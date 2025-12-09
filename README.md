@@ -574,9 +574,9 @@ ${{requirement_description}}
 
 {{IF existing_code}}
 # Existing Code Context
-```${{language}}
+'''${{language}}
 ${{existing_code}}
-```
+'''
 {{ENDIF}}
 
 {{IF api_docs}}
