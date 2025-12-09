@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-template-resolver",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Node for resolving conditional markdown formatting into final markdown-formatted text",
 	"license": "MIT",
 	"homepage": "",
