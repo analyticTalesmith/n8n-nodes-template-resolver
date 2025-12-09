@@ -805,9 +805,45 @@ export function resolveVariablePath(variables: VariableMap, path: string): Templ
   const parts = path.split('.');
   let current: TemplateValue = variables.get(parts[0]);
 
+  // If it's a JSON string, try to parse it
+  if (typeof current === 'string' && parts.length > 1) {
+    const trimmed = current.trim();
+    if ((trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+        (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+      try {
+        current = JSON.parse(trimmed);
+      } catch {
+        // Not valid JSON, continue with string
+      }
+    }
+  }
+
   for (let i = 1; i < parts.length && current != null; i++) {
-    if (typeof current === 'object' && !Array.isArray(current)) {
+    // Try to parse JSON strings at each level
+    if (typeof current === 'string') {
+      const trimmed = current.trim();
+      if ((trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+          (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+        try {
+          current = JSON.parse(trimmed);
+        } catch {
+          return undefined;
+        }
+      } else {
+        return undefined;
+      }
+    }
+    
+    if (typeof current === 'object' && !Array.isArray(current) && current !== null) {
       current = (current as Record<string, TemplateValue>)[parts[i]];
+    } else if (Array.isArray(current)) {
+      // Allow array index access like items.0
+      const index = parseInt(parts[i], 10);
+      if (!isNaN(index)) {
+        current = current[index];
+      } else {
+        return undefined;
+      }
     } else {
       return undefined;
     }
@@ -858,7 +894,20 @@ export function processForLoop(
   itemAlias: string | null,
   body: string
 ): string {
-  const list = resolveVariablePath(variables, varPath);
+  let list = resolveVariablePath(variables, varPath);
+  
+  // If it's a JSON array string, parse it
+  if (typeof list === 'string') {
+    const trimmed = list.trim();
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      try {
+        list = JSON.parse(trimmed);
+      } catch {
+        return '';
+      }
+    }
+  }
+  
   if (!Array.isArray(list)) return '';
 
   const placeholder = itemAlias || 'this';
@@ -980,8 +1029,14 @@ export function processListItems(variables: VariableMap, template: string): stri
  * @returns Processed template
  */
 export function substituteVariables(variables: VariableMap, template: string): string {
-  return template.replace(/\$\{\{(\w+)\}\}/g, (_m, varName) => {
-    const value = variables.get(varName);
+  // Match ${{varName}} or ${{varName.property.nested}}
+  return template.replace(/\$\{\{([\w.]+)\}\}/g, (_m, varPath: string) => {
+    // Check if it's a simple variable or dot notation path
+    if (varPath.includes('.')) {
+      const value = resolveVariablePath(variables, varPath);
+      return value != null ? String(value) : '';
+    }
+    const value = variables.get(varPath);
     return value != null ? String(value) : '';
   });
 }
@@ -1072,8 +1127,8 @@ export class TemplateResolver implements INodeType {
     // eslint-disable-next-line @n8n/community-nodes/icon-validation
     icon: 'fa:file-code', // format is valid icon reference and will display as expected, despite warning
     group: ['transform'],
-    version: 1,
     usableAsTool: true,
+    version: 1,
     description: 'Resolves conditional markdown templates with variable substitution, conditionals, loops, and more',
     defaults: {
       name: 'Template Resolver',
@@ -1115,7 +1170,7 @@ By \${{author}}
           multipleValues: true,
         },
         default: {},
-        description: 'Map template variables to values. Use expressions like {{ $("NodeName").item.JSON.fieldName }}.',
+        description: 'Map template variables to values. Use static, fixed values or n8n expressions like {{ $("NodeName").item.JSON.fieldName }}.',
         placeholder: 'Add mapping',
         options: [
           {

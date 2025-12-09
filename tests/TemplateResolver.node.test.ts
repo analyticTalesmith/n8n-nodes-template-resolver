@@ -412,7 +412,7 @@ describe('extractAllVariables', () => {
 
   test('deduplicates variables', () => {
     const result = extractAllVariables('${{x}} {{IF x}}${{x}}{{ENDIF}}');
-    expect(result.filter(v => v === 'x')).toHaveLength(1);
+    expect(result.filter((v: string) => v === 'x')).toHaveLength(1);
   });
 
   test('returns sorted array', () => {
@@ -1519,10 +1519,15 @@ describe('substituteVariables', () => {
     expect(substituteVariables(v, '${{var1}} ${{var2}}')).toBe('one two');
   });
 
-  test('does not substitute dot notation (simple only)', () => {
+  test('handles dot notation for nested objects', () => {
+    const v = vars([['user', { name: 'Alice', address: { city: 'NYC' } }]]);
+    expect(substituteVariables(v, '${{user.name}}')).toBe('Alice');
+    expect(substituteVariables(v, '${{user.address.city}}')).toBe('NYC');
+  });
+
+  test('handles missing nested property', () => {
     const v = vars([['user', { name: 'Alice' }]]);
-    // substituteVariables only handles simple ${{var}}, not ${{var.prop}}
-    expect(substituteVariables(v, '${{user}}')).toBe('[object Object]');
+    expect(substituteVariables(v, '${{user.missing}}')).toBe('');
   });
 });
 
@@ -1559,7 +1564,7 @@ describe('normalizeWhitespace', () => {
     expect(normalizeWhitespace('single line')).toBe('single line');
   });
 
-    test('combines all normalizations', () => {
+  test('combines all normalizations', () => {
     // Note: normalizeWhitespace strips trailing whitespace before newlines,
     // but the last line's trailing spaces remain if there's no trailing newline
     const input = '\n\nline1  \n\n\n\nline2\n\n';
@@ -1780,5 +1785,97 @@ describe('Regression Tests', () => {
     const v = vars([['IF', 'value']]);
     const result = substituteVariables(v, '${{IF}}');
     expect(result).toBe('value');
+  });
+});
+
+// ============================================================================
+// JSON STRING HANDLING
+// ============================================================================
+
+describe('JSON String Auto-Parsing', () => {
+  describe('dot notation with JSON strings', () => {
+    test('parses JSON object string for property access', () => {
+      const v = vars([['user', '{"name": "Alice", "age": 30}']]);
+      expect(substituteVariables(v, 'Name: ${{user.name}}')).toBe('Name: Alice');
+      expect(substituteVariables(v, 'Age: ${{user.age}}')).toBe('Age: 30');
+    });
+
+    test('parses nested JSON object string', () => {
+      const v = vars([['data', '{"user": {"address": {"city": "NYC"}}}']]);
+      expect(substituteVariables(v, 'City: ${{data.user.address.city}}')).toBe('City: NYC');
+    });
+
+    test('parses JSON array string with index access', () => {
+      const v = vars([['items', '["apple", "banana", "cherry"]']]);
+      expect(substituteVariables(v, 'First: ${{items.0}}')).toBe('First: apple');
+      expect(substituteVariables(v, 'Last: ${{items.2}}')).toBe('Last: cherry');
+    });
+
+    test('handles nested JSON string in object property', () => {
+      const v = vars([['config', { settings: '{"theme": "dark"}' }]]);
+      expect(substituteVariables(v, 'Theme: ${{config.settings.theme}}')).toBe('Theme: dark');
+    });
+
+    test('returns empty for invalid JSON', () => {
+      const v = vars([['bad', '{not valid json}']]);
+      expect(substituteVariables(v, 'Value: ${{bad.key}}')).toBe('Value: ');
+    });
+
+    test('returns empty for non-JSON string with dot notation', () => {
+      const v = vars([['text', 'plain string']]);
+      expect(substituteVariables(v, 'Value: ${{text.prop}}')).toBe('Value: ');
+    });
+
+    test('actual objects still work', () => {
+      const v = vars([['user', { name: 'Bob' }]]);
+      expect(substituteVariables(v, 'Name: ${{user.name}}')).toBe('Name: Bob');
+    });
+  });
+
+  describe('FOR loops with JSON array strings', () => {
+    test('iterates JSON array string', () => {
+      const v = vars([['items', '["a", "b", "c"]']]);
+      const result = processForBlocks(v, '{{FOR items AS i}}${{i}}{{END}}');
+      expect(result).toBe('abc');
+    });
+
+    test('iterates JSON object array string', () => {
+      const v = vars([['users', '[{"name": "Alice"}, {"name": "Bob"}]']]);
+      const result = processForBlocks(v, '{{FOR users AS u}}${{u.name}},{{END}}');
+      expect(result).toBe('Alice,Bob,');
+    });
+
+    test('returns empty for invalid JSON array', () => {
+      const v = vars([['bad', '[not valid]']]);
+      const result = processForBlocks(v, '{{FOR bad AS x}}${{x}}{{END}}');
+      expect(result).toBe('');
+    });
+
+    test('returns empty for JSON object (not array)', () => {
+      const v = vars([['obj', '{"a": 1}']]);
+      const result = processForBlocks(v, '{{FOR obj AS x}}${{x}}{{END}}');
+      expect(result).toBe('');
+    });
+  });
+
+  describe('full template with JSON strings', () => {
+    test('complex template with JSON config', () => {
+      const v = vars([
+        ['config', '{"model": "gpt-4", "temperature": 0.7, "options": {"stream": true}}'],
+        ['items', '["research", "analyze", "summarize"]']
+      ]);
+      
+      const template = 
+        'Model: ${{config.model}}\n' +
+        'Temp: ${{config.temperature}}\n' +
+        'Stream: ${{config.options.stream}}\n' +
+        'Tasks: {{FOR items AS task}}${{task}}, {{END}}';
+      
+      const result = resolveTemplate(template, v);
+      expect(result).toContain('Model: gpt-4');
+      expect(result).toContain('Temp: 0.7');
+      expect(result).toContain('Stream: true');
+      expect(result).toContain('research, analyze, summarize,');
+    });
   });
 });
