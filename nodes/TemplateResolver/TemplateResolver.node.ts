@@ -1069,9 +1069,10 @@ export class TemplateResolver implements INodeType {
   description: INodeTypeDescription = {
     displayName: 'Template Resolver',
     name: 'templateResolver',
+    // eslint-disable-next-line @n8n/community-nodes/icon-validation
+    icon: 'fa:file-code', // format is valid icon reference and will display as expected, despite warning
     group: ['transform'],
     version: 1,
-    icon: {light: 'file:icoTemplateResolver_light.svg', dark: 'file:icoTemplateResolver_dark.svg'},
     usableAsTool: true,
     description: 'Resolves conditional markdown templates with variable substitution, conditionals, loops, and more',
     defaults: {
