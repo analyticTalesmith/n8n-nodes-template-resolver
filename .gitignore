@@ -1,5 +1,6 @@
 dist
 node_modules
 *.tgz
-.vscode
-.github
+.vscode/
+.github/
+coverage/
