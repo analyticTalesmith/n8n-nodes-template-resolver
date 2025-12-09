@@ -51,7 +51,8 @@ A custom template resolution node for n8n for conditional prompt/text creation b
 3. **Install the package** inside the container:
    ```bash
    docker exec -it n8n /bin/sh
-   cd /home/node/.n8n/custom && npm install n8n-nodes-template-resolver-x.y.z.tgz
+   cd /home/node/.n8n/custom 
+   npm install n8n-nodes-template-resolver-x.y.z.tgz
    ```
 
 4. **Restart n8n**:
