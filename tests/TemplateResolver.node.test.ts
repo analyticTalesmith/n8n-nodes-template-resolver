@@ -495,16 +495,16 @@ describe('isVariableTruthy', () => {
     expect(isVariableTruthy(vars([['x', 42]]), 'x')).toBe(true);
   });
 
-  test('true for zero (converts to "0")', () => {
-    expect(isVariableTruthy(vars([['x', 0]]), 'x')).toBe(true);
+  test('false for zero (converts to "0")', () => {
+    expect(isVariableTruthy(vars([['x', 0]]), 'x')).toBe(false);
   });
 
   test('true for boolean true', () => {
     expect(isVariableTruthy(vars([['x', true]]), 'x')).toBe(true);
   });
 
-  test('true for boolean false (converts to "false")', () => {
-    expect(isVariableTruthy(vars([['x', false]]), 'x')).toBe(true);
+  test('false for boolean false (converts to "false")', () => {
+    expect(isVariableTruthy(vars([['x', false]]), 'x')).toBe(false);
   });
 
   test('true for array', () => {

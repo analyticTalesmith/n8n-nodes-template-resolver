@@ -279,7 +279,33 @@ export function getVariable(variables: VariableMap, name: string): TemplateValue
 export function isVariableTruthy(variables: VariableMap, name: string): boolean {
   if (!variables.has(name)) return false;
   const value = variables.get(name);
-  return value != null && String(value).trim() !== '';
+  
+  // Handle null/undefined
+  if (value == null) return false;
+  
+  // Handle booleans directly
+  if (typeof value === 'boolean') return value;
+  
+  // Handle numbers (0 is falsy)
+  if (typeof value === 'number') return value !== 0;
+  
+  // Handle strings - check for falsy string values
+  if (typeof value === 'string') {
+    const trimmed = value.trim().toLowerCase();
+    // Empty string is falsy
+    if (trimmed === '') return false;
+    // Common falsy string representations
+    if (trimmed === 'false' || trimmed === '0' || trimmed === 'no' || trimmed === 'null' || trimmed === 'undefined') {
+      return false;
+    }
+    return true;
+  }
+  
+  // Arrays - empty arrays are falsy
+  if (Array.isArray(value)) return value.length > 0;
+  
+  // Objects - empty objects are still truthy (consistent with JS)
+  return true;
 }
 
 /**
