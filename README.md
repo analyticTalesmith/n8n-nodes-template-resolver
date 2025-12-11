@@ -106,12 +106,6 @@ Transform values before output.
 ${{description | trim | head=200 | escape_md}}
 ```
 
-**Combine with default:**
-
-```
-${{bio ?? "No bio provided" | trim | head=100}}
-```
-
 ---
 
 ### Conditionals: `{{IF}}` / `{{ELSE}}` / `{{ELSEIF}}`
