@@ -1,0 +1,28 @@
+{
+  "restatement": "Split the template resolver into a headless core and a thin n8n wrapper without changing behavior. The lexer, parser, expressions, interpreter, filters, coercion, errors, types and utils move to core/src. A new resolve.ts holds resolveTemplate, and core/src/index.ts exports the public surface. n8n/ keeps only the node class, its json, its icon and an index. Core must not import n8n or Node I/O modules, and the node must reach core only through its public entry. Pre-existing tests may change only their import specifiers and must still pass (446 or more). package.json n8n.nodes, tsconfig and jest must follow the new layout so that the build still emits the node entry. No test body may be edited and no runtime dependency may be added.",
+  "brief_mismatch": null,
+  "verification_plan": [
+    "c1: list every .ts file under core/ and check that its import, require and jest.mock specifiers include no n8n-workflow, n8n-* or @n8n/* package and no fs, fs/promises, net, http, https or child_process (with or without the node: prefix).",
+    "c2: check that core/src/index.ts exports resolveTemplate, and that every specifier in an n8n/ .ts file that reaches core ends in core/src or core/src/index, never a deep file such as core/src/lexer.",
+    "c3: diff tests/TemplateResolver.node.test.ts against its base version and confirm that only import-path lines and '} from' lines changed, with the same number of non-import lines.",
+    "c4: run jest on the pre-existing test file and confirm 0 failed and at least 446 passed. Also check that the other pre-existing suites (tests/regressions/*) still pass after their specifiers are updated.",
+    "c5: run npm run build, read package.json n8n.nodes and confirm each path exists under dist/n8n/. Also confirm that the compiled node's relative require of the core resolves inside dist (dist/core/src/index.js exists), so the packaged node loads.",
+    "m1: confirm that no test file in the diff has a changed line outside import or mock specifiers.",
+    "m2: confirm that package.json dependencies and peerDependencies gained no entry.",
+    "Rubric: confirm that the moves are git renames at or near 100% similarity, and that the only code change in a moved file is extracting resolveTemplate verbatim into resolve.ts and replacing the node's sibling imports.",
+    "Interface: confirm that resolveTemplate keeps its signature and that the core index still exports everything it did before (Lexer, Parser, Interpreter, expressions, filters, coercion, utils, errors, types), minus the node class.",
+    "Scope: confirm that every changed path is in files_scope or the scope-exceptions log, and that no stale references to nodes/TemplateResolver remain in config or source."
+  ],
+  "findings": [],
+  "responses": [],
+  "reviewer": {
+    "kind": "fallback",
+    "label": "opus fallback (same model family as the builder; has repository access)"
+  },
+  "at": "2026-10-13T21:56:36.955Z",
+  "card": "0011-restructure-into-a-pure-core-and-a-thin",
+  "tier": "product",
+  "packet_sha256": "b134a834db89c5308b0aa511da0c0ac7908c536076a8105f4a408ce686639536",
+  "diff_sha256": "82790d45117667f8400f1c2cb2dd167e7e9e56bbcd3fd8413d4e4567b33c9334",
+  "dropped": []
+}
