@@ -59,14 +59,11 @@
     "--test-reporter=tap",
     "tools/tests/test-runner.test.mjs"
   ],
-  "claim": {
-    "owner": "build:implementer",
-    "heartbeat": "2026-10-13T21:38:08.084Z"
-  },
+  "claim": null,
   "blocked_on": null,
   "docs_impact": "none",
   "started": "2026-10-13T21:30:19.144Z",
-  "ended": null,
+  "ended": "2026-10-13T21:39:45.572Z",
   "review_rounds": 2,
   "schema_version": 1,
   "blast_radius": [
