@@ -22,8 +22,8 @@ export * from "./expressions";
 // Interpreter
 export * from "./interpreter";
 
-// Utilities
-export * from "./utils";
+// Template analysis
+export * from "./analyze";
 
 // Template resolution
 export { resolveTemplate } from "./resolve";

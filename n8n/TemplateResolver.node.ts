@@ -1,4 +1,4 @@
-import { VariableMap, extractAllVariables, resolveTemplate } from "../core/src";
+import { VariableMap, analyze, resolveTemplate } from "../core/src";
 import {
   IExecuteFunctions,
   INodeExecutionData,
@@ -170,7 +170,13 @@ By \${{author}}
         ) as string;
 
         // Extract variables from template
-        const detectedVariables = extractAllVariables(template);
+        const analysis = analyze(template);
+        const detectedVariables = analysis.variables
+          .map((v) => v.name)
+          .sort();
+        const requiredVariables = new Set(
+          analysis.variables.filter((v) => !v.optional).map((v) => v.name)
+        );
 
         // Build variable map
         const variables: VariableMap = new Map();
@@ -188,10 +194,14 @@ By \${{author}}
           (v) => !variables.has(v)
         );
 
-        if (strictMode && missingVariables.length > 0) {
+        const missingRequired = missingVariables.filter((v) =>
+          requiredVariables.has(v)
+        );
+
+        if (strictMode && missingRequired.length > 0) {
           throw new NodeOperationError(
             this.getNode(),
-            `Template requires unmapped variables: ${missingVariables.join(", ")}. ` +
+            `Template requires unmapped variables: ${missingRequired.join(", ")}. ` +
               `Add mappings or disable "Strict Mode". ` +
               `Detected variables: ${detectedVariables.join(", ")}`,
             { itemIndex }

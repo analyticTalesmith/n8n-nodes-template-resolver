@@ -1,4 +1,4 @@
-# Context for Derive variable and filter usage from the AST
+# Context for Follow-up: Living module doc still describes utils.ts/extractAllVariables as the node's detection step
 
 Working memory for this ticket, next to card.md. The lead updates it in small edits as the conversation goes. It moves with the card, reaches the living documents only when the human approves, and is archived at done.
 
