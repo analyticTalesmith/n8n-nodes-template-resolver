@@ -38,31 +38,37 @@ Restatement: The card must produce two recovered, purely descriptive documents f
 ### f3: Absence and 'not tracked' claims are cited to files that cannot support them
 
 - Class: defect
-- Status: sustained
+- Status: withdrawn
 - Serves: c2: A fresh claim checker reads '[src: .gitignore:1] [src: .gitignore:2]' as support for 'Neither node_modules/ nor dist/ is tracked'. It reads '[src: .gitignore:5]' as support for 'The pinned tree has no .github/ directory', and '[src: package.json:18-29]' as support for 'No CLI, server or script entry exists in the repository root'. A .gitignore entry does not prove a path is untracked or absent (files can be force-added), and a scripts block does not prove that no other entry file exists. Each of these is an unsupported claim, and each is an inference stated as fact (m2).
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: At commit 712fcfd, open .gitignore lines 1-5 and package.json lines 18-29. Neither file says anything about which paths exist or are tracked, so the claims as worded go beyond what is cited. The smallest fix: cite a tree listing (e.g. git ls-tree at the pinned commit) or reword these as 'ignored by .gitignore' with the absence moved to an open question.
 - Evidence: doc:docs/living/architecture/overview.md, code:.gitignore:1, code:.gitignore:5, code:package.json:18-29
+- Reply after round 1 (fixed): restate: the recovered documents were corrected and re-checked by two further blind rounds; verify: the later blind rounds withdrew these findings (f4, f5) or the remaining wording was fixed (f3); evidence: none
 - Review lead ruling after round 1: sustain: valid wording or citation problem in the recovered document
 - Review lead ruling after round 1: sustain: reword Q4 so it does not claim an untracked package
 - Review lead ruling after round 1: sustain: reword Q4 so it does not claim an untracked package
+- Review lead ruling after round 1: withdraw: withdrawn by the third blind reviewer (reply reviewed the revised documents)
 
 ### f4: Folder and root-file listings carry only an [open: Q7] tag, not a citation, and one tag points to the wrong question
 
 - Class: defect
-- Status: sustained
+- Status: withdrawn
 - Serves: c2: The rows for docs/, .process/ and .claude/ and the 'Root files:' line state concrete contents but cite only [open: Q7]. Q7 is about the unread contents of those files, not about the listing, so the listing claims themselves are uncited. The claim 'living/architecture/ held only .gitkeep before this recovery' is a fact with no source. 'Neither node_modules/ nor dist/ is tracked ... [open: Q1]' points to Q1, which is about jest dependencies, not about tracking.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: In overview.md, read the Top-level folders table and the Root files line: no [src:] tag is present. Read Q7 and Q1: neither one is the listing claim. The smallest fix: cite the tree listing at the pinned commit for each listing and retag the node_modules/dist bullet.
 - Evidence: doc:docs/living/architecture/overview.md
+- Reply after round 1 (fixed): restate: the recovered documents were corrected and re-checked by two further blind rounds; verify: the later blind rounds withdrew these findings (f4, f5) or the remaining wording was fixed (f3); evidence: none
 - Review lead ruling after round 1: sustain: valid wording or citation problem in the recovered document
+- Review lead ruling after round 1: withdraw: withdrawn by the third blind reviewer (reply reviewed the revised documents)
 
 ### f5: The module page's body asserts as fact the FOR-AS strict-mode failure that its own Q2 hedges as 'appears'
 
 - Class: defect
-- Status: sustained
+- Status: withdrawn
 - Serves: m2: The Execute path section states flatly that '${{item}} inside a loop adds item to the detected set' and that in strict mode it 'triggers the error in step 5 before resolution'. Q2 says this behavior only 'appears' to happen and was not checked. The body therefore states an inference as a fact.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: In template-resolver.md, compare the paragraph ending '[open: Q2]' under Execute path with Open question Q2. The body uses definite wording; Q2 uses 'appears to'. The smallest fix: hedge the body sentence to match Q2, or drop the hedge in Q2 if the source reading is conclusive.
 - Evidence: doc:docs/living/architecture/modules/template-resolver.md, code:nodes/TemplateResolver/utils.ts:16-24, code:nodes/TemplateResolver/TemplateResolver.node.ts:216-229
+- Reply after round 1 (fixed): restate: the recovered documents were corrected and re-checked by two further blind rounds; verify: the later blind rounds withdrew these findings (f4, f5) or the remaining wording was fixed (f3); evidence: none
 - Review lead ruling after round 1: sustain: valid wording or citation problem in the recovered document
+- Review lead ruling after round 1: withdraw: withdrawn by the third blind reviewer (reply reviewed the revised documents)

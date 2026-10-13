@@ -120,10 +120,18 @@
       "location": "docs/living/architecture/overview.md (Languages and manifests: .gitignore bullet; Build and test commands: node_modules/dist bullet; Entry points: last bullet)",
       "label": "f3",
       "raised_in": 1,
-      "status": "sustained",
+      "status": "withdrawn",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "the recovered documents were corrected and re-checked by two further blind rounds",
+          "verify": "the later blind rounds withdrew these findings (f4, f5) or the remaining wording was fixed (f3)",
+          "action": "fixed",
+          "evidence": []
+        }
+      ],
       "rulings": [
         {
           "after_round": 1,
@@ -139,6 +147,11 @@
           "after_round": 1,
           "ruling": "sustain",
           "note": "reword Q4 so it does not claim an untracked package"
+        },
+        {
+          "after_round": 1,
+          "ruling": "withdraw",
+          "note": "withdrawn by the third blind reviewer (reply reviewed the revised documents)"
         }
       ]
     },
@@ -157,15 +170,28 @@
       "location": "docs/living/architecture/overview.md (Top-level folders; Build and test commands, node_modules bullet)",
       "label": "f4",
       "raised_in": 1,
-      "status": "sustained",
+      "status": "withdrawn",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "the recovered documents were corrected and re-checked by two further blind rounds",
+          "verify": "the later blind rounds withdrew these findings (f4, f5) or the remaining wording was fixed (f3)",
+          "action": "fixed",
+          "evidence": []
+        }
+      ],
       "rulings": [
         {
           "after_round": 1,
           "ruling": "sustain",
           "note": "valid wording or citation problem in the recovered document"
+        },
+        {
+          "after_round": 1,
+          "ruling": "withdraw",
+          "note": "withdrawn by the third blind reviewer (reply reviewed the revised documents)"
         }
       ]
     },
@@ -186,15 +212,28 @@
       "location": "docs/living/architecture/modules/template-resolver.md (Interface > Execute path, final paragraph)",
       "label": "f5",
       "raised_in": 1,
-      "status": "sustained",
+      "status": "withdrawn",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "the recovered documents were corrected and re-checked by two further blind rounds",
+          "verify": "the later blind rounds withdrew these findings (f4, f5) or the remaining wording was fixed (f3)",
+          "action": "fixed",
+          "evidence": []
+        }
+      ],
       "rulings": [
         {
           "after_round": 1,
           "ruling": "sustain",
           "note": "valid wording or citation problem in the recovered document"
+        },
+        {
+          "after_round": 1,
+          "ruling": "withdraw",
+          "note": "withdrawn by the third blind reviewer (reply reviewed the revised documents)"
         }
       ]
     }
