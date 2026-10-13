@@ -1,5 +1,5 @@
 ---
-summary: Surface map of the n8n-nodes-template-resolver repository at the recovered commit - one TypeScript n8n community node package, its manifests, scripts, test and lint setup, entry points and top-level folders.
+summary: Surface map of the repository at the recovered commit: manifests, scripts, build and test setup, entry points and folders.
 state: planned
 provenance: recovered
 recovered_at: 712fcfd7f7af0b329e6506120a25f0db8e58de06
