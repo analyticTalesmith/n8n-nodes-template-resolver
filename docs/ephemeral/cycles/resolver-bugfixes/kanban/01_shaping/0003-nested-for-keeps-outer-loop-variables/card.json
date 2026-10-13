@@ -1,0 +1,89 @@
+{
+  "id": "0003-nested-for-keeps-outer-loop-variables",
+  "title": "Nested FOR keeps outer loop variables",
+  "type": "bug",
+  "parent": null,
+  "depends_on": [
+    "0002-working-test-runner"
+  ],
+  "origin": "resolver-bugfixes",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "nodes/TemplateResolver/interpreter.ts"
+  ],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [
+      "nodes/TemplateResolver/interpreter.ts"
+    ],
+    "frozen": true
+  },
+  "criteria": [
+    {
+      "text": "nf-01 after an inner FOR loop ends, the outer loop variable and its @index0 and @first values still resolve in the rest of the outer body",
+      "verify": "test",
+      "level": "unit",
+      "evidence": null,
+      "status": "pending",
+      "class": "goal-critical"
+    },
+    {
+      "text": "nf-02 two sibling inner loops and a doubly nested loop render every iteration with the right outer item",
+      "verify": "test",
+      "level": "unit",
+      "evidence": null,
+      "status": "pending",
+      "class": "goal-critical"
+    },
+    {
+      "text": "nf-03 a TABLE row loop inside an outer FOR keeps the outer loop variable for later rows and text",
+      "verify": "test",
+      "level": "unit",
+      "evidence": null,
+      "status": "pending",
+      "class": "goal-critical"
+    },
+    {
+      "text": "nf-04 the existing jest suite files are untouched and the whole node:test suite still passes",
+      "verify": "review",
+      "evidence": null,
+      "status": "pending",
+      "class": "polish"
+    }
+  ],
+  "gate": [
+    "node",
+    "scripts/run-node-tests.mjs",
+    "test-node/nested-for.test.js"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1,
+  "blast_radius": [
+    "resolver-core"
+  ],
+  "test_levels": [
+    "unit"
+  ],
+  "user_visible": false,
+  "freeze": {
+    "at": "2026-10-13T18:01:33.083Z",
+    "brief_sha256": "71b0bd09d8b614a83f7144888d836f5ad419195e60f77bba2474b3f3b80b931b",
+    "brief_core_sha256": "c77ac397b9a8764472290dc0082f524bb4c7812340e11091746819342e574759",
+    "manifest_sha256": "c250af2da6b22861526e058f05d6edfb9e335f98c3709646cb984bba2109ecfd",
+    "criteria_sha256": "b245381d47decf1eb413993f7c76b4786bd86b69798e769f15c200eb77980927",
+    "scope_sha256": "ad22549945ae98e99e49d2c4d4ac48143ed5de6c21a7948c7e411d733e7756c2",
+    "scope_parts": {
+      "files_scope": "7f44f9457cf1902f5d454fab596dcc7c0baa434881a92d78ff318a10e0199ca1",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "ebd198c1021e45c841a0248e64bfcb1c1a8b0ccfb8536ac9185b3dc97ad71746"
+    }
+  }
+}
