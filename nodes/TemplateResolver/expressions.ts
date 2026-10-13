@@ -4,6 +4,7 @@ import {
   tryCoerceToNumber,
   tryCoerceToArray,
   tryCoerceToObject,
+  tryCoerceStringForPathSegment,
   tryCoerceToBoolean,
   tryCoerceToString,
 } from "./coercion";
@@ -391,11 +392,9 @@ function resolveValue(expr: string, variables: VariableMap): TemplateValue {
 
     // Parse as JSON if the variable is a string
     if (typeof current === "string") {
-      try {
-        current = JSON.parse(current);
-      } catch {
-        return null;
-      }
+      const parsed = tryCoerceStringForPathSegment(current, path[i]);
+      if (!parsed) return null;
+      current = parsed;
     }
 
     if (
