@@ -27,6 +27,11 @@ import {
 } from "./expressions";
 import { parseFilter, applyFilters } from "./filters";
 
+interface LoopEntries {
+  keys: string[];
+  existing: Map<string, TemplateValue>;
+}
+
 /**
  * Interpreter: Walks AST and produces output string
  *
@@ -211,26 +216,63 @@ export class Interpreter {
     }
 
     const results: string[] = [];
+    const saved = this.saveLoopEntries(node.itemName);
 
-    for (let i = 0; i < array.length; i++) {
-      // Set loop context
-      this.loopContext.set(node.itemName, array[i]);
-      this.loopContext.set("@index0", i);
-      this.loopContext.set("@index1", i + 1);
-      this.loopContext.set("@first", i === 0);
-      this.loopContext.set("@last", i === array.length - 1);
-      this.loopContext.set("@notFirst", i !== 0);
-      this.loopContext.set("@notLast", i !== array.length - 1);
+    try {
+      for (let i = 0; i < array.length; i++) {
+        // Set loop context
+        this.loopContext.set(node.itemName, array[i]);
+        this.loopContext.set("@index0", i);
+        this.loopContext.set("@index1", i + 1);
+        this.loopContext.set("@first", i === 0);
+        this.loopContext.set("@last", i === array.length - 1);
+        this.loopContext.set("@notFirst", i !== 0);
+        this.loopContext.set("@notLast", i !== array.length - 1);
 
-      // Render body
-      const output = node.body.map((child) => this.visit(child)).join("");
-      results.push(output);
+        // Render body
+        const output = node.body.map((child) => this.visit(child)).join("");
+        results.push(output);
+      }
+    } finally {
+      // Restore the enclosing loop's entries
+      this.restoreLoopEntries(saved);
     }
 
-    // Clear loop context
-    this.loopContext.clear();
-
     return results.join("");
+  }
+
+  /**
+   * Save the loop entries a loop with this item name will overwrite
+   */
+  private saveLoopEntries(itemName: string): LoopEntries {
+    const keys = [
+      itemName,
+      "@index0",
+      "@index1",
+      "@first",
+      "@last",
+      "@notFirst",
+      "@notLast",
+    ];
+    const existing = new Map<string, TemplateValue>();
+    for (const key of keys) {
+      if (this.loopContext.has(key)) {
+        existing.set(key, this.loopContext.get(key) as TemplateValue);
+      }
+    }
+    return { keys, existing };
+  }
+
+  /**
+   * Put saved loop entries back, removing those that did not exist before
+   */
+  private restoreLoopEntries(saved: LoopEntries): void {
+    for (const key of saved.keys) {
+      this.loopContext.delete(key);
+    }
+    for (const [key, value] of saved.existing) {
+      this.loopContext.set(key, value);
+    }
   }
 
   /**
@@ -310,35 +352,38 @@ export class Interpreter {
         const array = tryCoerceToArray(iterable);
 
         if (array) {
-          for (let i = 0; i < array.length; i++) {
-            // Set loop context
-            this.loopContext.set(forNode.itemName, array[i]);
-            this.loopContext.set("@index0", i);
-            this.loopContext.set("@index1", i + 1);
-            this.loopContext.set("@first", i === 0);
-            this.loopContext.set("@last", i === array.length - 1);
-            this.loopContext.set("@notFirst", i !== 0);
-            this.loopContext.set("@notLast", i !== array.length - 1);
+          const saved = this.saveLoopEntries(forNode.itemName);
+          try {
+            for (let i = 0; i < array.length; i++) {
+              // Set loop context
+              this.loopContext.set(forNode.itemName, array[i]);
+              this.loopContext.set("@index0", i);
+              this.loopContext.set("@index1", i + 1);
+              this.loopContext.set("@first", i === 0);
+              this.loopContext.set("@last", i === array.length - 1);
+              this.loopContext.set("@notFirst", i !== 0);
+              this.loopContext.set("@notLast", i !== array.length - 1);
 
-            // Process FOR body - look for TableRow nodes
-            for (const bodyNode of forNode.body) {
-              if (bodyNode.type === "TableRow") {
-                const tableRowNode = bodyNode as TableRowNode;
-                const cells = this.processCellsArray(tableRowNode.cells);
-                rows.push(cells);
-              } else {
-                // Fallback: render and split by |
-                const forOutput = this.visit(bodyNode);
-                if (forOutput.trim()) {
-                  const cells = forOutput.split("|").map((cell) => cell.trim());
+              // Process FOR body - look for TableRow nodes
+              for (const bodyNode of forNode.body) {
+                if (bodyNode.type === "TableRow") {
+                  const tableRowNode = bodyNode as TableRowNode;
+                  const cells = this.processCellsArray(tableRowNode.cells);
                   rows.push(cells);
+                } else {
+                  // Fallback: render and split by |
+                  const forOutput = this.visit(bodyNode);
+                  if (forOutput.trim()) {
+                    const cells = forOutput.split("|").map((cell) => cell.trim());
+                    rows.push(cells);
+                  }
                 }
               }
             }
+          } finally {
+            // Restore the enclosing loop's entries
+            this.restoreLoopEntries(saved);
           }
-
-          // Clear loop context
-          this.loopContext.clear();
         }
       } else {
         // Regular row - process all cells
