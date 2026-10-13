@@ -1,0 +1,144 @@
+{
+  "id": "0013-add-the-golden-file-test-harness",
+  "title": "Add the golden-file test harness",
+  "type": "task",
+  "parent": null,
+  "depends_on": [
+    "0011-restructure-into-a-pure-core-and-a-thin"
+  ],
+  "origin": "foundations",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "tests/golden/cases/case-when-default/data.json",
+    "tests/golden/cases/case-when-default/expected.md",
+    "tests/golden/cases/case-when-default/template.md",
+    "tests/golden/cases/default-fallback/data.json",
+    "tests/golden/cases/default-fallback/expected.md",
+    "tests/golden/cases/default-fallback/template.md",
+    "tests/golden/cases/error-missing-variable/data.json",
+    "tests/golden/cases/error-missing-variable/expected-error.txt",
+    "tests/golden/cases/error-missing-variable/template.md",
+    "tests/golden/cases/filter-chain/data.json",
+    "tests/golden/cases/filter-chain/expected.md",
+    "tests/golden/cases/filter-chain/template.md",
+    "tests/golden/cases/for-nested-loops/data.json",
+    "tests/golden/cases/for-nested-loops/expected.md",
+    "tests/golden/cases/for-nested-loops/template.md",
+    "tests/golden/cases/if-elseif-else/data.json",
+    "tests/golden/cases/if-elseif-else/expected.md",
+    "tests/golden/cases/if-elseif-else/template.md",
+    "tests/golden/cases/list-nested-conditional/data.json",
+    "tests/golden/cases/list-nested-conditional/expected.md",
+    "tests/golden/cases/list-nested-conditional/template.md",
+    "tests/golden/cases/table-with-for-rows/data.json",
+    "tests/golden/cases/table-with-for-rows/expected.md",
+    "tests/golden/cases/table-with-for-rows/template.md",
+    "tests/golden/golden.test.ts",
+    "tests/golden/harness.ts"
+  ],
+  "manifest": {
+    "add": [
+      "tests/golden/cases/case-when-default/data.json",
+      "tests/golden/cases/case-when-default/expected.md",
+      "tests/golden/cases/case-when-default/template.md",
+      "tests/golden/cases/default-fallback/data.json",
+      "tests/golden/cases/default-fallback/expected.md",
+      "tests/golden/cases/default-fallback/template.md",
+      "tests/golden/cases/error-missing-variable/data.json",
+      "tests/golden/cases/error-missing-variable/expected-error.txt",
+      "tests/golden/cases/error-missing-variable/template.md",
+      "tests/golden/cases/filter-chain/data.json",
+      "tests/golden/cases/filter-chain/expected.md",
+      "tests/golden/cases/filter-chain/template.md",
+      "tests/golden/cases/for-nested-loops/data.json",
+      "tests/golden/cases/for-nested-loops/expected.md",
+      "tests/golden/cases/for-nested-loops/template.md",
+      "tests/golden/cases/if-elseif-else/data.json",
+      "tests/golden/cases/if-elseif-else/expected.md",
+      "tests/golden/cases/if-elseif-else/template.md",
+      "tests/golden/cases/list-nested-conditional/data.json",
+      "tests/golden/cases/list-nested-conditional/expected.md",
+      "tests/golden/cases/list-nested-conditional/template.md",
+      "tests/golden/cases/table-with-for-rows/data.json",
+      "tests/golden/cases/table-with-for-rows/expected.md",
+      "tests/golden/cases/table-with-for-rows/template.md",
+      "tests/golden/golden.test.ts",
+      "tests/golden/harness.ts"
+    ],
+    "remove": [],
+    "edit": [],
+    "frozen": true
+  },
+  "criteria": [
+    {
+      "text": "gf-01: the harness discovers every case folder and passes when output equals the expected file exactly",
+      "verify": "test",
+      "traces": [
+        "tests/golden-harness.test.ts#gf-01"
+      ]
+    },
+    {
+      "text": "gf-02: a mismatch fails with the case name and the first differing line",
+      "verify": "test",
+      "traces": [
+        "tests/golden-harness.test.ts#gf-02"
+      ]
+    },
+    {
+      "text": "gf-03: an expected-error.txt case passes when rendering throws a message containing that text",
+      "verify": "test",
+      "traces": [
+        "tests/golden-harness.test.ts#gf-03"
+      ]
+    },
+    {
+      "text": "gf-04: UPDATE_GOLDEN=1 rewrites the expected files instead of failing",
+      "verify": "test",
+      "traces": [
+        "tests/golden-harness.test.ts#gf-04"
+      ]
+    },
+    {
+      "text": "gf-05: the shipped suite holds at least eight cases and they all pass against the real resolver",
+      "verify": "test",
+      "traces": [
+        "tests/golden-harness.test.ts#gf-05"
+      ]
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/golden-harness.test.ts",
+    "--reporters=<rootDir>/tools/jest-tap-reporter.cjs"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": "2026-10-13T21:56:45.510Z",
+  "ended": "2026-10-13T22:03:33.000Z",
+  "review_rounds": 2,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver"
+  ],
+  "user_visible": false,
+  "user_docs_waiver": "internal restructuring or tooling; no user-facing document describes it",
+  "freeze": {
+    "at": "2026-10-13T21:59:27.011Z",
+    "brief_sha256": "6db13ad33a19b112d8984eeed9f357c0f732bfefd34ca5309bf069bdc0b16714",
+    "brief_core_sha256": "a8cb6b62e1d34274630db9fbc487da7cb25ec14f849a7b5f455b624ec52c3685",
+    "manifest_sha256": "730d56b2e9c460bed7a2f8e2d2daabf2faf789ab3e6e89e02c6ef3b577843f0d",
+    "criteria_sha256": "3bad4f9f1dce4f5da3a0a40a5bf10fc157b19de2f47e120df77993bedcdf0d3d",
+    "scope_sha256": "56626eebfc41e36f2a055c4d6bba47a8a2dea0108a2d14c78321751f05035ea7",
+    "scope_parts": {
+      "files_scope": "4eaa3a92f67df740e83bf92a857b2bc02fed449c62194ab1218313e1c6ddaf22",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "bdc7080de3d24917fbdc11119776f29841f4a1d6c38ad8a8bfa9bef1546374ba"
+    }
+  },
+  "base_commit": "292dd776abb07dbb75973d266568dcd4e75a70c1"
+}
