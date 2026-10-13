@@ -1,0 +1,95 @@
+{
+  "id": "0004-restore-jest-and-make-it-the-default-tes",
+  "title": "Restore jest and make it the default test command",
+  "type": "task",
+  "parent": null,
+  "depends_on": [],
+  "origin": "foundations",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "package.json",
+    "tools/jest-tap-reporter.cjs",
+    "tools/tests/test-runner-load-failure.test.mjs"
+  ],
+  "manifest": {
+    "add": [
+      "tools/jest-tap-reporter.cjs",
+      "tools/tests/test-runner-load-failure.test.mjs"
+    ],
+    "remove": [],
+    "edit": [
+      "package.json"
+    ],
+    "frozen": true
+  },
+  "criteria": [
+    {
+      "text": "tr-01: package.json lists jest, ts-jest and @types/jest in devDependencies, the lockfile root agrees, and the test script runs jest",
+      "verify": "test",
+      "traces": [
+        "tools/tests/test-runner.test.mjs#tr-01"
+      ]
+    },
+    {
+      "text": "tr-02: the jest TAP reporter prints TAP where a failing assertion is a not ok test carrying code ERR_ASSERTION and a passing test is ok",
+      "verify": "test",
+      "traces": [
+        "tools/tests/test-runner.test.mjs#tr-02"
+      ]
+    },
+    {
+      "text": "tr-03: with dependencies installed the existing suite runs through the jest binary with no failures and at least 446 passing tests",
+      "verify": "test",
+      "traces": [
+        "tools/tests/test-runner.test.mjs#tr-03"
+      ]
+    },
+    {
+      "text": "tr-04: a test file that fails to load is reported as a not ok entry",
+      "verify": "test",
+      "traces": [
+        "tools/tests/test-runner-load-failure.test.mjs#tr-04"
+      ]
+    }
+  ],
+  "gate": [
+    "node",
+    "--test",
+    "--test-reporter=tap",
+    "tools/tests/test-runner.test.mjs"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": "2026-10-13T21:30:19.144Z",
+  "ended": "2026-10-13T21:39:45.572Z",
+  "review_rounds": 2,
+  "schema_version": 1,
+  "blast_radius": [
+    "build-tooling"
+  ],
+  "user_visible": false,
+  "freeze": {
+    "at": "2026-10-13T21:38:07.972Z",
+    "brief_sha256": "2ed5586dfc90da306a4838733562a2d7b8ee0b1d8ba99af9a1e186ef61256196",
+    "brief_core_sha256": "086e063fe1a3e26adf3e99f647b6d8ed5530cc9e9979893fbbb41d118a0991ca",
+    "manifest_sha256": "dc2e8551dc8ce55b050cd08e29f30727e5b6fbf46fe7ebdacdbb7a329a715531",
+    "criteria_sha256": "1a292a2a28d70885a7aa6c9e0efef1b27842a6aba00415184bc6b8b20bb7e51e",
+    "scope_sha256": "e2f62ad3347b1336a7f4577e3d6ccf94ee58698af518d58aed7828f93dc49f0c",
+    "scope_parts": {
+      "files_scope": "f9bcbc3383a4b9e56d140c905c44a3f281fa276dd1b6496b6b67347c1d22bf9c",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "3be9dad667157fe0a7cae6a9c53b7fdff9509d8cb2964670e94ada387679567e"
+    }
+  },
+  "base_commit": "2f6aef4db269a9da0dfc8c53483027359d8177eb",
+  "test_amendments": [
+    {
+      "path": "tools/tests/test-runner.test.mjs",
+      "reason": "a template-literal digit class was written d instead of \\d so the not ok matcher could never match; assertion intent unchanged",
+      "approved_by": "project lead (front approval)"
+    }
+  ]
+}

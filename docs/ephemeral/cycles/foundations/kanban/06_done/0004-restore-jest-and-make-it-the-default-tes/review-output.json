@@ -1,0 +1,40 @@
+{
+  "restatement": "Make the existing 446-test jest suite the working default test command from a clean clone: declare jest, ts-jest and @types/jest in package.json devDependencies at the ranges the lockfile root already records, so that npm ci followed by npm test runs jest and passes. Also add a small jest reporter that prints node:test-style TAP, so later cards can gate red-first evidence on jest tests. In that TAP a passing test is ok, a failed assertion is not ok with code ERR_ASSERTION, a thrown non-assertion error is not ok without that code, and a test file that fails to load is a not ok entry. Do not touch nodes/ source or existing tests, do not add runtime dependencies, and do not change the jest roots or the n8n-workflow module mapper.",
+  "brief_mismatch": null,
+  "verification_plan": [
+    "c1: confirm package.json devDependencies gain jest, ts-jest and @types/jest with ranges exactly equal to the lockfile root packages[''].devDependencies entries, and that scripts.test stays exactly 'jest'",
+    "c1 / goal-critical question: confirm package.json and the lockfile root agree on every devDependency, so npm ci does not reject the lock as out of sync; check whether the lockfile itself needed an edit",
+    "c2: read the reporter and confirm it writes a 'TAP version' first line, 'ok N - name' for passes, and 'not ok N - name' with an indented '  ---' / '  ...' YAML block for failures; expect matcher failures carry 'code: ERR_ASSERTION' and thrown plain errors do not",
+    "c2: confirm the frozen tr-02 test can actually exercise this (check its regexes are valid)",
+    "c3: confirm nothing in the diff changes jest.config.js, the tests/ folder or nodes/, so the existing suite runs unchanged through the jest binary",
+    "c4: confirm the reporter emits a not ok entry when result.testExecError is set or a file has no test results but has a failureMessage, and counts it in the fail total; confirm a test covers it",
+    "m1: check the diff for any change under nodes/ or to an existing test file, and check whether such a change is logged and approved",
+    "m2: confirm the diff adds no 'dependencies' entry to package.json",
+    "m3: confirm jest.config.js roots and moduleNameMapper are untouched",
+    "rubric: confirm every changed path is in files_scope or the approved scope exceptions log"
+  ],
+  "findings": [],
+  "responses": [
+    {
+      "finding": "f1",
+      "verdict": "withdraw",
+      "evidence": [
+        "diff:tools/jest-tap-reporter.cjs",
+        "code:tools/jest-tap-reporter.cjs:40",
+        "code:tools/jest-tap-reporter.cjs:47",
+        "test:tr-04: a test file that fails to load is reported as a not ok entry",
+        "diff:tools/tests/test-runner-load-failure.test.mjs"
+      ]
+    }
+  ],
+  "reviewer": {
+    "kind": "fallback",
+    "label": "opus fallback (same model family as the builder; has repository access)"
+  },
+  "at": "2026-10-13T21:38:56.753Z",
+  "card": "0004-restore-jest-and-make-it-the-default-tes",
+  "tier": "product",
+  "packet_sha256": "d8dc7029135a1cd3c28e62cee68452f13cbcf80049fd4a1dceaefc19c5c99317",
+  "diff_sha256": "dcd79bb160f0c086756abda030b60fce587e63b21d63bff31614aa5cfa858674",
+  "dropped": []
+}

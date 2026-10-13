@@ -1,0 +1,26 @@
+{
+  "id": "0025-follow-up-living-module-doc-still-descri",
+  "title": "Follow-up: Living module doc still describes utils.ts/extractAllVariables as the node's detection step",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [],
+  "origin": "foundations",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [],
+    "frozen": false
+  },
+  "criteria": [],
+  "gate": null,
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1
+}

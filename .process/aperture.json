@@ -40,5 +40,13 @@
         "work-profile"
       ]
     }
+  },
+  "work_profile": {
+    "audience": "public",
+    "governance": "none",
+    "deployment": "none",
+    "executor": "supervised",
+    "independence": "other-agent",
+    "criticality": "comfort"
   }
 }

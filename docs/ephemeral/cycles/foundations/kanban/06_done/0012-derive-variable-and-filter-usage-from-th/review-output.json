@@ -1,0 +1,47 @@
+{
+  "restatement": "Add a core analyze(template) function that walks the parsed AST (and the evaluator's own expression splitting) to report every input variable a template reads: its root name, the distinct full paths, the constructs that read it (output, if, elseif, case, for source, list_item, table cells, condition operands on both sides of AND/OR/comparisons/contains), and whether every read has a ?? default (optional). It also lists the filters applied with counts and flags unknown filters as diagnostics. FOR item names inside their loop, @-metadata and operator words are not inputs. The n8n node's strict-mode pre-check switches to analyze, so it no longer rejects loop item names or ??-defaulted variables, and the regex-based extractAllVariables is removed from core. No existing test body may change and no runtime dependency may be added.",
+  "brief_mismatch": null,
+  "verification_plan": [
+    "c1: confirm analyze visits Variable, If (with ELSEIF as nested alternate), Case, For iterable, ListItem condition and table Header/Row cells, tagging each with the right usedIn kind, and that table cells win over output inside a table",
+    "c2: confirm condition operands are split on AND/OR/&&/||, comparison operators and string operators (contains right side included), and that literals (numbers, quoted strings, true/false/null) are skipped",
+    "c3: confirm FOR item names are scoped to the loop body only (still reported when used outside), @-prefixed names are dropped, and NOT / ! / NOT(...) are stripped, never recorded",
+    "c4: confirm optional is true only when every read carries a ?? default, and that the node's strict check exempts optional variables while resolveTemplate still renders the default",
+    "c5: confirm every filter name is counted from the parsed filter list and that names outside the implemented set (head, tail, trim, escape_md) produce a diagnostic naming the filter",
+    "c6: confirm the node computes missing names from analyze output, so a loop item name never counts as unmapped, while an unmapped loop source still errors with 'unmapped variables: xs'",
+    "c7: confirm utils.ts is deleted, index.ts no longer re-exports it, and no file under core/src mentions extractAllVariables",
+    "rubric: confirm no regex runs over the raw template source to find variables (regexes on already-isolated condition or path text are acceptable)",
+    "m1: confirm no test file is modified or deleted in the diff",
+    "m2: confirm no package.json dependency is added and analyze imports only sibling core modules",
+    "goal-critical Qs: check that red evidence exists showing the frozen tests failed for the stated reasons before, that tests/analyze.test.ts passes after, and that any remaining suite failures are unrelated to this change",
+    "scope: confirm edits stay within the files_scope plus the logged expressions.ts exception, and that the expressions.ts refactor preserves evaluator behaviour"
+  ],
+  "findings": [
+    {
+      "title": "Living module doc still describes utils.ts/extractAllVariables as the node's detection step",
+      "class": "drift",
+      "serves": {
+        "target": "card-goal",
+        "scenario": "After this card, docs/living/architecture/modules/template-resolver.md still lists utils.ts, exports extractAllVariables, and says the node computes detectedVariables = extractAllVariables(template) and rejects FOR item names in strict mode, none of which is true any more; a reader changing the node or strict mode is misled and analyze is undocumented"
+      },
+      "rubric": "an-07: the regex-based extractAllVariables no longer exists in core",
+      "reproduction": "Open docs/living/architecture/modules/template-resolver.md at head 4903ccd; lines 31, 37, 60 and 69 still describe extractAllVariables, while core/src/utils.ts is deleted in the diff and the node imports analyze",
+      "evidence": [
+        "doc:docs/living/architecture/modules/template-resolver.md",
+        "diff:core/src/utils.ts",
+        "diff:n8n/TemplateResolver.node.ts"
+      ],
+      "location": "docs/living/architecture/modules/template-resolver.md:31"
+    }
+  ],
+  "responses": [],
+  "reviewer": {
+    "kind": "fallback",
+    "label": "opus fallback (same model family as the builder; has repository access)"
+  },
+  "at": "2026-10-13T22:02:32.530Z",
+  "card": "0012-derive-variable-and-filter-usage-from-th",
+  "tier": "product",
+  "packet_sha256": "732613a2468bb060cbee0f704e3fa83959a8eae9e99f7115696ed373b78e065d",
+  "diff_sha256": "6b3e7de3cb548dd224c8740bd6ef92ca173d167aee1857d912fa517cc3fe6c3b",
+  "dropped": []
+}

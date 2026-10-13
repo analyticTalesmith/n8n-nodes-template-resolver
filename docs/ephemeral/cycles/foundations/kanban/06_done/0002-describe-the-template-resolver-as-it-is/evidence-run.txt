@@ -1,0 +1,8 @@
+evidence-stale docs/living/architecture/modules/template-resolver.md: Citation nodes/TemplateResolver/lexer.ts:142-174 points to a path changed since its cited commit; re-check the claim.
+evidence-stale docs/living/architecture/modules/template-resolver.md: Citation nodes/TemplateResolver/parser.ts:36-52 points to a path changed since its cited commit; re-check the claim.
+evidence-stale docs/living/architecture/modules/template-resolver.md: Citation nodes/TemplateResolver/expressions.ts:26-108 points to a path changed since its cited commit; re-check the claim.
+evidence-stale docs/living/architecture/modules/template-resolver.md: Citation nodes/TemplateResolver/interpreter.ts:45-96 points to a path changed since its cited commit; re-check the claim.
+evidence-stale docs/living/architecture/modules/template-resolver.md: Citation nodes/TemplateResolver/coercion.ts:15-275 points to a path changed since its cited commit; re-check the claim.
+evidence-stale docs/living/architecture/modules/template-resolver.md: Citation package.json:47-49 points to a path changed since its cited commit; re-check the claim.
+evidence-stale docs/living/architecture/overview.md: Citation package.json:2-3 points to a path changed since its cited commit; re-check the claim.
+evidence-stale docs/living/architecture/overview.md: Citation .gitignore:5 points to a path changed since its cited commit; re-check the claim.

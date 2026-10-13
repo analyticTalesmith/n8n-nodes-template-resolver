@@ -1,0 +1,117 @@
+{
+  "id": "0012-derive-variable-and-filter-usage-from-th",
+  "title": "Derive variable and filter usage from the AST",
+  "type": "task",
+  "parent": null,
+  "depends_on": [
+    "0011-restructure-into-a-pure-core-and-a-thin",
+    "0008-conditions-evaluate-negation-boolean-wor"
+  ],
+  "origin": "foundations",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "core/src/analyze.ts",
+    "core/src/index.ts",
+    "core/src/utils.ts",
+    "n8n/TemplateResolver.node.ts"
+  ],
+  "manifest": {
+    "add": [
+      "core/src/analyze.ts"
+    ],
+    "remove": [
+      "core/src/utils.ts"
+    ],
+    "edit": [
+      "core/src/index.ts",
+      "n8n/TemplateResolver.node.ts"
+    ],
+    "frozen": true
+  },
+  "criteria": [
+    {
+      "text": "an-01: analyze reports variables used in output tags, IF, ELSEIF, CASE, FOR sources, LIST_ITEM conditions and table cells",
+      "verify": "test",
+      "traces": [
+        "tests/analyze.test.ts#an-01"
+      ]
+    },
+    {
+      "text": "an-02: variables on either side of AND, OR and comparison operators, including the right side of contains, are reported",
+      "verify": "test",
+      "traces": [
+        "tests/analyze.test.ts#an-02"
+      ]
+    },
+    {
+      "text": "an-03: FOR item variables, @-metadata and operator words such as NOT are not reported as inputs",
+      "verify": "test",
+      "traces": [
+        "tests/analyze.test.ts#an-03"
+      ]
+    },
+    {
+      "text": "an-04: a variable with a ?? default is reported optional and the node strict mode accepts it unmapped",
+      "verify": "test",
+      "traces": [
+        "tests/analyze.test.ts#an-04"
+      ]
+    },
+    {
+      "text": "an-05: analyze lists every filter used with its name, and an unknown filter is reported as a diagnostic",
+      "verify": "test",
+      "traces": [
+        "tests/analyze.test.ts#an-05"
+      ]
+    },
+    {
+      "text": "an-06: strict mode no longer rejects a template whose only unmapped names are FOR item variables",
+      "verify": "test",
+      "traces": [
+        "tests/analyze.test.ts#an-06"
+      ]
+    },
+    {
+      "text": "an-07: the regex-based extractAllVariables no longer exists in core",
+      "verify": "test",
+      "traces": [
+        "tests/analyze.test.ts#an-07"
+      ]
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/analyze.test.ts",
+    "--reporters=<rootDir>/tools/jest-tap-reporter.cjs"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": "2026-10-13T21:56:45.142Z",
+  "ended": "2026-10-13T22:02:58.015Z",
+  "review_rounds": 1,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver"
+  ],
+  "user_visible": false,
+  "user_docs_waiver": "internal restructuring or tooling; no user-facing document describes it",
+  "freeze": {
+    "at": "2026-10-13T22:01:06.133Z",
+    "brief_sha256": "374dd11340f9597d22fee169d58c98bb2e1a9796b90e141fcd87dadc328e4be9",
+    "brief_core_sha256": "b6732d14676c59dbf0c894fc90c25126b0760d3b095b122e2f5fb2f99cbdc1e3",
+    "manifest_sha256": "a3bd3f1984f747b4016de820923a7ccb65d5b92060c156fd34ef08912411f7d7",
+    "criteria_sha256": "928b460d70a60e21d892c0e8117c986126ef19876affd78f41412617302db9f1",
+    "scope_sha256": "9373fa319d1e3fbdcfd506fa6b9b0e17dd98a29589343c07a535d3193ec59b95",
+    "scope_parts": {
+      "files_scope": "17f0da7f57e7daf131c1eee1f073045d2dd0014cc9495a6e7fa09c1dfd891dd2",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "bea2aa973c50c4947eff10383b9a38ac1c8866bcfc649047afcd3a30db3cca0d"
+    }
+  },
+  "base_commit": "dca9cee9598720e6e31bae2f135734f38d838daa"
+}

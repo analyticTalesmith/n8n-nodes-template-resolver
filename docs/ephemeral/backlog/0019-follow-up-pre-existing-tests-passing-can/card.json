@@ -1,0 +1,26 @@
+{
+  "id": "0019-follow-up-pre-existing-tests-passing-can",
+  "title": "Follow-up: Pre-existing tests passing cannot be confirmed from the packet; END_* tags beyond the frozen examples now rej",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [],
+  "origin": "foundations",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [],
+    "frozen": false
+  },
+  "criteria": [],
+  "gate": null,
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1
+}

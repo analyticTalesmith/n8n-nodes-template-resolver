@@ -1,0 +1,26 @@
+{
+  "id": "0024-follow-up-no-frozen-test-or-evidence-che",
+  "title": "Follow-up: No frozen test or evidence-check output is supplied for c1, so the goal-critical question cannot be answered",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [],
+  "origin": "foundations",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [],
+    "frozen": false
+  },
+  "criteria": [],
+  "gate": null,
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1
+}

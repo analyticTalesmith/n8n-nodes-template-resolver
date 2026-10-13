@@ -1,0 +1,24 @@
+{
+  "card": "0011-restructure-into-a-pure-core-and-a-thin",
+  "rounds": [
+    {
+      "number": 1,
+      "at": "2026-10-13T21:56:37.252Z",
+      "reviewer": {
+        "kind": "fallback",
+        "label": "opus fallback (same model family as the builder; has repository access)"
+      },
+      "output_sha256": "0b76612893e1cd039d896239d0aeddab9bc59b6a4cc87e60ccb6a1401f6d6ae2",
+      "diff_sha256": "82790d45117667f8400f1c2cb2dd167e7e9e56bbcd3fd8413d4e4567b33c9334",
+      "restatement": "Split the template resolver into a headless core and a thin n8n wrapper without changing behavior. The lexer, parser, expressions, interpreter, filters, coercion, errors, types and utils move to core/src. A new resolve.ts holds resolveTemplate, and core/src/index.ts exports the public surface. n8n/ keeps only the node class, its json, its icon and an index. Core must not import n8n or Node I/O modules, and the node must reach core only through its public entry. Pre-existing tests may change only their import specifiers and must still pass (446 or more). package.json n8n.nodes, tsconfig and jest must follow the new layout so that the build still emits the node entry. No test body may be edited and no runtime dependency may be added.",
+      "brief_mismatch": null,
+      "evidence": [
+        "patch:82790d45117667f8400f1c2cb2dd167e7e9e56bbcd3fd8413d4e4567b33c9334"
+      ],
+      "stalled": false,
+      "raised": [],
+      "responses": []
+    }
+  ],
+  "findings": []
+}

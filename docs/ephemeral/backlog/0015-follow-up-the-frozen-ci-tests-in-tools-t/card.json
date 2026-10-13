@@ -1,0 +1,26 @@
+{
+  "id": "0015-follow-up-the-frozen-ci-tests-in-tools-t",
+  "title": "Follow-up: The frozen CI tests in tools/tests/ci.test.mjs are not run by the workflow's npm test",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [],
+  "origin": "foundations",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [],
+    "frozen": false
+  },
+  "criteria": [],
+  "gate": null,
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1
+}

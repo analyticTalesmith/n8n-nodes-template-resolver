@@ -1,0 +1,86 @@
+{
+  "id": "0010-nested-for-keeps-outer-loop-variables",
+  "title": "Nested FOR keeps outer loop variables",
+  "type": "bug",
+  "parent": null,
+  "depends_on": [
+    "0004-restore-jest-and-make-it-the-default-tes"
+  ],
+  "origin": "foundations",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "nodes/TemplateResolver/interpreter.ts"
+  ],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [
+      "nodes/TemplateResolver/interpreter.ts"
+    ],
+    "frozen": true
+  },
+  "criteria": [
+    {
+      "text": "nf-01: after an inner FOR ends, the outer loop item variable still resolves",
+      "verify": "test",
+      "traces": [
+        "tests/regressions/nested-for.test.ts#nf-01"
+      ]
+    },
+    {
+      "text": "nf-02: after an inner FOR ends, the outer loop @index0, @index1, @first and @last are still the outer values",
+      "verify": "test",
+      "traces": [
+        "tests/regressions/nested-for.test.ts#nf-02"
+      ]
+    },
+    {
+      "text": "nf-03: inside the inner FOR the loop metadata describes the inner loop and the outer metadata is restored when it ends",
+      "verify": "test",
+      "traces": [
+        "tests/regressions/nested-for.test.ts#nf-03"
+      ]
+    },
+    {
+      "text": "nf-04: a FOR inside a TABLE does not clear the enclosing loop variables",
+      "verify": "test",
+      "traces": [
+        "tests/regressions/nested-for.test.ts#nf-04"
+      ]
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/regressions/nested-for.test.ts",
+    "--reporters=<rootDir>/tools/jest-tap-reporter.cjs"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": "2026-10-13T21:40:22.841Z",
+  "ended": "2026-10-13T21:51:43.989Z",
+  "review_rounds": 1,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver"
+  ],
+  "user_visible": false,
+  "freeze": {
+    "at": "2026-10-13T21:40:13.561Z",
+    "brief_sha256": "5b0aef1fabf45b929762c35a8d741e7c7d26d7bbef1d239ff6e07057a706ef22",
+    "brief_core_sha256": "d46a616f5ed5fc385e6bca266494a19f660f3ec514f4c6fd19b990fc36d76c64",
+    "manifest_sha256": "c250af2da6b22861526e058f05d6edfb9e335f98c3709646cb984bba2109ecfd",
+    "criteria_sha256": "380a90c69d16c2dc3bc5f051307b159f992849e97fe229cb2d5d9df8f4a5861a",
+    "scope_sha256": "d9c591d8e65aabc3bf16f8f347f96c46f4bc2aca13da2d250cc405cdb79355be",
+    "scope_parts": {
+      "files_scope": "7f44f9457cf1902f5d454fab596dcc7c0baa434881a92d78ff318a10e0199ca1",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "ef621110bfc9260f4b79fd50c51bd48cb367140ed57ad12c00e00b7c9e5cbae9"
+    }
+  },
+  "base_commit": "e7069db9c344f65385b3956ece624de0aad10268"
+}

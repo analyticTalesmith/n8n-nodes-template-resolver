@@ -1,0 +1,90 @@
+{
+  "id": "0007-string-inputs-keep-commas-and-index-like",
+  "title": "String inputs keep commas and index like arrays",
+  "type": "bug",
+  "parent": null,
+  "depends_on": [
+    "0004-restore-jest-and-make-it-the-default-tes"
+  ],
+  "origin": "foundations",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "nodes/TemplateResolver/coercion.ts",
+    "nodes/TemplateResolver/interpreter.ts",
+    "nodes/TemplateResolver/expressions.ts"
+  ],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [
+      "nodes/TemplateResolver/coercion.ts",
+      "nodes/TemplateResolver/interpreter.ts",
+      "nodes/TemplateResolver/expressions.ts"
+    ],
+    "frozen": true
+  },
+  "criteria": [
+    {
+      "text": "sc-01: a JSON object string value containing doubled, trailing or bracket-adjacent commas inside a string is preserved exactly",
+      "verify": "test",
+      "traces": [
+        "tests/regressions/string-input-coercion.test.ts#sc-01"
+      ]
+    },
+    {
+      "text": "sc-02: a JSON array string whose elements contain commas inside strings is preserved exactly",
+      "verify": "test",
+      "traces": [
+        "tests/regressions/string-input-coercion.test.ts#sc-02"
+      ]
+    },
+    {
+      "text": "sc-03: tags.0 and tags.1 index into a comma-separated string",
+      "verify": "test",
+      "traces": [
+        "tests/regressions/string-input-coercion.test.ts#sc-03"
+      ]
+    },
+    {
+      "text": "sc-04: tags.0 and tags.1 index into a JSON array string, in output and in IF conditions",
+      "verify": "test",
+      "traces": [
+        "tests/regressions/string-input-coercion.test.ts#sc-04"
+      ]
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/regressions/string-input-coercion.test.ts",
+    "--reporters=<rootDir>/tools/jest-tap-reporter.cjs"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": "2026-10-13T21:40:22.065Z",
+  "ended": "2026-10-13T21:51:38.201Z",
+  "review_rounds": 2,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver"
+  ],
+  "user_visible": false,
+  "freeze": {
+    "at": "2026-10-13T21:40:06.484Z",
+    "brief_sha256": "deda7102ce59e751a996e4164873d4b7202856b7f5fa003697513d6e94dfe7ce",
+    "brief_core_sha256": "09f107e96e7f11bd26707be45ccdf4e48ae5d62b82812227ea214b248fe0fff8",
+    "manifest_sha256": "fdc137f61e1e631db959a6adbb8689d8dbec5805adbe6d39d172666d65613f70",
+    "criteria_sha256": "01915156cfd1a725936624e2246952fb0840234adfccb67b8205e3dad6fe285b",
+    "scope_sha256": "f5e935f5bbd5036488cc0484cb5e38e37992ff704268087a52a7d4e1fd6b26f9",
+    "scope_parts": {
+      "files_scope": "d1be7b3ea7d57c9456bbc729c36d72f6f565c7e9833f5db51b8eb87d3d45f25c",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "3d9f3baff56010e3e9c2c81097b341d4f4e03384684a117b7d20bb23f8fed779"
+    }
+  },
+  "base_commit": "e7069db9c344f65385b3956ece624de0aad10268"
+}

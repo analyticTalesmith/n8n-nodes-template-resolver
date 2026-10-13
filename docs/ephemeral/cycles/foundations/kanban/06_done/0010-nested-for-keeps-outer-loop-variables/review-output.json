@@ -1,0 +1,25 @@
+{
+  "restatement": "When a FOR loop runs inside another FOR loop, or inside a TABLE that is inside a FOR loop, the inner loop must not wipe or permanently overwrite the outer loop's state. After the inner loop ends, the outer item variable and the outer metadata (@index0, @index1, @first, @last, @notFirst, @notLast) must resolve to the outer values again. Inside the inner loop, the metadata must describe the inner loop. The fix has to stay inside interpreter.ts, change no behavior beyond this defect, leave existing tests alone and add no runtime dependency. This serves the cycle goal of fixing the Tier 0 bugs in a deterministic, pure-library template core.",
+  "brief_mismatch": null,
+  "verification_plan": [
+    "Confirm the diff touches only nodes/TemplateResolver/interpreter.ts, the single file in scope, and no test file or package manifest (m2, m3).",
+    "For c1: trace a nested FOR and confirm the outer item name resolves to the outer value after the inner END_FOR, including with sequential inner loops and three levels of nesting.",
+    "For c2: confirm @index0, @index1, @first, @last (and @notFirst, @notLast) resolve to the outer iteration's values after an inner loop ends, both in variable output and in IF conditions.",
+    "For c3: confirm the inner loop sets every metadata key on each iteration, so the inner values win inside the inner body. Confirm the outer values come back at inner END_FOR, including when the inner loop has a different length and would otherwise leak @last or @notLast.",
+    "For c4: confirm the FOR-in-TABLE path (a separate code path from visitFor) also preserves the enclosing loop context instead of clearing it.",
+    "Goal-critical Q1: for each frozen test, reason whether it fails on the base code (where the whole loop context is cleared) for the stated reason, and passes after the fix.",
+    "Goal-critical Q2 and m1: check that a lone FOR and sibling FORs behave exactly as before (the context is empty after a top-level loop), so pre-existing single-loop tests are unaffected. Check edge paths (empty array, non-iterable value in lenient or strict mode) for unintended changes."
+  ],
+  "findings": [],
+  "responses": [],
+  "reviewer": {
+    "kind": "fallback",
+    "label": "opus fallback (same model family as the builder; has repository access)"
+  },
+  "at": "2026-10-13T21:50:52.084Z",
+  "card": "0010-nested-for-keeps-outer-loop-variables",
+  "tier": "product",
+  "packet_sha256": "c6524c9810b84cceb746acb868893b8fa60b6961334113fb4dc5060c888470bc",
+  "diff_sha256": "7cc748f47b700933c5778cea03e38e641525532c2a94d52c47a462c891171f7f",
+  "dropped": []
+}

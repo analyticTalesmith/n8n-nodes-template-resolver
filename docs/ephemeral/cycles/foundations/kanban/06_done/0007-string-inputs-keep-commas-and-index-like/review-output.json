@@ -1,0 +1,43 @@
+{
+  "restatement": "Values reach the template resolver from n8n as strings. Two things must hold. First, when the resolver repairs a JSON object or array string, it removes only structural stray commas (leading, trailing, doubled) and never changes a comma inside a string value. Second, a path such as tags.0 on a string input uses the same coercion FOR uses, so 'a,b' and '[\"a\",\"b\"]' index like arrays in both ${{...}} output and IF conditions. Nothing else may change behavior, no existing test may be edited or deleted, and no runtime dependency may be added. The work has to stay inside coercion.ts, expressions.ts and interpreter.ts.",
+  "brief_mismatch": null,
+  "verification_plan": [
+    "c1: confirm that the object-string repair does not touch commas inside string literals (doubled, before '}' or ']', after '{' or '[') and still removes structural trailing commas such as '{\"name\":\"a,, b\",}'.",
+    "c2: confirm that the array-string repair used by FOR keeps commas inside element strings, for example '[\"a, b\",\"c,]d\"]' and '[\"[,x\",\"y,,z\"]'.",
+    "c3: confirm that interpreter path lookup and condition operand resolution both coerce a comma-separated string to an array for a numeric segment, so tags.0 gives 'a' and tags.1 gives 'b'.",
+    "c4: confirm the same for a JSON array string, in output and in IF.",
+    "Brief Q1: for each frozen test, trace the base code to show it fails for the stated reason, and trace the head code to show it passes. Check that the guard tests pass both before and after.",
+    "Brief Q2 / m1: look for behavior changes outside the named defects. Examples are non-numeric property access on array strings in conditions (such as length), repair of already-valid JSON, and the fallback paths of tryCoerceToArray.",
+    "m2: confirm the diff edits or deletes no existing test file.",
+    "m3: confirm no package.json change or new import outside sibling files.",
+    "Scope: confirm every changed path is in files_scope or in the approved exceptions log."
+  ],
+  "findings": [
+    {
+      "title": "Array-string repair now also collapses doubled commas between elements, which changes FOR/index results for inputs like '[1,,2]'",
+      "class": "drift",
+      "serves": {
+        "target": "m1",
+        "scenario": "At base, tryCoerceToArray stripped only ',]' and '[,' from a '['-prefixed string. '[1,,2]' therefore failed JSON.parse and fell back to comma splitting, which gives string pieces. At head, repairStructuralCommas also collapses the doubled comma, so JSON.parse succeeds and gives the numbers [1,2]. Rendered FOR output is the same. Type-sensitive checks on items, or JSON output of an indexed sub-array, could differ. This is a small widening beyond the named defects. It is not a criterion failure."
+      },
+      "rubric": "no change outside the card scope",
+      "reproduction": "Run resolveTemplate('{{FOR a AS x}}{{IF x isNumber}}N{{ELSE}}S{{END_IF}}{{END_FOR}}', new Map([['a','[1,,2]']]), {strictMode:false}) at base and at head, and compare. The results differ only if isNumber distinguishes a numeric string from a number.",
+      "evidence": [
+        "diff:nodes/TemplateResolver/coercion.ts",
+        "doc:docs/living/architecture/modules/template-resolver.md"
+      ],
+      "location": "nodes/TemplateResolver/coercion.ts:62"
+    }
+  ],
+  "responses": [],
+  "reviewer": {
+    "kind": "fallback",
+    "label": "opus fallback (same model family as the builder; has repository access)"
+  },
+  "at": "2026-10-13T21:51:09.676Z",
+  "card": "0007-string-inputs-keep-commas-and-index-like",
+  "tier": "product",
+  "packet_sha256": "725103d44eab75ff4a7139c7c9f7c9a26bef1f06c05334f956f9cf1209b56295",
+  "diff_sha256": "49a5f3dde29319e9fec16398c0000ab19b0df1a385320cdf411158811931017d",
+  "dropped": []
+}

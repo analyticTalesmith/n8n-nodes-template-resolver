@@ -18,7 +18,7 @@ import {
   ListItemNode,
   TableNode,
   CommentNode,
-} from "../nodes/TemplateResolver/types";
+} from "../core/src/types";
 
 // Type coercion functions
 import {
@@ -27,29 +27,29 @@ import {
   tryCoerceToObject,
   tryCoerceToBoolean,
   tryCoerceToString,
-} from "../nodes/TemplateResolver/coercion";
+} from "../core/src/coercion";
 
 // Filter system
 import {
   parseFilter,
   applyFilter,
   applyFilters,
-} from "../nodes/TemplateResolver/filters";
+} from "../core/src/filters";
 
 // Lexer
-import { Lexer } from "../nodes/TemplateResolver/lexer";
+import { Lexer } from "../core/src/lexer";
 
 // Parser
-import { Parser } from "../nodes/TemplateResolver/parser";
+import { Parser } from "../core/src/parser";
 
 // Expression evaluation
 import {
   evaluateCondition,
   evaluateMathExpression,
-} from "../nodes/TemplateResolver/expressions";
+} from "../core/src/expressions";
 
 // Main entry point
-import { resolveTemplate } from "../nodes/TemplateResolver/TemplateResolver.node";
+import { resolveTemplate } from "../core/src/resolve";
 
 // ============================================================================
 // HELPER FUNCTIONS

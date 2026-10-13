@@ -1,0 +1,59 @@
+{
+  "restatement": "Fix three parsing defects in the template resolver's lexer and parser, and change nothing else. (1) A ?? default whose quoted text contains a pipe must render literally, and any real filters after it must still apply. (2) {{ELSE IF cond}} must be a SyntaxError whose message points to ELSEIF, instead of being read as a plain ELSE. (3) END_* and ELSE tags with trailing arguments must be SyntaxErrors. The work must not change other behavior, must not edit or delete existing tests, and must not add a runtime dependency. All of this serves a deterministic, no-eval template core that passes CI.",
+  "brief_mismatch": null,
+  "verification_plan": [
+    "c1: trace '${{x ?? \"a|b\"}}' and the single-quoted form through the new pipe split, the ?? split and quote stripping. Confirm the output is 'a|b' for a missing variable, an empty variable and strict mode, and that a present value still wins.",
+    "c2: trace '${{x ?? \"a|b\" | head=2}}', '| trim' and '| trim | tail=3'. Confirm the split happens only at the pipe outside the quotes and that the filters apply to the default in order.",
+    "c3: trace '{{ELSE IF b}}' through the lexer. Confirm it throws a TemplateError SyntaxError (name 'SyntaxError') whose formatted message contains 'ELSEIF', whether or not a final ELSE follows.",
+    "c4: trace '{{END_IF garbage}}', '{{ELSE garbage}}' and '{{END_FOR junk}}'. Confirm each throws a SyntaxError at lex time, before any condition is evaluated.",
+    "Frozen tests: confirm each one fails at base for the stated reason (unknown-filter error for split defaults, ELSE IF silently accepted, arguments on END/ELSE ignored) and passes at head.",
+    "m1: look for behavior changes outside the named defects. Cover unquoted defaults containing apostrophes or quotes, unclosed quotes, filters with quoted parameters, plain ELSEIF/ELSE/END_* with surrounding whitespace, and other END_* tags.",
+    "m2: confirm no existing test file is edited or deleted, and that any added test file is covered by the scope exceptions log.",
+    "m3: confirm no package.json or import change adds a runtime dependency.",
+    "Scope: confirm source edits stay within lexer.ts and parser.ts."
+  ],
+  "findings": [
+    {
+      "title": "An unquoted default that starts with an apostrophe still opens a quote that never closes, so the filters after it are swallowed",
+      "class": "defect",
+      "serves": {
+        "target": "m1",
+        "scenario": "This is the same class of failure as sustained f1. The revision opens a quote only when the quote character directly follows ^, ?? or =. An unquoted default whose first character is an apostrophe ('90s hits, 'tis, 'em) still opens a quote and never closes it. At base, '${{x ?? '90s hits | head=3}}' rendered \"'90\": the default is \"'90s hits\" and then head=3 applies. At head, the whole tail \"'90s hits | head=3\" becomes the default (only one outer quote, so nothing is stripped), the filter is dropped, and the filter text leaks into the prompt. The lead ruled that an apostrophe in an unquoted default must not swallow later filters."
+      },
+      "rubric": "no change outside the card scope (m1: change behavior outside the named defects)",
+      "reproduction": "resolveTemplate(\"${{x ?? '90s hits | head=3}}\", new Map(), { strictMode: false }). At base e7069db: expr.split('|') gives [\"x ?? '90s hits\", 'head=3'], and the output is \"'90\". At head 1c62228: in splitOutsideQuotes, text.slice(0, i) is 'x ?? ', which matches /(^|\\?\\?|=)\\s*$/, so quote is set to \"'\". No closing \"'\" follows, so parts = [\"x ?? '90s hits | head=3\"] and the output is \"'90s hits | head=3\". An unclosed double quote does the same: '${{x ?? \"abc | trim}}'. Smallest fix: if splitOutsideQuotes reaches the end of the string with a quote still open, rescan from the position where that quote opened and treat the quote character as plain text there, so an unterminated quote never hides a separator.",
+      "evidence": [
+        "diff:nodes/TemplateResolver/parser.ts",
+        "code:nodes/TemplateResolver/parser.ts:580-601",
+        "doc:docs/living/architecture/modules/template-resolver.md"
+      ],
+      "location": "nodes/TemplateResolver/parser.ts:589-593"
+    },
+    {
+      "title": "Pre-existing tests passing cannot be confirmed from the packet; END_* tags beyond the frozen examples now reject arguments",
+      "class": "drift",
+      "serves": {
+        "target": "cycle-goal",
+        "scenario": "The packet includes no pre-existing test files and no CI result. The new lexer check rejects arguments on every END_* tag (END_WHEN, END_DEFAULT, END_LIST_ITEM, END_HEADER, END_ROW, END_TABLE, END_LIST, END_CASE), not only END_IF and END_FOR. That matches the card's wording ('closing and ELSE tags'), so it is in scope. But if any existing test or golden file writes a closing tag with a trailing word, that test would now fail. This is noted for the lead to confirm with a green test run; it is not a fix request."
+      },
+      "rubric": "goal-critical: do all pre-existing tests still pass?",
+      "reproduction": "Run the full jest suite at head 1c62228 and search the existing tests and fixtures for /\\{\\{END_[A-Z_]+\\s+\\S/ or /\\{\\{ELSE\\s+\\S/.",
+      "evidence": [
+        "diff:nodes/TemplateResolver/lexer.ts",
+        "code:nodes/TemplateResolver/lexer.ts:246-262"
+      ],
+      "location": "nodes/TemplateResolver/lexer.ts:246"
+    }
+  ],
+  "responses": [],
+  "reviewer": {
+    "kind": "fallback",
+    "label": "opus fallback (same model family as the builder; has repository access)"
+  },
+  "at": "2026-10-13T21:51:08.979Z",
+  "card": "0006-parse-pipe-defaults-else-if-and-tag-argu",
+  "tier": "product",
+  "packet_sha256": "efdf0492755d1b0e977bfc9674e679f24651d4ef4f85c62b59a21a7c15e6796f",
+  "diff_sha256": "d34a353f45b38873f0747602b8038cbbd76af89044e6425a47e15cc2a5450ca7",
+  "dropped": []
+}
