@@ -24,3 +24,4 @@ Working memory for this ticket, next to card.md. The lead updates it in small ed
 
 | Date | Path | Kind | Reason | Approved by |
 | --- | --- | --- | --- | --- |
+| 2026-10-13 | core/src/expressions.ts | edit | export the evaluator's condition-splitting helpers so analyze shares them; behaviour preserving | project lead (front approval) |
