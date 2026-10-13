@@ -1,0 +1,98 @@
+{
+  "id": "0004-default-text-may-contain-a-pipe",
+  "title": "Default text may contain a pipe",
+  "type": "bug",
+  "parent": null,
+  "depends_on": [
+    "0002-working-test-runner"
+  ],
+  "origin": "resolver-bugfixes",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "nodes/TemplateResolver/parser.ts"
+  ],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [
+      "nodes/TemplateResolver/parser.ts"
+    ],
+    "frozen": true
+  },
+  "criteria": [
+    {
+      "text": "dp-01 a double-quoted default text after ?? may contain a pipe character and renders whole when the value is missing",
+      "verify": "test",
+      "level": "unit",
+      "evidence": null,
+      "status": "pending",
+      "class": "goal-critical",
+      "traces": [
+        "test-node/default-pipe.test.ts#dp-01"
+      ]
+    },
+    {
+      "text": "dp-02 filters after a default that contains a pipe still apply to the default text",
+      "verify": "test",
+      "level": "unit",
+      "evidence": null,
+      "status": "pending",
+      "class": "goal-critical",
+      "traces": [
+        "test-node/default-pipe.test.ts#dp-02"
+      ]
+    },
+    {
+      "text": "dp-03 a single-quoted default containing a pipe renders whole, and defaults and filters without a quoted pipe behave as before",
+      "verify": "test",
+      "level": "unit",
+      "evidence": null,
+      "status": "pending",
+      "class": "goal-critical",
+      "traces": [
+        "test-node/default-pipe.test.ts#dp-03"
+      ]
+    },
+    {
+      "text": "dp-04 the existing jest suite files are untouched and the whole node:test suite still passes",
+      "verify": "review",
+      "evidence": null,
+      "status": "pending",
+      "class": "polish"
+    }
+  ],
+  "gate": [
+    "node",
+    "scripts/run-node-tests.mjs",
+    ".test-build/test-node/default-pipe.test.js"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1,
+  "blast_radius": [
+    "resolver-core"
+  ],
+  "test_levels": [
+    "unit"
+  ],
+  "user_visible": false,
+  "freeze": {
+    "at": "2026-10-13T18:07:43.017Z",
+    "brief_sha256": "bac435a65d23b3baf4883cd81cf59c51ee42bca9d805d68c9eb6ac35a94ad816",
+    "brief_core_sha256": "a0513fd349b81af88b9032d6681c974a9de88e4d04cdd2e0a92dac4d86295b1f",
+    "manifest_sha256": "6d5ca45d633101a309b203679302267b908086cac84842af16def08652d65022",
+    "criteria_sha256": "00f71c5ed21407aca6a1c6ee5d8d123c2663187239fe1b1c7979db609c4527a3",
+    "scope_sha256": "56e60a11df138afd31804cea4d679a82e1241cb134443b5a7d1726c0b2a4f36c",
+    "scope_parts": {
+      "files_scope": "9d7625ad356399b2265b6bb3a3e4cf111c67a46300ab9daadc2b4191732ca2a3",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "5c50d9f3ce990cecd582422fca1e453afece7d197664eb82cc6881f9173868c7"
+    }
+  }
+}

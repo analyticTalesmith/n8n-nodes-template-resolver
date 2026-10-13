@@ -23,6 +23,9 @@ Status: planned.
 | t-nested-outer | nf-01 | outer item and index values survive an inner loop |
 | t-nested-siblings | nf-02 | sibling and three-level loops render with the right items |
 | t-nested-table | nf-03 | a table row loop inside a loop keeps the outer variable |
+| t-default-pipe | dp-01 | a quoted default with a pipe renders whole |
+| t-default-pipe-filter | dp-02 | filters after a default with a pipe still apply |
+| t-default-pipe-single | dp-03 | a single-quoted default and plain forms are unchanged |
 
 ## Integration
 
