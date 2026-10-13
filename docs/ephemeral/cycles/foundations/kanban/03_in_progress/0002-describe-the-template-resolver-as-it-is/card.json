@@ -40,7 +40,7 @@
   "review_rounds": 0,
   "schema_version": 1,
   "blast_radius": [
-    "template-resolver"
+    "none"
   ],
   "user_visible": false,
   "freeze": {

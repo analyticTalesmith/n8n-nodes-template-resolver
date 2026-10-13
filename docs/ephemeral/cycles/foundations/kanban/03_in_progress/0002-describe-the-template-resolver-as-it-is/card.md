@@ -55,3 +55,5 @@ none: no public interface changes.
 
 Files scope: none
 <!-- end generated scope -->
+
+read-only
