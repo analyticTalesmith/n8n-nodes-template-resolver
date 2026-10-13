@@ -133,8 +133,8 @@ export class Parser {
     defaultValue?: string;
     filters?: FilterCall[];
   } {
-    // --- 1. Split filters FIRST ---
-    const parts = expr.split("|").map((p) => p.trim());
+    // --- 1. Split filters FIRST (pipes inside quotes belong to the text) ---
+    const parts = this.splitOutsideQuotes(expr, "|").map((p) => p.trim());
     const core = parts[0];
     const filterExprs = parts.slice(1);
 
@@ -168,6 +168,29 @@ export class Parser {
       defaultValue,
       filters: filters.length > 0 ? filters : undefined,
     };
+  }
+
+  /**
+   * Split on a separator character, ignoring any inside single or double quotes
+   */
+  private splitOutsideQuotes(text: string, separator: string): string[] {
+    const parts: string[] = [];
+    let quote: string | null = null;
+    let start = 0;
+
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (quote) {
+        if (ch === quote) quote = null;
+      } else if (ch === '"' || ch === "'") {
+        quote = ch;
+      } else if (ch === separator) {
+        parts.push(text.slice(start, i));
+        start = i + 1;
+      }
+    }
+    parts.push(text.slice(start));
+    return parts;
   }
 
   /**
