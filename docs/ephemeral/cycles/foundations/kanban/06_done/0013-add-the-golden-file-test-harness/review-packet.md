@@ -2,16 +2,16 @@
 type: review-packet
 card: 0013-add-the-golden-file-test-harness
 tier: product
-built_at: 2026-10-13T21:59:33.047Z
+built_at: 2026-10-13T22:02:44.571Z
 base: 292dd776abb07dbb75973d266568dcd4e75a70c1
-head: 2f88efbea8869bed4aa85361a7f67beb0a936bce
+head: c8f2109e17f05214bde9e4f21547d7f8c9758bed
 frozen: true
 brief_sha256: 6db13ad33a19b112d8984eeed9f357c0f732bfefd34ca5309bf069bdc0b16714
 manifest_sha256: 730d56b2e9c460bed7a2f8e2d2daabf2faf789ab3e6e89e02c6ef3b577843f0d
 criteria_sha256: 3bad4f9f1dce4f5da3a0a40a5bf10fc157b19de2f47e120df77993bedcdf0d3d
 scope_sha256: 56626eebfc41e36f2a055c4d6bba47a8a2dea0108a2d14c78321751f05035ea7
-diff_sha256: 50bd049b2e1a20f913f40da079d16aa076d62e99c02b4f6cef6bee774e1baba6
-omitted_paths: 8
+diff_sha256: b30d40b32371752ea0661b11268cfedf874bf04647b643bd66334f81599bb55d
+omitted_paths: 12
 criteria_count: 5
 must_not_count: 2
 ---
@@ -150,7 +150,12 @@ Files scope: `tests/golden/`
 
 ### Scope exceptions log (as of now, written during the work)
 
-No scope exceptions are logged.
+Each row is a change outside the card's scope that its lead approved. A builder who can edit the card folder can add a row, so the human gate is the backstop.
+
+| Date | Path | Kind | Reason | Approved by |
+| --- | --- | --- | --- | --- |
+| 2026-10-13 | `tests/golden/update-flip.test.ts` | add | guard test for the sustained update-mode finding | project lead (front approval) |
+| 2026-10-13 | `tests/golden/.gitattributes` | add | pin fixture line endings for the windows runner | project lead (front approval) |
 
 ### Manifest and scope
 
@@ -639,9 +644,16 @@ describe("golden-file harness", () => {
 
 ## 4. Diff
 
-8 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
+12 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
 
 ```diff
+diff --git a/tests/golden/.gitattributes b/tests/golden/.gitattributes
+new file mode 100644
+index 0000000..622cf51
+--- /dev/null
++++ b/tests/golden/.gitattributes
+@@ -0,0 +1 @@
++cases/** text eol=lf
 diff --git a/tests/golden/cases/case-when-default/data.json b/tests/golden/cases/case-when-default/data.json
 new file mode 100644
 index 0000000..ecb04dd
@@ -871,10 +883,10 @@ index 0000000..96b8e25
 +});
 diff --git a/tests/golden/harness.ts b/tests/golden/harness.ts
 new file mode 100644
-index 0000000..b39d4f0
+index 0000000..aa48d0f
 --- /dev/null
 +++ b/tests/golden/harness.ts
-@@ -0,0 +1,114 @@
+@@ -0,0 +1,115 @@
 +import * as fs from "fs";
 +import * as path from "path";
 +
@@ -919,8 +931,6 @@ index 0000000..b39d4f0
 +
 +  const expectedFile = path.join(dir, "expected.md");
 +  const errorFile = path.join(dir, "expected-error.txt");
-+  const wantsError =
-+    fs.existsSync(errorFile) && !(update && fs.existsSync(expectedFile));
 +
 +  let output = "";
 +  let thrown: string | null = null;
@@ -930,11 +940,18 @@ index 0000000..b39d4f0
 +    thrown = error instanceof Error ? error.message : String(error);
 +  }
 +
-+  if (wantsError) {
-+    if (update && thrown !== null) {
++  if (update) {
++    if (thrown !== null) {
 +      fs.writeFileSync(errorFile, thrown);
-+      return { name, passed: true };
++      fs.rmSync(expectedFile, { force: true });
++    } else {
++      fs.writeFileSync(expectedFile, output);
++      fs.rmSync(errorFile, { force: true });
 +    }
++    return { name, passed: true };
++  }
++
++  if (fs.existsSync(errorFile)) {
 +    const expectedError = fs.readFileSync(errorFile, "utf8").trim();
 +    if (thrown === null) {
 +      return {
@@ -959,10 +976,6 @@ index 0000000..b39d4f0
 +      passed: false,
 +      message: `${name}: render threw ${JSON.stringify(thrown)}`,
 +    };
-+  }
-+  if (update) {
-+    fs.writeFileSync(expectedFile, output);
-+    return { name, passed: true };
 +  }
 +  const expected = readIfExists(expectedFile);
 +  if (expected === null) {
@@ -989,7 +1002,72 @@ index 0000000..b39d4f0
 +    .sort()
 +    .map((name) => runCase(path.join(casesDir, name), name, render, update));
 +}
+diff --git a/tests/golden/update-flip.test.ts b/tests/golden/update-flip.test.ts
+new file mode 100644
+index 0000000..0d220f1
+--- /dev/null
++++ b/tests/golden/update-flip.test.ts
+@@ -0,0 +1,39 @@
++import * as fs from "fs";
++import * as os from "os";
++import * as path from "path";
++import { runGoldenCases } from "./harness";
++
++describe("golden update mode when the outcome flips", () => {
++  let root: string;
++  beforeEach(() => {
++    root = fs.mkdtempSync(path.join(os.tmpdir(), "golden-flip-"));
++    fs.mkdirSync(path.join(root, "c"));
++    fs.writeFileSync(path.join(root, "c", "template.md"), "t");
++    fs.writeFileSync(path.join(root, "c", "data.json"), "{}");
++  });
++  afterEach(() => fs.rmSync(root, { recursive: true, force: true }));
++
++  const files = () => fs.readdirSync(path.join(root, "c")).sort();
++
++  test("a case that now renders replaces its expected-error.txt with expected.md", () => {
++    fs.writeFileSync(path.join(root, "c", "expected-error.txt"), "old");
++    const results = runGoldenCases(root, () => "out", { update: true });
++    expect(results.map((r) => r.passed)).toEqual([true]);
++    expect(files()).toEqual(["data.json", "expected.md", "template.md"]);
++    expect(fs.readFileSync(path.join(root, "c", "expected.md"), "utf8")).toBe("out");
++  });
++
++  test("a case that now throws replaces its expected.md with expected-error.txt", () => {
++    fs.writeFileSync(path.join(root, "c", "expected.md"), "old");
++    const results = runGoldenCases(
++      root,
++      () => {
++        throw new Error("boom");
++      },
++      { update: true },
++    );
++    expect(results.map((r) => r.passed)).toEqual([true]);
++    expect(files()).toEqual(["data.json", "expected-error.txt", "template.md"]);
++    expect(fs.readFileSync(path.join(root, "c", "expected-error.txt"), "utf8")).toBe("boom");
++  });
++});
 ```
+
+## 5. Earlier findings and replies
+
+Answer each fix-class (defect or goal-risk) finding below in `responses` with sustain or withdraw and evidence. Raise new findings only about what the revision changed or an in-scope problem newly evidenced.
+
+### f1: Byte-exact expected.md fixtures have no line-ending pin, so they fail on the windows-latest CI runner
+
+- Class: goal-risk
+- Serves: cycle-goal: CI runs the matrix on ubuntu-latest and windows-latest. The repo has no .gitattributes, and GitHub's Windows runners check out with core.autocrlf=true. So expected.md files arrive with CRLF. The lexer normalizes \r\n to \n in the template, so the rendered output has LF, and the byte-exact compare in harness.ts fails every multi-line case. The result is that tests/golden/golden.test.ts and the gf-05 frozen test go red on Windows, which breaks 'a clean clone ... tests green in CI' and c5.
+- Reproduction: 1. On a Windows machine with git config core.autocrlf=true, which is the default on GitHub windows-latest, clone the repo at head 2f88efb. 2. Run npm ci, npm run build, npm test. 3. Expect cases such as if-elseif-else and list-nested-conditional to fail with 'output differs from expected.md at line 1' and an expected line ending in \r. Smallest fix: add tests/golden/.gitattributes with '* -text' or 'cases/** text eol=lf', which is inside the card's tests/golden/ files scope (log the scope addition).
+- Status: sustained
+- Review lead ruling: sustain: valid: fix it
+
+### f2: UPDATE_GOLDEN=1 fails, or leaves two expected files, when a case flips between output and error
+
+- Class: goal-risk
+- Serves: c4: A case that has only expected.md and now throws: in update mode wantsError is false and thrown is not null, so the harness returns 'render threw' as a failure instead of writing expected-error.txt. A case that has only expected-error.txt and now renders: update writes expected.md but keeps the stale expected-error.txt. The folder then holds two expected files, which the gf-05 shape check rejects, and the next run without update fails because wantsError is true and the render succeeds.
+- Reproduction: 1. Create case x with template.md 'T' and expected.md 'old'. Call runGoldenCases(dir, () => { throw new Error('boom') }, { update: true }). The result is passed=false with 'render threw', and no expected-error.txt is written. 2. Create case y with only expected-error.txt 'e'. Call runGoldenCases(dir, t => t, { update: true }). It passes, but y now has both expected.md and expected-error.txt. Running again without update fails with 'but render succeeded'. Smallest fix: in update mode, write the file that matches the outcome (expected-error.txt on throw, expected.md otherwise) and remove the other one.
+- Status: sustained
+- Review lead ruling: sustain: valid: fix it
 
 ## Output
 

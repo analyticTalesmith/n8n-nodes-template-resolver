@@ -29,6 +29,51 @@
         "f2"
       ],
       "responses": []
+    },
+    {
+      "number": 2,
+      "at": "2026-10-13T22:03:25.638Z",
+      "reviewer": {
+        "kind": "fallback",
+        "label": "opus fallback (same model family as the builder; has repository access)"
+      },
+      "output_sha256": "f8872f688841a4a6aafe6a062002928fb4f55d6580deb9ffd6fe1eec8a31cc21",
+      "diff_sha256": "b30d40b32371752ea0661b11268cfedf874bf04647b643bd66334f81599bb55d",
+      "restatement": "Add a reusable golden-file harness, runGoldenCases(casesDir, render, options), in tests/golden/harness.ts. It finds every case folder under tests/golden/cases/<name>/ in sorted order. Each folder holds template.md, data.json, an optional options.json, and either expected.md or expected-error.txt. The harness renders each case through the render function it is given and compares the result byte for byte. A failure names the case and shows the first differing line. An error case passes when the thrown message contains the trimmed expected text. Under UPDATE_GOLDEN=1, or options.update, it rewrites the expected files instead of failing. The work also ships at least eight plain-file cases (IF/ELSEIF, CASE, nested FOR, LIST, TABLE, filters, ?? defaults, one error case) that pass against the real resolver. It must not edit existing test bodies or add a runtime dependency. This serves the cycle goal of golden-file tests that stay green in CI on a clean clone.",
+      "brief_mismatch": null,
+      "evidence": [
+        "code:tests/golden/.gitattributes:1",
+        "code:tests/golden/harness.ts:51-60",
+        "diff:tests/golden/.gitattributes",
+        "diff:tests/golden/harness.ts",
+        "diff:tests/golden/update-flip.test.ts",
+        "patch:b30d40b32371752ea0661b11268cfedf874bf04647b643bd66334f81599bb55d",
+        "test:golden update mode when the outcome flips",
+        "test:tests/golden-harness.test.ts (line 1 eslint-disable)"
+      ],
+      "stalled": false,
+      "raised": [
+        "f3"
+      ],
+      "responses": [
+        {
+          "finding": "f1",
+          "verdict": "withdraw",
+          "evidence": [
+            "diff:tests/golden/.gitattributes",
+            "code:tests/golden/.gitattributes:1"
+          ]
+        },
+        {
+          "finding": "f2",
+          "verdict": "withdraw",
+          "evidence": [
+            "code:tests/golden/harness.ts:51-60",
+            "test:golden update mode when the outcome flips",
+            "diff:tests/golden/update-flip.test.ts"
+          ]
+        }
+      ]
     }
   ],
   "findings": [
@@ -50,7 +95,7 @@
       "location": "tests/golden/harness.ts:983",
       "label": "f1",
       "raised_in": 1,
-      "status": "sustained",
+      "status": "withdrawn",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [],
@@ -80,7 +125,7 @@
       "location": "tests/golden/harness.ts:930",
       "label": "f2",
       "raised_in": 1,
-      "status": "sustained",
+      "status": "withdrawn",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [],
@@ -91,6 +136,35 @@
           "note": "valid: fix it"
         }
       ]
+    },
+    {
+      "title": "harness.ts uses `any` in GoldenRender without the eslint disable that the frozen test carries",
+      "class": "drift",
+      "serves": {
+        "target": "cycle-goal",
+        "scenario": "If CI lints tests/ under @typescript-eslint/no-explicit-any, harness.ts would raise lint errors. The frozen test file disables that rule explicitly; the new harness does not. Whether CI lints tests/ is not shown in the packet, so this is a note for the lead, not a fix request."
+      },
+      "rubric": "cycle-goal: a clean clone installs, builds and tests green in CI",
+      "reproduction": "Run the project's eslint over tests/golden/harness.ts with @typescript-eslint/no-explicit-any enabled. Expect two errors at the data and options parameters of GoldenRender.",
+      "evidence": [
+        "diff:tests/golden/harness.ts",
+        "test:tests/golden-harness.test.ts (line 1 eslint-disable)"
+      ],
+      "location": "tests/golden/harness.ts:4",
+      "label": "f3",
+      "raised_in": 2,
+      "status": "filed",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [
+        {
+          "after_round": 2,
+          "ruling": "drift",
+          "note": "a lint-comment nit in a test helper; lint is not run on tests in this repo; recorded"
+        }
+      ],
+      "ticket": "0025-follow-up-harness-ts-uses-any-in-goldenr"
     }
   ]
 }
