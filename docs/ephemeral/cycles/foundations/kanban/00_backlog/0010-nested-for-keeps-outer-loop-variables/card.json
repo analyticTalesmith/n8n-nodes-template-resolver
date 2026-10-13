@@ -53,8 +53,9 @@
   "gate": [
     "node",
     "node_modules/jest/bin/jest.js",
-    "--reporters=<rootDir>/tools/jest-tap-reporter.cjs",
-    "tests/regressions/nested-for.test.ts"
+    "--runTestsByPath",
+    "tests/regressions/nested-for.test.ts",
+    "--reporters=<rootDir>/tools/jest-tap-reporter.cjs"
   ],
   "claim": null,
   "blocked_on": null,

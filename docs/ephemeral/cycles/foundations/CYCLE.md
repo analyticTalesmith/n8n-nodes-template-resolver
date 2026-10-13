@@ -100,5 +100,6 @@ A person judges the cycle done when a clean clone is green locally and in CI, th
 
 <!-- generated index: replace everything between this line and the end marker -->
 - [deltas/](deltas/INDEX.md) — Index of docs/ephemeral/cycles/foundations/deltas.
+- [design-approval.md](design-approval.md) — Foundations cycle design: restore tests, CI, Tier 0 fixes, restructure into core and n8n, AST analyze, golden harness.
 - [test-plan.md](test-plan.md) — The tests this cycle plans at each level, and which requirement lines each one proves.
 <!-- end generated index -->

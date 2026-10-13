@@ -82,8 +82,9 @@
   "gate": [
     "node",
     "node_modules/jest/bin/jest.js",
-    "--reporters=<rootDir>/tools/jest-tap-reporter.cjs",
-    "tests/analyze.test.ts"
+    "--runTestsByPath",
+    "tests/analyze.test.ts",
+    "--reporters=<rootDir>/tools/jest-tap-reporter.cjs"
   ],
   "claim": null,
   "blocked_on": null,

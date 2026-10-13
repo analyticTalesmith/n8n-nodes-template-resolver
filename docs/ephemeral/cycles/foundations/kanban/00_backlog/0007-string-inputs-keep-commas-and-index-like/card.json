@@ -57,8 +57,9 @@
   "gate": [
     "node",
     "node_modules/jest/bin/jest.js",
-    "--reporters=<rootDir>/tools/jest-tap-reporter.cjs",
-    "tests/regressions/string-input-coercion.test.ts"
+    "--runTestsByPath",
+    "tests/regressions/string-input-coercion.test.ts",
+    "--reporters=<rootDir>/tools/jest-tap-reporter.cjs"
   ],
   "claim": null,
   "blocked_on": null,
