@@ -60,10 +60,13 @@
     "--test-reporter=tap",
     "scripts/run-node-tests.test.mjs"
   ],
-  "claim": null,
+  "claim": {
+    "owner": "build:implementer",
+    "heartbeat": "2026-10-13T17:46:43.446Z"
+  },
   "blocked_on": null,
   "docs_impact": "none",
-  "started": null,
+  "started": "2026-10-13T17:46:43.587Z",
   "ended": null,
   "review_rounds": 0,
   "schema_version": 1,
@@ -81,5 +84,6 @@
       "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
       "gate": "ee95ac13b8486621eba45314df6fcfbe940080b0cf75de3bf00d86345afcf5cd"
     }
-  }
+  },
+  "base_commit": "a84943d3b29edbfbc14dfc86de28e453fa019dc0"
 }

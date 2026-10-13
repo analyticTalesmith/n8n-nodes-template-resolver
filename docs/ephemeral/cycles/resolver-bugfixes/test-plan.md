@@ -17,6 +17,9 @@ Status: planned.
 
 | Test | Covers | What it proves |
 |---|---|---|
+| t-runner-pass | tr-01 | the runner exits 0 and reports a passing smoke test |
+| t-runner-fail | tr-01 | the runner exits nonzero for a failing test file |
+| t-runner-tap | tr-02 | stdout is node:test TAP |
 
 ## Integration
 
