@@ -2,16 +2,16 @@
 type: review-packet
 card: 0002-working-test-runner
 tier: product
-built_at: 2026-10-13T17:52:25.160Z
+built_at: 2026-10-13T17:56:36.168Z
 base: a84943d3b29edbfbc14dfc86de28e453fa019dc0
-head: 51e95a8354e01659e83a5a5a1d1700e4b4c11153
+head: 0e1a6b413fdd6e352e12256679a909dd12ca7e3a
 frozen: true
 brief_sha256: d8563a94be5f5e1e60542d300b7d5eca7e4955bc6722464a340ef39c31fc0037
 manifest_sha256: 026a47842fd88ce703b85511c441685f3512dd845ad630df7ff0c80194db6d55
 criteria_sha256: 7e1cc39d611d0f4e35f61e93fc11356049dc504572360d624afda504e38ee60c
 scope_sha256: c9f513c857f1aeabf6cdb3eb1349cd06bbc55fc32c08d48e5de626ee133bba77
-diff_sha256: a28d9b0ee1da07822f338f054d2c87caa5b47c4393632c155da6b00adb5bf6d2
-omitted_paths: 8
+diff_sha256: 251e1a8a606a32e7eef5f60c9758e269bc8dd78fefba774c5040b0a8bbbcbda0
+omitted_paths: 13
 criteria_count: 3
 must_not_count: 2
 ---
@@ -777,7 +777,7 @@ test('tr-02 stdout starts with TAP version', () => {
 
 ## 4. Diff
 
-8 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
+13 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
 
 ```diff
 diff --git a/.gitignore b/.gitignore
@@ -828,14 +828,14 @@ index 78182d0..685f3b6 100644
      "prettier": "3.6.2",
      "release-it": "^19.0.4",
 diff --git a/scripts/run-node-tests.mjs b/scripts/run-node-tests.mjs
-index 84467c8..b3833fc 100644
+index 84467c8..4bb3a2d 100644
 --- a/scripts/run-node-tests.mjs
 +++ b/scripts/run-node-tests.mjs
-@@ -1,2 +1,38 @@
+@@ -1,2 +1,40 @@
 -// Stub: signature only. The real runner replaces this.
 -process.exitCode = 0;
 +import { spawnSync } from 'node:child_process';
-+import { readdirSync, statSync } from 'node:fs';
++import { readdirSync, rmSync, statSync } from 'node:fs';
 +import { dirname, join, resolve } from 'node:path';
 +import { fileURLToPath } from 'node:url';
 +
@@ -852,6 +852,8 @@ index 84467c8..b3833fc 100644
 +	}
 +	return found;
 +}
++
++rmSync(join(root, '.test-build'), { recursive: true, force: true });
 +
 +const compile = spawnSync(process.execPath, [tsc, '-p', join(root, 'tsconfig.test.json')], {
 +	cwd: root,
@@ -910,6 +912,18 @@ index 0000000..a48324c
 +  "include": ["nodes/**/*", "test-node/**/*"]
 +}
 ```
+
+## 5. Earlier findings and replies
+
+Answer each fix-class (defect or goal-risk) finding below in `responses` with sustain or withdraw and evidence. Raise new findings only about what the revision changed or an in-scope problem newly evidenced.
+
+### f1: The runner never clears .test-build, so compiled tests from deleted, renamed or other-branch sources keep running
+
+- Class: goal-risk
+- Serves: cycle-goal: The two bug cards each need a 'fails first, then passes' reading from this runner. A compiled test left in .test-build/test-node/ by one card's branch still runs after the .ts source is renamed, deleted or absent on another branch, because findTests walks whatever .test.js is on disk and tsc never removes orphaned output. The gate then reads a 'not ok' and a nonzero exit (or an extra 'ok') for a test that does not exist in the tree under test.
+- Reproduction: 1. Add test-node/tmp.test.ts containing a failing test. 2. Run npm run test:node; it exits nonzero as expected. 3. Delete test-node/tmp.test.ts. 4. Run npm run test:node again. tsc succeeds, but .test-build/test-node/tmp.test.js is still found and run, so stdout has 'not ok' and the exit is nonzero although every test in the source tree passes.
+- Status: fixed
+- Reply (fixed): restate: The runner kept stale compiled tests in .test-build after sources were deleted.; verify: Added rmSync of .test-build before the tsc compile; reran the repro and only the live smoke test runs.; evidence: code:scripts/run-node-tests.mjs:11
 
 ## Output
 
