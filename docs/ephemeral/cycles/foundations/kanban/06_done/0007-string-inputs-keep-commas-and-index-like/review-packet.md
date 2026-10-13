@@ -2,16 +2,16 @@
 type: review-packet
 card: 0007-string-inputs-keep-commas-and-index-like
 tier: product
-built_at: 2026-10-13T21:43:07.925Z
+built_at: 2026-10-13T21:47:11.169Z
 base: e7069db9c344f65385b3956ece624de0aad10268
-head: 2a63dc12b1444586a8833b34cdebbefdcd115720
+head: c261d4f327a21734a23720c13c2a1f973dcf1b4a
 frozen: true
 brief_sha256: deda7102ce59e751a996e4164873d4b7202856b7f5fa003697513d6e94dfe7ce
 manifest_sha256: fdc137f61e1e631db959a6adbb8689d8dbec5805adbe6d39d172666d65613f70
 criteria_sha256: 01915156cfd1a725936624e2246952fb0840234adfccb67b8205e3dad6fe285b
 scope_sha256: f5e935f5bbd5036488cc0484cb5e38e37992ff704268087a52a7d4e1fd6b26f9
-diff_sha256: 431723477024b416c074d97055f6f2975ae56d6592ab1625d3351c9bdfe66c90
-omitted_paths: 8
+diff_sha256: 49a5f3dde29319e9fec16398c0000ab19b0df1a385320cdf411158811931017d
+omitted_paths: 12
 criteria_count: 4
 must_not_count: 3
 ---
@@ -152,7 +152,11 @@ Files scope: `nodes/TemplateResolver/coercion.ts`, `nodes/TemplateResolver/expre
 
 ### Scope exceptions log (as of now, written during the work)
 
-No scope exceptions are logged.
+Each row is a change outside the card's scope that its lead approved. A builder who can edit the card folder can add a row, so the human gate is the backstop.
+
+| Date | Path | Kind | Reason | Approved by |
+| --- | --- | --- | --- | --- |
+| 2026-10-13 | `tests/regressions/string-input-coercion-guards.test.ts` | add | guard test for the sustained finding about length on JSON array strings | project lead (front approval) |
 
 ### Manifest and scope
 
@@ -433,7 +437,7 @@ describe("string input coercion", () => {
 
 ## 4. Diff
 
-8 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
+12 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
 
 ```diff
 diff --git a/nodes/TemplateResolver/coercion.ts b/nodes/TemplateResolver/coercion.ts
@@ -530,7 +534,7 @@ index eecbb97..ca4a94e 100644
          const parsed = JSON.parse(fixed);
          if (typeof parsed === "object" && !Array.isArray(parsed)) {
 diff --git a/nodes/TemplateResolver/expressions.ts b/nodes/TemplateResolver/expressions.ts
-index 7970d6a..9729211 100644
+index 7970d6a..96afdac 100644
 --- a/nodes/TemplateResolver/expressions.ts
 +++ b/nodes/TemplateResolver/expressions.ts
 @@ -4,6 +4,7 @@ import {
@@ -541,7 +545,7 @@ index 7970d6a..9729211 100644
    tryCoerceToBoolean,
    tryCoerceToString,
  } from "./coercion";
-@@ -391,11 +392,9 @@ function resolveValue(expr: string, variables: VariableMap): TemplateValue {
+@@ -391,11 +392,18 @@ function resolveValue(expr: string, variables: VariableMap): TemplateValue {
  
      // Parse as JSON if the variable is a string
      if (typeof current === "string") {
@@ -549,9 +553,17 @@ index 7970d6a..9729211 100644
 -        current = JSON.parse(current);
 -      } catch {
 -        return null;
--      }
-+      const parsed = tryCoerceStringForPathSegment(current, path[i]);
-+      if (!parsed) return null;
++      let parsed: TemplateValue = tryCoerceStringForPathSegment(
++        current,
++        path[i]
++      );
++      if (!parsed) {
++        try {
++          parsed = JSON.parse(current);
++        } catch {
++          return null;
++        }
+       }
 +      current = parsed;
      }
  
@@ -579,6 +591,18 @@ index fbdbc50..1929590 100644
            current = parsed;
          } else {
 ```
+
+## 5. Earlier findings and replies
+
+Answer each fix-class (defect or goal-risk) finding below in `responses` with sustain or withdraw and evidence. Raise new findings only about what the revision changed or an in-scope problem newly evidenced.
+
+### f1: Conditions lose non-numeric property access on JSON-array strings (for example tags.length), a behavior change outside the named defects
+
+- Class: goal-risk
+- Serves: m1: Before the change, expressions.resolveValue ran JSON.parse on any string intermediate, so with tags='["a","b"]' a condition such as {{IF tags.length > 1}} reached the parsed array and could read its 'length' property. After the change, tryCoerceStringForPathSegment returns null for a non-numeric segment on a string that is not an object, so resolveValue returns null. The ordering comparison then throws TypeError, or == yields a different result. No defect named in the card asks for this change.
+- Reproduction: With base e7069db and head 2a63dc1, run resolveTemplate('{{IF tags.length > 1}}Y{{ELSE}}N{{END_IF}}', new Map([['tags','["a","b"]']]), {strictMode:false}). This holds if the lookup code after the string branch in resolveValue resolves own or array properties such as 'length', which is plausible because it previously received the JSON.parse result unchanged. Expect 'Y' at base and a thrown TypeError, or 'N', at head. The smallest fix: in resolveValue, keep the old JSON.parse result as a fallback when tryCoerceStringForPathSegment returns null, or apply the array coercion only for numeric segments and otherwise keep the JSON.parse behavior.
+- Status: sustained
+- Review lead ruling: sustain: valid: non-numeric property access such as length on a JSON array string in conditions must keep working
 
 ## Output
 

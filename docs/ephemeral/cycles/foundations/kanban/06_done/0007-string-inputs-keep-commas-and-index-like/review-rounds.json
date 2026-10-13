@@ -24,12 +24,34 @@
         "f2"
       ],
       "responses": []
+    },
+    {
+      "number": 2,
+      "at": "2026-10-13T21:51:09.955Z",
+      "reviewer": {
+        "kind": "fallback",
+        "label": "opus fallback (same model family as the builder; has repository access)"
+      },
+      "output_sha256": "888cda3452929c1cf6cceca0915168c8ff22639d857def3741eec29650109ad6",
+      "diff_sha256": "49a5f3dde29319e9fec16398c0000ab19b0df1a385320cdf411158811931017d",
+      "restatement": "Values reach the template resolver from n8n as strings. Two things must hold. First, when the resolver repairs a JSON object or array string, it removes only structural stray commas (leading, trailing, doubled) and never changes a comma inside a string value. Second, a path such as tags.0 on a string input uses the same coercion FOR uses, so 'a,b' and '[\"a\",\"b\"]' index like arrays in both ${{...}} output and IF conditions. Nothing else may change behavior, no existing test may be edited or deleted, and no runtime dependency may be added. The work has to stay inside coercion.ts, expressions.ts and interpreter.ts.",
+      "brief_mismatch": null,
+      "evidence": [
+        "diff:nodes/TemplateResolver/coercion.ts",
+        "doc:docs/living/architecture/modules/template-resolver.md",
+        "patch:49a5f3dde29319e9fec16398c0000ab19b0df1a385320cdf411158811931017d"
+      ],
+      "stalled": false,
+      "raised": [
+        "f3"
+      ],
+      "responses": []
     }
   ],
   "findings": [
     {
       "title": "Conditions lose non-numeric property access on JSON-array strings (for example tags.length), a behavior change outside the named defects",
-      "class": "goal-risk",
+      "class": "drift",
       "serves": {
         "target": "m1",
         "scenario": "Before the change, expressions.resolveValue ran JSON.parse on any string intermediate, so with tags='[\"a\",\"b\"]' a condition such as {{IF tags.length > 1}} reached the parsed array and could read its 'length' property. After the change, tryCoerceStringForPathSegment returns null for a non-numeric segment on a string that is not an object, so resolveValue returns null. The ordering comparison then throws TypeError, or == yields a different result. No defect named in the card asks for this change."
@@ -53,6 +75,16 @@
           "after_round": 1,
           "ruling": "sustain",
           "note": "valid: non-numeric property access such as length on a JSON array string in conditions must keep working"
+        },
+        {
+          "after_round": 1,
+          "ruling": "drift",
+          "note": "doubled commas between array elements now repair; intended by the one repair path; recorded"
+        },
+        {
+          "after_round": 1,
+          "ruling": "sustain",
+          "note": "restored: the first-round finding was sustained and fixed"
         }
       ]
     },
@@ -84,6 +116,35 @@
         }
       ],
       "ticket": "0015-follow-up-conditions-now-repair-malforme"
+    },
+    {
+      "title": "Array-string repair now also collapses doubled commas between elements, which changes FOR/index results for inputs like '[1,,2]'",
+      "class": "drift",
+      "serves": {
+        "target": "m1",
+        "scenario": "At base, tryCoerceToArray stripped only ',]' and '[,' from a '['-prefixed string. '[1,,2]' therefore failed JSON.parse and fell back to comma splitting, which gives string pieces. At head, repairStructuralCommas also collapses the doubled comma, so JSON.parse succeeds and gives the numbers [1,2]. Rendered FOR output is the same. Type-sensitive checks on items, or JSON output of an indexed sub-array, could differ. This is a small widening beyond the named defects. It is not a criterion failure."
+      },
+      "rubric": "no change outside the card scope",
+      "reproduction": "Run resolveTemplate('{{FOR a AS x}}{{IF x isNumber}}N{{ELSE}}S{{END_IF}}{{END_FOR}}', new Map([['a','[1,,2]']]), {strictMode:false}) at base and at head, and compare. The results differ only if isNumber distinguishes a numeric string from a number.",
+      "evidence": [
+        "diff:nodes/TemplateResolver/coercion.ts",
+        "doc:docs/living/architecture/modules/template-resolver.md"
+      ],
+      "location": "nodes/TemplateResolver/coercion.ts:62",
+      "label": "f3",
+      "raised_in": 2,
+      "status": "filed",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [
+        {
+          "after_round": 2,
+          "ruling": "drift",
+          "note": "doubled commas between array elements now repair; intended by the single repair path"
+        }
+      ],
+      "ticket": "0015-follow-up-array-string-repair-now-also-c"
     }
   ]
 }
