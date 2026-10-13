@@ -24,3 +24,4 @@ Working memory for this ticket, next to card.md. The lead updates it in small ed
 
 | Date | Path | Kind | Reason | Approved by |
 | --- | --- | --- | --- | --- |
+| 2026-10-13 | tests/regressions/parse-defaults-guards.test.ts | add | guard test for the sustained finding about apostrophes in unquoted defaults | project lead (front approval) |
