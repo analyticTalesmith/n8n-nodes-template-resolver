@@ -24,3 +24,5 @@ Working memory for this ticket, next to card.md. The lead updates it in small ed
 
 | Date | Path | Kind | Reason | Approved by |
 | --- | --- | --- | --- | --- |
+| 2026-10-13 | docs/living/architecture/overview.md | edit | corrections of the recovered document by the research lead after review | project lead (front approval) |
+| 2026-10-13 | docs/living/architecture/modules/template-resolver.md | edit | corrections of the recovered document by the research lead after review | project lead (front approval) |
