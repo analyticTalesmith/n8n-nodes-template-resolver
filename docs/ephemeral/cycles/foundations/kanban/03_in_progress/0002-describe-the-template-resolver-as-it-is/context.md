@@ -26,3 +26,6 @@ Working memory for this ticket, next to card.md. The lead updates it in small ed
 | --- | --- | --- | --- | --- |
 | 2026-10-13 | docs/living/architecture/overview.md | edit | corrections of the recovered document by the research lead after review | project lead (front approval) |
 | 2026-10-13 | docs/living/architecture/modules/template-resolver.md | edit | corrections of the recovered document by the research lead after review | project lead (front approval) |
+| 2026-10-13 | docs/ephemeral/work/0011-restructure-into-a-pure-core-and-a-thin/red-evidence.md | add | lead bookkeeping for another card committed after this card base | project lead (front approval) |
+| 2026-10-13 | docs/ephemeral/work/0012-derive-variable-and-filter-usage-from-th/red-evidence.md | add | lead bookkeeping for another card committed after this card base | project lead (front approval) |
+| 2026-10-13 | docs/ephemeral/work/0013-add-the-golden-file-test-harness/red-evidence.md | add | lead bookkeeping for another card committed after this card base | project lead (front approval) |

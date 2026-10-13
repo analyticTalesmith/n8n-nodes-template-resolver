@@ -1,0 +1,26 @@
+{
+  "id": "0018-follow-up-an-unquoted-default-that-start",
+  "title": "Follow-up: An unquoted default that starts with an apostrophe still opens a quote that never closes, so the filters afte",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [],
+  "origin": "foundations",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [],
+    "frozen": false
+  },
+  "criteria": [],
+  "gate": null,
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1
+}

@@ -1,6 +1,6 @@
 {
-  "id": "0018-follow-up-no-frozen-test-or-evidence-che",
-  "title": "Follow-up: No frozen test or evidence-check output is supplied for c1, so the goal-critical question cannot be answered",
+  "id": "0019-follow-up-pre-existing-tests-passing-can",
+  "title": "Follow-up: Pre-existing tests passing cannot be confirmed from the packet; END_* tags beyond the frozen examples now rej",
   "type": "improvement",
   "parent": null,
   "depends_on": [],

@@ -1,0 +1,26 @@
+{
+  "id": "0020-follow-up-array-string-repair-now-also-c",
+  "title": "Follow-up: Array-string repair now also collapses doubled commas between elements, which changes FOR/index results for i",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [],
+  "origin": "foundations",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [],
+    "frozen": false
+  },
+  "criteria": [],
+  "gate": null,
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1
+}
