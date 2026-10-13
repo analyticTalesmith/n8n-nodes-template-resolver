@@ -211,6 +211,7 @@ export class Interpreter {
     }
 
     const results: string[] = [];
+    const outerLoopContext = new Map(this.loopContext);
 
     for (let i = 0; i < array.length; i++) {
       // Set loop context
@@ -227,10 +228,16 @@ export class Interpreter {
       results.push(output);
     }
 
-    // Clear loop context
-    this.loopContext.clear();
+    this.restoreLoopContext(outerLoopContext);
 
     return results.join("");
+  }
+
+  private restoreLoopContext(saved: Map<string, TemplateValue>): void {
+    this.loopContext.clear();
+    for (const [key, value] of saved) {
+      this.loopContext.set(key, value);
+    }
   }
 
   /**
@@ -310,6 +317,7 @@ export class Interpreter {
         const array = tryCoerceToArray(iterable);
 
         if (array) {
+          const outerLoopContext = new Map(this.loopContext);
           for (let i = 0; i < array.length; i++) {
             // Set loop context
             this.loopContext.set(forNode.itemName, array[i]);
@@ -337,8 +345,7 @@ export class Interpreter {
             }
           }
 
-          // Clear loop context
-          this.loopContext.clear();
+          this.restoreLoopContext(outerLoopContext);
         }
       } else {
         // Regular row - process all cells
