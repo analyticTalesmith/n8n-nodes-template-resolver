@@ -106,10 +106,13 @@
     "--test-reporter=tap",
     "tools/tests/restructure.test.mjs"
   ],
-  "claim": null,
+  "claim": {
+    "owner": "build:implementer",
+    "heartbeat": "2026-10-13T21:52:53.615Z"
+  },
   "blocked_on": null,
   "docs_impact": "none",
-  "started": null,
+  "started": "2026-10-13T21:52:53.759Z",
   "ended": null,
   "review_rounds": 0,
   "schema_version": 1,
@@ -131,5 +134,6 @@
       "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
       "gate": "1f87034e85d934b016d928de39394aa8b58a3891be75babde8dc5d230e566bbb"
     }
-  }
+  },
+  "base_commit": "f77a73095b2b4d32779b509068ceb7671deaa086"
 }
