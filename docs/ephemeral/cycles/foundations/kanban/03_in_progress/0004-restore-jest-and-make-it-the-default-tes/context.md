@@ -24,3 +24,4 @@ Working memory for this ticket, next to card.md. The lead updates it in small ed
 
 | Date | Path | Kind | Reason | Approved by |
 | --- | --- | --- | --- | --- |
+| 2026-10-13 | tools/tests/test-runner.test.mjs | edit | the frozen reporter test had a regex typo (\d in a template literal); amendment logged in card.json test_amendments | project lead (front approval) |

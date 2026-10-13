@@ -55,8 +55,7 @@ none: no public interface changes.
 | Path | Permission (add, edit, remove) | Blast radius |
 | --- | --- | --- |
 | `tools/jest-tap-reporter.cjs` | add | build-tooling |
-| `package-lock.json` | edit | build-tooling |
 | `package.json` | edit | build-tooling |
 
-Files scope: `package-lock.json`, `package.json`, `tools/jest-tap-reporter.cjs`
+Files scope: `package.json`, `tools/jest-tap-reporter.cjs`
 <!-- end generated scope -->
