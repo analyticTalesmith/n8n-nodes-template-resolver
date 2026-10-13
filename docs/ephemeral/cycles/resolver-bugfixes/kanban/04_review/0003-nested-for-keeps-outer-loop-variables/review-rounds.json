@@ -1,0 +1,42 @@
+{
+  "card": "0003-nested-for-keeps-outer-loop-variables",
+  "rounds": [
+    {
+      "number": 1,
+      "at": "2026-10-13T18:05:07.778Z",
+      "reviewer": {
+        "kind": "fallback",
+        "label": "opus fallback (same model family as the builder; has repository access)"
+      },
+      "output_sha256": "95bb09c6465626f66f4ac6387f5d39218ca0bf096d8d27cc2c9d5d79fabd2cd2",
+      "diff_sha256": "197058d9a63143b8f3cef35349aaddc36b0a20d9bb09986469606094cd9f1e52",
+      "restatement": "Make loop state in the interpreter nest correctly. When an inner FOR loop ends, including a FOR that drives TABLE rows, the enclosing loop's item variable and its @index values must be exactly what they were before the inner loop started, even if the inner body throws. A single non-nested loop must render as before, a top-level loop must still leave the loop context empty, and variable lookup order outside loops must not change. The change is confined to nodes/TemplateResolver/interpreter.ts, the jest suite files stay untouched, and the node:test suite must still pass.",
+      "brief_mismatch": "c1-c3 are marked verify: test and the cycle goal demands a failing regression test first, but the packet gives no test to judge against. The Frozen tests section lists no file at base, the only named test (.test-build/test-node/nested-for.test.js) is the implementer's own build output and its source is not shown, and the card scope plus the spec's 'Never: edit tests' leave nowhere for a regression test to be added in scope. No test-run output is included either, so the 'whole node:test suite still passes' half of c4 cannot be confirmed. I judged c1-c3 by reading the diff only; the lead should supply the test source and a run result, or change the verify mode. Separately, the packet shows only the diff hunks, so I could not confirm that the two loop sites are the only writers to loopContext. If another construct writes to it, replacing clear() with a seven-key delete would no longer leave a top-level loop's context empty.",
+      "evidence": [
+        "patch:197058d9a63143b8f3cef35349aaddc36b0a20d9bb09986469606094cd9f1e52"
+      ],
+      "stalled": false,
+      "raised": [],
+      "responses": []
+    },
+    {
+      "number": 2,
+      "at": "2026-10-13T18:06:18.831Z",
+      "reviewer": {
+        "kind": "fallback",
+        "label": "opus fallback (same model family as the builder; has repository access)"
+      },
+      "output_sha256": "4190abc39016625c8b88ae0518de7a07f3bd0124acc315a1543ade8e528cae87",
+      "diff_sha256": "197058d9a63143b8f3cef35349aaddc36b0a20d9bb09986469606094cd9f1e52",
+      "restatement": "Make the interpreter's loop handling save the loop-context entries a loop is about to overwrite (the item name and the six @ values) and put them back by value when the loop ends, including when the body throws. This must hold in both the FOR visitor and the TABLE row loop, so text after an inner loop still resolves the enclosing loop's item and @index values. A top-level loop must still end with an empty loop context, single non-nested loops must render exactly as before, variable lookup order outside loops must not change, and only nodes/TemplateResolver/interpreter.ts may be edited, with the frozen tests and the jest suite files untouched.",
+      "brief_mismatch": "c4 is marked verify: review and asks the reviewer to confirm that the whole node:test suite still passes, but the reviewer is blind and read-only and the packet contains no test-run output. Only the 'jest suite files untouched' half is checkable from the diff, and only for the non-omitted paths. The four frozen nested-for tests were traced by hand against the diff and should pass, but the rest of the node:test suite is not shown and its pass status is unconfirmed here. Separately, the packet says the card names `.test-build/test-node/nested-for.test.js`, but the card text shown does not mention that path.",
+      "evidence": [
+        "patch:197058d9a63143b8f3cef35349aaddc36b0a20d9bb09986469606094cd9f1e52"
+      ],
+      "stalled": true,
+      "raised": [],
+      "responses": []
+    }
+  ],
+  "findings": []
+}

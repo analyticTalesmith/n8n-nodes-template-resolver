@@ -1,0 +1,31 @@
+{
+  "restatement": "Make the interpreter's loop handling save the loop-context entries a loop is about to overwrite (the item name and the six @ values) and put them back by value when the loop ends, including when the body throws. This must hold in both the FOR visitor and the TABLE row loop, so text after an inner loop still resolves the enclosing loop's item and @index values. A top-level loop must still end with an empty loop context, single non-nested loops must render exactly as before, variable lookup order outside loops must not change, and only nodes/TemplateResolver/interpreter.ts may be edited, with the frozen tests and the jest suite files untouched.",
+  "brief_mismatch": "c4 is marked verify: review and asks the reviewer to confirm that the whole node:test suite still passes, but the reviewer is blind and read-only and the packet contains no test-run output. Only the 'jest suite files untouched' half is checkable from the diff, and only for the non-omitted paths. The four frozen nested-for tests were traced by hand against the diff and should pass, but the rest of the node:test suite is not shown and its pass status is unconfirmed here. Separately, the packet says the card names `.test-build/test-node/nested-for.test.js`, but the card text shown does not mention that path.",
+  "verification_plan": [
+    "c1: trace nf-01 through the FOR visitor and confirm that after the inner loop ends, the outer item, @index0 and @first hold the outer iteration's values rather than being cleared or left at the inner loop's last values.",
+    "c2: trace two sibling inner loops and a three-level nest, and confirm each loop restores exactly what it overwrote so every level sees its own item after its child ends.",
+    "c3: confirm the TABLE row loop path, which is separate from the FOR visitor, has the same save and restore, so the outer variable survives across rows and into text after the table.",
+    "Brief question (goal-critical): confirm the restore runs in a finally block or equivalent on both paths, so a throwing body still restores the enclosing state.",
+    "Rubric: confirm restore is by saved value, with no re-evaluation of the outer iterable or recomputation of the index.",
+    "Spec contract: confirm a top-level loop leaves the loop context empty afterwards, with keys that were absent before the loop deleted rather than set to undefined.",
+    "Edge: confirm an inner loop reusing the outer loop's item name gets the outer value back afterwards.",
+    "Edge: confirm a saved entry whose value is undefined or null is told apart from an absent one (has() rather than a get() truthiness check).",
+    "m1: confirm the per-iteration sets and body rendering for a single loop are unchanged, and the only difference is the cleanup mechanism.",
+    "m2: confirm the variable lookup code and its precedence between loop context and variables are not touched.",
+    "c4, scope and rubric: confirm the diff touches only nodes/TemplateResolver/interpreter.ts, with no test files, no jest files, no AST or resolveTemplate signature changes, and no unrelated edits in interpreter.ts.",
+    "Polish: confirm the change is small and local to the loop handling.",
+    "Frozen tests: confirm test-node/nested-for.test.ts is not modified in the diff."
+  ],
+  "findings": [],
+  "responses": [],
+  "reviewer": {
+    "kind": "fallback",
+    "label": "opus fallback (same model family as the builder; has repository access)"
+  },
+  "at": "2026-10-13T18:06:18.438Z",
+  "card": "0003-nested-for-keeps-outer-loop-variables",
+  "tier": "product",
+  "packet_sha256": "c633c90f23db94e51dcb5e4e20c857f68d0815654d0d564ac0514f38837e57f5",
+  "diff_sha256": "197058d9a63143b8f3cef35349aaddc36b0a20d9bb09986469606094cd9f1e52",
+  "dropped": []
+}

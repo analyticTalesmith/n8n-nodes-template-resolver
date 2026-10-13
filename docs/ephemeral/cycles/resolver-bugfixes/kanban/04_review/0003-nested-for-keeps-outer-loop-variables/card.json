@@ -27,7 +27,10 @@
       "level": "unit",
       "evidence": null,
       "status": "pending",
-      "class": "goal-critical"
+      "class": "goal-critical",
+      "traces": [
+        "test-node/nested-for.test.ts#nf-01"
+      ]
     },
     {
       "text": "nf-02 two sibling inner loops and a doubly nested loop render every iteration with the right outer item",
@@ -35,7 +38,10 @@
       "level": "unit",
       "evidence": null,
       "status": "pending",
-      "class": "goal-critical"
+      "class": "goal-critical",
+      "traces": [
+        "test-node/nested-for.test.ts#nf-02"
+      ]
     },
     {
       "text": "nf-03 a TABLE row loop inside an outer FOR keeps the outer loop variable for later rows and text",
@@ -43,7 +49,10 @@
       "level": "unit",
       "evidence": null,
       "status": "pending",
-      "class": "goal-critical"
+      "class": "goal-critical",
+      "traces": [
+        "test-node/nested-for.test.ts#nf-03"
+      ]
     },
     {
       "text": "nf-04 the existing jest suite files are untouched and the whole node:test suite still passes",
@@ -66,7 +75,7 @@
   "docs_impact": "none",
   "started": "2026-10-13T18:03:18.793Z",
   "ended": null,
-  "review_rounds": 0,
+  "review_rounds": 2,
   "schema_version": 1,
   "blast_radius": [
     "resolver-core"
