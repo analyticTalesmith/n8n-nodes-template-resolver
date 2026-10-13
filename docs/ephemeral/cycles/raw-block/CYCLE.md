@@ -51,32 +51,32 @@ Shape: kind feature; intent add; purpose ship; compatibility additive; uncertain
 - stg-slicing-plan done: one slice, one card: the lexer scan, README and living doc together
 - stg-ready-check done: card has typed criteria, frozen manifest, reviewer brief and red evidence; gate moves to ready checks it
 - stg-plan-approval done: plan approval is auto per the shape (small additive card), no human approval requested
-- stg-work-order todo
-- stg-workspace todo
-- stg-build-slices todo
-- stg-flags-abstraction todo
-- stg-mechanical-gate todo
-- stg-cleanup todo
-- stg-local-integration todo
-- stg-design-drift todo
-- stg-independent-review todo
-- stg-human-spot-check todo
-- stg-unit-regression todo
-- stg-integration-contract todo
-- stg-system-e2e todo
+- stg-work-order skipped: rule
+- stg-workspace done: worktree .worktrees/raw-block on branch feature/raw-block-impl
+- stg-build-slices done: one slice: lexer scan, README section and living doc, built by a fresh implementer to the frozen manifest
+- stg-flags-abstraction skipped: additive syntax: a template without RAW cannot reach the new code, so no flag is needed
+- stg-mechanical-gate done: gate ran on each move; card reached done
+- stg-cleanup skipped: the diff is one 40-line method and docs; no cleanup spawn
+- stg-local-integration skipped: rule
+- stg-design-drift done: review found the n8n node scans text for variables, outside the planned scope; fixed by a logged scope exception and filed two follow-ups
+- stg-independent-review done: blind fallback review, three rounds; findings f1 f2 f3 f5 answered, f4 f6 filed as follow-ups
+- stg-human-spot-check skipped: rule
+- stg-unit-regression done: node:test 28 of 28; old jest suite 446 of 446 from a copy with jest installed
+- stg-integration-contract skipped: rule
+- stg-system-e2e skipped: waived in the cycle test plan: no new external interface
 - stg-acceptance todo
-- stg-accessibility todo
-- stg-exploratory todo
-- stg-docs-verification todo
-- stg-integrity-audit todo
-- stg-blind-evaluation todo
+- stg-accessibility skipped: no UI surface
+- stg-exploratory skipped: rule
+- stg-docs-verification done: README example output equals the compiled resolver output; a person has not confirmed it
+- stg-integrity-audit skipped: single card; no cross-card interaction
+- stg-blind-evaluation skipped: not selected for this cycle (verification levels none)
 - stg-final-review todo
-- stg-evidence-packet todo
+- stg-evidence-packet skipped: rule
 - stg-go-no-go todo
 - stg-branch-merge todo
-- stg-publish-notes todo
+- stg-publish-notes skipped: deployment none; nothing is released
 - stg-record todo
-- stg-feedback-intake todo
+- stg-feedback-intake skipped: no feedback captured in this cycle
 
 ## Who and why
 

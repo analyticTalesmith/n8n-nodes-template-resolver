@@ -87,16 +87,13 @@
     "scripts/run-node-tests.mjs",
     ".test-build/test-node/raw-block.test.js"
   ],
-  "claim": {
-    "owner": "build:implementer",
-    "heartbeat": "2026-10-13T18:19:15.021Z"
-  },
+  "claim": null,
   "blocked_on": null,
   "docs_impact": [
     "docs/living/product/raw-block.md"
   ],
   "started": "2026-10-13T18:19:15.219Z",
-  "ended": null,
+  "ended": "2026-10-13T18:27:55.782Z",
   "review_rounds": 3,
   "schema_version": 1,
   "blast_radius": [
