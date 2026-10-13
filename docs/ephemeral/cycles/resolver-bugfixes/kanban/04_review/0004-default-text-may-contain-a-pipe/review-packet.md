@@ -2,16 +2,16 @@
 type: review-packet
 card: 0004-default-text-may-contain-a-pipe
 tier: product
-built_at: 2026-10-13T18:09:42.056Z
+built_at: 2026-10-13T18:11:45.744Z
 base: 785fa6a058a08210d56a2278c92c5e0459b6c284
-head: 7870dd415c84a1871a6611ea52df319e941e8297
+head: 2d40e8bf1823498bbdca8f28213bd303f1dfe84e
 frozen: true
 brief_sha256: bac435a65d23b3baf4883cd81cf59c51ee42bca9d805d68c9eb6ac35a94ad816
 manifest_sha256: 6d5ca45d633101a309b203679302267b908086cac84842af16def08652d65022
 criteria_sha256: 00f71c5ed21407aca6a1c6ee5d8d123c2663187239fe1b1c7979db609c4527a3
 scope_sha256: 56e60a11df138afd31804cea4d679a82e1241cb134443b5a7d1726c0b2a4f36c
-diff_sha256: 101286b7f8c57faaa338eb048fc32c52690f1c7c81c5ac5772d354530aa515ea
-omitted_paths: 6
+diff_sha256: cc7068231b61f85f6739aa6e8d62b7f986d3ec3c76cb08d02144a45bd58fad8a
+omitted_paths: 11
 criteria_count: 4
 must_not_count: 2
 ---
@@ -149,7 +149,11 @@ none: internal parser behavior; the public resolveTemplate signature is unchange
 
 ### Scope exceptions log (as of now, written during the work)
 
-No scope exceptions are logged.
+Each row is a change outside the card's scope that its lead approved. A builder who can edit the card folder can add a row, so the human gate is the backstop.
+
+| Date | Path | Kind | Reason | Approved by |
+| --- | --- | --- | --- | --- |
+| 2026-10-13 | `test-node/default-pipe-unbalanced.test.ts` | add | regression test for review finding f1 (unbalanced quote before a pipe) | project lead |
 
 ### Manifest and scope
 
@@ -777,11 +781,11 @@ Named by the card but not at the base commit (the implementer's own tests, never
 
 ## 4. Diff
 
-6 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
+11 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
 
 ```diff
 diff --git a/nodes/TemplateResolver/parser.ts b/nodes/TemplateResolver/parser.ts
-index c7e6eee..6bb8705 100644
+index c7e6eee..d795581 100644
 --- a/nodes/TemplateResolver/parser.ts
 +++ b/nodes/TemplateResolver/parser.ts
 @@ -133,8 +133,8 @@ export class Parser {
@@ -795,7 +799,7 @@ index c7e6eee..6bb8705 100644
      const core = parts[0];
      const filterExprs = parts.slice(1);
  
-@@ -170,6 +170,29 @@ export class Parser {
+@@ -170,6 +170,30 @@ export class Parser {
      };
    }
  
@@ -811,7 +815,8 @@ index c7e6eee..6bb8705 100644
 +      const ch = text[i];
 +      if (quote) {
 +        if (ch === quote) quote = null;
-+      } else if (ch === '"' || ch === "'") {
++      } else if ((ch === '"' || ch === "'") && text.indexOf(ch, i + 1) !== -1) {
++        // Only a quote that closes later opens one; a lone quote is plain text
 +        quote = ch;
 +      } else if (ch === separator) {
 +        parts.push(text.slice(start, i));
@@ -825,7 +830,49 @@ index c7e6eee..6bb8705 100644
    /**
     * Parse IF block: {{IF condition}}...{{ELSEIF}}...{{ELSE}}...{{END_IF}}
     */
+diff --git a/test-node/default-pipe-unbalanced.test.ts b/test-node/default-pipe-unbalanced.test.ts
+new file mode 100644
+index 0000000..b6d70e8
+--- /dev/null
++++ b/test-node/default-pipe-unbalanced.test.ts
+@@ -0,0 +1,24 @@
++import { test } from 'node:test';
++import assert from 'node:assert/strict';
++import { Lexer } from '../nodes/TemplateResolver/lexer';
++import { Parser } from '../nodes/TemplateResolver/parser';
++import { Interpreter } from '../nodes/TemplateResolver/interpreter';
++import type { TemplateValue } from '../nodes/TemplateResolver/types';
++
++function render(template: string, vars: Record<string, TemplateValue>): string {
++	const tokens = new Lexer(template).tokenize();
++	const ast = new Parser(tokens).parse();
++	return new Interpreter(new Map(Object.entries(vars))).interpret(ast);
++}
++
++test("dp-03 a lone apostrophe in an unquoted default still lets the pipe split off the filter", () => {
++	assert.equal(render("${{x ?? it's | trim}}", { y: 1 }), "it's", 'the apostrophe is plain text, so trim is split off and applied');
++});
++
++test('dp-03 an unterminated double quote in a default still lets the pipe split off the filter', () => {
++	assert.equal(render('${{x ?? "abc | trim}}', { y: 1 }), 'abc', 'the unclosed quote is plain text, so trim is split off and applied; the default strip drops the leading quote as before');
++});
++
++test('dp-03 a balanced quoted default holding a pipe still renders whole', () => {
++	assert.equal(render('${{x ?? "a|b"}}', { y: 1 }), 'a|b', 'the balanced quotes keep the pipe inside the default');
++});
 ```
+
+## 5. Earlier findings and replies
+
+Answer each fix-class (defect or goal-risk) finding below in `responses` with sustain or withdraw and evidence. Raise new findings only about what the revision changed or an in-scope problem newly evidenced.
+
+### f1: Escaped or unbalanced quote swallows every later pipe, so trailing filters silently stop being split off
+
+- Class: goal-risk
+- Serves: m1: The scanner has no escape handling and no recovery for an unterminated quote. In `x ?? "a\"b" | trim` the backslash-escaped quote closes the quote, the real closing quote reopens it, and the ` | trim` pipe, which is outside the quoted default, is treated as quoted text. The same happens with a stray apostrophe before a pipe (`x ?? "abc | trim`, or any lone ' or " earlier in the expression). At base these pipes separated filters; at head they do not, so the filter is dropped and the core handed to the ?? parsing becomes the whole string. Whether that surfaces as wrong output or a different error depends on the unshown remainder of parseVariableExpression, which is why this is a risk and not a confirmed defect.
+- Reproduction: Call splitOutsideQuotes on `x ?? "a\"b" | trim` with separator `|`: head returns 1 part (the whole string); base expr.split('|') returned 2 parts (`x ?? "a\"b" `, ` trim`). Then render `${{x ?? "a\"b" | trim}}` and `${{x ?? "abc | trim}}` with x missing at base and at head and compare output and error class; any difference confirms the regression. Smallest fix: inside a quote, skip the character after a backslash; and if the scan ends with a quote still open, fall back to the previous split for the unterminated tail (or only open a quote when a matching closer exists later in the text). The loop is a single linear pass, so there is no hang in either case.
+- Status: fixed
+- Reply (fixed): restate: A lone or unterminated quote before a pipe stopped the filter split.; verify: A quote now opens only when a matching closer exists later; new unit tests fail before and pass after, full suite passes.; evidence: code:nodes/TemplateResolver/parser.ts:185, test:dp-03
 
 ## Output
 

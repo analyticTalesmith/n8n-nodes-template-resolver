@@ -24,6 +24,43 @@
         "f1"
       ],
       "responses": []
+    },
+    {
+      "number": 2,
+      "at": "2026-10-13T18:12:36.309Z",
+      "reviewer": {
+        "kind": "fallback",
+        "label": "opus fallback (same model family as the builder; has repository access)"
+      },
+      "output_sha256": "eb46dc60f05c5f32eba52a326ea525827722ae00df05388746ebd3c23d6b5dd6",
+      "diff_sha256": "cc7068231b61f85f6739aa6e8d62b7f986d3ec3c76cb08d02144a45bd58fad8a",
+      "restatement": "Change the variable-expression parser so that a pipe inside a single- or double-quoted default text after ?? is kept as part of the default and no longer starts a filter. Pipes outside quotes must split filters exactly as before, including after a quoted default, so later filters still apply to the default. The ?? emptiness rule, the jest suite files and everything outside parser.ts stay untouched, and the node:test suite must still pass.",
+      "brief_mismatch": null,
+      "evidence": [
+        "code:nodes/TemplateResolver/parser.ts:184",
+        "code:nodes/TemplateResolver/parser.ts:185",
+        "diff:nodes/TemplateResolver/parser.ts",
+        "patch:cc7068231b61f85f6739aa6e8d62b7f986d3ec3c76cb08d02144a45bd58fad8a",
+        "test:dp-03",
+        "test:dp-03 a lone apostrophe in an unquoted default still lets the pipe split off the filter",
+        "test:dp-03 an unterminated double quote in a default still lets the pipe split off the filter"
+      ],
+      "stalled": false,
+      "raised": [
+        "f2"
+      ],
+      "responses": [
+        {
+          "finding": "f1",
+          "verdict": "withdraw",
+          "evidence": [
+            "code:nodes/TemplateResolver/parser.ts:185",
+            "diff:nodes/TemplateResolver/parser.ts",
+            "test:dp-03 a lone apostrophe in an unquoted default still lets the pipe split off the filter",
+            "test:dp-03 an unterminated double quote in a default still lets the pipe split off the filter"
+          ]
+        }
+      ]
     }
   ],
   "findings": [
@@ -45,7 +82,7 @@
       "location": "nodes/TemplateResolver/parser.ts:183",
       "label": "f1",
       "raised_in": 1,
-      "status": "fixed",
+      "status": "withdrawn",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [
@@ -61,6 +98,29 @@
         }
       ],
       "rulings": []
+    },
+    {
+      "title": "A quoted default that holds both an escaped quote and a pipe still splits at the pipe (unchanged from base)",
+      "class": "drift",
+      "serves": {
+        "target": "card-goal",
+        "scenario": "`${{x ?? \"a\\\"|b\"}}` with x missing: the backslash-escaped quote closes the quoted run, the pipe splits, and `b\"` is treated as a filter name, so the default does not render whole. Base behaved the same way, so this is not a regression or a new error type, and the spec does not define escapes; noted for the lead only."
+      },
+      "rubric": "A default with an escaped or unbalanced quote does not hang or throw a new error type.",
+      "reproduction": "Call splitOutsideQuotes on `x ?? \"a\\\"|b\"` with separator `|`: it returns 2 parts (`x ?? \"a\\\"` and `b\"`), the same as base `expr.split('|')`. Rendering with x missing should give the same Unknown filter error at base and at head.",
+      "evidence": [
+        "code:nodes/TemplateResolver/parser.ts:184",
+        "diff:nodes/TemplateResolver/parser.ts"
+      ],
+      "location": "nodes/TemplateResolver/parser.ts:184",
+      "label": "f2",
+      "raised_in": 2,
+      "status": "filed",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [],
+      "ticket": "0006-follow-up-a-quoted-default-that-holds-bo"
     }
   ]
 }

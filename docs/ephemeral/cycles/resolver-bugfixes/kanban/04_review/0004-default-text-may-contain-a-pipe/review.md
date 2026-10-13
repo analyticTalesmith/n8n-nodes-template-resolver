@@ -12,14 +12,35 @@ Generated from review-rounds.json by core/scripts/rounds.mjs; edits here are ove
 
 Restatement: Make the variable-expression parser treat a pipe inside a single- or double-quoted ?? default as part of the default text, so the default renders whole when the value is missing and any filters written after the closing quote still apply to it. Pipes outside quotes must keep separating filters exactly as before, the rule for which values count as empty must not move, the change must stay inside parseVariableExpression in parser.ts, and the existing jest files and the node:test suite must be unaffected.
 
+## Round 2
+
+- Reviewer: opus fallback (same model family as the builder; has repository access)
+- At: 2026-10-13T18:12:36.309Z
+- Stalled: no
+- Brief mismatch: none
+- Raised: f2
+
+Restatement: Change the variable-expression parser so that a pipe inside a single- or double-quoted default text after ?? is kept as part of the default and no longer starts a filter. Pipes outside quotes must split filters exactly as before, including after a quoted default, so later filters still apply to the default. The ?? emptiness rule, the jest suite files and everything outside parser.ts stay untouched, and the node:test suite must still pass.
+
+- Response to f1: withdraw (evidence: code:nodes/TemplateResolver/parser.ts:185, diff:nodes/TemplateResolver/parser.ts, test:dp-03 a lone apostrophe in an unquoted default still lets the pipe split off the filter, test:dp-03 an unterminated double quote in a default still lets the pipe split off the filter)
+
 ## Findings
 
 ### f1: Escaped or unbalanced quote swallows every later pipe, so trailing filters silently stop being split off
 
 - Class: goal-risk
-- Status: fixed
+- Status: withdrawn
 - Serves: m1: The scanner has no escape handling and no recovery for an unterminated quote. In `x ?? "a\"b" | trim` the backslash-escaped quote closes the quote, the real closing quote reopens it, and the ` | trim` pipe, which is outside the quoted default, is treated as quoted text. The same happens with a stray apostrophe before a pipe (`x ?? "abc | trim`, or any lone ' or " earlier in the expression). At base these pipes separated filters; at head they do not, so the filter is dropped and the core handed to the ?? parsing becomes the whole string. Whether that surfaces as wrong output or a different error depends on the unshown remainder of parseVariableExpression, which is why this is a risk and not a confirmed defect.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: Call splitOutsideQuotes on `x ?? "a\"b" | trim` with separator `|`: head returns 1 part (the whole string); base expr.split('|') returned 2 parts (`x ?? "a\"b" `, ` trim`). Then render `${{x ?? "a\"b" | trim}}` and `${{x ?? "abc | trim}}` with x missing at base and at head and compare output and error class; any difference confirms the regression. Smallest fix: inside a quote, skip the character after a backslash; and if the scan ends with a quote still open, fall back to the previous split for the unterminated tail (or only open a quote when a matching closer exists later in the text). The loop is a single linear pass, so there is no hang in either case.
 - Evidence: diff:nodes/TemplateResolver/parser.ts, code:nodes/TemplateResolver/parser.ts:183, doc:spec.md, test:dp-02 a filter after a default holding a pipe still applies to the whole default
 - Reply after round 1 (fixed): restate: A lone or unterminated quote before a pipe stopped the filter split.; verify: A quote now opens only when a matching closer exists later; new unit tests fail before and pass after, full suite passes.; evidence: code:nodes/TemplateResolver/parser.ts:185, test:dp-03
+
+### f2: A quoted default that holds both an escaped quote and a pipe still splits at the pipe (unchanged from base)
+
+- Class: drift
+- Status: filed (0006-follow-up-a-quoted-default-that-holds-bo)
+- Serves: card-goal: `${{x ?? "a\"|b"}}` with x missing: the backslash-escaped quote closes the quoted run, the pipe splits, and `b"` is treated as a filter name, so the default does not render whole. Base behaved the same way, so this is not a regression or a new error type, and the spec does not define escapes; noted for the lead only.
+- Raised in round 2; sustained 0, failed fixes 0
+- Reproduction: Call splitOutsideQuotes on `x ?? "a\"|b"` with separator `|`: it returns 2 parts (`x ?? "a\"` and `b"`), the same as base `expr.split('|')`. Rendering with x missing should give the same Unknown filter error at base and at head.
+- Evidence: code:nodes/TemplateResolver/parser.ts:184, diff:nodes/TemplateResolver/parser.ts
