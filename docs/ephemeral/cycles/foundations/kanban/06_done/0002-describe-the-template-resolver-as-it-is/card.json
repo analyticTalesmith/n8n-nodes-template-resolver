@@ -37,7 +37,7 @@
   "review_rounds": 2,
   "schema_version": 1,
   "blast_radius": [
-    "none"
+    "template-resolver"
   ],
   "user_visible": false,
   "freeze": {

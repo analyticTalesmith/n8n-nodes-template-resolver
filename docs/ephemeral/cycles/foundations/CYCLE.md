@@ -5,7 +5,7 @@ goal: "A clean clone installs, builds and tests green in CI; the core is a pure 
 tier: product
 stage: concept
 approvals: front
-status: open
+status: closed
 verification_levels: []
 review_sweeps: []
 kind: restructure
@@ -105,4 +105,5 @@ A person judges the cycle done when a clean clone is green locally and in CI, th
 - [deltas/](deltas/INDEX.md) — Index of docs/ephemeral/cycles/foundations/deltas.
 - [design-approval.md](design-approval.md) — Foundations cycle design: restore tests, CI, Tier 0 fixes, restructure into core and n8n, AST analyze, golden harness.
 - [test-plan.md](test-plan.md) — The tests this cycle plans at each level, and which requirement lines each one proves.
+- [verification/](verification/INDEX.md) — Index of docs/ephemeral/cycles/foundations/verification.
 <!-- end generated index -->

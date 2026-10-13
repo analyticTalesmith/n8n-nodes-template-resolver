@@ -3,7 +3,7 @@ summary: Foundations cycle design: restore tests, CI, Tier 0 fixes, restructure 
 approved_by: "Jon (front approval)"
 approved_on: 2026-10-13
 approves:
-- 4042fade6f55cb338e30e62dde0c22ffcda5e1cfbca0d3af126ad15a674695e7 docs/ephemeral/cycles/foundations/CYCLE.md
+- 7f60caadcad8202c55176816505a320c25e3abeff5d16b854db8493fc041d005 docs/ephemeral/cycles/foundations/CYCLE.md
 - 0511630f7ee0068e907bcbc351631404bda87d82f8961ab3ddebe67fdfbc0b94 docs/ephemeral/cycles/foundations/test-plan.md
 - c1b4698142e0f1b62082beca69106292be77e67aab3757f350e0dad47dd70134 docs/living/decisions/adr/0001-house-style-for-every-block.md
 - b6ad28c22ac4c8d9bc2c978853ec65c7b30c53191fa555df8a7ec084986d1a2e docs/living/decisions/adr/0002-standalone-block-tag-lines-vanish.md
@@ -43,7 +43,7 @@ max_spawns: 80
 max_cost:
 cost_unit:
 sweep_rounds: 3
-approval_hash: c8146c42a714180a3fc70684ca672f1cbc11b818ebb8994397a62074a56cae12
+approval_hash: fe929096fac82b1589c8f389da11a00d41bc4129413e70f790e8fbd44b7e83ba
 ---
 
 # Design approval
