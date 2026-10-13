@@ -67,7 +67,7 @@
   "docs_impact": "none",
   "started": "2026-10-13T21:30:19.144Z",
   "ended": null,
-  "review_rounds": 1,
+  "review_rounds": 2,
   "schema_version": 1,
   "blast_radius": [
     "build-tooling"

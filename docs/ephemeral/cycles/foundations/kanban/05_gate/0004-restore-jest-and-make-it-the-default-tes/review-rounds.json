@@ -26,6 +26,41 @@
         "f2"
       ],
       "responses": []
+    },
+    {
+      "number": 2,
+      "at": "2026-10-13T21:38:57.034Z",
+      "reviewer": {
+        "kind": "fallback",
+        "label": "opus fallback (same model family as the builder; has repository access)"
+      },
+      "output_sha256": "6c22f8e1d7f6b0152ab3c1cda232a9e2bce9c6256f9cee7025a3ab2af2ffa053",
+      "diff_sha256": "dcd79bb160f0c086756abda030b60fce587e63b21d63bff31614aa5cfa858674",
+      "restatement": "Make the existing 446-test jest suite the working default test command from a clean clone: declare jest, ts-jest and @types/jest in package.json devDependencies at the ranges the lockfile root already records, so that npm ci followed by npm test runs jest and passes. Also add a small jest reporter that prints node:test-style TAP, so later cards can gate red-first evidence on jest tests. In that TAP a passing test is ok, a failed assertion is not ok with code ERR_ASSERTION, a thrown non-assertion error is not ok without that code, and a test file that fails to load is a not ok entry. Do not touch nodes/ source or existing tests, do not add runtime dependencies, and do not change the jest roots or the n8n-workflow module mapper.",
+      "brief_mismatch": null,
+      "evidence": [
+        "code:tools/jest-tap-reporter.cjs:40",
+        "code:tools/jest-tap-reporter.cjs:47",
+        "diff:tools/jest-tap-reporter.cjs",
+        "diff:tools/tests/test-runner-load-failure.test.mjs",
+        "patch:dcd79bb160f0c086756abda030b60fce587e63b21d63bff31614aa5cfa858674",
+        "test:tr-04: a test file that fails to load is reported as a not ok entry"
+      ],
+      "stalled": false,
+      "raised": [],
+      "responses": [
+        {
+          "finding": "f1",
+          "verdict": "withdraw",
+          "evidence": [
+            "diff:tools/jest-tap-reporter.cjs",
+            "code:tools/jest-tap-reporter.cjs:40",
+            "code:tools/jest-tap-reporter.cjs:47",
+            "test:tr-04: a test file that fails to load is reported as a not ok entry",
+            "diff:tools/tests/test-runner-load-failure.test.mjs"
+          ]
+        }
+      ]
     }
   ],
   "findings": [
@@ -46,7 +81,7 @@
       "location": "tools/jest-tap-reporter.cjs:26",
       "label": "f1",
       "raised_in": 1,
-      "status": "sustained",
+      "status": "withdrawn",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [],
@@ -74,7 +109,7 @@
       "location": "tools/tests/test-runner.test.mjs:51",
       "label": "f2",
       "raised_in": 1,
-      "status": "open",
+      "status": "filed",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [],
@@ -84,7 +119,8 @@
           "ruling": "drift",
           "note": "the test amendment is logged in card.json test_amendments and the scope exceptions; accepted"
         }
-      ]
+      ],
+      "ticket": "0014-follow-up-a-frozen-test-under-tools-test"
     }
   ]
 }

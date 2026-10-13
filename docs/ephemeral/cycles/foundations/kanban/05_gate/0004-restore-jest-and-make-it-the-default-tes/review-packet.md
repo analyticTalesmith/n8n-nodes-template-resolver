@@ -2,17 +2,17 @@
 type: review-packet
 card: 0004-restore-jest-and-make-it-the-default-tes
 tier: product
-built_at: 2026-10-13T21:35:21.456Z
+built_at: 2026-10-13T21:38:20.084Z
 base: 2f6aef4db269a9da0dfc8c53483027359d8177eb
-head: 51896b099e297c6ee049d2c0fa2030eb846b72e1
+head: 4869375f8db9f9a5db388ae1391e16deb09c2a90
 frozen: true
 brief_sha256: 2ed5586dfc90da306a4838733562a2d7b8ee0b1d8ba99af9a1e186ef61256196
-manifest_sha256: 80a37cb493f907bff56d207c5692304c7f9f9b51e13e1529a8b41937982aa66b
-criteria_sha256: 10e836ffc1d4fa5e60b81add62b6180dc43a56b392c1edefc616eb0f5e66f17f
-scope_sha256: e4e75af65f594092f399931df9d074ca4cb3518296568e39683f078ec8f3809d
-diff_sha256: c6d27cdfa8f3859633392b338c96267083c67125777747e0fc7ace295b979daf
-omitted_paths: 8
-criteria_count: 3
+manifest_sha256: dc2e8551dc8ce55b050cd08e29f30727e5b6fbf46fe7ebdacdbb7a329a715531
+criteria_sha256: 1a292a2a28d70885a7aa6c9e0efef1b27842a6aba00415184bc6b8b20bb7e51e
+scope_sha256: e2f62ad3347b1336a7f4577e3d6ccf94ee58698af518d58aed7828f93dc49f0c
+diff_sha256: dcd79bb160f0c086756abda030b60fce587e63b21d63bff31614aa5cfa858674
+omitted_paths: 13
+criteria_count: 4
 must_not_count: 3
 ---
 
@@ -33,6 +33,7 @@ Card goal: npm ci then npm test runs the existing jest suite and passes from a c
 - c1 (verify: test): tr-01: package.json lists jest, ts-jest and @types/jest in devDependencies, the lockfile root agrees, and the test script runs jest
 - c2 (verify: test): tr-02: the jest TAP reporter prints TAP where a failing assertion is a not ok test carrying code ERR_ASSERTION and a passing test is ok
 - c3 (verify: test): tr-03: with dependencies installed the existing suite runs through the jest binary with no failures and at least 446 passing tests
+- c4 (verify: test): tr-04: a test file that fails to load is reported as a not ok entry
 
 ### Must not
 
@@ -156,13 +157,14 @@ Each row is a change outside the card's scope that its lead approved. A builder 
 | Date | Path | Kind | Reason | Approved by |
 | --- | --- | --- | --- | --- |
 | 2026-10-13 | `tools/tests/test-runner.test.mjs` | edit | the frozen reporter test had a regex typo (\d in a template literal); amendment logged in card.json test_amendments | project lead (front approval) |
+| 2026-10-13 | `docs/ephemeral/work/0004-restore-jest-and-make-it-the-default-tes/spec.md` | edit | add the tr-04 acceptance line after the sustained review finding | project lead (front approval) |
 
 ### Manifest and scope
 
-- add: `tools/jest-tap-reporter.cjs`
+- add: `tools/jest-tap-reporter.cjs`, `tools/tests/test-runner-load-failure.test.mjs`
 - remove: none
 - edit: `package.json`
-- files_scope: `package.json`, `tools/jest-tap-reporter.cjs`
+- files_scope: `package.json`, `tools/jest-tap-reporter.cjs`, `tools/tests/test-runner-load-failure.test.mjs`
 
 ## 2. Your verification plan
 
@@ -361,9 +363,11 @@ test('tr-03: the existing suite passes through the jest binary with at least 446
 });
 ```
 
+Named by the card but not at the base commit (the implementer's own tests, never frozen): `tools/tests/test-runner-load-failure.test.mjs`.
+
 ## 4. Diff
 
-8 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
+13 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
 
 ```diff
 diff --git a/package.json b/package.json
@@ -385,13 +389,20 @@ index 78182d0..8b3237e 100644
    "peerDependencies": {
 diff --git a/tools/jest-tap-reporter.cjs b/tools/jest-tap-reporter.cjs
 new file mode 100644
-index 0000000..cec5c29
+index 0000000..09b8821
 --- /dev/null
 +++ b/tools/jest-tap-reporter.cjs
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,69 @@
 +'use strict';
 +
++const path = require('path');
++
 +const esc = (s) => String(s).replace(/[\\#]/g, '\\$&');
++const firstLine = (s) =>
++  String(s)
++    .replace(/\u001b\[[0-9;]*m/g, '')
++    .split('\n')
++    .find((l) => l.trim());
 +const quote = (s) => `'${String(s).replace(/'/g, "''")}'`;
 +
 +function isAssertion(t) {
@@ -405,7 +416,8 @@ index 0000000..cec5c29
 +}
 +
 +class JestTapReporter {
-+  constructor() {
++  constructor(globalConfig) {
++    this.root = (globalConfig && globalConfig.rootDir) || process.cwd();
 +    this.n = 0;
 +    this.pass = 0;
 +    this.fail = 0;
@@ -417,6 +429,15 @@ index 0000000..cec5c29
 +
 +  onTestResult(_test, result) {
 +    const out = [];
++    if (result.testExecError || (!result.testResults.length && result.failureMessage)) {
++      const err = result.testExecError;
++      const msg = (err && err.message) || result.failureMessage || 'test file failed to run';
++      const first = firstLine(msg) || 'test file failed to run';
++      const file = esc(path.relative(this.root, result.testFilePath).split(path.sep).join('/'));
++      this.n += 1;
++      this.fail += 1;
++      out.push(`not ok ${this.n} - ${file}`, '  ---', `  error: ${quote(first)}`, "  failureType: 'testCodeFailure'", '  ...');
++    }
 +    for (const t of result.testResults) {
 +      const name = esc(t.ancestorTitles.concat(t.title).join(' '));
 +      this.n += 1;
@@ -425,9 +446,7 @@ index 0000000..cec5c29
 +        out.push(`ok ${this.n} - ${name}`);
 +      } else if (t.status === 'failed') {
 +        this.fail += 1;
-+        const first = ((t.failureMessages && t.failureMessages[0]) || 'failed')
-+          .replace(/\u001b\[[0-9;]*m/g, '')
-+          .split('\n')[0];
++        const first = firstLine((t.failureMessages && t.failureMessages[0]) || 'failed');
 +        out.push(`not ok ${this.n} - ${name}`, '  ---', `  error: ${quote(first)}`);
 +        out.push(isAssertion(t) ? '  code: ERR_ASSERTION' : "  failureType: 'testCodeFailure'", '  ...');
 +      } else {
@@ -443,6 +462,40 @@ index 0000000..cec5c29
 +}
 +
 +module.exports = JestTapReporter;
+diff --git a/tools/tests/test-runner-load-failure.test.mjs b/tools/tests/test-runner-load-failure.test.mjs
+new file mode 100644
+index 0000000..fecb726
+--- /dev/null
++++ b/tools/tests/test-runner-load-failure.test.mjs
+@@ -0,0 +1,28 @@
++import { test } from 'node:test';
++import assert from 'node:assert/strict';
++import fs from 'node:fs';
++import os from 'node:os';
++import path from 'node:path';
++import { spawnSync } from 'node:child_process';
++import { fileURLToPath } from 'node:url';
++
++const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
++const jestBin = path.join(root, 'node_modules', 'jest', 'bin', 'jest.js');
++const reporter = path.join(root, 'tools', 'jest-tap-reporter.cjs');
++
++test('tr-04: a test file that fails to load is reported as a not ok entry', () => {
++  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tr04-'));
++  try {
++    fs.writeFileSync(path.join(dir, 'broken.fixture.js'), "require('./does-not-exist');\ntest('never runs', () => {});\n");
++    const config = JSON.stringify({ rootDir: dir, testMatch: ['**/*.fixture.js'], testEnvironment: 'node' });
++    const res = spawnSync(process.execPath, [jestBin, '--config', config, '--reporters', reporter], {
++      cwd: dir, encoding: 'utf8', timeout: 120000,
++    });
++    assert.equal(res.error, undefined, `jest must spawn: ${res.error}`);
++    const out = res.stdout ?? '';
++    assert.match(out, /^not ok \d+ - .*broken\.fixture\.js/m, `a load failure must be a "not ok N - file" line, got: ${out}`);
++    assert.doesNotMatch(out, /^# fail 0\s*$/m, 'the fail total must not be 0');
++  } finally {
++    fs.rmSync(dir, { recursive: true, force: true });
++  }
++});
 diff --git a/tools/tests/test-runner.test.mjs b/tools/tests/test-runner.test.mjs
 index cd12f91..cf5180f 100644
 --- a/tools/tests/test-runner.test.mjs
@@ -457,6 +510,26 @@ index cd12f91..cf5180f 100644
        const body = [];
        for (let j = i + 1; j < lines.length && /^\s/.test(lines[j]); j++) body.push(lines[j]);
 ```
+
+## 5. Earlier findings and replies
+
+Answer each fix-class (defect or goal-risk) finding below in `responses` with sustain or withdraw and evidence. Raise new findings only about what the revision changed or an in-scope problem newly evidenced.
+
+### f1: The TAP reporter emits nothing for a test file that fails to run, so a suite that cannot load reads as '# fail 0'
+
+- Class: goal-risk
+- Serves: card-goal: A later card writes a red-first jest test that imports a not-yet-existing export. ts-jest reports a type error, so the file fails to run: jest sets result.testExecError and result.testResults is empty. onTestResult loops only over result.testResults and writes no line for that file. The TAP output then has no 'not ok' entry and ends '1..0 / # pass 0 / # fail 0'. Aperture, which reads this TAP, either sees no red failure or treats the run as clean. Gating cards on jest tests therefore breaks for the most common red-first shape in a TypeScript project.
+- Reproduction: 1) Create a temp dir containing broken.fixture.js with the content `throw new Error('load failure'); test('x', () => {});`. 2) Run `node node_modules/jest/bin/jest.js --config '{"rootDir":"<dir>","testMatch":["**/*.fixture.js"],"testEnvironment":"node"}' --reporters tools/jest-tap-reporter.cjs`. 3) Observe that stdout is 'TAP version 13', '1..0', '# pass 0', '# fail 0', with no 'not ok' line, even though jest exits non-zero. Smallest fix: in onTestResult, when result.testExecError is set, emit a 'not ok N - <test file path>' entry with a YAML block carrying the error message (no ERR_ASSERTION code), and count it in this.fail.
+- Status: sustained
+- Review lead ruling: sustain: valid: a file that cannot load must read as a failure for red-first gating
+
+### f2: A frozen test under tools/tests was edited (regex escape fix); the change is logged and approved but is outside files_scope
+
+- Class: drift
+- Serves: m1: m1 forbids changing any existing test, and the frozen tools/tests/test-runner.test.mjs changed. The change replaces `\d` with `\\d` inside a template literal passed to new RegExp. The original pattern degraded to `^not ok d+ - `, which could never match, so tr-02 could not pass against any correct reporter. The fix is correct and minimal, and the scope exceptions log records the project lead's approval. It is noted for the lead because the path is not in the card's files_scope or manifest.
+- Reproduction: Compare the frozen test at base 2f6aef4 line 338 with the diff hunk at tools/tests/test-runner.test.mjs:51. The path appears only in the scope exceptions log, not in the manifest's files_scope.
+- Status: open
+- Review lead ruling: drift: the test amendment is logged in card.json test_amendments and the scope exceptions; accepted
 
 ## Output
 
