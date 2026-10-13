@@ -17,7 +17,7 @@ import {
 import { TypeError, MissingVariableError } from "./errors";
 import {
   tryCoerceToArray,
-  tryCoerceToObject,
+  tryCoerceStringForPathSegment,
   tryCoerceToString,
 } from "./coercion";
 import {
@@ -492,7 +492,7 @@ export class Interpreter {
 
       // Try JSON parsing if string
       if (typeof current === "string") {
-        const parsed = tryCoerceToObject(current);
+        const parsed = tryCoerceStringForPathSegment(current, path[i]);
         if (parsed) {
           current = parsed;
         } else {

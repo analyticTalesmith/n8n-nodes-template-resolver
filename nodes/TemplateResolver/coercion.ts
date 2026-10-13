@@ -65,9 +65,7 @@ export function tryCoerceToArray(value: TemplateValue): any[] | null {
       }
 
       // Fix trailing/leading commas before parsing
-      const fixed = trimmed
-        .replace(/,\s*\]/g, "]") // Remove trailing commas before ]
-        .replace(/\[\s*,/g, "["); // Remove leading commas after [
+      const fixed = repairStructuralCommas(trimmed);
 
       try {
         const parsed = JSON.parse(fixed);
@@ -93,6 +91,63 @@ export function tryCoerceToArray(value: TemplateValue): any[] | null {
 
   // Single value â†’ single-item array
   return [value];
+}
+
+/**
+ * Removes leading, trailing and repeated commas that sit outside string
+ * literals, leaving every character inside a string untouched.
+ */
+function repairStructuralCommas(text: string): string {
+  let out = "";
+  let inString = false;
+  let escaped = false;
+  let pendingComma = false;
+  let last = "";
+
+  for (const char of text) {
+    if (inString) {
+      out += char;
+      if (escaped) escaped = false;
+      else if (char === "\\") escaped = true;
+      else if (char === '"') inString = false;
+      continue;
+    }
+
+    if (char === ",") {
+      if (last !== "" && last !== "{" && last !== "[" && last !== ",") {
+        pendingComma = true;
+      }
+      continue;
+    }
+
+    if (/\s/.test(char)) {
+      out += char;
+      continue;
+    }
+
+    if (pendingComma && char !== "}" && char !== "]") out += ",";
+    pendingComma = false;
+    out += char;
+    last = char;
+    if (char === '"') inString = true;
+  }
+
+  return out;
+}
+
+/**
+ * Coerces a string input to the container a path segment indexes into:
+ * a JSON object for a key, or the same array coercion FOR uses for a
+ * numeric index. Returns null when the string cannot be indexed that way.
+ */
+export function tryCoerceStringForPathSegment(
+  value: string,
+  segment: string
+): Record<string, any> | any[] | null {
+  const object = tryCoerceToObject(value);
+  if (object) return object;
+  if (/^\d+$/.test(segment)) return tryCoerceToArray(value);
+  return null;
 }
 
 /**
@@ -179,12 +234,7 @@ export function tryCoerceToObject(
     if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
       try {
         // Fix malformed JSON with leading/trailing commas
-        const fixed = trimmed
-          .replace(/\{,+/g, "{") // Remove leading commas after {
-          .replace(/,+\}/g, "}") // Remove trailing commas before }
-          .replace(/\[,+/g, "[") // Remove leading commas after [
-          .replace(/,+\]/g, "]") // Remove trailing commas before ]
-          .replace(/,+/g, ","); // Normalize multiple commas
+        const fixed = repairStructuralCommas(trimmed);
 
         const parsed = JSON.parse(fixed);
         if (typeof parsed === "object" && !Array.isArray(parsed)) {

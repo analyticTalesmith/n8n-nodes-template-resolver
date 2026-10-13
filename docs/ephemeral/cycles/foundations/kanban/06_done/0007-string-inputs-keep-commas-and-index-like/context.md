@@ -24,3 +24,4 @@ Working memory for this ticket, next to card.md. The lead updates it in small ed
 
 | Date | Path | Kind | Reason | Approved by |
 | --- | --- | --- | --- | --- |
+| 2026-10-13 | tests/regressions/string-input-coercion-guards.test.ts | add | guard test for the sustained finding about length on JSON array strings | project lead (front approval) |
