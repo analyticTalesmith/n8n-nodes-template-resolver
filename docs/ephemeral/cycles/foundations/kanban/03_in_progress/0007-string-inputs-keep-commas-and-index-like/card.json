@@ -61,10 +61,13 @@
     "tests/regressions/string-input-coercion.test.ts",
     "--reporters=<rootDir>/tools/jest-tap-reporter.cjs"
   ],
-  "claim": null,
+  "claim": {
+    "owner": "build:implementer",
+    "heartbeat": "2026-10-13T21:40:21.900Z"
+  },
   "blocked_on": null,
   "docs_impact": "none",
-  "started": null,
+  "started": "2026-10-13T21:40:22.065Z",
   "ended": null,
   "review_rounds": 0,
   "schema_version": 1,
@@ -85,5 +88,6 @@
       "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
       "gate": "3d9f3baff56010e3e9c2c81097b341d4f4e03384684a117b7d20bb23f8fed779"
     }
-  }
+  },
+  "base_commit": "04c46ee174fa772d36538d8866ebfafb8db6510d"
 }
