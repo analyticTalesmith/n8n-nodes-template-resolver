@@ -48,7 +48,7 @@ test('tr-02: the jest TAP reporter prints ok, not ok with code ERR_ASSERTION, an
     assert.match(lines[0] ?? '', /^TAP version/, `stdout must start with a TAP version line, got: ${lines[0]} | stderr: ${(res.stderr ?? '').slice(0, 200)}`);
     assert.match(out, /^ok \d+ - .*fixture passes/m, 'passing test must be an "ok N - name" line');
     const block = (name) => {
-      const i = lines.findIndex((l) => new RegExp(`^not ok \d+ - .*${name}`).test(l));
+      const i = lines.findIndex((l) => new RegExp(`^not ok \\d+ - .*${name}`).test(l));
       assert.ok(i >= 0, `"${name}" must be a "not ok N - name" line`);
       const body = [];
       for (let j = i + 1; j < lines.length && /^\s/.test(lines[j]); j++) body.push(lines[j]);
