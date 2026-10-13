@@ -1,0 +1,5 @@
+{
+  "name": "feedback",
+  "version": "0.3.0",
+  "description": "Digests captured feedback and untrusted external text into quoted items with severity and priority, routes them, and drafts iterate plans and proposals."
+}

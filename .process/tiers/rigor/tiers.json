@@ -1,0 +1,60 @@
+{
+  "checks": {
+    "no-ids": "spike",
+    "spec": "prototype",
+    "design-approved": "spike",
+    "reviewer-brief": "prototype",
+    "frozen": "prototype",
+    "manifest": "prototype",
+    "card-contract": "prototype",
+    "test-levels": "product",
+    "docs-impact": "product",
+    "boundary": "product",
+    "secrets": "product",
+    "review-recorded": "prototype",
+    "review-clear": "product",
+    "ownership": "product",
+    "tests-fail-first": "product",
+    "card-gate": "prototype",
+    "test-amendments": "prototype",
+    "front-end-css": "product",
+    "front-end-contrast": "product",
+    "front-end-tools": "spike",
+    "baselines": "prototype",
+    "index-fresh": "product",
+    "living-state": "product",
+    "living-via-delta": "spike",
+    "verification-recorded": "product",
+    "evidence-cited": "product",
+    "claim-checked": "product",
+    "stance-hardened": "hardened",
+    "efv-orphans": "product",
+    "rule-has-test": "product",
+    "actor-has-action": "product",
+    "interface-has-contract-test": "product",
+    "boundary-covered": "product",
+    "atom-size": "product",
+    "deliverable-cites": "product",
+    "deliverable-fresh": "product",
+    "user-docs-updated": "product",
+    "cycle-shape-recorded": "product"
+  },
+  "boundary_required": "hardened",
+  "test_levels": {
+    "unit": "product",
+    "integration": "product",
+    "system": "hardened",
+    "acceptance": "hardened"
+  },
+  "sweeps": {
+    "security": "hardened",
+    "unhappy-path": "hardened",
+    "malicious-path": "hardened",
+    "red-team": "hardened"
+  },
+  "regression": {
+    "selection": "product",
+    "full-suite": "hardened"
+  },
+  "signoff_required": "hardened"
+}

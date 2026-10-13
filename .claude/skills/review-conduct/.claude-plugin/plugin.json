@@ -1,0 +1,5 @@
+{
+  "name": "review-conduct",
+  "version": "0.1.0",
+  "description": "How a reviewer earns a no-findings verdict and cites its findings, and how an implementer takes a batch of findings."
+}

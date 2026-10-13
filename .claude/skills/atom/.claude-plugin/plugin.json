@@ -1,0 +1,5 @@
+{
+  "name": "atom",
+  "version": "0.1.0",
+  "description": "One design fact per file with an id, a source and typed links, and one delta per atom."
+}
