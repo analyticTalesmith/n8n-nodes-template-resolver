@@ -9,7 +9,6 @@
   "claimed_in": null,
   "files_scope": [
     "scripts/run-node-tests.mjs",
-    "scripts/run-node-tests.test.mjs",
     "tsconfig.test.json",
     "test-node/smoke.test.ts",
     "package.json",
@@ -18,13 +17,12 @@
   ],
   "manifest": {
     "add": [
-      "scripts/run-node-tests.mjs",
       "tsconfig.test.json",
       "test-node/smoke.test.ts"
     ],
     "remove": [],
     "edit": [
-      "scripts/run-node-tests.test.mjs",
+      "scripts/run-node-tests.mjs",
       "package.json",
       "package-lock.json",
       ".gitignore"
@@ -37,7 +35,8 @@
       "verify": "test",
       "evidence": null,
       "status": "pending",
-      "class": "goal-critical"
+      "class": "goal-critical",
+      "level": "unit"
     },
     {
       "text": "tr-02 the runner prints node:test TAP on stdout so the card gate can read failing tests",
@@ -72,18 +71,24 @@
   "schema_version": 1,
   "user_visible": false,
   "freeze": {
-    "at": "2026-10-13T17:45:29.834Z",
+    "at": "2026-10-13T17:51:46.564Z",
     "brief_sha256": "d8563a94be5f5e1e60542d300b7d5eca7e4955bc6722464a340ef39c31fc0037",
     "brief_core_sha256": "7e59fde4135b19d536da3f7e6c5e444bf896f081ba01f13d736c6e8b501b75c5",
-    "manifest_sha256": "52255128491a81838e974d0eed9351451e9306ceedec18161dc0f9c9a21fd681",
+    "manifest_sha256": "026a47842fd88ce703b85511c441685f3512dd845ad630df7ff0c80194db6d55",
     "criteria_sha256": "7e1cc39d611d0f4e35f61e93fc11356049dc504572360d624afda504e38ee60c",
-    "scope_sha256": "b92ec22815e2054ff52097b7660767b5895e702a46272b5885654fa6631aef90",
+    "scope_sha256": "c9f513c857f1aeabf6cdb3eb1349cd06bbc55fc32c08d48e5de626ee133bba77",
     "scope_parts": {
-      "files_scope": "ddc9bd25b2b2e1a7245ff5ffe7c2faaaa12d6a8f1ff8b7096c75e03377c33bb9",
+      "files_scope": "f6bf22a7b8c8983da43dd234810e19d95eeeb7fe953dba298db2aadf1bc5bafc",
       "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
       "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
       "gate": "ee95ac13b8486621eba45314df6fcfbe940080b0cf75de3bf00d86345afcf5cd"
     }
   },
-  "base_commit": "a84943d3b29edbfbc14dfc86de28e453fa019dc0"
+  "base_commit": "a84943d3b29edbfbc14dfc86de28e453fa019dc0",
+  "blast_radius": [
+    "test-tooling"
+  ],
+  "test_levels": [
+    "unit"
+  ]
 }

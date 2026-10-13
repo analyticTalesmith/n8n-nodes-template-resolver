@@ -26,7 +26,8 @@ Status: planned.
 Pairs with: software design.
 Depth: product default.
 Approval: auto.
-Status: planned.
+Status: waived.
+Reason: both fixes are inside one module and the cycle selects no system or acceptance level.
 
 | Test | Covers | What it proves |
 |---|---|---|
@@ -36,7 +37,8 @@ Status: planned.
 Pairs with: system analysis and design.
 Depth: product default.
 Approval: human.
-Status: planned.
+Status: waived.
+Reason: both fixes are inside one module and the cycle selects no system or acceptance level.
 
 | Test | Covers | What it proves |
 |---|---|---|
@@ -46,7 +48,8 @@ Status: planned.
 Pairs with: requirements.
 Depth: selected by the cycle.
 Approval: human.
-Status: planned.
+Status: waived.
+Reason: both fixes are inside one module and the cycle selects no system or acceptance level.
 
 | Test | Covers | What it proves |
 |---|---|---|

@@ -64,6 +64,13 @@ Shape: kind bug-fix; intent correct; purpose ship; compatibility preserved; unce
 <!-- What has to be true for the cycle to count as a success. -->
 <!-- Type each line: "- `contract` `id` text" or "- `constraint` `id` must: text". Constraint kinds: must, must-not, evidence-required, human-decides, open-ended. -->
 
+- `contract` `tr-01` The node:test runner compiles the sources and runs tests from test-node, exiting nonzero when a test fails.
+- `contract` `tr-02` The runner prints node:test TAP on stdout.
+- `constraint` `tr-03` must: leave the existing jest suite files and the node sources untouched.
+- `contract` `nf-01` After an inner FOR loop ends, the outer loop variable and its @index values still resolve.
+- `contract` `nf-02` Sibling and doubly nested loops render every iteration with the right outer item.
+- `contract` `dp-01` A default text after ?? may contain a pipe character and still render whole, with later filters applied.
+
 ## Won't-haves
 
 <!-- What this cycle leaves out on purpose, so nobody builds it by accident. -->

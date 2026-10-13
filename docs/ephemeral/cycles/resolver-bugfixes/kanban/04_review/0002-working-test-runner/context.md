@@ -24,3 +24,5 @@ Working memory for this ticket, next to card.md. The lead updates it in small ed
 
 | Date | Path | Kind | Reason | Approved by |
 | --- | --- | --- | --- | --- |
+| 2026-10-13 | docs/ephemeral/cycles/resolver-bugfixes/CYCLE.md | edit | cycle stage and must-have records made by the lead after the test commit | project lead |
+| 2026-10-13 | docs/ephemeral/cycles/resolver-bugfixes/test-plan.md | edit | cycle test plan rows made by the lead after the test commit | project lead |

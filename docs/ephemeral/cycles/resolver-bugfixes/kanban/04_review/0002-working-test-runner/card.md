@@ -19,7 +19,7 @@ The repository declares jest and ts-jest in jest.config.js but installs neither,
 
 ## Context links
 
-- [Resolver cycle brief](../../CYCLE.md)
+- none
 
 ## User documentation
 
@@ -33,10 +33,9 @@ none: adds a developer-facing npm script `test:node`; no public API of the node 
 
 | Path | Permission (add, edit, remove) | Approx lines | Blast radius |
 | --- | --- | --- | --- |
-| scripts/run-node-tests.mjs | add | 40 | none |
-| tsconfig.test.json | add | 15 | none |
-| test-node/smoke.test.ts | add | 12 | none |
-| scripts/run-node-tests.test.mjs | edit | 40 | none |
-| package.json | edit | 3 | none |
-| package-lock.json | edit | 20 | none |
-| .gitignore | edit | 1 | none |
+| scripts/run-node-tests.mjs | edit | 40 | test-tooling |
+| tsconfig.test.json | add | 15 | test-tooling |
+| test-node/smoke.test.ts | add | 12 | test-tooling |
+| package.json | edit | 3 | test-tooling |
+| package-lock.json | edit | 20 | test-tooling |
+| .gitignore | edit | 1 | test-tooling |
