@@ -58,10 +58,13 @@
     "scripts/run-node-tests.mjs",
     ".test-build/test-node/nested-for.test.js"
   ],
-  "claim": null,
+  "claim": {
+    "owner": "build:implementer",
+    "heartbeat": "2026-10-13T18:03:18.666Z"
+  },
   "blocked_on": null,
   "docs_impact": "none",
-  "started": null,
+  "started": "2026-10-13T18:03:18.793Z",
   "ended": null,
   "review_rounds": 0,
   "schema_version": 1,
@@ -85,5 +88,6 @@
       "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
       "gate": "69f20c8eccd851cccec3c20ec7200cd62b083d5b1c6eb893183fd1cc92d76d86"
     }
-  }
+  },
+  "base_commit": "a955a0bf90f5cb23b1c11f29852ac5977416303a"
 }
