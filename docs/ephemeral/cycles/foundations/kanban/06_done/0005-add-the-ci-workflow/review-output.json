@@ -1,0 +1,44 @@
+{
+  "restatement": "Add a GitHub Actions workflow at .github/workflows/ci.yml that triggers on pushes to main and on pull requests, runs on a matrix of ubuntu-latest and windows-latest with Node lts/*, and runs npm ci, then npm run build, then npm test. Stop .gitignore from ignoring .github so the workflow is tracked. With dependencies installed, npm run build must exit 0 and produce the node file named in package.json n8n.nodes. Only .github/workflows/ci.yml (add) and .gitignore (edit) may change. Nothing may be published, no release job, no secrets or tokens, and nothing under nodes/ may change. This card serves the cycle goal that a clean clone installs, builds and tests green in CI.",
+  "brief_mismatch": null,
+  "verification_plan": [
+    "c1: the workflow has an on: block with push limited to branches [main] and an unfiltered pull_request trigger",
+    "c1: the job uses strategy.matrix with os ubuntu-latest and windows-latest, runs-on takes the matrix os, and setup-node gets node-version lts/*",
+    "c2: the steps run npm ci, npm run build and npm test in that order, after checkout and setup-node",
+    "c3: .gitignore has no .github or /.github line, and no other pattern (such as a .yml glob) ignores .github/workflows/ci.yml",
+    "c4: nothing in the diff stops npm run build from producing dist/nodes/TemplateResolver/TemplateResolver.node.js; nodes/ and package.json are unchanged",
+    "m1: no publish or release job, no npm publish, no release-it step, no release trigger",
+    "m2: no secrets.* or token references and no env holding credentials",
+    "m3: no path under nodes/ in the diff",
+    "scope: only .github/workflows/ci.yml and .gitignore change apart from process material; frozen tests unchanged",
+    "goal-critical question: would a fresh PR on a clean clone pass npm ci, build and test on both OSes without extra setup (lockfile in sync with package.json, test deps installed, no secrets needed, YAML valid)"
+  ],
+  "findings": [
+    {
+      "title": "npm ci and npm test may fail on a fresh PR: package.json does not declare the jest devDependencies that package-lock.json records",
+      "class": "goal-risk",
+      "serves": {
+        "target": "card-goal",
+        "scenario": "On a fresh pull request, the npm ci step fails because package.json and package-lock.json are out of sync (the lockfile root lists jest, ts-jest and @types/jest, but package.json does not). If install still succeeds, npm test calls jest, which is not declared. Either way CI is red on both OSes, so the workflow does not install, build and test green with no extra setup. This answers the reviewer brief's goal-critical question with 'probably not'."
+      },
+      "rubric": "goal-critical question: would the workflow run on a fresh pull request without extra setup?; each criterion is met by the diff and its test",
+      "reproduction": "On a clean clone at head da58380, compare the package.json devDependencies with the root packages[\"\"].devDependencies in package-lock.json. If jest, ts-jest or @types/jest is in the lockfile but not in package.json, run npm ci with Node lts/*. Expect it to exit non-zero with 'npm ci can only install packages when your package.json and package-lock.json are in sync'. If it does install, run npm test and check whether jest resolves. Pushing a PR shows the same result in the CI run.",
+      "evidence": [
+        "doc:docs/living/architecture/overview.md",
+        "diff:.github/workflows/ci.yml"
+      ],
+      "location": ".github/workflows/ci.yml:21"
+    }
+  ],
+  "responses": [],
+  "reviewer": {
+    "kind": "fallback",
+    "label": "opus fallback (same model family as the builder; has repository access)"
+  },
+  "at": "2026-10-13T21:50:51.395Z",
+  "card": "0005-add-the-ci-workflow",
+  "tier": "product",
+  "packet_sha256": "78d0d0a34cffec96bc5949969505dcf74610f46f01510edca381caa83490086e",
+  "diff_sha256": "899b1b46ed149f4db2fb83d3cc8d5fcea735ec95502931b17998430a9c9a2d16",
+  "dropped": []
+}

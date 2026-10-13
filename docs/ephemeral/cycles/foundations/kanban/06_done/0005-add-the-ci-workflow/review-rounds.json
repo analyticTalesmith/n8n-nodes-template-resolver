@@ -1,0 +1,57 @@
+{
+  "card": "0005-add-the-ci-workflow",
+  "rounds": [
+    {
+      "number": 1,
+      "at": "2026-10-13T21:50:51.653Z",
+      "reviewer": {
+        "kind": "fallback",
+        "label": "opus fallback (same model family as the builder; has repository access)"
+      },
+      "output_sha256": "49486909f7698b6d0b66be966f011ed3bdcf511afe8f502f93b7826b404d8f3b",
+      "diff_sha256": "899b1b46ed149f4db2fb83d3cc8d5fcea735ec95502931b17998430a9c9a2d16",
+      "restatement": "Add a GitHub Actions workflow at .github/workflows/ci.yml that triggers on pushes to main and on pull requests, runs on a matrix of ubuntu-latest and windows-latest with Node lts/*, and runs npm ci, then npm run build, then npm test. Stop .gitignore from ignoring .github so the workflow is tracked. With dependencies installed, npm run build must exit 0 and produce the node file named in package.json n8n.nodes. Only .github/workflows/ci.yml (add) and .gitignore (edit) may change. Nothing may be published, no release job, no secrets or tokens, and nothing under nodes/ may change. This card serves the cycle goal that a clean clone installs, builds and tests green in CI.",
+      "brief_mismatch": null,
+      "evidence": [
+        "diff:.github/workflows/ci.yml",
+        "doc:docs/living/architecture/overview.md",
+        "patch:899b1b46ed149f4db2fb83d3cc8d5fcea735ec95502931b17998430a9c9a2d16"
+      ],
+      "stalled": false,
+      "raised": [
+        "f1"
+      ],
+      "responses": []
+    }
+  ],
+  "findings": [
+    {
+      "title": "npm ci and npm test may fail on a fresh PR: package.json does not declare the jest devDependencies that package-lock.json records",
+      "class": "goal-risk",
+      "serves": {
+        "target": "card-goal",
+        "scenario": "On a fresh pull request, the npm ci step fails because package.json and package-lock.json are out of sync (the lockfile root lists jest, ts-jest and @types/jest, but package.json does not). If install still succeeds, npm test calls jest, which is not declared. Either way CI is red on both OSes, so the workflow does not install, build and test green with no extra setup. This answers the reviewer brief's goal-critical question with 'probably not'."
+      },
+      "rubric": "goal-critical question: would the workflow run on a fresh pull request without extra setup?; each criterion is met by the diff and its test",
+      "reproduction": "On a clean clone at head da58380, compare the package.json devDependencies with the root packages[\"\"].devDependencies in package-lock.json. If jest, ts-jest or @types/jest is in the lockfile but not in package.json, run npm ci with Node lts/*. Expect it to exit non-zero with 'npm ci can only install packages when your package.json and package-lock.json are in sync'. If it does install, run npm test and check whether jest resolves. Pushing a PR shows the same result in the CI run.",
+      "evidence": [
+        "doc:docs/living/architecture/overview.md",
+        "diff:.github/workflows/ci.yml"
+      ],
+      "location": ".github/workflows/ci.yml:21",
+      "label": "f1",
+      "raised_in": 1,
+      "status": "withdrawn",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [
+        {
+          "after_round": 1,
+          "ruling": "withdraw",
+          "note": "stale premise: this branch declares the jest devDependencies; npm ci and the build pass in the gate run"
+        }
+      ]
+    }
+  ]
+}
