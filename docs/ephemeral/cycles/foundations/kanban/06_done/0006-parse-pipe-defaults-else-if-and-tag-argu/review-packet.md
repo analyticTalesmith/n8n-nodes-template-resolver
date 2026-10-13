@@ -2,16 +2,16 @@
 type: review-packet
 card: 0006-parse-pipe-defaults-else-if-and-tag-argu
 tier: product
-built_at: 2026-10-13T21:42:58.464Z
+built_at: 2026-10-13T21:45:10.120Z
 base: e7069db9c344f65385b3956ece624de0aad10268
-head: 3bceae83fb7d62064b264de6aa1b5a55fa966769
+head: 1c62228033f7a2f641cc833d2129d569f158fb95
 frozen: true
 brief_sha256: 96cb68d0baffb9cb7496e6f6b947ff8052c45632520afa13c80685b17d3ed06b
 manifest_sha256: fab61e2ab7db0506778e4c0cdac77d44d4f36cb5a08285d383e7f3e55dfd6b18
 criteria_sha256: 8114bb9f6238a007c9e7e7187b6566481f59f457a70bc1cd0255358dab15ae56
 scope_sha256: 8727e6180c494a258758b524b88c58fccee9d53d367007bf89c53abcb15bca72
-diff_sha256: 110cf1bf7c579af6c7789742b78980d4c711398d7b72e66aee60dbcb111758c7
-omitted_paths: 8
+diff_sha256: d34a353f45b38873f0747602b8038cbbd76af89044e6425a47e15cc2a5450ca7
+omitted_paths: 12
 criteria_count: 4
 must_not_count: 3
 ---
@@ -151,7 +151,11 @@ Files scope: `nodes/TemplateResolver/lexer.ts`, `nodes/TemplateResolver/parser.t
 
 ### Scope exceptions log (as of now, written during the work)
 
-No scope exceptions are logged.
+Each row is a change outside the card's scope that its lead approved. A builder who can edit the card folder can add a row, so the human gate is the backstop.
+
+| Date | Path | Kind | Reason | Approved by |
+| --- | --- | --- | --- | --- |
+| 2026-10-13 | `tests/regressions/parse-defaults-guards.test.ts` | add | guard test for the sustained finding about apostrophes in unquoted defaults | project lead (front approval) |
 
 ### Manifest and scope
 
@@ -509,7 +513,7 @@ describe("parse pipe defaults, ELSE IF and tag arguments", () => {
 
 ## 4. Diff
 
-8 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
+12 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
 
 ```diff
 diff --git a/nodes/TemplateResolver/lexer.ts b/nodes/TemplateResolver/lexer.ts
@@ -542,7 +546,7 @@ index bc49703..5b5a756 100644
        type: tokenType,
        value: trimmed,
 diff --git a/nodes/TemplateResolver/parser.ts b/nodes/TemplateResolver/parser.ts
-index c7e6eee..5f7fded 100644
+index c7e6eee..96b81b6 100644
 --- a/nodes/TemplateResolver/parser.ts
 +++ b/nodes/TemplateResolver/parser.ts
 @@ -133,8 +133,8 @@ export class Parser {
@@ -556,12 +560,14 @@ index c7e6eee..5f7fded 100644
      const core = parts[0];
      const filterExprs = parts.slice(1);
  
-@@ -170,6 +170,29 @@ export class Parser {
+@@ -170,6 +170,34 @@ export class Parser {
      };
    }
  
 +  /**
-+   * Split on a separator character, ignoring separators inside quotes
++   * Split on a separator character, ignoring separators inside quotes.
++   * A quote only opens at the start of a value, so an apostrophe inside a
++   * word is plain text.
 +   */
 +  private splitOutsideQuotes(text: string, separator: string): string[] {
 +    const parts: string[] = [];
@@ -572,7 +578,10 @@ index c7e6eee..5f7fded 100644
 +      const ch = text[i];
 +      if (quote) {
 +        if (ch === quote) quote = null;
-+      } else if (ch === '"' || ch === "'") {
++      } else if (
++        (ch === '"' || ch === "'") &&
++        /(^|\?\?|=)\s*$/.test(text.slice(start, i))
++      ) {
 +        quote = ch;
 +      } else if (ch === separator) {
 +        parts.push(text.slice(start, i));
@@ -586,7 +595,47 @@ index c7e6eee..5f7fded 100644
    /**
     * Parse IF block: {{IF condition}}...{{ELSEIF}}...{{ELSE}}...{{END_IF}}
     */
+diff --git a/tests/regressions/parse-defaults-guards.test.ts b/tests/regressions/parse-defaults-guards.test.ts
+new file mode 100644
+index 0000000..f4b82a1
+--- /dev/null
++++ b/tests/regressions/parse-defaults-guards.test.ts
+@@ -0,0 +1,22 @@
++import { resolveTemplate } from "../../nodes/TemplateResolver/TemplateResolver.node";
++import { VariableMap } from "../../nodes/TemplateResolver/types";
++
++function render(template: string): string {
++  return resolveTemplate(template, new Map() as VariableMap, {
++    strictMode: false,
++  });
++}
++
++describe("parse defaults guards", () => {
++  it("an apostrophe in an unquoted default keeps the filter that follows", () => {
++    expect(render("${{x ?? it's | head=2}}")).toBe("it");
++  });
++
++  it("an apostrophe in a multi-word unquoted default keeps the filter that follows", () => {
++    expect(render("${{x ?? don't know | trim}}")).toBe("don't know");
++  });
++
++  it("a double-quoted default with an apostrophe and a pipe stays whole", () => {
++    expect(render('${{x ?? "it\'s a|b"}}')).toBe("it's a|b");
++  });
++});
 ```
+
+## 5. Earlier findings and replies
+
+Answer each fix-class (defect or goal-risk) finding below in `responses` with sustain or withdraw and evidence. Raise new findings only about what the revision changed or an in-scope problem newly evidenced.
+
+### f1: Quote-aware pipe split treats an apostrophe in an unquoted default as an opening quote and swallows the following filters
+
+- Class: defect
+- Serves: m1: A template with an unquoted default that contains an apostrophe, followed by a filter, e.g. ${{name ?? it's | head=2}}, used to render 'it' (default it's, then head=2). Now splitOutsideQuotes opens a quote at the apostrophe and never closes it, so the whole tail becomes the default and the output is the literal text "it's | head=2". The filter is silently dropped and filter text leaks into the prompt. That is a behavior change outside the named defects.
+- Reproduction: resolveTemplate("${{x ?? it's | head=2}}", new Map(), { strictMode: false }). At base e7069db, expr.split('|') gives ['x ?? it\'s', 'head=2'], so the default is it's and the output is 'it'. At head 3bceae8, splitOutsideQuotes sets quote="'" at the apostrophe and never resets it, so parts = ["x ?? it's | head=2"], the default is "it's | head=2" (no outer quotes to strip), and the output is "it's | head=2". The same happens with ${{x ?? don't know | trim}}.
+- Status: sustained
+- Review lead ruling: sustain: valid: an apostrophe in an unquoted default must not swallow later filters
 
 ## Output
 
