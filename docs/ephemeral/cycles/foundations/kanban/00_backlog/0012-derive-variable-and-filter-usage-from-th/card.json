@@ -1,0 +1,100 @@
+{
+  "id": "0012-derive-variable-and-filter-usage-from-th",
+  "title": "Derive variable and filter usage from the AST",
+  "type": "task",
+  "parent": null,
+  "depends_on": [
+    "0011-restructure-into-a-pure-core-and-a-thin",
+    "0008-conditions-evaluate-negation-boolean-wor"
+  ],
+  "origin": "foundations",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "core/src/analyze.ts",
+    "core/src/index.ts",
+    "core/src/utils.ts",
+    "n8n/TemplateResolver.node.ts"
+  ],
+  "manifest": {
+    "add": [
+      "core/src/analyze.ts"
+    ],
+    "remove": [],
+    "edit": [
+      "core/src/index.ts",
+      "core/src/utils.ts",
+      "n8n/TemplateResolver.node.ts"
+    ],
+    "frozen": false
+  },
+  "criteria": [
+    {
+      "text": "an-01: analyze reports variables used in output tags, IF, ELSEIF, CASE, FOR sources, LIST_ITEM conditions and table cells",
+      "verify": "test",
+      "traces": [
+        "tests/analyze.test.ts#an-01"
+      ]
+    },
+    {
+      "text": "an-02: variables on either side of AND, OR and comparison operators, including the right side of contains, are reported",
+      "verify": "test",
+      "traces": [
+        "tests/analyze.test.ts#an-02"
+      ]
+    },
+    {
+      "text": "an-03: FOR item variables, @-metadata and operator words such as NOT are not reported as inputs",
+      "verify": "test",
+      "traces": [
+        "tests/analyze.test.ts#an-03"
+      ]
+    },
+    {
+      "text": "an-04: a variable with a ?? default is reported optional and the node strict mode accepts it unmapped",
+      "verify": "test",
+      "traces": [
+        "tests/analyze.test.ts#an-04"
+      ]
+    },
+    {
+      "text": "an-05: analyze lists every filter used with its name, and an unknown filter is reported as a diagnostic",
+      "verify": "test",
+      "traces": [
+        "tests/analyze.test.ts#an-05"
+      ]
+    },
+    {
+      "text": "an-06: strict mode no longer rejects a template whose only unmapped names are FOR item variables",
+      "verify": "test",
+      "traces": [
+        "tests/analyze.test.ts#an-06"
+      ]
+    },
+    {
+      "text": "an-07: the regex-based extractAllVariables no longer exists in core",
+      "verify": "test",
+      "traces": [
+        "tests/analyze.test.ts#an-07"
+      ]
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--reporters=<rootDir>/tools/jest-tap-reporter.cjs",
+    "tests/analyze.test.ts"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver"
+  ],
+  "user_visible": false,
+  "user_docs_waiver": "internal restructuring or tooling; no user-facing document describes it"
+}

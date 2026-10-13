@@ -1,0 +1,84 @@
+{
+  "id": "0008-conditions-evaluate-negation-boolean-wor",
+  "title": "Conditions evaluate negation, boolean words and numeric equality",
+  "type": "bug",
+  "parent": null,
+  "depends_on": [
+    "0004-restore-jest-and-make-it-the-default-tes"
+  ],
+  "origin": "foundations",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "nodes/TemplateResolver/expressions.ts"
+  ],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [
+      "nodes/TemplateResolver/expressions.ts"
+    ],
+    "frozen": false
+  },
+  "criteria": [
+    {
+      "text": "co-01: NOT a, !a, and NOT (a) negate the variable",
+      "verify": "test",
+      "traces": [
+        "tests/regressions/condition-operators.test.ts#co-01"
+      ]
+    },
+    {
+      "text": "co-02: a && b, a || b, a and b, a or b evaluate as AND and OR",
+      "verify": "test",
+      "traces": [
+        "tests/regressions/condition-operators.test.ts#co-02"
+      ]
+    },
+    {
+      "text": "co-03: AND or OR inside a quoted string literal does not split the condition",
+      "verify": "test",
+      "traces": [
+        "tests/regressions/condition-operators.test.ts#co-03"
+      ]
+    },
+    {
+      "text": "co-04: an unquoted contains, startsWith or endsWith right-hand side is read as a variable",
+      "verify": "test",
+      "traces": [
+        "tests/regressions/condition-operators.test.ts#co-04"
+      ]
+    },
+    {
+      "text": "co-05: == and != compare numerically when both sides are numeric",
+      "verify": "test",
+      "traces": [
+        "tests/regressions/condition-operators.test.ts#co-05"
+      ]
+    },
+    {
+      "text": "co-06: an unknown word next to an operator is an error, not false",
+      "verify": "test",
+      "traces": [
+        "tests/regressions/condition-operators.test.ts#co-06"
+      ]
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--reporters=<rootDir>/tools/jest-tap-reporter.cjs",
+    "tests/regressions/condition-operators.test.ts"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver"
+  ],
+  "user_visible": false
+}

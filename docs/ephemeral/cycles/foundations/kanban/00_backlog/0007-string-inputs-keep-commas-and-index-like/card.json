@@ -1,0 +1,74 @@
+{
+  "id": "0007-string-inputs-keep-commas-and-index-like",
+  "title": "String inputs keep commas and index like arrays",
+  "type": "bug",
+  "parent": null,
+  "depends_on": [
+    "0004-restore-jest-and-make-it-the-default-tes"
+  ],
+  "origin": "foundations",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "nodes/TemplateResolver/coercion.ts",
+    "nodes/TemplateResolver/interpreter.ts",
+    "nodes/TemplateResolver/expressions.ts"
+  ],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [
+      "nodes/TemplateResolver/coercion.ts",
+      "nodes/TemplateResolver/interpreter.ts",
+      "nodes/TemplateResolver/expressions.ts"
+    ],
+    "frozen": false
+  },
+  "criteria": [
+    {
+      "text": "sc-01: a JSON object string value containing doubled, trailing or bracket-adjacent commas inside a string is preserved exactly",
+      "verify": "test",
+      "traces": [
+        "tests/regressions/string-input-coercion.test.ts#sc-01"
+      ]
+    },
+    {
+      "text": "sc-02: a JSON array string whose elements contain commas inside strings is preserved exactly",
+      "verify": "test",
+      "traces": [
+        "tests/regressions/string-input-coercion.test.ts#sc-02"
+      ]
+    },
+    {
+      "text": "sc-03: tags.0 and tags.1 index into a comma-separated string",
+      "verify": "test",
+      "traces": [
+        "tests/regressions/string-input-coercion.test.ts#sc-03"
+      ]
+    },
+    {
+      "text": "sc-04: tags.0 and tags.1 index into a JSON array string, in output and in IF conditions",
+      "verify": "test",
+      "traces": [
+        "tests/regressions/string-input-coercion.test.ts#sc-04"
+      ]
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--reporters=<rootDir>/tools/jest-tap-reporter.cjs",
+    "tests/regressions/string-input-coercion.test.ts"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver"
+  ],
+  "user_visible": false
+}

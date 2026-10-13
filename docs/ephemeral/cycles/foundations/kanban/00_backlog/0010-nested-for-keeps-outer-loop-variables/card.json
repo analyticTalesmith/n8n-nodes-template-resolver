@@ -1,0 +1,70 @@
+{
+  "id": "0010-nested-for-keeps-outer-loop-variables",
+  "title": "Nested FOR keeps outer loop variables",
+  "type": "bug",
+  "parent": null,
+  "depends_on": [
+    "0004-restore-jest-and-make-it-the-default-tes"
+  ],
+  "origin": "foundations",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "nodes/TemplateResolver/interpreter.ts"
+  ],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [
+      "nodes/TemplateResolver/interpreter.ts"
+    ],
+    "frozen": false
+  },
+  "criteria": [
+    {
+      "text": "nf-01: after an inner FOR ends, the outer loop item variable still resolves",
+      "verify": "test",
+      "traces": [
+        "tests/regressions/nested-for.test.ts#nf-01"
+      ]
+    },
+    {
+      "text": "nf-02: after an inner FOR ends, the outer loop @index0, @index1, @first and @last are still the outer values",
+      "verify": "test",
+      "traces": [
+        "tests/regressions/nested-for.test.ts#nf-02"
+      ]
+    },
+    {
+      "text": "nf-03: inside the inner FOR the loop metadata describes the inner loop and the outer metadata is restored when it ends",
+      "verify": "test",
+      "traces": [
+        "tests/regressions/nested-for.test.ts#nf-03"
+      ]
+    },
+    {
+      "text": "nf-04: a FOR inside a TABLE does not clear the enclosing loop variables",
+      "verify": "test",
+      "traces": [
+        "tests/regressions/nested-for.test.ts#nf-04"
+      ]
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--reporters=<rootDir>/tools/jest-tap-reporter.cjs",
+    "tests/regressions/nested-for.test.ts"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver"
+  ],
+  "user_visible": false
+}

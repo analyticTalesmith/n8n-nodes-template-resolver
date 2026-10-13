@@ -1,0 +1,80 @@
+{
+  "id": "0004-restore-jest-and-make-it-the-default-tes",
+  "title": "Restore jest and make it the default test command",
+  "type": "task",
+  "parent": null,
+  "depends_on": [],
+  "origin": "foundations",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "package.json",
+    "package-lock.json",
+    "tools/jest-tap-reporter.cjs"
+  ],
+  "manifest": {
+    "add": [
+      "tools/jest-tap-reporter.cjs"
+    ],
+    "remove": [],
+    "edit": [
+      "package.json",
+      "package-lock.json"
+    ],
+    "frozen": true
+  },
+  "criteria": [
+    {
+      "text": "tr-01: package.json lists jest, ts-jest and @types/jest in devDependencies, the lockfile root agrees, and the test script runs jest",
+      "verify": "test",
+      "traces": [
+        "tools/tests/test-runner.test.mjs#tr-01"
+      ]
+    },
+    {
+      "text": "tr-02: the jest TAP reporter prints TAP where a failing assertion is a not ok test carrying code ERR_ASSERTION and a passing test is ok",
+      "verify": "test",
+      "traces": [
+        "tools/tests/test-runner.test.mjs#tr-02"
+      ]
+    },
+    {
+      "text": "tr-03: with dependencies installed the existing suite runs through the jest binary with no failures and at least 446 passing tests",
+      "verify": "test",
+      "traces": [
+        "tools/tests/test-runner.test.mjs#tr-03"
+      ]
+    }
+  ],
+  "gate": [
+    "node",
+    "--test",
+    "--test-reporter=tap",
+    "tools/tests/test-runner.test.mjs"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1,
+  "blast_radius": [
+    "build-tooling"
+  ],
+  "user_visible": false,
+  "freeze": {
+    "at": "2026-10-13T21:28:12.900Z",
+    "brief_sha256": "2ed5586dfc90da306a4838733562a2d7b8ee0b1d8ba99af9a1e186ef61256196",
+    "brief_core_sha256": "086e063fe1a3e26adf3e99f647b6d8ed5530cc9e9979893fbbb41d118a0991ca",
+    "manifest_sha256": "6ad89fbcbc7fb0bc472bd73f47b78ea1a219a671eeb1679af34efc5e22e51df5",
+    "criteria_sha256": "10e836ffc1d4fa5e60b81add62b6180dc43a56b392c1edefc616eb0f5e66f17f",
+    "scope_sha256": "3805808e0383a9841ddfa8ed9b3eae2fc94d801a7f73af0c7024b66c413e8c26",
+    "scope_parts": {
+      "files_scope": "291c5b915c007deca7e419f8582a9920a2a100a77458ecdc2cc21d2ebf5b68d6",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "3be9dad667157fe0a7cae6a9c53b7fdff9509d8cb2964670e94ada387679567e"
+    }
+  }
+}

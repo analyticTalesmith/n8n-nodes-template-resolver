@@ -1,0 +1,121 @@
+{
+  "id": "0011-restructure-into-a-pure-core-and-a-thin",
+  "title": "Restructure into a pure core and a thin n8n wrapper",
+  "type": "task",
+  "parent": null,
+  "depends_on": [
+    "0010-nested-for-keeps-outer-loop-variables",
+    "0006-parse-pipe-defaults-else-if-and-tag-argu",
+    "0008-conditions-evaluate-negation-boolean-wor",
+    "0007-string-inputs-keep-commas-and-index-like",
+    "0009-table-cells-escape-pipes-and-newlines"
+  ],
+  "origin": "foundations",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "core/",
+    "n8n/",
+    "nodes/",
+    "package.json",
+    "tsconfig.json",
+    "jest.config.js",
+    "tests/TemplateResolver.node.test.ts"
+  ],
+  "manifest": {
+    "add": [
+      "core/src/lexer.ts",
+      "core/src/parser.ts",
+      "core/src/expressions.ts",
+      "core/src/interpreter.ts",
+      "core/src/filters.ts",
+      "core/src/coercion.ts",
+      "core/src/errors.ts",
+      "core/src/types.ts",
+      "core/src/utils.ts",
+      "core/src/resolve.ts",
+      "core/src/index.ts",
+      "n8n/TemplateResolver.node.ts",
+      "n8n/TemplateResolver.node.json",
+      "n8n/icoTemplateResolver.svg",
+      "n8n/index.ts"
+    ],
+    "remove": [
+      "nodes/TemplateResolver/lexer.ts",
+      "nodes/TemplateResolver/parser.ts",
+      "nodes/TemplateResolver/expressions.ts",
+      "nodes/TemplateResolver/interpreter.ts",
+      "nodes/TemplateResolver/filters.ts",
+      "nodes/TemplateResolver/coercion.ts",
+      "nodes/TemplateResolver/errors.ts",
+      "nodes/TemplateResolver/types.ts",
+      "nodes/TemplateResolver/utils.ts",
+      "nodes/TemplateResolver/index.ts",
+      "nodes/TemplateResolver/TemplateResolver.node.ts",
+      "nodes/TemplateResolver/TemplateResolver.node.json",
+      "nodes/TemplateResolver/icoTemplateResolver.svg"
+    ],
+    "edit": [
+      "package.json",
+      "tsconfig.json",
+      "jest.config.js",
+      "tests/TemplateResolver.node.test.ts"
+    ],
+    "frozen": false
+  },
+  "criteria": [
+    {
+      "text": "rs-01: no file under core/ imports n8n-workflow, any n8n package, or a Node I/O module (fs, net, http, child_process)",
+      "verify": "test",
+      "traces": [
+        "tools/tests/restructure.test.mjs#rs-01"
+      ]
+    },
+    {
+      "text": "rs-02: the n8n wrapper imports the core only through core/src/index.ts, and core/src/index.ts exports resolveTemplate",
+      "verify": "test",
+      "traces": [
+        "tools/tests/restructure.test.mjs#rs-02"
+      ]
+    },
+    {
+      "text": "rs-03: the pre-existing test file differs from its base version only in import and mock specifier lines",
+      "verify": "test",
+      "traces": [
+        "tools/tests/restructure.test.mjs#rs-03"
+      ]
+    },
+    {
+      "text": "rs-04: the pre-existing suite passes with at least 446 passing tests and none failing",
+      "verify": "test",
+      "traces": [
+        "tools/tests/restructure.test.mjs#rs-04"
+      ]
+    },
+    {
+      "text": "rs-05: the build succeeds and every path in package.json n8n.nodes exists afterwards",
+      "verify": "test",
+      "traces": [
+        "tools/tests/restructure.test.mjs#rs-05"
+      ]
+    }
+  ],
+  "gate": [
+    "node",
+    "--test",
+    "--test-reporter=tap",
+    "tools/tests/restructure.test.mjs"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver"
+  ],
+  "user_visible": false,
+  "user_docs_waiver": "internal restructuring or tooling; no user-facing document describes it"
+}

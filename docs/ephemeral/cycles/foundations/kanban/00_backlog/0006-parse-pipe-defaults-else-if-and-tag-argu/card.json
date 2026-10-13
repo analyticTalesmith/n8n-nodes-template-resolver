@@ -1,0 +1,72 @@
+{
+  "id": "0006-parse-pipe-defaults-else-if-and-tag-argu",
+  "title": "Parse pipe defaults, ELSE IF and tag arguments",
+  "type": "bug",
+  "parent": null,
+  "depends_on": [
+    "0004-restore-jest-and-make-it-the-default-tes"
+  ],
+  "origin": "foundations",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "nodes/TemplateResolver/parser.ts",
+    "nodes/TemplateResolver/lexer.ts"
+  ],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [
+      "nodes/TemplateResolver/parser.ts",
+      "nodes/TemplateResolver/lexer.ts"
+    ],
+    "frozen": false
+  },
+  "criteria": [
+    {
+      "text": "pd-01: a ?? default holding a pipe inside quotes renders the default literally when the value is missing",
+      "verify": "test",
+      "traces": [
+        "tests/regressions/parse-defaults-and-tag-arguments.test.ts#pd-01"
+      ]
+    },
+    {
+      "text": "pd-02: a pipe-bearing ?? default followed by a real filter still applies the filter to the result",
+      "verify": "test",
+      "traces": [
+        "tests/regressions/parse-defaults-and-tag-arguments.test.ts#pd-02"
+      ]
+    },
+    {
+      "text": "pd-03: ELSE IF with a condition is a syntax error whose message says to use ELSEIF",
+      "verify": "test",
+      "traces": [
+        "tests/regressions/parse-defaults-and-tag-arguments.test.ts#pd-03"
+      ]
+    },
+    {
+      "text": "pd-04: END and ELSE tags with trailing arguments are syntax errors",
+      "verify": "test",
+      "traces": [
+        "tests/regressions/parse-defaults-and-tag-arguments.test.ts#pd-04"
+      ]
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--reporters=<rootDir>/tools/jest-tap-reporter.cjs",
+    "tests/regressions/parse-defaults-and-tag-arguments.test.ts"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver"
+  ],
+  "user_visible": false
+}

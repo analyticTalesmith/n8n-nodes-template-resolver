@@ -1,0 +1,87 @@
+{
+  "id": "0005-add-the-ci-workflow",
+  "title": "Add the CI workflow",
+  "type": "task",
+  "parent": null,
+  "depends_on": [
+    "0004-restore-jest-and-make-it-the-default-tes"
+  ],
+  "origin": "foundations",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    ".github/workflows/ci.yml",
+    ".gitignore"
+  ],
+  "manifest": {
+    "add": [
+      ".github/workflows/ci.yml"
+    ],
+    "remove": [],
+    "edit": [
+      ".gitignore"
+    ],
+    "frozen": true
+  },
+  "criteria": [
+    {
+      "text": "ci-01: the workflow runs on push to main and on pull_request, on a matrix of ubuntu-latest and windows-latest with the lts/* Node version",
+      "verify": "test",
+      "traces": [
+        "tools/tests/ci.test.mjs#ci-01"
+      ]
+    },
+    {
+      "text": "ci-02: the workflow runs npm ci, npm run build and npm test in that order",
+      "verify": "test",
+      "traces": [
+        "tools/tests/ci.test.mjs#ci-02"
+      ]
+    },
+    {
+      "text": "ci-03: .gitignore no longer ignores .github and git does not ignore the workflow file",
+      "verify": "test",
+      "traces": [
+        "tools/tests/ci.test.mjs#ci-03"
+      ]
+    },
+    {
+      "text": "ci-04: with dependencies installed, npm run build exits 0 and writes the compiled node entry listed in package.json n8n.nodes",
+      "verify": "test",
+      "traces": [
+        "tools/tests/ci.test.mjs#ci-04"
+      ]
+    }
+  ],
+  "gate": [
+    "node",
+    "--test",
+    "--test-reporter=tap",
+    "tools/tests/ci.test.mjs"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1,
+  "blast_radius": [
+    "build-tooling"
+  ],
+  "user_visible": false,
+  "freeze": {
+    "at": "2026-10-13T21:30:08.362Z",
+    "brief_sha256": "2b8714a0cf31d422daf02c097d2770928c23dd21a51265a18513340f95474145",
+    "brief_core_sha256": "4c39a06136e45c778bfc7272e011a38e0bfdfec5a19eb79a25a18652a953f46c",
+    "manifest_sha256": "3b8188c0e11a710d208dc8e2a869b6cdd85c5c04a970dce52fc2608e50621087",
+    "criteria_sha256": "477a561d88f0bd6f04508d0d1168554cbb8f962fac966aa4dca412cc6f2a415a",
+    "scope_sha256": "6a8254c89a519da9fe307516d9eab3978ebc995d798bcd9e9bea36775419365b",
+    "scope_parts": {
+      "files_scope": "9d1d20d900742cf7b28421703e51883aa97acaa2c3bc851f27b5f17d997df076",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "068718daa6cc65dcdf0a972052efff59c65cebf35ee1400a863eca2d16e814cf"
+    }
+  }
+}
