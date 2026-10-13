@@ -1,0 +1,106 @@
+{
+  "id": "0007-raw-block-outputs-its-text-literally",
+  "title": "Raw block outputs its text literally",
+  "type": "task",
+  "parent": null,
+  "depends_on": [],
+  "origin": "raw-block",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "nodes/TemplateResolver/lexer.ts",
+    "README.md"
+  ],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [
+      "nodes/TemplateResolver/lexer.ts",
+      "README.md"
+    ],
+    "frozen": false
+  },
+  "criteria": [
+    {
+      "text": "rb-01 the text between RAW and END_RAW renders exactly as written, including IF tags, variable tags, comment markers and lone braces",
+      "verify": "test",
+      "level": "unit",
+      "evidence": null,
+      "status": "pending",
+      "class": "goal-critical",
+      "traces": [
+        "test-node/raw-block.test.ts#rb-01"
+      ]
+    },
+    {
+      "text": "rb-02 a RAW block inside IF and FOR bodies repeats per iteration and is skipped in an untaken branch, with surrounding tags and variables rendering as before",
+      "verify": "test",
+      "level": "integration",
+      "evidence": null,
+      "status": "pending",
+      "class": "goal-critical",
+      "traces": [
+        "test-node/raw-block.test.ts#rb-02"
+      ]
+    },
+    {
+      "text": "rb-03 the raw text is not trimmed and CRLF in it becomes LF",
+      "verify": "test",
+      "level": "unit",
+      "evidence": null,
+      "status": "pending",
+      "class": "goal-critical",
+      "traces": [
+        "test-node/raw-block.test.ts#rb-03"
+      ]
+    },
+    {
+      "text": "rb-04 an unclosed RAW block is a syntax error that names its line and column",
+      "verify": "test",
+      "level": "unit",
+      "evidence": null,
+      "status": "pending",
+      "class": "goal-critical",
+      "traces": [
+        "test-node/raw-block.test.ts#rb-04"
+      ]
+    },
+    {
+      "text": "rb-05 templates without RAW render exactly as before: the jest suite and the node:test suite pass and the jest suite files are untouched",
+      "verify": "review",
+      "evidence": null,
+      "status": "pending",
+      "class": "goal-critical"
+    },
+    {
+      "text": "rb-06 the README documents RAW with one example whose output a person confirms",
+      "verify": "manual",
+      "evidence": null,
+      "status": "pending",
+      "class": "polish"
+    }
+  ],
+  "gate": [
+    "node",
+    "scripts/run-node-tests.mjs",
+    ".test-build/test-node/raw-block.test.js"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1,
+  "blast_radius": [
+    "resolver-core"
+  ],
+  "test_levels": [
+    "unit",
+    "integration"
+  ],
+  "user_visible": true,
+  "user_docs": [
+    "README.md"
+  ]
+}
