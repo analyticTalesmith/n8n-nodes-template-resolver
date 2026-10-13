@@ -71,21 +71,16 @@ export function evaluateCondition(
   const trimmed = condition.trim();
 
   // Handle parentheses for grouping - only if they're matching outer parens
-  if (trimmed.startsWith("(") && trimmed.endsWith(")")) {
-    const inner = trimmed.slice(1, -1);
-    // Check if the inner content is balanced - if so, these are wrapping parens
-    if (isBalancedParens(inner)) {
-      return evaluateCondition(inner, variables);
-    }
-  }
+  const unwrapped = unwrapParens(trimmed);
+  if (unwrapped !== null) return evaluateCondition(unwrapped, variables);
 
   // Handle logical operators (AND, OR)
   const logicalResult = tryEvaluateLogical(trimmed, variables);
   if (logicalResult !== null) return logicalResult;
 
   // Handle negation: NOT x, NOT (x), !x
-  const negated = trimmed.match(/^(?:NOT\b|!(?!=))\s*([\s\S]+)$/i);
-  if (negated) return !evaluateCondition(negated[1], variables);
+  const negated = splitNegation(trimmed);
+  if (negated !== null) return !evaluateCondition(negated, variables);
 
   // Handle comparison operators
   const comparisonResult = tryEvaluateComparison(trimmed, variables);
@@ -127,12 +122,32 @@ function isBalancedParens(str: string): boolean {
 }
 
 /**
- * Try to evaluate logical operators (AND/&&, OR/||) outside parentheses and quotes
+ * The inner text when the whole expression is wrapped in matching parentheses,
+ * otherwise null
  */
-function tryEvaluateLogical(
-  expr: string,
-  variables: VariableMap
-): boolean | null {
+export function unwrapParens(expr: string): string | null {
+  if (expr.startsWith("(") && expr.endsWith(")")) {
+    const inner = expr.slice(1, -1);
+    if (isBalancedParens(inner)) return inner;
+  }
+  return null;
+}
+
+/**
+ * The negated operand of NOT x, NOT (x) or !x, otherwise null
+ */
+export function splitNegation(expr: string): string | null {
+  const negated = expr.match(/^(?:NOT\b|!(?!=))\s*([\s\S]+)$/i);
+  return negated ? negated[1] : null;
+}
+
+/**
+ * Split on the lowest-precedence logical operator (AND/&&, OR/||) outside
+ * parentheses and quotes: the rightmost OR first, then the rightmost AND
+ */
+export function splitLogical(
+  expr: string
+): { op: "or" | "and"; left: string; right: string } | null {
   let depth = 0;
   let quoteChar: string | null = null;
   let orPos = -1;
@@ -176,32 +191,45 @@ function tryEvaluateLogical(
     }
   }
 
-  // OR has lower precedence - split on rightmost OR first
   if (orPos !== -1) {
-    const left = expr.slice(0, orPos).trim();
-    const right = expr.slice(orPos + orLen).trim();
-    return (
-      evaluateCondition(left, variables) || evaluateCondition(right, variables)
-    );
+    return {
+      op: "or",
+      left: expr.slice(0, orPos).trim(),
+      right: expr.slice(orPos + orLen).trim(),
+    };
   }
 
-  // Then split on rightmost AND
   if (andPos !== -1) {
-    const left = expr.slice(0, andPos).trim();
-    const right = expr.slice(andPos + andLen).trim();
-    return (
-      evaluateCondition(left, variables) && evaluateCondition(right, variables)
-    );
+    return {
+      op: "and",
+      left: expr.slice(0, andPos).trim(),
+      right: expr.slice(andPos + andLen).trim(),
+    };
   }
 
   return null;
 }
 
 /**
+ * Try to evaluate logical operators (AND/&&, OR/||) outside parentheses and quotes
+ */
+function tryEvaluateLogical(
+  expr: string,
+  variables: VariableMap
+): boolean | null {
+  const split = splitLogical(expr);
+  if (split === null) return null;
+  const left = evaluateCondition(split.left, variables);
+  return split.op === "or"
+    ? left || evaluateCondition(split.right, variables)
+    : left && evaluateCondition(split.right, variables);
+}
+
+/**
  * True when the expression has whitespace outside quotes, meaning it holds
  * more than one bare word
  */
-function hasBareWhitespace(expr: string): boolean {
+export function hasBareWhitespace(expr: string): boolean {
   let quoteChar: string | null = null;
   for (let i = 0; i < expr.length; i++) {
     const char = expr[i];
@@ -235,12 +263,11 @@ function valuesEqual(left: TemplateValue, right: TemplateValue): boolean {
 }
 
 /**
- * Try to evaluate comparison operators (==, !=, >, <, >=, <=)
+ * Split on the first comparison operator (==, !=, >=, <=, >, <) outside quotes
  */
-function tryEvaluateComparison(
-  expr: string,
-  variables: VariableMap
-): boolean | null {
+export function splitComparison(
+  expr: string
+): { op: string; left: string; right: string } | null {
   const operators = ["==", "!=", ">=", "<=", ">", "<"];
 
   let inQuotes = false;
@@ -253,25 +280,11 @@ function tryEvaluateComparison(
     if (!inQuotes) {
       for (const op of operators) {
         if (expr.startsWith(op, i)) {
-          const leftExpr = expr.slice(0, i).trim();
-          const rightExpr = expr.slice(i + op.length).trim();
-
-          const left = resolveValue(leftExpr, variables);
-          const right = resolveValue(rightExpr, variables);
-
-          switch (op) {
-            case "==":
-              return valuesEqual(left, right);
-
-            case "!=":
-              return !valuesEqual(left, right);
-
-            case ">":
-            case "<":
-            case ">=":
-            case "<=":
-              return evaluateNumericComparison(left, right, op);
-          }
+          return {
+            op,
+            left: expr.slice(0, i).trim(),
+            right: expr.slice(i + op.length).trim(),
+          };
         }
       }
     }
@@ -293,6 +306,29 @@ function tryEvaluateComparison(
   }
 
   return null;
+}
+
+/**
+ * Try to evaluate comparison operators (==, !=, >, <, >=, <=)
+ */
+function tryEvaluateComparison(
+  expr: string,
+  variables: VariableMap
+): boolean | null {
+  const split = splitComparison(expr);
+  if (split === null) return null;
+
+  const left = resolveValue(split.left, variables);
+  const right = resolveValue(split.right, variables);
+
+  switch (split.op) {
+    case "==":
+      return valuesEqual(left, right);
+    case "!=":
+      return !valuesEqual(left, right);
+    default:
+      return evaluateNumericComparison(left, right, split.op);
+  }
 }
 
 /**
@@ -330,49 +366,56 @@ function evaluateNumericComparison(
 }
 
 /**
- * Try to evaluate string operators (contains, startsWith, endsWith)
+ * Split on the first string operator (contains, startsWith, endsWith)
  */
-function tryEvaluateStringOp(
-  expr: string,
-  variables: VariableMap
-): boolean | null {
+export function splitStringOp(
+  expr: string
+): { op: string; left: string; right: string } | null {
   const operators = ["contains", "startsWith", "endsWith"];
 
   for (const op of operators) {
     const regex = new RegExp(`(.+?)\\s+${op}\\s+(.+)`, "i");
     const match = expr.match(regex);
-
-    if (match) {
-      const leftValue = resolveValue(match[1].trim(), variables);
-      const rightValue = tryCoerceToString(
-        resolveValue(match[2].trim(), variables)
-      );
-      if (rightValue === null) return false;
-
-      const leftStr = tryCoerceToString(leftValue);
-      if (leftStr === null) return false;
-
-      switch (op) {
-        case "contains":
-          return leftStr.includes(rightValue);
-        case "startsWith":
-          return leftStr.startsWith(rightValue);
-        case "endsWith":
-          return leftStr.endsWith(rightValue);
-      }
-    }
+    if (match) return { op, left: match[1].trim(), right: match[2].trim() };
   }
 
   return null;
 }
 
 /**
- * Try to evaluate type check operators
+ * Try to evaluate string operators (contains, startsWith, endsWith)
  */
-function tryEvaluateTypeCheck(
+function tryEvaluateStringOp(
   expr: string,
   variables: VariableMap
 ): boolean | null {
+  const split = splitStringOp(expr);
+  if (split === null) return null;
+
+  const leftValue = resolveValue(split.left, variables);
+  const rightValue = tryCoerceToString(resolveValue(split.right, variables));
+  if (rightValue === null) return false;
+
+  const leftStr = tryCoerceToString(leftValue);
+  if (leftStr === null) return false;
+
+  switch (split.op) {
+    case "contains":
+      return leftStr.includes(rightValue);
+    case "startsWith":
+      return leftStr.startsWith(rightValue);
+    default:
+      return leftStr.endsWith(rightValue);
+  }
+}
+
+/**
+ * Split a trailing type-check operator (isEmpty, isNotEmpty, isArray,
+ * isNumber, isObject, isBoolean) from its operand
+ */
+export function splitTypeCheck(
+  expr: string
+): { check: string; operand: string } | null {
   const checks = [
     "isEmpty",
     "isNotEmpty",
@@ -385,38 +428,141 @@ function tryEvaluateTypeCheck(
   for (const check of checks) {
     const regex = new RegExp(`(.+?)\\s+${check}$`, "i");
     const match = expr.match(regex);
-
-    if (match) {
-      const value = resolveValue(match[1].trim(), variables);
-
-      switch (check) {
-        case "isEmpty": {
-          if (value == null) return true;
-          if (typeof value === "string") return value.trim() === "";
-          if (Array.isArray(value)) return value.length === 0;
-          if (typeof value === "object") return Object.keys(value).length === 0;
-          return false;
-        }
-        case "isNotEmpty": {
-          if (value == null) return false;
-          if (typeof value === "string") return value.trim() !== "";
-          if (Array.isArray(value)) return value.length > 0;
-          if (typeof value === "object") return Object.keys(value).length > 0;
-          return true;
-        }
-        case "isArray":
-          return tryCoerceToArray(value) !== null;
-        case "isNumber":
-          return tryCoerceToNumber(value) !== null;
-        case "isObject":
-          return tryCoerceToObject(value) !== null;
-        case "isBoolean":
-          return tryCoerceToBoolean(value) !== null;
-      }
-    }
+    if (match) return { check, operand: match[1].trim() };
   }
 
   return null;
+}
+
+/**
+ * Try to evaluate type check operators
+ */
+function tryEvaluateTypeCheck(
+  expr: string,
+  variables: VariableMap
+): boolean | null {
+  const split = splitTypeCheck(expr);
+  if (split === null) return null;
+
+  const value = resolveValue(split.operand, variables);
+
+  switch (split.check) {
+    case "isEmpty": {
+      if (value == null) return true;
+      if (typeof value === "string") return value.trim() === "";
+      if (Array.isArray(value)) return value.length === 0;
+      if (typeof value === "object") return Object.keys(value).length === 0;
+      return false;
+    }
+    case "isNotEmpty": {
+      if (value == null) return false;
+      if (typeof value === "string") return value.trim() !== "";
+      if (Array.isArray(value)) return value.length > 0;
+      if (typeof value === "object") return Object.keys(value).length > 0;
+      return true;
+    }
+    case "isArray":
+      return tryCoerceToArray(value) !== null;
+    case "isNumber":
+      return tryCoerceToNumber(value) !== null;
+    case "isObject":
+      return tryCoerceToObject(value) !== null;
+    default:
+      return tryCoerceToBoolean(value) !== null;
+  }
+}
+
+/**
+ * The value of a literal operand (true, false, null, a number or a quoted
+ * string), or null when the operand is not a literal
+ */
+export function parseLiteral(expr: string): { value: TemplateValue } | null {
+  if (expr === "true") return { value: true };
+  if (expr === "false") return { value: false };
+  if (expr === "null") return { value: null };
+
+  if (/^-?\d+(\.\d+)?$/.test(expr)) return { value: Number(expr) };
+
+  const first = expr[0];
+  const last = expr[expr.length - 1];
+  if ((first === `"` && last === `"`) || (first === `'` && last === `'`)) {
+    return { value: expr.substring(1, expr.length - 1) };
+  }
+
+  return null;
+}
+
+/**
+ * The operand expressions a condition reads, in source order. Mirrors the
+ * structure evaluateCondition walks: grouping, logical operators, negation,
+ * comparisons, string operators and type checks split the text; whatever is
+ * left is an operand (a literal or a variable path).
+ */
+export function conditionOperands(condition: string): string[] {
+  const trimmed = condition.trim();
+
+  const unwrapped = unwrapParens(trimmed);
+  if (unwrapped !== null) return conditionOperands(unwrapped);
+
+  const logical = splitLogical(trimmed);
+  if (logical !== null) {
+    return [
+      ...conditionOperands(logical.left),
+      ...conditionOperands(logical.right),
+    ];
+  }
+
+  const negated = splitNegation(trimmed);
+  if (negated !== null) return conditionOperands(negated);
+
+  const comparison = splitComparison(trimmed);
+  if (comparison !== null) return [comparison.left, comparison.right];
+
+  const stringOp = splitStringOp(trimmed);
+  if (stringOp !== null) return [stringOp.left, stringOp.right];
+
+  const typeCheck = splitTypeCheck(trimmed);
+  if (typeCheck !== null) return [typeCheck.operand];
+
+  return [trimmed];
+}
+
+/**
+ * True when the text is an arithmetic expression rather than a plain path
+ */
+export function isMathExpression(expr: string): boolean {
+  return /[+\-*/%()]/.test(expr);
+}
+
+/**
+ * The variable names in a math expression, using the same name characters
+ * the math tokenizer reads
+ */
+export function mathVariableNames(expr: string): string[] {
+  const names: string[] = [];
+  let i = 0;
+
+  while (i < expr.length) {
+    const char = expr[i];
+
+    if (/\s/.test(char) || ["+", "-", "*", "/", "%", "(", ")"].includes(char)) {
+      i++;
+      continue;
+    }
+
+    let name = "";
+    while (i < expr.length && /[a-zA-Z0-9_@.]/.test(expr[i])) {
+      name += expr[i];
+      i++;
+    }
+    if (name === "") {
+      i++;
+    } else if (!/^[\d.]+$/.test(name)) {
+      names.push(name);
+    }
+  }
+
+  return names;
 }
 
 /**
@@ -428,20 +574,8 @@ function resolveValue(expr: string, variables: VariableMap): TemplateValue {
   // Normalize whitespace everywhere
   expr = expr.trim();
 
-  // Literal booleans
-  if (expr === "true") return true;
-  if (expr === "false") return false;
-  if (expr === "null") return null;
-
-  // Numeric literal
-  if (/^-?\d+(\.\d+)?$/.test(expr)) return Number(expr);
-
-  // Robust string-literal detection
-  const first = expr[0];
-  const last = expr[expr.length - 1];
-  if ((first === `"` && last === `"`) || (first === `'` && last === `'`)) {
-    return expr.substring(1, expr.length - 1);
-  }
+  const literal = parseLiteral(expr);
+  if (literal) return literal.value;
 
   // Variable path resolution
   const path = expr.split(".");
