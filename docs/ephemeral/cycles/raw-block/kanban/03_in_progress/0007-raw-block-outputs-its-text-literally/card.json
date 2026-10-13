@@ -87,12 +87,15 @@
     "scripts/run-node-tests.mjs",
     ".test-build/test-node/raw-block.test.js"
   ],
-  "claim": null,
+  "claim": {
+    "owner": "build:implementer",
+    "heartbeat": "2026-10-13T18:19:15.021Z"
+  },
   "blocked_on": null,
   "docs_impact": [
     "docs/living/product/raw-block.md"
   ],
-  "started": null,
+  "started": "2026-10-13T18:19:15.219Z",
   "ended": null,
   "review_rounds": 0,
   "schema_version": 1,
@@ -120,5 +123,6 @@
       "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
       "gate": "49c3ef5aa35a814ab902803ccbf710bbd1bb99f48f68f419a20077f536d403ff"
     }
-  }
+  },
+  "base_commit": "342feb27736239cce79e7d6cb7080bd76bf2c0d5"
 }
