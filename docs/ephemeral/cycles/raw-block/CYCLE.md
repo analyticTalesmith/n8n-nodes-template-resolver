@@ -132,4 +132,5 @@ A person confirms the README example renders as shown when run through the resol
 <!-- generated index: replace everything between this line and the end marker -->
 - [deltas/](deltas/INDEX.md) — Index of docs/ephemeral/cycles/raw-block/deltas.
 - [test-plan.md](test-plan.md) — The tests this cycle plans at each level, and which requirement lines each one proves.
+- [verification/](verification/INDEX.md) — Index of docs/ephemeral/cycles/raw-block/verification.
 <!-- end generated index -->
