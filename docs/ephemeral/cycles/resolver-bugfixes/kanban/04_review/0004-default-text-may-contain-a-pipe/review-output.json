@@ -1,0 +1,45 @@
+{
+  "restatement": "Make the variable-expression parser treat a pipe inside a single- or double-quoted ?? default as part of the default text, so the default renders whole when the value is missing and any filters written after the closing quote still apply to it. Pipes outside quotes must keep separating filters exactly as before, the rule for which values count as empty must not move, the change must stay inside parseVariableExpression in parser.ts, and the existing jest files and the node:test suite must be unaffected.",
+  "brief_mismatch": "c4 is marked verify: review, but its second half (\"the whole node:test suite still passes\") cannot be reviewed from this packet: it carries no test-run output and the reviewer is forbidden to run anything. From the diff I can confirm only that no jest or test file is touched (the sole code path is nodes/TemplateResolver/parser.ts; the 6 omitted paths are stated to be docs/ephemeral). Likewise the body of parseVariableExpression between the split and the return (roughly lines 141-170) is not shown, so the dp-01..dp-03 outcomes and the 'no new error type' rubric item are inferred from the split alone, not confirmed. The lead should attach the node:test result and that function body, or reclassify c4's pass half as verify: test.",
+  "verification_plan": [
+    "c1: confirm the split no longer cuts at a pipe between double quotes, so the core handed to the ?? parsing for `x ?? \"a|b\"` is the whole text and no filter named b\" is produced.",
+    "c2: confirm that for `x ?? \"a|b\" | head=2` the split yields exactly two parts (core with the full quoted default, then head=2) and that filters are still applied to the resolved default.",
+    "c3: confirm single quotes are honored the same way as double quotes, and that a quote character of the other kind inside a quoted default does not end the quote.",
+    "c3 / spec constraint: confirm an expression with no quotes, or with quotes holding no pipe, yields the same parts array as expr.split('|') did (same trimming, same empty parts for leading, trailing or doubled pipes).",
+    "m1: look for any input where a pipe that is not inside a properly closed quote pair stops separating filters (unbalanced quote, stray apostrophe, escaped quote).",
+    "m2: confirm nothing touching the emptiness test for ?? is changed (interpreter untouched, no change to how defaultValue is derived beyond the split).",
+    "c4: confirm the diff touches no jest suite file and no frozen test file, and look for evidence that the node:test suite passes.",
+    "Rubric: the scan terminates on every input (no hang) and introduces no new throw; no unrelated edits in parser.ts; the change is small and local to the expression split.",
+    "Scope: only nodes/TemplateResolver/parser.ts is edited; AST node shape and public resolveTemplate signature unchanged."
+  ],
+  "findings": [
+    {
+      "title": "Escaped or unbalanced quote swallows every later pipe, so trailing filters silently stop being split off",
+      "class": "goal-risk",
+      "serves": {
+        "target": "m1",
+        "scenario": "The scanner has no escape handling and no recovery for an unterminated quote. In `x ?? \"a\\\"b\" | trim` the backslash-escaped quote closes the quote, the real closing quote reopens it, and the ` | trim` pipe, which is outside the quoted default, is treated as quoted text. The same happens with a stray apostrophe before a pipe (`x ?? \"abc | trim`, or any lone ' or \" earlier in the expression). At base these pipes separated filters; at head they do not, so the filter is dropped and the core handed to the ?? parsing becomes the whole string. Whether that surfaces as wrong output or a different error depends on the unshown remainder of parseVariableExpression, which is why this is a risk and not a confirmed defect."
+      },
+      "rubric": "A default with an escaped or unbalanced quote does not hang or throw a new error type. Also the goal-critical question: does a pipe outside quotes still separate filters, including after a quoted default?",
+      "reproduction": "Call splitOutsideQuotes on `x ?? \"a\\\"b\" | trim` with separator `|`: head returns 1 part (the whole string); base expr.split('|') returned 2 parts (`x ?? \"a\\\"b\" `, ` trim`). Then render `${{x ?? \"a\\\"b\" | trim}}` and `${{x ?? \"abc | trim}}` with x missing at base and at head and compare output and error class; any difference confirms the regression. Smallest fix: inside a quote, skip the character after a backslash; and if the scan ends with a quote still open, fall back to the previous split for the unterminated tail (or only open a quote when a matching closer exists later in the text). The loop is a single linear pass, so there is no hang in either case.",
+      "evidence": [
+        "diff:nodes/TemplateResolver/parser.ts",
+        "code:nodes/TemplateResolver/parser.ts:183",
+        "doc:spec.md",
+        "test:dp-02 a filter after a default holding a pipe still applies to the whole default"
+      ],
+      "location": "nodes/TemplateResolver/parser.ts:183"
+    }
+  ],
+  "responses": [],
+  "reviewer": {
+    "kind": "fallback",
+    "label": "opus fallback (same model family as the builder; has repository access)"
+  },
+  "at": "2026-10-13T18:10:40.218Z",
+  "card": "0004-default-text-may-contain-a-pipe",
+  "tier": "product",
+  "packet_sha256": "12b690f1da3bd880cb65fb5177892e67011607c00d16586edc1bb1af51b6a7fb",
+  "diff_sha256": "101286b7f8c57faaa338eb048fc32c52690f1c7c81c5ac5772d354530aa515ea",
+  "dropped": []
+}

@@ -24,3 +24,4 @@ Working memory for this ticket, next to card.md. The lead updates it in small ed
 
 | Date | Path | Kind | Reason | Approved by |
 | --- | --- | --- | --- | --- |
+| 2026-10-13 | test-node/default-pipe-unbalanced.test.ts | add | regression test for review finding f1 (unbalanced quote before a pipe) | project lead |
