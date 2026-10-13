@@ -135,5 +135,47 @@
       "gate": "1f87034e85d934b016d928de39394aa8b58a3891be75babde8dc5d230e566bbb"
     }
   },
-  "base_commit": "f77a73095b2b4d32779b509068ceb7671deaa086"
+  "base_commit": "f77a73095b2b4d32779b509068ceb7671deaa086",
+  "test_amendments": [
+    {
+      "path": "tests/regressions/condition-operators.test.ts",
+      "reason": "import and mock specifiers follow the move into core/src and n8n; no assertion changes",
+      "approved_by": "project lead (front approval)"
+    },
+    {
+      "path": "tests/regressions/nested-for.test.ts",
+      "reason": "import and mock specifiers follow the move into core/src and n8n; no assertion changes",
+      "approved_by": "project lead (front approval)"
+    },
+    {
+      "path": "tests/regressions/parse-defaults-and-tag-arguments.test.ts",
+      "reason": "import and mock specifiers follow the move into core/src and n8n; no assertion changes",
+      "approved_by": "project lead (front approval)"
+    },
+    {
+      "path": "tests/regressions/parse-defaults-guards.test.ts",
+      "reason": "import and mock specifiers follow the move into core/src and n8n; no assertion changes",
+      "approved_by": "project lead (front approval)"
+    },
+    {
+      "path": "tests/regressions/string-input-coercion.test.ts",
+      "reason": "import and mock specifiers follow the move into core/src and n8n; no assertion changes",
+      "approved_by": "project lead (front approval)"
+    },
+    {
+      "path": "tests/regressions/table-cell-escaping-filters.test.ts",
+      "reason": "import and mock specifiers follow the move into core/src and n8n; no assertion changes",
+      "approved_by": "project lead (front approval)"
+    },
+    {
+      "path": "tests/regressions/table-cell-escaping.test.ts",
+      "reason": "import and mock specifiers follow the move into core/src and n8n; no assertion changes",
+      "approved_by": "project lead (front approval)"
+    },
+    {
+      "path": "tests/TemplateResolver.node.test.ts",
+      "reason": "import and mock specifiers follow the move into core/src and n8n; no assertion changes",
+      "approved_by": "project lead (front approval)"
+    }
+  ]
 }
