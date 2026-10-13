@@ -1,0 +1,26 @@
+{
+  "id": "0008-follow-up-closing-tag-match-allows-only",
+  "title": "Follow-up: Closing-tag match allows only spaces and tabs inside the braces",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [],
+  "origin": "raw-block",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [],
+    "frozen": false
+  },
+  "criteria": [],
+  "gate": null,
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1
+}

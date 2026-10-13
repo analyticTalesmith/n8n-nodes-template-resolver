@@ -33,6 +33,70 @@
         "f4"
       ],
       "responses": []
+    },
+    {
+      "number": 2,
+      "at": "2026-10-13T18:24:11.431Z",
+      "reviewer": {
+        "kind": "fallback",
+        "label": "opus fallback (same model family as the builder; has repository access)"
+      },
+      "output_sha256": "f5d785e67b66b00a2ed993025de32bfaea8c143dfbc10b005ef784bb549e9b8d",
+      "diff_sha256": "57807016465114b814576ea70f8f00cc16c91b9ecd32aa607f6f064fdc1280d4",
+      "restatement": "Add a {{RAW}}...{{END_RAW}} block to the template resolver, implemented only in the lexer: everything between the two tags becomes one ordinary Text token (untrimmed, CRLF turned into LF), so the parser and interpreter need no change and the text renders literally wherever the block sits. An unclosed RAW must fail with a SyntaxError at the RAW tag's line and column. Templates without RAW must behave exactly as before. The README must document the tag with one accurate example. The feature has to work both in the n8n node and as a headless library, with no nesting, escapes or options.",
+      "brief_mismatch": "c5 is marked verify: review and asks that the jest suite and the node:test suite pass, but the packet holds no test-run output and the reviewer may run nothing. I can confirm from the diff only that no jest file is touched and the frozen test file is unchanged; suite passes (including the builder's 'failed before, pass after' claims for f1 to f3) rest on the builder's word. The lead should attach run output or change how c5 is verified.",
+      "evidence": [
+        "code:nodes/TemplateResolver/lexer.ts:237",
+        "code:nodes/TemplateResolver/lexer.ts:296",
+        "code:nodes/TemplateResolver/utils.ts:17",
+        "code:nodes/TemplateResolver/utils.ts:18",
+        "diff:nodes/TemplateResolver/utils.ts",
+        "diff:test-node/raw-block-review.test.ts",
+        "doc:docs/living/product/raw-block.md",
+        "patch:57807016465114b814576ea70f8f00cc16c91b9ecd32aa607f6f064fdc1280d4",
+        "test:rb-01",
+        "test:rb-01 variable detection ignores everything inside a RAW block",
+        "test:rb-01 variable detection still finds variables outside a RAW block",
+        "test:rb-03",
+        "test:rb-03 RAW keeps leading and trailing spaces and turns CRLF into LF",
+        "test:rb-03 a RAW block keeps blank lines and spaces when rendered inside an IF",
+        "test:rb-04",
+        "test:rb-04 a tag after a multi-line RAW block reports the right position",
+        "test:rb-04 an unknown tag right after a RAW block reports the right position"
+      ],
+      "stalled": false,
+      "raised": [
+        "f5"
+      ],
+      "responses": [
+        {
+          "finding": "f1",
+          "verdict": "withdraw",
+          "evidence": [
+            "code:nodes/TemplateResolver/utils.ts:18",
+            "test:rb-01 variable detection ignores everything inside a RAW block",
+            "test:rb-01 variable detection still finds variables outside a RAW block"
+          ]
+        },
+        {
+          "finding": "f2",
+          "verdict": "withdraw",
+          "evidence": [
+            "test:rb-04 a tag after a multi-line RAW block reports the right position",
+            "test:rb-04 an unknown tag right after a RAW block reports the right position",
+            "diff:test-node/raw-block-review.test.ts"
+          ]
+        },
+        {
+          "finding": "f3",
+          "verdict": "withdraw",
+          "evidence": [
+            "test:rb-03 a RAW block keeps blank lines and spaces when rendered inside an IF",
+            "test:rb-03 RAW keeps leading and trailing spaces and turns CRLF into LF",
+            "diff:test-node/raw-block-review.test.ts"
+          ]
+        }
+      ]
     }
   ],
   "findings": [
@@ -53,7 +117,7 @@
       "location": "nodes/TemplateResolver/lexer.ts:237",
       "label": "f1",
       "raised_in": 1,
-      "status": "fixed",
+      "status": "withdrawn",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [
@@ -87,7 +151,7 @@
       "location": "nodes/TemplateResolver/lexer.ts:310",
       "label": "f2",
       "raised_in": 1,
-      "status": "rebutted",
+      "status": "withdrawn",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [
@@ -121,7 +185,7 @@
       "location": "nodes/TemplateResolver/lexer.ts:314",
       "label": "f3",
       "raised_in": 1,
-      "status": "rebutted",
+      "status": "withdrawn",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [
@@ -153,10 +217,48 @@
       "location": "nodes/TemplateResolver/lexer.ts:296",
       "label": "f4",
       "raised_in": 1,
-      "status": "open",
+      "status": "filed",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [],
+      "rulings": [],
+      "ticket": "0008-follow-up-closing-tag-match-allows-only"
+    },
+    {
+      "title": "Variable detection strips only the unspaced {{RAW}}/{{END_RAW}} spelling, so the f1 fix misses tag forms the lexer accepts and the living doc documents",
+      "class": "goal-risk",
+      "serves": {
+        "target": "cycle-goal",
+        "scenario": "The lexer opens a block on any tag whose trimmed content is RAW and closes it on /\\{\\{[ \\t]*END_RAW[ \\t]*\\}\\}/, and the living doc tells users the closing tag may be written {{ END_RAW }}. extractAllVariables removes only the exact text {{RAW}}...{{END_RAW}}. A node template such as '{{RAW}}${{name}}{{ END_RAW }}' or '{{ RAW }}${{name}}{{END_RAW}}' renders literally in the lexer, but detection still reports 'name'; with Strict Mode on (the default) and no mapping the node raises a missing-variable error, so the template still cannot carry tag-like text in the node. A lesser side effect of the same text-level regex: a literal {{RAW}} inside a comment, followed later by a real block, makes detection drop every variable in between, so Strict Mode would stop flagging them."
+      },
+      "rubric": "goal-critical question 1: does everything between RAW and END_RAW come out exactly as written, including double braces and tag-like text (in the n8n node, per the project goal)",
+      "reproduction": "Call extractAllVariables('{{RAW}}${{name}}{{ END_RAW }}') and extractAllVariables('{{ RAW }}${{name}}{{END_RAW}}'). Expected [] for both; the regex at utils.ts:18 does not match either, so the result is ['name']. In the node: Template '{{RAW}}${{name}}{{ END_RAW }}', no mappings, Strict Mode on; expected output '${{name}}', failure is a missing-variable error. Smallest fix: use the lexer's tag shapes in the strip regex, for example /\\{\\{\\s*RAW\\s*\\}\\}[\\s\\S]*?\\{\\{[ \\t]*END_RAW[ \\t]*\\}\\}/g, and add these two cases to test-node/raw-block-review.test.ts.",
+      "evidence": [
+        "diff:nodes/TemplateResolver/utils.ts",
+        "code:nodes/TemplateResolver/utils.ts:18",
+        "code:nodes/TemplateResolver/lexer.ts:237",
+        "code:nodes/TemplateResolver/lexer.ts:296",
+        "doc:docs/living/product/raw-block.md",
+        "test:rb-01 variable detection ignores everything inside a RAW block"
+      ],
+      "location": "nodes/TemplateResolver/utils.ts:18",
+      "label": "f5",
+      "raised_in": 2,
+      "status": "fixed",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [
+        {
+          "after_round": 2,
+          "restate": "Variable detection only dropped the unspaced RAW tag spelling the lexer also accepts with spaces.",
+          "verify": "The regex now accepts whitespace inside both tags like the lexer; two new tests failed before and pass after, suite 28 of 28.",
+          "action": "fixed",
+          "evidence": [
+            "code:nodes/TemplateResolver/utils.ts:18",
+            "test:rb-01"
+          ]
+        }
+      ],
       "rulings": []
     }
   ]
