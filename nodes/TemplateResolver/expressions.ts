@@ -392,8 +392,17 @@ function resolveValue(expr: string, variables: VariableMap): TemplateValue {
 
     // Parse as JSON if the variable is a string
     if (typeof current === "string") {
-      const parsed = tryCoerceStringForPathSegment(current, path[i]);
-      if (!parsed) return null;
+      let parsed: TemplateValue = tryCoerceStringForPathSegment(
+        current,
+        path[i]
+      );
+      if (!parsed) {
+        try {
+          parsed = JSON.parse(current);
+        } catch {
+          return null;
+        }
+      }
       current = parsed;
     }
 
