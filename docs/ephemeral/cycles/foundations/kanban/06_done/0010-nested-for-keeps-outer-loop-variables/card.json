@@ -57,15 +57,12 @@
     "tests/regressions/nested-for.test.ts",
     "--reporters=<rootDir>/tools/jest-tap-reporter.cjs"
   ],
-  "claim": {
-    "owner": "build:implementer",
-    "heartbeat": "2026-10-13T21:40:22.692Z"
-  },
+  "claim": null,
   "blocked_on": null,
   "docs_impact": "none",
   "started": "2026-10-13T21:40:22.841Z",
-  "ended": null,
-  "review_rounds": 0,
+  "ended": "2026-10-13T21:51:43.989Z",
+  "review_rounds": 1,
   "schema_version": 1,
   "blast_radius": [
     "template-resolver"
