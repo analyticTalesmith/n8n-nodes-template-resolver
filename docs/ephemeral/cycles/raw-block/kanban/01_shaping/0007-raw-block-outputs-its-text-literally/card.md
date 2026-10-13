@@ -26,7 +26,7 @@ A template that contains double braces as literal text (a code sample, a JSON ex
 
 ## User documentation
 
-Users see the new tag. The README gains a short RAW section with one example and its output.
+Users see the new tag. A new living document describes the built RAW syntax, and the README gains a short RAW section with one example and its output.
 
 ## Interface contract
 
@@ -38,3 +38,4 @@ The template syntax gains `{{RAW}}` and `{{END_RAW}}`. The first `{{END_RAW}}` a
 | --- | --- | --- | --- |
 | nodes/TemplateResolver/lexer.ts | edit | 30 | resolver-core |
 | README.md | edit | 25 | resolver-core |
+| docs/living/product/raw-block.md | add | 30 | resolver-core |

@@ -9,16 +9,19 @@
   "claimed_in": null,
   "files_scope": [
     "nodes/TemplateResolver/lexer.ts",
-    "README.md"
+    "README.md",
+    "docs/living/product/raw-block.md"
   ],
   "manifest": {
-    "add": [],
+    "add": [
+      "docs/living/product/raw-block.md"
+    ],
     "remove": [],
     "edit": [
       "nodes/TemplateResolver/lexer.ts",
       "README.md"
     ],
-    "frozen": false
+    "frozen": true
   },
   "criteria": [
     {
@@ -87,7 +90,9 @@
   ],
   "claim": null,
   "blocked_on": null,
-  "docs_impact": "none",
+  "docs_impact": [
+    "docs/living/product/raw-block.md"
+  ],
   "started": null,
   "ended": null,
   "review_rounds": 0,
@@ -101,6 +106,20 @@
   ],
   "user_visible": true,
   "user_docs": [
-    "README.md"
-  ]
+    "docs/living/product/raw-block.md"
+  ],
+  "freeze": {
+    "at": "2026-10-13T18:17:59.310Z",
+    "brief_sha256": "aa635d4690c596935d58667c93f168794c5dffe2aedb3b0d4d87f790aadcc391",
+    "brief_core_sha256": "924e25e388c4417b14d16fca3a78bce051bc66d16907e86ca6068b45c8877714",
+    "manifest_sha256": "449158691aa8f09f6e7e24f81269346ae3cdcab8ccf3d16c963d4522185bdede",
+    "criteria_sha256": "b217e9548020de61629971995f9cc9101d03a16a15d814ce739850481bc2c5c9",
+    "scope_sha256": "08a956ddda379e7ac16d14102ac383c9e55a7f23c11c25bf93c809b2c36cf6d2",
+    "scope_parts": {
+      "files_scope": "c33d34355b7beecb722cf80a2a076f6419890550b812435a5fa8c33ac5eda7dd",
+      "docs_impact": "9aeba749df816d922c0f3aac462040d5d60465c60675048235ae33c408d49d95",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "49c3ef5aa35a814ab902803ccbf710bbd1bb99f48f68f419a20077f536d403ff"
+    }
+  }
 }

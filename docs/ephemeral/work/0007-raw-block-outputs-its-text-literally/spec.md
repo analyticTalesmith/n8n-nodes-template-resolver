@@ -28,7 +28,7 @@ In: the lexer's tag scan, one README section. Out: parser, interpreter, filters,
 
 ## Change manifest
 
-Edit nodes/TemplateResolver/lexer.ts and README.md.
+Edit nodes/TemplateResolver/lexer.ts and README.md. Add docs/living/product/raw-block.md (state planned, user_facing true, describes the built syntax; the delta applies it to built when the cycle merges).
 
 ## Acceptance criteria
 
