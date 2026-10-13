@@ -1,5 +1,5 @@
 ---
-summary: The nodes/TemplateResolver module - a lexer, recursive-descent parser and tree-walking interpreter that resolves a conditional-markdown template string against a variable map, wrapped in an n8n node with template, mapping, strict-mode and output-field parameters.
+summary: The template resolver module as it is: lexer, parser, interpreter, filters, coercion, errors and the n8n node, with its syntax and failure handling.
 state: planned
 provenance: recovered
 recovered_at: 712fcfd7f7af0b329e6506120a25f0db8e58de06
