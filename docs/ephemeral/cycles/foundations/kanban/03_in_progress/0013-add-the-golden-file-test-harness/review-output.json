@@ -1,0 +1,64 @@
+{
+  "restatement": "Add a reusable golden-file harness, tests/golden/harness.ts exporting runGoldenCases(casesDir, render, options), that walks every case folder under tests/golden/cases/ in sorted order, feeds template.md, data.json and optional options.json to an injected render function, and compares the output byte for byte with expected.md, or checks that the thrown message contains the trimmed expected-error.txt. A failure names the case and shows the first differing line. UPDATE_GOLDEN=1 or options.update rewrites the expected files instead of failing. Ship at least eight plain-file cases that pass against the real resolver, covering IF/ELSEIF, CASE, nested FOR, LIST, TABLE, filters, ?? defaults and an error. Do not edit existing test bodies or add runtime dependencies. This serves the cycle goal that golden-file tests exist and that a clean clone tests green in CI.",
+  "brief_mismatch": null,
+  "verification_plan": [
+    "Confirm tests/golden/harness.ts exports runGoldenCases(casesDir, render, options) with render injected as a parameter, as the interface contract requires.",
+    "c1: discovery lists every subdirectory of casesDir in a deterministic order, reads template.md, data.json and optional options.json, passes the parsed values to render, and compares with strict string equality, with no trimming or newline normalization.",
+    "c2: on a mismatch, the message holds the case name, the 1-based number of the first differing line, and the actual and expected lines. A later differing line is not reported.",
+    "c3: an expected-error.txt case passes only when render throws a message containing the trimmed file text. It fails, naming the case, when render does not throw or throws a different message.",
+    "c4: options.update or UPDATE_GOLDEN=1 rewrites expected.md and expected-error.txt and reports a pass. Without update, files stay untouched. Check edge cases where a case flips between success and error.",
+    "c5: count the shipped case folders (at least 8), check that each has template.md, data.json and exactly one expected file, check that the names cover the eight topics, and check that each expected output is plausible for the resolver's documented behavior.",
+    "Cycle goal (CI green on a clean clone): check that byte-exact fixtures survive checkout on every CI runner OS, including line-ending conversion.",
+    "m1: the diff only adds files and modifies no existing test file.",
+    "m2: no package.json or lockfile change, and the harness imports only Node built-ins.",
+    "Rubric: the cases are plain files readable without running code.",
+    "Brief questions: frozen tests fail before the change because the harness module and cases dir are missing, and pass after. Pre-existing suites are unaffected."
+  ],
+  "findings": [
+    {
+      "title": "Byte-exact expected.md fixtures have no line-ending pin, so they fail on the windows-latest CI runner",
+      "class": "goal-risk",
+      "serves": {
+        "target": "cycle-goal",
+        "scenario": "CI runs the matrix on ubuntu-latest and windows-latest. The repo has no .gitattributes, and GitHub's Windows runners check out with core.autocrlf=true. So expected.md files arrive with CRLF. The lexer normalizes \\r\\n to \\n in the template, so the rendered output has LF, and the byte-exact compare in harness.ts fails every multi-line case. The result is that tests/golden/golden.test.ts and the gf-05 frozen test go red on Windows, which breaks 'a clean clone ... tests green in CI' and c5."
+      },
+      "rubric": "c5 (gf-05: the shipped suite ... all pass against the real resolver); cycle goal: a clean clone installs, builds and tests green in CI",
+      "reproduction": "1. On a Windows machine with git config core.autocrlf=true, which is the default on GitHub windows-latest, clone the repo at head 2f88efb. 2. Run npm ci, npm run build, npm test. 3. Expect cases such as if-elseif-else and list-nested-conditional to fail with 'output differs from expected.md at line 1' and an expected line ending in \\r. Smallest fix: add tests/golden/.gitattributes with '* -text' or 'cases/** text eol=lf', which is inside the card's tests/golden/ files scope (log the scope addition).",
+      "evidence": [
+        "code:.github/workflows/ci.yml:13",
+        "code:tests/golden/harness.ts:983",
+        "doc:docs/living/architecture/modules/template-resolver.md",
+        "diff:tests/golden/cases/list-nested-conditional/expected.md"
+      ],
+      "location": "tests/golden/harness.ts:983"
+    },
+    {
+      "title": "UPDATE_GOLDEN=1 fails, or leaves two expected files, when a case flips between output and error",
+      "class": "goal-risk",
+      "serves": {
+        "target": "c4",
+        "scenario": "A case that has only expected.md and now throws: in update mode wantsError is false and thrown is not null, so the harness returns 'render threw' as a failure instead of writing expected-error.txt. A case that has only expected-error.txt and now renders: update writes expected.md but keeps the stale expected-error.txt. The folder then holds two expected files, which the gf-05 shape check rejects, and the next run without update fails because wantsError is true and the render succeeds."
+      },
+      "rubric": "c4 (gf-04: UPDATE_GOLDEN=1 rewrites the expected files instead of failing)",
+      "reproduction": "1. Create case x with template.md 'T' and expected.md 'old'. Call runGoldenCases(dir, () => { throw new Error('boom') }, { update: true }). The result is passed=false with 'render threw', and no expected-error.txt is written. 2. Create case y with only expected-error.txt 'e'. Call runGoldenCases(dir, t => t, { update: true }). It passes, but y now has both expected.md and expected-error.txt. Running again without update fails with 'but render succeeded'. Smallest fix: in update mode, write the file that matches the outcome (expected-error.txt on throw, expected.md otherwise) and remove the other one.",
+      "evidence": [
+        "code:tests/golden/harness.ts:930",
+        "code:tests/golden/harness.ts:964",
+        "code:tests/golden/harness.ts:971",
+        "test:gf-05: the shipped suite holds at least eight cases covering the required topics"
+      ],
+      "location": "tests/golden/harness.ts:930"
+    }
+  ],
+  "responses": [],
+  "reviewer": {
+    "kind": "fallback",
+    "label": "opus fallback (same model family as the builder; has repository access)"
+  },
+  "at": "2026-10-13T22:01:04.834Z",
+  "card": "0013-add-the-golden-file-test-harness",
+  "tier": "product",
+  "packet_sha256": "61fd6d1ed82fdbdc9b7ce4fafba3a0422022b7b5595a5efd8a6f455ad4175c71",
+  "diff_sha256": "50bd049b2e1a20f913f40da079d16aa076d62e99c02b4f6cef6bee774e1baba6",
+  "dropped": []
+}
