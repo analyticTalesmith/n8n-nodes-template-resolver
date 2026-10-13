@@ -1,0 +1,1339 @@
+{
+  "version": "0.1.0",
+  "dated": "2026-10-06",
+  "prism": {
+    "commit": "451168da1c7057b5730fbd6838fbd6fa2467f815",
+    "read_at": "2026-10-06",
+    "tell_ids": [
+      "purple-accent",
+      "decorative-glow",
+      "eyebrow-density",
+      "em-dash",
+      "invented-specificity",
+      "cta-repetition",
+      "section-numbering",
+      "scroll-cue",
+      "uniform-radius",
+      "emoji-iconography",
+      "overused-font",
+      "gradient-text",
+      "italic-serif-display",
+      "extreme-tracking",
+      "bounce-easing",
+      "pulsing-dot",
+      "blinking-cursor",
+      "marquee",
+      "image-hover-transform",
+      "custom-cursor",
+      "layout-animation",
+      "side-tab",
+      "border-accent-rounded",
+      "nested-cards",
+      "monotonous-spacing",
+      "status-dot",
+      "thin-border-wide-shadow",
+      "stripe-gradient",
+      "grid-background",
+      "cream-palette",
+      "marketing-buzzword",
+      "aphoristic-cadence",
+      "middle-dot",
+      "version-label",
+      "locale-strip",
+      "generic-names",
+      "startup-brand",
+      "repeated-container-text",
+      "broken-image",
+      "section-template-repetition",
+      "heading-hierarchy-collapse",
+      "keyboard-path-required"
+    ]
+  },
+  "entries": [
+    {
+      "id": "purple-accent",
+      "family": "colour",
+      "tell": "A violet or indigo accent that no token in the system owns.",
+      "detection": "deterministic",
+      "prism_tell": "purple-accent",
+      "instead": "Name a palette of four to six colours with a role each, and take the accent from it.",
+      "modes": [
+        "persuade",
+        "operate",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        },
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "decorative-glow",
+      "family": "colour",
+      "tell": "Glows, halos and blurred gradient blobs behind content.",
+      "detection": "deterministic",
+      "prism_tell": "decorative-glow",
+      "instead": "Build depth from the system's elevation steps, and let one shadow token carry it.",
+      "modes": [
+        "persuade",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        },
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "gradient-text",
+      "family": "colour",
+      "tell": "Headings or metrics painted with a gradient fill.",
+      "detection": "deterministic",
+      "prism_tell": "gradient-text",
+      "instead": "Set text in one solid colour from the palette and let size and weight carry the emphasis.",
+      "modes": [
+        "persuade",
+        "operate",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        },
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "cream-palette",
+      "family": "colour",
+      "tell": "A warm cream page surface with a terracotta accent, chosen by reflex.",
+      "detection": "deterministic",
+      "prism_tell": "cream-palette",
+      "instead": "Derive the surface from the brand or the subject, and record the choice and its reason in the palette.",
+      "modes": [
+        "persuade",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        },
+        {
+          "name": "Anthropic frontend-design skill",
+          "date": "2026-09-03"
+        },
+        {
+          "name": "Capital and Compute, fix AI slop tell by tell",
+          "date": "2026-09-25"
+        }
+      ]
+    },
+    {
+      "id": "raw-colour-values",
+      "family": "colour",
+      "tell": "Hex, rgb or hsl colours and pixel sizes written straight into component styles.",
+      "detection": "deterministic",
+      "gate_rule": "front-end-raw-value",
+      "instead": "Reference the colour, spacing and radius tokens, and propose a token to the design system steward when none fits.",
+      "modes": [
+        "persuade",
+        "operate",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        },
+        {
+          "name": "Vercel Web Interface Guidelines",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "low-contrast-text",
+      "family": "colour",
+      "tell": "Text on a surface that falls below the contrast the pair needs.",
+      "detection": "deterministic",
+      "gate_rule": "contrast-too-low",
+      "instead": "Pick the text and surface tokens as a pair, and list the pair in the contrast pairs file in both modes.",
+      "modes": [
+        "persuade",
+        "operate",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        },
+        {
+          "name": "Vercel Web Interface Guidelines",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "accent-sprawl",
+      "family": "colour",
+      "tell": "More than one accent colour, or warm and cool greys mixed on one page.",
+      "detection": "judgment",
+      "prompt": "Does one accent carry every action and every highlight, and do all greys lean the same way?",
+      "instead": "Keep one accent for actions, tint every neutral toward one temperature, and use semantic colours only for state.",
+      "modes": [
+        "persuade",
+        "operate",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        },
+        {
+          "name": "Anthropic frontend-design skill",
+          "date": "2026-09-03"
+        }
+      ]
+    },
+    {
+      "id": "grey-on-colour",
+      "family": "colour",
+      "tell": "Grey body text laid over a coloured surface.",
+      "detection": "judgment",
+      "prompt": "Is each text colour on a coloured surface a shade of that surface or a defined on-colour token?",
+      "instead": "Use the on-colour token the surface defines, and check it against the surface as a pair.",
+      "modes": [
+        "persuade",
+        "operate"
+      ],
+      "sources": [
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "stale-black-fix",
+      "family": "colour",
+      "tell": "Tinted near-black, noise or grain added as the cure for a flat dark theme.",
+      "detection": "judgment",
+      "prompt": "Does the dark theme get its depth from layered surfaces and a clear text ladder, not from an overlay?",
+      "instead": "Define surface steps and a text ladder for dark mode as tokens, and judge them by contrast and hierarchy.",
+      "modes": [
+        "persuade",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Capital and Compute, fix AI slop tell by tell",
+          "date": "2026-09-25"
+        },
+        {
+          "name": "Taste-skill",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "overused-font",
+      "family": "type",
+      "tell": "A default generator typeface that the system does not name. The library bans no other font by name, and a system or workhorse face is fine in operate mode.",
+      "detection": "deterministic",
+      "prism_tell": "overused-font",
+      "instead": "Give each typeface a role (display, body, mono) and take it from the system's font tokens.",
+      "modes": [
+        "persuade",
+        "operate",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        },
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        },
+        {
+          "name": "Taste-skill",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "italic-serif-display",
+      "family": "type",
+      "tell": "An oversized italic serif headline over a sans body.",
+      "detection": "deterministic",
+      "prism_tell": "italic-serif-display",
+      "instead": "Set the display face to match the system's type roles, and use italics only where the text is stressed.",
+      "modes": [
+        "persuade",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        },
+        {
+          "name": "Capital and Compute, fix AI slop tell by tell",
+          "date": "2026-09-25"
+        }
+      ]
+    },
+    {
+      "id": "extreme-tracking",
+      "family": "type",
+      "tell": "Display text with crushed letter-spacing.",
+      "detection": "deterministic",
+      "prism_tell": "extreme-tracking",
+      "instead": "Take tracking from the type scale tokens and keep headings readable at their smallest size.",
+      "modes": [
+        "persuade",
+        "operate",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        },
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "heading-hierarchy-collapse",
+      "family": "type",
+      "tell": "Heading levels that resolve to nearly the same size.",
+      "detection": "deterministic",
+      "prism_tell": "heading-hierarchy-collapse",
+      "instead": "Make each heading level visibly smaller than the one above, using the type scale.",
+      "modes": [
+        "persuade",
+        "operate",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        },
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "eyebrow-density",
+      "family": "type",
+      "tell": "A small caps kicker above the heading of most sections.",
+      "detection": "deterministic",
+      "prism_tell": "eyebrow-density",
+      "instead": "Open a section with its heading, and keep a kicker for the one place where it names a real category.",
+      "modes": [
+        "persuade",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        },
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "one-word-accent",
+      "family": "type",
+      "tell": "One word of a headline set in an accent colour or italic.",
+      "detection": "judgment",
+      "prompt": "Does the headline read as one clear statement without a highlighted word?",
+      "instead": "Write the headline so it holds on its own, and spend emphasis in one deliberate place on the page.",
+      "modes": [
+        "persuade"
+      ],
+      "sources": [
+        {
+          "name": "Capital and Compute, fix AI slop tell by tell",
+          "date": "2026-09-25"
+        },
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "mono-costume",
+      "family": "type",
+      "tell": "A monospace face used on labels and headings only to look technical.",
+      "detection": "judgment",
+      "prompt": "Does every monospace use show code, data, a shortcut or an identifier?",
+      "instead": "Reserve the mono role for text that is literally code or data, and set labels in the body face.",
+      "modes": [
+        "persuade",
+        "operate",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        },
+        {
+          "name": "Capital and Compute, fix AI slop tell by tell",
+          "date": "2026-09-25"
+        }
+      ]
+    },
+    {
+      "id": "stale-font-fix",
+      "family": "type",
+      "tell": "Geist, Outfit or Satoshi picked as the fresh alternative to the usual defaults.",
+      "detection": "judgment",
+      "prompt": "Was the typeface chosen for this product's voice and written down with its role, or only to dodge a default?",
+      "instead": "Choose from the brand and the content, and state why in the type section of the design file.",
+      "modes": [
+        "persuade",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Taste-skill",
+          "date": "2026-10-05"
+        },
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "nested-cards",
+      "family": "layout",
+      "tell": "Bordered or shadowed surfaces placed inside other cards.",
+      "detection": "deterministic",
+      "prism_tell": "nested-cards",
+      "instead": "Use one surface level for grouping, and separate inner items with spacing or a divider.",
+      "modes": [
+        "persuade",
+        "operate",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        },
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "uniform-radius",
+      "family": "layout",
+      "tell": "One corner radius on every element.",
+      "detection": "deterministic",
+      "prism_tell": "uniform-radius",
+      "instead": "Pick radii from a short ladder and tie each step to a component class.",
+      "modes": [
+        "persuade",
+        "operate",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        },
+        {
+          "name": "Capital and Compute, fix AI slop tell by tell",
+          "date": "2026-09-25"
+        }
+      ]
+    },
+    {
+      "id": "monotonous-spacing",
+      "family": "layout",
+      "tell": "One gap value used between everything.",
+      "detection": "deterministic",
+      "prism_tell": "monotonous-spacing",
+      "instead": "Use the spacing steps to separate section, group and item, so spacing shows the structure.",
+      "modes": [
+        "persuade",
+        "operate",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        }
+      ]
+    },
+    {
+      "id": "section-template-repetition",
+      "family": "layout",
+      "tell": "The same icon, heading and text shape stamped across most sections.",
+      "detection": "deterministic",
+      "prism_tell": "section-template-repetition",
+      "instead": "Shape each section from its content, and give one section the signature treatment.",
+      "modes": [
+        "persuade",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        },
+        {
+          "name": "Capital and Compute, fix AI slop tell by tell",
+          "date": "2026-09-25"
+        }
+      ]
+    },
+    {
+      "id": "grid-background",
+      "family": "layout",
+      "tell": "A faint grid-line pattern behind page content.",
+      "detection": "deterministic",
+      "prism_tell": "grid-background",
+      "instead": "Leave the background flat, or use a pattern only on a real canvas or map surface.",
+      "modes": [
+        "persuade",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        }
+      ]
+    },
+    {
+      "id": "identical-card-grid",
+      "family": "layout",
+      "tell": "Three equal cards in a row as the default section.",
+      "detection": "judgment",
+      "prompt": "Does each section's layout follow from its content, or is it the three-card default?",
+      "instead": "Let the content's shape pick the layout, and give one section the signature treatment.",
+      "modes": [
+        "persuade"
+      ],
+      "sources": [
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        },
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        }
+      ]
+    },
+    {
+      "id": "hero-metric-block",
+      "family": "layout",
+      "tell": "A hero built from a big number, a small label and a gradient accent.",
+      "detection": "judgment",
+      "prompt": "Is every figure in the hero real, sourced and tied to the page's one claim?",
+      "instead": "Lead with the product's own claim or a real screenshot, and show a number only when it is true and sourced.",
+      "modes": [
+        "persuade"
+      ],
+      "sources": [
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        },
+        {
+          "name": "Capital and Compute, fix AI slop tell by tell",
+          "date": "2026-09-25"
+        }
+      ]
+    },
+    {
+      "id": "centred-everything",
+      "family": "layout",
+      "tell": "Every block centred, with the same stack of heading, line and two buttons.",
+      "detection": "judgment",
+      "prompt": "Does the alignment of each section come from how it is read, or from habit?",
+      "instead": "Align text to the reading edge, and centre only short, standalone statements.",
+      "modes": [
+        "persuade",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Taste-skill",
+          "date": "2026-10-05"
+        },
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        }
+      ]
+    },
+    {
+      "id": "side-tab",
+      "family": "components",
+      "tell": "A thick coloured bar down one side of a card.",
+      "detection": "deterministic",
+      "prism_tell": "side-tab",
+      "instead": "Show importance with position, size or a label, and keep card edges plain.",
+      "modes": [
+        "persuade",
+        "operate",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        },
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "border-accent-rounded",
+      "family": "components",
+      "tell": "A heavy accent border around a rounded card.",
+      "detection": "deterministic",
+      "prism_tell": "border-accent-rounded",
+      "instead": "Frame content with one quiet border token, and leave the accent for the action.",
+      "modes": [
+        "persuade",
+        "operate",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        }
+      ]
+    },
+    {
+      "id": "thin-border-wide-shadow",
+      "family": "components",
+      "tell": "A hairline border together with a wide soft shadow on one surface.",
+      "detection": "deterministic",
+      "prism_tell": "thin-border-wide-shadow",
+      "instead": "Choose one depth cue per surface, a border or a shadow, from the elevation tokens.",
+      "modes": [
+        "persuade",
+        "operate",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        },
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "status-dot",
+      "family": "components",
+      "tell": "A row of coloured dots that carries no state.",
+      "detection": "deterministic",
+      "prism_tell": "status-dot",
+      "instead": "Show a dot only when it maps to a real state, and pair it with a text label.",
+      "modes": [
+        "persuade",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        }
+      ]
+    },
+    {
+      "id": "stripe-gradient",
+      "family": "components",
+      "tell": "A repeating stripe texture used as surface filler.",
+      "detection": "deterministic",
+      "prism_tell": "stripe-gradient",
+      "instead": "Keep surfaces flat, or define a texture token with a stated purpose.",
+      "modes": [
+        "persuade",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        }
+      ]
+    },
+    {
+      "id": "missing-states",
+      "family": "components",
+      "tell": "Components shown only in their default state.",
+      "detection": "judgment",
+      "prompt": "Does every interactive component define hover, focus, disabled, loading, empty and error?",
+      "instead": "Specify each state in the component contract and build the states with the component.",
+      "modes": [
+        "operate",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        },
+        {
+          "name": "Vercel Web Interface Guidelines",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "modal-for-light-task",
+      "family": "components",
+      "tell": "A modal dialog for a task that does not need to interrupt.",
+      "detection": "judgment",
+      "prompt": "Would the task work inline, in a popover or on its own page?",
+      "instead": "Keep the user in context with an inline or popover pattern, and reserve the modal for a decision that blocks.",
+      "modes": [
+        "operate"
+      ],
+      "sources": [
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        },
+        {
+          "name": "Vercel Web Interface Guidelines",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "button-pair-default",
+      "family": "components",
+      "tell": "One filled and one ghost button on every call to action.",
+      "detection": "judgment",
+      "prompt": "Does each action group show one primary action that matches the page's goal?",
+      "instead": "Give the page one primary action, and make secondary actions plain links or quiet buttons.",
+      "modes": [
+        "persuade",
+        "operate"
+      ],
+      "sources": [
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        },
+        {
+          "name": "Capital and Compute, fix AI slop tell by tell",
+          "date": "2026-09-25"
+        }
+      ]
+    },
+    {
+      "id": "emoji-iconography",
+      "family": "imagery-icons",
+      "tell": "Emoji used as icons, bullets or section markers.",
+      "detection": "deterministic",
+      "prism_tell": "emoji-iconography",
+      "instead": "Use one icon set at one stroke weight, or use plain text labels.",
+      "modes": [
+        "persuade",
+        "operate",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        },
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "broken-image",
+      "family": "imagery-icons",
+      "tell": "An image with an empty, missing or placeholder source.",
+      "detection": "deterministic",
+      "prism_tell": "broken-image",
+      "instead": "Ship real images with set width and height, or design an empty state with a real component.",
+      "modes": [
+        "persuade",
+        "operate",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        },
+        {
+          "name": "Vercel Web Interface Guidelines",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "icon-cliche",
+      "family": "imagery-icons",
+      "tell": "A rocket for launch, a shield for security, a bulb for ideas.",
+      "detection": "judgment",
+      "prompt": "Does each icon say something specific about this product's feature?",
+      "instead": "Draw or choose an icon from the product's own objects and actions.",
+      "modes": [
+        "persuade"
+      ],
+      "sources": [
+        {
+          "name": "Capital and Compute, fix AI slop tell by tell",
+          "date": "2026-09-25"
+        },
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "mixed-stroke-weights",
+      "family": "imagery-icons",
+      "tell": "Icons from several sets or with different stroke weights on one page.",
+      "detection": "judgment",
+      "prompt": "Do all icons share one set, size scale and stroke weight?",
+      "instead": "Standardise on one icon set and record its size and stroke in the design file.",
+      "modes": [
+        "persuade",
+        "operate",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "rough-svg-scene",
+      "family": "imagery-icons",
+      "tell": "A hero illustration assembled from basic shapes.",
+      "detection": "judgment",
+      "prompt": "Is the image authored artwork, a real screenshot or a photo of the subject?",
+      "instead": "Use real product views or authored artwork, and leave the space empty when there is none.",
+      "modes": [
+        "persuade"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        },
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "transition-all",
+      "family": "motion",
+      "tell": "Transitions that animate every property.",
+      "detection": "deterministic",
+      "gate_rule": "front-end-transition-all",
+      "instead": "Name the properties, and animate only transform and opacity.",
+      "modes": [
+        "persuade",
+        "operate",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Vercel Web Interface Guidelines",
+          "date": "2026-10-05"
+        },
+        {
+          "name": "Josh Comeau, CSS transitions guide",
+          "date": "2026-05-05"
+        }
+      ]
+    },
+    {
+      "id": "transition-non-compositor",
+      "family": "motion",
+      "tell": "Transitions on properties other than transform, opacity and their relatives.",
+      "detection": "deterministic",
+      "gate_rule": "front-end-transition-property",
+      "instead": "Move things with transform and fade them with opacity.",
+      "modes": [
+        "persuade",
+        "operate",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Vercel Web Interface Guidelines",
+          "date": "2026-10-05"
+        },
+        {
+          "name": "Emil Kowalski, animation tips",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "reduced-motion-missing",
+      "family": "motion",
+      "tell": "Animation with no prefers-reduced-motion handling.",
+      "detection": "deterministic",
+      "gate_rule": "front-end-reduced-motion-missing",
+      "instead": "Add a reduced-motion block that stops the motion or shortens it to a fade.",
+      "modes": [
+        "persuade",
+        "operate",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Vercel Web Interface Guidelines",
+          "date": "2026-10-05"
+        },
+        {
+          "name": "Josh Comeau, CSS transitions guide",
+          "date": "2026-05-05"
+        }
+      ]
+    },
+    {
+      "id": "layout-animation",
+      "family": "motion",
+      "tell": "Animating width, height, margin, padding or position.",
+      "detection": "deterministic",
+      "prism_tell": "layout-animation",
+      "instead": "Animate transform for movement, and open a disclosure once with a single short transition.",
+      "modes": [
+        "persuade",
+        "operate",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        },
+        {
+          "name": "Emil Kowalski, animation tips",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "bounce-easing",
+      "family": "motion",
+      "tell": "Bounce or overshoot easing on entrances.",
+      "detection": "deterministic",
+      "prism_tell": "bounce-easing",
+      "instead": "Use a short ease-out curve at 150 to 300 milliseconds and keep one curve across the system.",
+      "modes": [
+        "persuade",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        },
+        {
+          "name": "Emil Kowalski, animation tips",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "pulsing-dot",
+      "family": "motion",
+      "tell": "A pulsing dot that implies live activity.",
+      "detection": "deterministic",
+      "prism_tell": "pulsing-dot",
+      "instead": "Animate a dot only when it is bound to live data, and show the real value beside it.",
+      "modes": [
+        "persuade",
+        "operate",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        }
+      ]
+    },
+    {
+      "id": "marquee",
+      "family": "motion",
+      "tell": "Auto-scrolling strips of logos, words or cards.",
+      "detection": "deterministic",
+      "prism_tell": "marquee",
+      "instead": "Lay the items out in a static row or grid the reader can scan at their own pace.",
+      "modes": [
+        "persuade",
+        "operate",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        },
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "image-hover-transform",
+      "family": "motion",
+      "tell": "Images or cards that zoom or rotate on hover.",
+      "detection": "deterministic",
+      "prism_tell": "image-hover-transform",
+      "instead": "Show hover with a colour or underline change, and leave images still.",
+      "modes": [
+        "persuade",
+        "operate",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        }
+      ]
+    },
+    {
+      "id": "scroll-cue",
+      "family": "motion",
+      "tell": "Bouncing chevrons or scroll to explore labels.",
+      "detection": "deterministic",
+      "prism_tell": "scroll-cue",
+      "instead": "Let the next section's top edge show above the fold so the page invites scrolling.",
+      "modes": [
+        "persuade",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        }
+      ]
+    },
+    {
+      "id": "same-fade-everywhere",
+      "family": "motion",
+      "tell": "The same fade and slide on every section as it enters.",
+      "detection": "judgment",
+      "prompt": "Does each motion explain a change of state, or only decorate the entrance?",
+      "instead": "Animate only state changes, and let everything else appear at rest.",
+      "modes": [
+        "persuade",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        },
+        {
+          "name": "Emil Kowalski, animation tips",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "em-dash",
+      "family": "copy",
+      "tell": "Em dashes chained through paragraphs and headings.",
+      "detection": "deterministic",
+      "prism_tell": "em-dash",
+      "instead": "Write short sentences and use a comma, a colon or a full stop.",
+      "modes": [
+        "persuade",
+        "operate",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        },
+        {
+          "name": "Capital and Compute, fix AI slop tell by tell",
+          "date": "2026-09-25"
+        }
+      ]
+    },
+    {
+      "id": "marketing-buzzword",
+      "family": "copy",
+      "tell": "Filler verbs such as elevate, seamless and supercharge.",
+      "detection": "deterministic",
+      "prism_tell": "marketing-buzzword",
+      "instead": "Name what the product does with a concrete verb and an object.",
+      "modes": [
+        "persuade",
+        "operate",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        },
+        {
+          "name": "Capital and Compute, fix AI slop tell by tell",
+          "date": "2026-09-25"
+        },
+        {
+          "name": "Anthropic frontend-design skill",
+          "date": "2026-09-03"
+        }
+      ]
+    },
+    {
+      "id": "aphoristic-cadence",
+      "family": "copy",
+      "tell": "Slogans in the shape \"Not an X. A Y.\"",
+      "detection": "deterministic",
+      "prism_tell": "aphoristic-cadence",
+      "instead": "State the claim once, in a plain sentence with a specific noun.",
+      "modes": [
+        "persuade",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        },
+        {
+          "name": "Capital and Compute, fix AI slop tell by tell",
+          "date": "2026-09-25"
+        }
+      ]
+    },
+    {
+      "id": "generic-names",
+      "family": "copy",
+      "tell": "Placeholder people such as John Doe in quotes and avatars.",
+      "detection": "deterministic",
+      "prism_tell": "generic-names",
+      "instead": "Use real, attributed people, or leave the section out.",
+      "modes": [
+        "persuade",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        },
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "invented-specificity",
+      "family": "copy",
+      "tell": "Made-up metrics, user counts and logo walls.",
+      "detection": "deterministic",
+      "prism_tell": "invented-specificity",
+      "instead": "State only figures you can source, and link the source.",
+      "modes": [
+        "persuade",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        },
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "cta-repetition",
+      "family": "copy",
+      "tell": "Several buttons in one viewport that ask for the same action.",
+      "detection": "deterministic",
+      "prism_tell": "cta-repetition",
+      "instead": "Show one primary action per viewport and word it as the outcome.",
+      "modes": [
+        "persuade"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        }
+      ]
+    },
+    {
+      "id": "section-numbering",
+      "family": "copy",
+      "tell": "Numbered section labels where nothing is a sequence.",
+      "detection": "deterministic",
+      "prism_tell": "section-numbering",
+      "instead": "Number sections only when the order matters, such as steps.",
+      "modes": [
+        "persuade",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        },
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "middle-dot",
+      "family": "copy",
+      "tell": "Chains of middle dots between short words.",
+      "detection": "deterministic",
+      "prism_tell": "middle-dot",
+      "instead": "Separate items with a comma or list them, and keep one dot for a real byline.",
+      "modes": [
+        "persuade",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Prism universal tells",
+          "date": "2026-10-06"
+        }
+      ]
+    },
+    {
+      "id": "sentence-case",
+      "family": "copy",
+      "tell": "Title Case on headings, buttons and labels. The library chose sentence case, against the Title Case that one source asks for.",
+      "detection": "judgment",
+      "prompt": "Are all headings, buttons and labels in sentence case, with proper nouns capitalised?",
+      "instead": "Write interface text in sentence case and capitalise only the first word and proper nouns.",
+      "modes": [
+        "persuade",
+        "operate",
+        "read"
+      ],
+      "sources": [
+        {
+          "name": "Anthropic frontend-design skill",
+          "date": "2026-09-03"
+        },
+        {
+          "name": "Taste-skill",
+          "date": "2026-10-05"
+        },
+        {
+          "name": "Vercel Web Interface Guidelines",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "submit-label",
+      "family": "copy",
+      "tell": "A button labelled Submit, OK or Click here.",
+      "detection": "judgment",
+      "prompt": "Does each button name the result of pressing it?",
+      "instead": "Label the button with the verb and object, such as Save changes.",
+      "modes": [
+        "operate"
+      ],
+      "sources": [
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        },
+        {
+          "name": "Vercel Web Interface Guidelines",
+          "date": "2026-10-05"
+        }
+      ]
+    },
+    {
+      "id": "oops-error",
+      "family": "copy",
+      "tell": "An error that says Oops, or a success message with an exclamation mark.",
+      "detection": "judgment",
+      "prompt": "Does each error say what happened and what to do next, in a calm voice?",
+      "instead": "Write the cause and the next step in plain words, next to the field it concerns.",
+      "modes": [
+        "operate"
+      ],
+      "sources": [
+        {
+          "name": "Impeccable",
+          "date": "2026-10-05"
+        },
+        {
+          "name": "Capital and Compute, fix AI slop tell by tell",
+          "date": "2026-09-25"
+        }
+      ]
+    }
+  ]
+}

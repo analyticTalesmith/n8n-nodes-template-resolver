@@ -1,0 +1,44 @@
+{
+  "aperture_version": "0.1.0",
+  "tier": "product",
+  "profile": "none",
+  "packs": {
+    "design-craft": "0.1.0",
+    "evidence-discipline": "0.1.0",
+    "layer-rules": "0.1.0",
+    "review-conduct": "0.1.0",
+    "root-cause": "0.1.0",
+    "build": "0.4.2",
+    "feedback": "0.3.0",
+    "atom": "0.1.0",
+    "deliverables": "0.3.0",
+    "threat-model": "0.1.0",
+    "planning": "0.8.0",
+    "records": "0.5.0",
+    "interface-heuristics": "0.1.0",
+    "review": "0.2.1",
+    "rigor": "0.10.0",
+    "verification": "0.5.2",
+    "work-profile": "0.1.2",
+    "research": "0.2.1"
+  },
+  "ejected": [],
+  "requested": [
+    "research"
+  ],
+  "sets": {
+    "starter": {
+      "version": "0.3.0",
+      "members": [
+        "planning",
+        "build",
+        "review",
+        "verification",
+        "feedback",
+        "records",
+        "rigor",
+        "work-profile"
+      ]
+    }
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "name": "records",
+  "version": "0.5.0",
+  "description": "Keeps indexes fresh, applies recover deltas when archaeology cards finish and ordinary deltas when the cycle's work merges, composes deliverables and archives closed cycles."
+}

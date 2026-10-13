@@ -1,0 +1,6 @@
+{
+  "stage_tiers": { "concept": "prototype", "alpha": "product", "beta": "product", "mvp": "hardened", "ga": "hardened" },
+  "approvals": "front",
+  "loop": { "allowed": true, "max_iterations": 150, "max_spawns": 300, "no_progress_limit": 3, "repeat_failure_limit": 3, "sweep_rounds": 3 },
+  "regulated": false
+}

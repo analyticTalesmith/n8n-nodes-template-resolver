@@ -1,0 +1,5 @@
+{
+  "name": "threat-model",
+  "version": "0.1.0",
+  "description": "Draw a data-flow diagram with trust boundaries and go through STRIDE at each crossing, recording risks."
+}

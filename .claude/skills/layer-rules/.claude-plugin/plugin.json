@@ -1,0 +1,5 @@
+{
+  "name": "layer-rules",
+  "version": "0.1.0",
+  "description": "Place each piece of code in one layer, import only downward, and stop for a decision record before any upward import."
+}
