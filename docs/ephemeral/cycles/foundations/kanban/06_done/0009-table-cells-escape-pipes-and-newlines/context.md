@@ -24,3 +24,4 @@ Working memory for this ticket, next to card.md. The lead updates it in small ed
 
 | Date | Path | Kind | Reason | Approved by |
 | --- | --- | --- | --- | --- |
+| 2026-10-13 | tests/regressions/table-cell-escaping-filters.test.ts | add | guard test for the sustained finding about already escaped pipes | project lead (front approval) |

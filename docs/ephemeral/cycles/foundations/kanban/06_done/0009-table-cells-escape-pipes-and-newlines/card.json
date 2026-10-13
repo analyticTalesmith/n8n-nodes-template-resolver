@@ -50,15 +50,12 @@
     "tests/regressions/table-cell-escaping.test.ts",
     "--reporters=<rootDir>/tools/jest-tap-reporter.cjs"
   ],
-  "claim": {
-    "owner": "build:implementer",
-    "heartbeat": "2026-10-13T21:40:22.431Z"
-  },
+  "claim": null,
   "blocked_on": null,
   "docs_impact": "none",
   "started": "2026-10-13T21:40:22.592Z",
-  "ended": null,
-  "review_rounds": 0,
+  "ended": "2026-10-13T21:51:42.059Z",
+  "review_rounds": 2,
   "schema_version": 1,
   "blast_radius": [
     "template-resolver"
@@ -78,5 +75,5 @@
       "gate": "8029a327c6e98d32df094f16810bcf76119a7c84d2587a5da1c1a53796917520"
     }
   },
-  "base_commit": "04c46ee174fa772d36538d8866ebfafb8db6510d"
+  "base_commit": "e7069db9c344f65385b3956ece624de0aad10268"
 }

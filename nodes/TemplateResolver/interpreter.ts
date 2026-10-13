@@ -408,7 +408,7 @@ export class Interpreter {
   private processCellsArray(cells: ASTNode[][]): string[] {
     return cells.map((cellNodes) => {
       const content = cellNodes.map((node) => this.visit(node)).join("");
-      return content.trim();
+      return content.replace(/\r?\n/g, " ").replace(/(?<!\\)\|/g, "\\|").trim();
     });
   }
 
