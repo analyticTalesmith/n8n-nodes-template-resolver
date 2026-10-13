@@ -24,3 +24,11 @@ Working memory for this ticket, next to card.md. The lead updates it in small ed
 
 | Date | Path | Kind | Reason | Approved by |
 | --- | --- | --- | --- | --- |
+| 2026-10-13 | tests/regressions/nested-for.test.ts | edit | import specifiers (or the layout mention) follow the move; no assertion changes | project lead (front approval) |
+| 2026-10-13 | tests/regressions/parse-defaults-and-tag-arguments.test.ts | edit | import specifiers (or the layout mention) follow the move; no assertion changes | project lead (front approval) |
+| 2026-10-13 | tests/regressions/parse-defaults-guards.test.ts | edit | import specifiers (or the layout mention) follow the move; no assertion changes | project lead (front approval) |
+| 2026-10-13 | tests/regressions/condition-operators.test.ts | edit | import specifiers (or the layout mention) follow the move; no assertion changes | project lead (front approval) |
+| 2026-10-13 | tests/regressions/string-input-coercion.test.ts | edit | import specifiers (or the layout mention) follow the move; no assertion changes | project lead (front approval) |
+| 2026-10-13 | tests/regressions/table-cell-escaping.test.ts | edit | import specifiers (or the layout mention) follow the move; no assertion changes | project lead (front approval) |
+| 2026-10-13 | tests/regressions/table-cell-escaping-filters.test.ts | edit | import specifiers (or the layout mention) follow the move; no assertion changes | project lead (front approval) |
+| 2026-10-13 | README.md | edit | import specifiers (or the layout mention) follow the move; no assertion changes | project lead (front approval) |
