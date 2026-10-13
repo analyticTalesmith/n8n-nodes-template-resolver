@@ -67,14 +67,11 @@
     "scripts/run-node-tests.mjs",
     ".test-build/test-node/default-pipe.test.js"
   ],
-  "claim": {
-    "owner": "build:implementer",
-    "heartbeat": "2026-10-13T18:08:43.645Z"
-  },
+  "claim": null,
   "blocked_on": null,
   "docs_impact": "none",
   "started": "2026-10-13T18:08:43.812Z",
-  "ended": null,
+  "ended": "2026-10-13T18:13:42.765Z",
   "review_rounds": 2,
   "schema_version": 1,
   "blast_radius": [
