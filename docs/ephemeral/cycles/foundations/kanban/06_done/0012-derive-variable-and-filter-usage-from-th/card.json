@@ -87,15 +87,12 @@
     "tests/analyze.test.ts",
     "--reporters=<rootDir>/tools/jest-tap-reporter.cjs"
   ],
-  "claim": {
-    "owner": "build:implementer",
-    "heartbeat": "2026-10-13T22:01:06.248Z"
-  },
+  "claim": null,
   "blocked_on": null,
   "docs_impact": "none",
   "started": "2026-10-13T21:56:45.142Z",
-  "ended": null,
-  "review_rounds": 0,
+  "ended": "2026-10-13T22:02:58.015Z",
+  "review_rounds": 1,
   "schema_version": 1,
   "blast_radius": [
     "template-resolver"
