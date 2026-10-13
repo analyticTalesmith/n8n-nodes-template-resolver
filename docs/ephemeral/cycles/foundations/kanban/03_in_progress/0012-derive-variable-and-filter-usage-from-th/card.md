@@ -59,8 +59,8 @@ New core export analyze(template: string): { variables: {name, paths, usedIn, op
 | --- | --- | --- |
 | `core/src/analyze.ts` | add | template-resolver |
 | `core/src/index.ts` | edit | template-resolver |
-| `core/src/utils.ts` | edit | template-resolver |
 | `n8n/TemplateResolver.node.ts` | edit | template-resolver |
+| `core/src/utils.ts` | remove | template-resolver |
 
 Files scope: `core/src/analyze.ts`, `core/src/index.ts`, `core/src/utils.ts`, `n8n/TemplateResolver.node.ts`
 <!-- end generated scope -->

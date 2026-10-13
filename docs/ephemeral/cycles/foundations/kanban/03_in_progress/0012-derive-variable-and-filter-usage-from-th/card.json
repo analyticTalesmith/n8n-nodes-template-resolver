@@ -20,10 +20,11 @@
     "add": [
       "core/src/analyze.ts"
     ],
-    "remove": [],
+    "remove": [
+      "core/src/utils.ts"
+    ],
     "edit": [
       "core/src/index.ts",
-      "core/src/utils.ts",
       "n8n/TemplateResolver.node.ts"
     ],
     "frozen": true
@@ -88,7 +89,7 @@
   ],
   "claim": {
     "owner": "build:implementer",
-    "heartbeat": "2026-10-13T21:56:44.986Z"
+    "heartbeat": "2026-10-13T22:01:06.248Z"
   },
   "blocked_on": null,
   "docs_impact": "none",
@@ -102,10 +103,10 @@
   "user_visible": false,
   "user_docs_waiver": "internal restructuring or tooling; no user-facing document describes it",
   "freeze": {
-    "at": "2026-10-13T21:48:59.287Z",
+    "at": "2026-10-13T22:01:06.133Z",
     "brief_sha256": "374dd11340f9597d22fee169d58c98bb2e1a9796b90e141fcd87dadc328e4be9",
     "brief_core_sha256": "b6732d14676c59dbf0c894fc90c25126b0760d3b095b122e2f5fb2f99cbdc1e3",
-    "manifest_sha256": "87fcd6c38f9067dea6f6da0f7450b42b7076bcebb8d848e555d85706df62a5b8",
+    "manifest_sha256": "a3bd3f1984f747b4016de820923a7ccb65d5b92060c156fd34ef08912411f7d7",
     "criteria_sha256": "928b460d70a60e21d892c0e8117c986126ef19876affd78f41412617302db9f1",
     "scope_sha256": "9373fa319d1e3fbdcfd506fa6b9b0e17dd98a29589343c07a535d3193ec59b95",
     "scope_parts": {
