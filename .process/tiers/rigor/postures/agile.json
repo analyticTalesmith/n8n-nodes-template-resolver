@@ -1,0 +1,6 @@
+{
+  "stage_tiers": { "concept": "spike", "alpha": "prototype", "beta": "product", "mvp": "product", "ga": "hardened" },
+  "approvals": "cycle",
+  "loop": { "allowed": false, "max_iterations": 0, "max_spawns": 0, "no_progress_limit": 0, "repeat_failure_limit": 0, "sweep_rounds": 0 },
+  "regulated": false
+}

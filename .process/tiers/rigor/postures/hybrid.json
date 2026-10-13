@@ -1,0 +1,6 @@
+{
+  "stage_tiers": { "concept": "spike", "alpha": "prototype", "beta": "product", "mvp": "product", "ga": "hardened" },
+  "approvals": "card",
+  "loop": { "allowed": true, "max_iterations": 40, "max_spawns": 80, "no_progress_limit": 3, "repeat_failure_limit": 3, "sweep_rounds": 3 },
+  "regulated": false
+}

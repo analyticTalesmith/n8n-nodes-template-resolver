@@ -1,0 +1,5 @@
+{
+  "name": "interface-heuristics",
+  "version": "0.1.0",
+  "description": "A fixed ten-row usability rubric for reviewing a web-app flow, with how to run it and when a hit may block."
+}

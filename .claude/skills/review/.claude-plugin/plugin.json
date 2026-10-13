@@ -1,0 +1,5 @@
+{
+  "name": "review",
+  "version": "0.2.1",
+  "description": "Runs the blind review of a card and records it for the feature lead."
+}
