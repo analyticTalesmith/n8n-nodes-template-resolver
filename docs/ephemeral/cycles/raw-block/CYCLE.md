@@ -46,11 +46,11 @@ Shape: kind feature; intent add; purpose ship; compatibility additive; uncertain
 - stg-threat-model skipped: RAW only emits template text unchanged and adds no input, file, network or eval path; a template author already controls the template
 - stg-design-challenge skipped: rule
 - stg-test-strategy done: test plan: unit (lexer) and integration (resolveTemplate) rows pair with module design; system waived; acceptance is a person
-- stg-red-first-tests todo
-- stg-docs-plan todo
-- stg-slicing-plan todo
-- stg-ready-check todo
-- stg-plan-approval todo
+- stg-red-first-tests done: red evidence for rb-01 to rb-04: 6 failing tests, all assertion failures, guard passes
+- stg-docs-plan done: delta raw-block-syntax adds docs/living/product/raw-block.md (planned stub) and the card edits README
+- stg-slicing-plan done: one slice, one card: the lexer scan, README and living doc together
+- stg-ready-check done: card has typed criteria, frozen manifest, reviewer brief and red evidence; gate moves to ready checks it
+- stg-plan-approval done: plan approval is auto per the shape (small additive card), no human approval requested
 - stg-work-order todo
 - stg-workspace todo
 - stg-build-slices todo
@@ -130,5 +130,6 @@ A person confirms the README example renders as shown when run through the resol
 <!-- Session instructions: the depth script adds a dated one-line list under a Session instructions heading here, created on first use. Do not write instructions by hand or leave them only in chat. -->
 
 <!-- generated index: replace everything between this line and the end marker -->
+- [deltas/](deltas/INDEX.md) — Index of docs/ephemeral/cycles/raw-block/deltas.
 - [test-plan.md](test-plan.md) — The tests this cycle plans at each level, and which requirement lines each one proves.
 <!-- end generated index -->

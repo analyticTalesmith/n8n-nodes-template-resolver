@@ -13,13 +13,12 @@
     "docs/living/product/raw-block.md"
   ],
   "manifest": {
-    "add": [
-      "docs/living/product/raw-block.md"
-    ],
+    "add": [],
     "remove": [],
     "edit": [
       "nodes/TemplateResolver/lexer.ts",
-      "README.md"
+      "README.md",
+      "docs/living/product/raw-block.md"
     ],
     "frozen": true
   },
@@ -109,10 +108,10 @@
     "docs/living/product/raw-block.md"
   ],
   "freeze": {
-    "at": "2026-10-13T18:17:59.310Z",
+    "at": "2026-10-13T18:18:50.601Z",
     "brief_sha256": "aa635d4690c596935d58667c93f168794c5dffe2aedb3b0d4d87f790aadcc391",
     "brief_core_sha256": "924e25e388c4417b14d16fca3a78bce051bc66d16907e86ca6068b45c8877714",
-    "manifest_sha256": "449158691aa8f09f6e7e24f81269346ae3cdcab8ccf3d16c963d4522185bdede",
+    "manifest_sha256": "714979ac8bf3072ad555cda59e45e0e10717d6371afa8cf58533bd1425d8a8d2",
     "criteria_sha256": "b217e9548020de61629971995f9cc9101d03a16a15d814ce739850481bc2c5c9",
     "scope_sha256": "08a956ddda379e7ac16d14102ac383c9e55a7f23c11c25bf93c809b2c36cf6d2",
     "scope_parts": {

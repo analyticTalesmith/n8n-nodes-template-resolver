@@ -13,7 +13,7 @@ state: planned
 Pairs with: module design.
 Depth: product default.
 Approval: auto.
-Status: planned.
+Status: red.
 
 | Test | Covers | What it proves |
 |---|---|---|
@@ -26,7 +26,7 @@ Status: planned.
 Pairs with: software design.
 Depth: product default.
 Approval: auto.
-Status: planned.
+Status: red.
 
 | Test | Covers | What it proves |
 |---|---|---|

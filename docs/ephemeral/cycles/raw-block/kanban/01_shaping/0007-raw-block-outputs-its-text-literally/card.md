@@ -38,4 +38,4 @@ The template syntax gains `{{RAW}}` and `{{END_RAW}}`. The first `{{END_RAW}}` a
 | --- | --- | --- | --- |
 | nodes/TemplateResolver/lexer.ts | edit | 30 | resolver-core |
 | README.md | edit | 25 | resolver-core |
-| docs/living/product/raw-block.md | add | 30 | resolver-core |
+| docs/living/product/raw-block.md | edit | 30 | resolver-core |
