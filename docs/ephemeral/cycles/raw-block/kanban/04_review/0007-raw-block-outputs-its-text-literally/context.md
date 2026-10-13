@@ -24,3 +24,5 @@ Working memory for this ticket, next to card.md. The lead updates it in small ed
 
 | Date | Path | Kind | Reason | Approved by |
 | --- | --- | --- | --- | --- |
+| 2026-10-13 | nodes/TemplateResolver/utils.ts | edit | review finding f1: the n8n node detects variables by scanning the template text, so a variable tag inside RAW would be reported missing in strict mode; the cycle goal cannot be met in the node without it | project lead |
+| 2026-10-13 | test-node/raw-block-review.test.ts | add | regression tests for review findings f1 to f3 | project lead |
