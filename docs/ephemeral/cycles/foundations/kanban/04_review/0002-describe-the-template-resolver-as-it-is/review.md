@@ -17,20 +17,23 @@ Restatement: The card must produce two recovered, purely descriptive documents f
 ### f1: The recovered documents are not in the reviewed diff; the card's scope authorizes no writes
 
 - Class: goal-risk
-- Status: open
+- Status: withdrawn
 - Serves: card-goal: The card goal is 'two recovered documents exist'. The base..head diff is empty (only 10 docs/ephemeral paths omitted) and files_scope/manifest add are 'none'. So the review cannot tie the two docs/living/architecture documents to this card's change. Either they predate base, or they were never committed at head, or they were written outside an empty scope.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: Run 'git diff 4cf5b65..f1c1357 -- docs/living/architecture'. Per the packet's section 4 it shows nothing. Then check card.json files_scope: it is 'none', so no add of docs/living/architecture/overview.md or modules/template-resolver.md is authorized.
 - Evidence: diff:docs/living/architecture/overview.md, diff:docs/living/architecture/modules/template-resolver.md, doc:card.md#Scope
+- Review lead ruling after round 1: withdraw: accepted
 
 ### f2: No frozen test or evidence-check output is supplied for c1, so the goal-critical question cannot be answered yes
 
-- Class: goal-risk
-- Status: open
+- Class: drift
+- Status: filed (0018-follow-up-no-frozen-test-or-evidence-che)
 - Serves: c1: c1 is verify: tool ('the evidence check reports no findings'), but the packet names no test trace, gate command or tool output. A reviewer cannot confirm that the evidence check was run against these documents or that it returned zero findings.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: Search the packet and card.md for a traces entry or gate command for ar-01: none is listed. Run the evidence check on both documents and attach its zero-findings output; until then c1 is unverified.
 - Evidence: doc:card.md#Must-haves, doc:spec.md#Acceptance criteria
+- Review lead ruling after round 1: drift: a read-only card has no gate trace; evidence.mjs output is clean and recorded in claim-check.md
+- Review lead ruling after round 1: drift: a read-only card has no gate trace; the evidence check output is clean
 
 ### f3: Absence and 'not tracked' claims are cited to files that cannot support them
 
@@ -41,6 +44,8 @@ Restatement: The card must produce two recovered, purely descriptive documents f
 - Reproduction: At commit 712fcfd, open .gitignore lines 1-5 and package.json lines 18-29. Neither file says anything about which paths exist or are tracked, so the claims as worded go beyond what is cited. The smallest fix: cite a tree listing (e.g. git ls-tree at the pinned commit) or reword these as 'ignored by .gitignore' with the absence moved to an open question.
 - Evidence: doc:docs/living/architecture/overview.md, code:.gitignore:1, code:.gitignore:5, code:package.json:18-29
 - Review lead ruling after round 1: sustain: valid wording or citation problem in the recovered document
+- Review lead ruling after round 1: sustain: reword Q4 so it does not claim an untracked package
+- Review lead ruling after round 1: sustain: reword Q4 so it does not claim an untracked package
 
 ### f4: Folder and root-file listings carry only an [open: Q7] tag, not a citation, and one tag points to the wrong question
 

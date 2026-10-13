@@ -56,15 +56,21 @@
       "location": null,
       "label": "f1",
       "raised_in": 1,
-      "status": "open",
+      "status": "withdrawn",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [],
-      "rulings": []
+      "rulings": [
+        {
+          "after_round": 1,
+          "ruling": "withdraw",
+          "note": "accepted"
+        }
+      ]
     },
     {
       "title": "No frozen test or evidence-check output is supplied for c1, so the goal-critical question cannot be answered yes",
-      "class": "goal-risk",
+      "class": "drift",
       "serves": {
         "target": "c1",
         "scenario": "c1 is verify: tool ('the evidence check reports no findings'), but the packet names no test trace, gate command or tool output. A reviewer cannot confirm that the evidence check was run against these documents or that it returned zero findings."
@@ -78,11 +84,23 @@
       "location": null,
       "label": "f2",
       "raised_in": 1,
-      "status": "open",
+      "status": "filed",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [],
-      "rulings": []
+      "rulings": [
+        {
+          "after_round": 1,
+          "ruling": "drift",
+          "note": "a read-only card has no gate trace; evidence.mjs output is clean and recorded in claim-check.md"
+        },
+        {
+          "after_round": 1,
+          "ruling": "drift",
+          "note": "a read-only card has no gate trace; the evidence check output is clean"
+        }
+      ],
+      "ticket": "0018-follow-up-no-frozen-test-or-evidence-che"
     },
     {
       "title": "Absence and 'not tracked' claims are cited to files that cannot support them",
@@ -111,6 +129,16 @@
           "after_round": 1,
           "ruling": "sustain",
           "note": "valid wording or citation problem in the recovered document"
+        },
+        {
+          "after_round": 1,
+          "ruling": "sustain",
+          "note": "reword Q4 so it does not claim an untracked package"
+        },
+        {
+          "after_round": 1,
+          "ruling": "sustain",
+          "note": "reword Q4 so it does not claim an untracked package"
         }
       ]
     },
