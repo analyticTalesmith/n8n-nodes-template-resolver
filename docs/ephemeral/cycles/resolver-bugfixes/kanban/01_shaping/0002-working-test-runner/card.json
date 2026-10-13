@@ -1,0 +1,85 @@
+{
+  "id": "0002-working-test-runner",
+  "title": "Working test runner",
+  "type": "task",
+  "parent": null,
+  "depends_on": [],
+  "origin": "resolver-bugfixes",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "scripts/run-node-tests.mjs",
+    "scripts/run-node-tests.test.mjs",
+    "tsconfig.test.json",
+    "test-node/smoke.test.ts",
+    "package.json",
+    "package-lock.json",
+    ".gitignore"
+  ],
+  "manifest": {
+    "add": [
+      "scripts/run-node-tests.mjs",
+      "tsconfig.test.json",
+      "test-node/smoke.test.ts"
+    ],
+    "remove": [],
+    "edit": [
+      "scripts/run-node-tests.test.mjs",
+      "package.json",
+      "package-lock.json",
+      ".gitignore"
+    ],
+    "frozen": true
+  },
+  "criteria": [
+    {
+      "text": "tr-01 npm run test:node compiles the sources and test-node tests with tsc and runs them with node:test, exiting 0 when they pass and nonzero when one fails",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "class": "goal-critical"
+    },
+    {
+      "text": "tr-02 the runner prints node:test TAP on stdout so the card gate can read failing tests",
+      "verify": "tool",
+      "evidence": null,
+      "status": "pending",
+      "class": "goal-critical"
+    },
+    {
+      "text": "tr-03 the build output directory is ignored by git and the existing jest suite files are untouched",
+      "verify": "review",
+      "evidence": null,
+      "status": "pending",
+      "class": "polish"
+    }
+  ],
+  "gate": [
+    "node",
+    "--test",
+    "--test-reporter=tap",
+    "scripts/run-node-tests.test.mjs"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1,
+  "user_visible": false,
+  "freeze": {
+    "at": "2026-10-13T17:45:29.834Z",
+    "brief_sha256": "d8563a94be5f5e1e60542d300b7d5eca7e4955bc6722464a340ef39c31fc0037",
+    "brief_core_sha256": "7e59fde4135b19d536da3f7e6c5e444bf896f081ba01f13d736c6e8b501b75c5",
+    "manifest_sha256": "52255128491a81838e974d0eed9351451e9306ceedec18161dc0f9c9a21fd681",
+    "criteria_sha256": "7e1cc39d611d0f4e35f61e93fc11356049dc504572360d624afda504e38ee60c",
+    "scope_sha256": "b92ec22815e2054ff52097b7660767b5895e702a46272b5885654fa6631aef90",
+    "scope_parts": {
+      "files_scope": "ddc9bd25b2b2e1a7245ff5ffe7c2faaaa12d6a8f1ff8b7096c75e03377c33bb9",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "ee95ac13b8486621eba45314df6fcfbe940080b0cf75de3bf00d86345afcf5cd"
+    }
+  }
+}

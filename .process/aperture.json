@@ -37,5 +37,8 @@
         "work-profile"
       ]
     }
+  },
+  "work_profile": {
+    "deployment": "none"
   }
 }
