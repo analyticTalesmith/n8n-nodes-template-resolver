@@ -36,6 +36,9 @@ Shape: kind restructure; intent restructure, adapt; purpose ship; compatibility 
 
 <!-- A stage is a question the cycle asks; record an answer only when it is surprising. Stages with an artifact are done when it exists. Record only: "- <stage> done: <evidence>" for a stage with no artifact, "- <stage> skipped (override): <reason>" for a skip where its own rule says run, and "- <stage> added: <reason>" for a stage chosen on purpose. A spine stage cannot be skipped. -->
 - stg-goals-oracle done: goal: clean clone green, core/n8n split, Tier 0 fixed; oracle: the existing 446 tests plus new regression tests
+- stg-build-slices done: 11 cards built in their own worktrees and merged into the cycle branch: jest runner, CI, five bug fix cards, restructure, analyze, golden harness
+- stg-unit-regression done: full suite 563 tests in 12 suites pass on the merged branch; the 446 pre-existing tests unchanged apart from import specifiers
+- stg-record done: cards done, deltas recorded; recovered documents apply after merge
 
 ## Who and why
 

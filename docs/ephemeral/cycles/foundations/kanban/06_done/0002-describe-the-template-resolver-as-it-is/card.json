@@ -29,15 +29,12 @@
     ".process/core/scripts/evidence.mjs",
     "."
   ],
-  "claim": {
-    "owner": "research:lead",
-    "heartbeat": "2026-10-13T21:40:50.031Z"
-  },
+  "claim": null,
   "blocked_on": null,
   "docs_impact": "none",
   "started": "2026-10-13T21:40:50.360Z",
-  "ended": null,
-  "review_rounds": 1,
+  "ended": "2026-10-13T22:05:55.809Z",
+  "review_rounds": 2,
   "schema_version": 1,
   "blast_radius": [
     "none"

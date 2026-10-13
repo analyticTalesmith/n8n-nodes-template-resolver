@@ -1,0 +1,26 @@
+{
+  "id": "0026-follow-up-two-absolute-syntax-claims-in",
+  "title": "Follow-up: Two absolute syntax claims in the module document are false for some inputs at the pinned commit",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [],
+  "origin": "foundations",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [],
+    "frozen": false
+  },
+  "criteria": [],
+  "gate": null,
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1
+}

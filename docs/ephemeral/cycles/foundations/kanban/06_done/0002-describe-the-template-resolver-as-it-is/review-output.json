@@ -1,0 +1,45 @@
+{
+  "restatement": "The card is descriptive only. At the pinned commit 712fcfd, two recovered documents must exist: a repository surface map (docs/living/architecture/overview.md) and a module description of the template resolver (docs/living/architecture/modules/template-resolver.md). Every claim in them must either carry a source citation that holds against the pinned commit or be marked as an open question. The documents must not propose changes and must not present an inference as a fact. Success is shown in two ways: the evidence tool reports no findings, and a fresh claim checker finds no unsupported claim.",
+  "brief_mismatch": null,
+  "verification_plan": [
+    "c1: confirm the evidence check reports no findings on both recovered documents (lead run fact: no findings, only two informational evidence-stale notes on package.json citations that changed after the pin)",
+    "c2: read the claims in both documents against the files at the pinned commit 712fcfd (git show 712fcfd:<path>), giving priority to the precise and absolute claims: manifest fields, script table, keyword sets, lookup and math semantics, error paths, and the answered questions Q2 and Q6 in the module document",
+    "c2: check that each citation's line range actually contains what the claim says, not only something nearby",
+    "c2: check that statements about the tree (files present or absent, folder listing) hold at the pinned commit and not only in the working tree",
+    "m1: scan both documents for recommendations, 'should' or 'fix' wording, or proposed changes",
+    "m2: check that derived statements (for example 'therefore', 'never', 'only') follow strictly from the cited code, and that anything unverified is marked [open: Qn] instead of being asserted",
+    "Rubric: confirm the diff touches nothing outside the card scope apart from the paths in the logged scope exceptions"
+  ],
+  "findings": [
+    {
+      "title": "Two absolute syntax claims in the module document are false for some inputs at the pinned commit",
+      "class": "defect",
+      "serves": {
+        "target": "c2",
+        "scenario": "A fresh claim checker reading the Tokenizing and Parsing claims against 712fcfd finds two absolute statements that the cited code contradicts, so the criterion 'no unsupported claim' fails. (1) The document says a tag keyword 'must be one of the 22 listed names ... or a SyntaxError \"Unknown template tag\" is thrown' and that 'a plain {{name}} without $ reaches this error'. But getTokenType does `mapping[keyword] || null` on a plain object literal, and extractKeyword returns the whole content when there is no leading [A-Z_] run. So {{constructor}}, {{toString}} or {{hasOwnProperty}} get an inherited Object.prototype member as the token type, skip the unknown-tag error, and fail later in the parser with 'Unexpected token: function ...'. (2) The document says a top-level ROW that is 'not closed ... raises \"Unclosed {{ROW}} block\"'. But parseTableRow also breaks, without error, on a following ROW or END_TABLE token, so {{ROW}}a{{ROW}}b{{END_ROW}} leaves the first ROW unclosed and does not raise."
+      },
+      "rubric": "c2 / ar-02: a fresh claim checker reads every claim against the pinned commit and finds no unsupported claim (also rubric: each criterion is met by the diff and its test)",
+      "reproduction": "1. git -C C:/n8n-run show 712fcfd:nodes/TemplateResolver/lexer.ts and read lines 359-362 (extractKeyword returns the whole content when there is no uppercase match) and 367-394 (`return mapping[keyword] || null` on an object literal). With the template '{{constructor}}', keyword = 'constructor', mapping['constructor'] === Object (truthy), so tokenType !== null and the error at lines 237-244 is not thrown. parser.ts:83-89 then throws 'Unexpected token: function Object() ...' instead. 2. git show 712fcfd:nodes/TemplateResolver/parser.ts, lines 773-790: the while loop breaks on check(ROW) or check(END_TABLE) before the isAtEnd check, so a ROW followed by another ROW returns a node without END_ROW and without the 'Unclosed {{ROW}} block' error. Smallest fix: qualify the two sentences in docs/living/architecture/modules/template-resolver.md, for example 'unless the content matches an inherited Object.prototype member name, which instead fails in the parser with \"Unexpected token\"' and 'when the file ends before END_ROW', citing lexer.ts:359-394, parser.ts:83-89 and parser.ts:778-787. Or move the edge cases to an open question.",
+      "evidence": [
+        "doc:docs/living/architecture/modules/template-resolver.md (Tokenizing, keyword bullet citing lexer.ts:359-394 and lexer.ts:237-244)",
+        "doc:docs/living/architecture/modules/template-resolver.md (Parsing, top-level HEADER/ROW bullet citing parser.ts:747-754 and parser.ts:780-787)",
+        "code:nodes/TemplateResolver/lexer.ts:359-362",
+        "code:nodes/TemplateResolver/lexer.ts:367-394",
+        "code:nodes/TemplateResolver/parser.ts:83-89",
+        "code:nodes/TemplateResolver/parser.ts:778-787"
+      ],
+      "location": "docs/living/architecture/modules/template-resolver.md (Behavior > Tokenizing, keyword bullet; Behavior > Parsing, top-level HEADER/ROW bullet)"
+    }
+  ],
+  "responses": [],
+  "reviewer": {
+    "kind": "fallback",
+    "label": "opus fallback (same model family as the builder; has repository access)"
+  },
+  "at": "2026-10-13T22:05:48.482Z",
+  "card": "0002-describe-the-template-resolver-as-it-is",
+  "tier": "product",
+  "packet_sha256": "546b701c455a7e9f8fb7d0e789fe3ef4277858ae16c66ef4aeadd1cc2b45512f",
+  "diff_sha256": "8bcb3b65b65b6ef39f98a7ec2415df5dcf781cb1b90a3462791ca7159801e7b9",
+  "dropped": []
+}
