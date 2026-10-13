@@ -20,6 +20,9 @@ Status: planned.
 | t-runner-pass | tr-01 | the runner exits 0 and reports a passing smoke test |
 | t-runner-fail | tr-01 | the runner exits nonzero for a failing test file |
 | t-runner-tap | tr-02 | stdout is node:test TAP |
+| t-nested-outer | nf-01 | outer item and index values survive an inner loop |
+| t-nested-siblings | nf-02 | sibling and three-level loops render with the right items |
+| t-nested-table | nf-03 | a table row loop inside a loop keeps the outer variable |
 
 ## Integration
 

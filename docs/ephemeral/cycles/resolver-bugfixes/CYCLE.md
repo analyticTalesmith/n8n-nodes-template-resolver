@@ -38,7 +38,7 @@ Shape: kind bug-fix; intent correct; purpose ship; compatibility preserved; unce
 - stg-goals-oracle done: criteria typed on each card; oracle is new failing-then-passing tests
 - stg-research-archaeology skipped: bug locations reproduced by hand in interpreter.ts and parser.ts; no recovery needed
 - stg-test-strategy done: unit tests per card in test-node via node:test; plan in test-plan.md
-- stg-red-first-tests done: red evidence per card; runner card red recorded (3 assertion failures)
+- stg-red-first-tests done: red evidence written per card; nested loop card red recorded with 4 assertion failures
 - stg-workspace todo
 - stg-build-slices todo
 - stg-mechanical-gate todo
