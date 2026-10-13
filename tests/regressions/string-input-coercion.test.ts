@@ -1,4 +1,4 @@
-import { resolveTemplate } from "../../nodes/TemplateResolver/TemplateResolver.node";
+import { resolveTemplate } from "../../core/src/resolve";
 
 type Vars = Map<string, any>;
 

@@ -19,7 +19,6 @@
     "nodes/",
     "package.json",
     "tsconfig.json",
-    "jest.config.js",
     "tests/TemplateResolver.node.test.ts"
   ],
   "manifest": {
@@ -58,7 +57,6 @@
     "edit": [
       "package.json",
       "tsconfig.json",
-      "jest.config.js",
       "tests/TemplateResolver.node.test.ts"
     ],
     "frozen": true
@@ -106,15 +104,12 @@
     "--test-reporter=tap",
     "tools/tests/restructure.test.mjs"
   ],
-  "claim": {
-    "owner": "build:implementer",
-    "heartbeat": "2026-10-13T21:52:53.615Z"
-  },
+  "claim": null,
   "blocked_on": null,
   "docs_impact": "none",
   "started": "2026-10-13T21:52:53.759Z",
-  "ended": null,
-  "review_rounds": 0,
+  "ended": "2026-10-13T21:56:44.537Z",
+  "review_rounds": 1,
   "schema_version": 1,
   "blast_radius": [
     "template-resolver"
@@ -122,18 +117,60 @@
   "user_visible": false,
   "user_docs_waiver": "internal restructuring or tooling; no user-facing document describes it",
   "freeze": {
-    "at": "2026-10-13T21:48:54.460Z",
+    "at": "2026-10-13T21:55:34.434Z",
     "brief_sha256": "de9ff54bf6d733b8a5da5adf4e8abf8d170d0e6d0aad7f9cfe13222ec6d425f2",
     "brief_core_sha256": "6c7c8dd2cac36b52f6d0cfe585a374506e0a4abcdb3ce40285a8bacdabcac0bc",
-    "manifest_sha256": "46e84f8bb29ab6c94e0d9b3ffe8b49c9ae768ce514b4a5f75cae4ab06f40d69a",
+    "manifest_sha256": "803d68e22955f7984981508cf128b79f6247b2ae1f735fd97511ea9cbfb8b0fe",
     "criteria_sha256": "b47e9bc9e5ca534429aee3b6dcef0f168efbd501d0978561273cae1d66ce7f9d",
-    "scope_sha256": "5fff6a5d4a2994a73a0f094b0aa18ebdb43d94ec9edf3c0991275a60de9701f1",
+    "scope_sha256": "4b234b9096390112a2a211bfd47d260ffef9471d4a8c3e5c54e35ab8d1c41432",
     "scope_parts": {
-      "files_scope": "056efc9a4c9152d23f09dab1fea4115aa3b853b6b213f6dd760cb256be5c6213",
+      "files_scope": "c8532368bb857fd027b7d863b0708fe9a43d6c98ed6c99fb8a07688f28eef577",
       "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
       "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
       "gate": "1f87034e85d934b016d928de39394aa8b58a3891be75babde8dc5d230e566bbb"
     }
   },
-  "base_commit": "f77a73095b2b4d32779b509068ceb7671deaa086"
+  "base_commit": "f77a73095b2b4d32779b509068ceb7671deaa086",
+  "test_amendments": [
+    {
+      "path": "tests/regressions/condition-operators.test.ts",
+      "reason": "import and mock specifiers follow the move into core/src and n8n; no assertion changes",
+      "approved_by": "project lead (front approval)"
+    },
+    {
+      "path": "tests/regressions/nested-for.test.ts",
+      "reason": "import and mock specifiers follow the move into core/src and n8n; no assertion changes",
+      "approved_by": "project lead (front approval)"
+    },
+    {
+      "path": "tests/regressions/parse-defaults-and-tag-arguments.test.ts",
+      "reason": "import and mock specifiers follow the move into core/src and n8n; no assertion changes",
+      "approved_by": "project lead (front approval)"
+    },
+    {
+      "path": "tests/regressions/parse-defaults-guards.test.ts",
+      "reason": "import and mock specifiers follow the move into core/src and n8n; no assertion changes",
+      "approved_by": "project lead (front approval)"
+    },
+    {
+      "path": "tests/regressions/string-input-coercion.test.ts",
+      "reason": "import and mock specifiers follow the move into core/src and n8n; no assertion changes",
+      "approved_by": "project lead (front approval)"
+    },
+    {
+      "path": "tests/regressions/table-cell-escaping-filters.test.ts",
+      "reason": "import and mock specifiers follow the move into core/src and n8n; no assertion changes",
+      "approved_by": "project lead (front approval)"
+    },
+    {
+      "path": "tests/regressions/table-cell-escaping.test.ts",
+      "reason": "import and mock specifiers follow the move into core/src and n8n; no assertion changes",
+      "approved_by": "project lead (front approval)"
+    },
+    {
+      "path": "tests/TemplateResolver.node.test.ts",
+      "reason": "import and mock specifiers follow the move into core/src and n8n; no assertion changes",
+      "approved_by": "project lead (front approval)"
+    }
+  ]
 }
