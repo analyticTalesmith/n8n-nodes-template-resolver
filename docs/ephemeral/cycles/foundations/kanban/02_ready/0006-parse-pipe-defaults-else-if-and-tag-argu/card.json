@@ -20,7 +20,7 @@
       "nodes/TemplateResolver/parser.ts",
       "nodes/TemplateResolver/lexer.ts"
     ],
-    "frozen": false
+    "frozen": true
   },
   "criteria": [
     {
@@ -69,5 +69,19 @@
   "blast_radius": [
     "template-resolver"
   ],
-  "user_visible": false
+  "user_visible": false,
+  "freeze": {
+    "at": "2026-10-13T21:40:04.090Z",
+    "brief_sha256": "96cb68d0baffb9cb7496e6f6b947ff8052c45632520afa13c80685b17d3ed06b",
+    "brief_core_sha256": "1f66acd9b74f4c3531f926d64a5dd13fbe82fb540c50db16f501915faf44fda5",
+    "manifest_sha256": "fab61e2ab7db0506778e4c0cdac77d44d4f36cb5a08285d383e7f3e55dfd6b18",
+    "criteria_sha256": "8114bb9f6238a007c9e7e7187b6566481f59f457a70bc1cd0255358dab15ae56",
+    "scope_sha256": "8727e6180c494a258758b524b88c58fccee9d53d367007bf89c53abcb15bca72",
+    "scope_parts": {
+      "files_scope": "0e7d547e2969c75d8ca24711f0a3e68f1aedef6abc33c7882bb415608d85629c",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "77d49648b4750ad0b2f928c8b4c128a94706d9e7190ba43ec9d17edf6918b664"
+    }
+  }
 }

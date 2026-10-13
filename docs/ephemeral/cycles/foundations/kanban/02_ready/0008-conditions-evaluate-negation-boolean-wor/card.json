@@ -18,7 +18,7 @@
     "edit": [
       "nodes/TemplateResolver/expressions.ts"
     ],
-    "frozen": false
+    "frozen": true
   },
   "criteria": [
     {
@@ -81,5 +81,19 @@
   "blast_radius": [
     "template-resolver"
   ],
-  "user_visible": false
+  "user_visible": false,
+  "freeze": {
+    "at": "2026-10-13T21:40:08.842Z",
+    "brief_sha256": "7dedb657d21c61928dd4629231e00fdc56990c8aac2f20d7a9e0eba9e275f28a",
+    "brief_core_sha256": "5732c4257092efb32ab5ccc56572bda76a39a8191026100361bdf84e3fddaaab",
+    "manifest_sha256": "bb5f51df59adf3c68cf9295a7323c255a9b89074d503ffa7e04c5814e5e0c32d",
+    "criteria_sha256": "c0cc789f45fa6dbfdf6e09dd78d7bcd7dc264c6b62ea78150a97b01c10b42f86",
+    "scope_sha256": "3925f6c632e9e67f8fe4a4ac91840069ef059aa62f032cfe1e60a6e5fd0324a7",
+    "scope_parts": {
+      "files_scope": "9f26f9f92cc673f24475821c49c87164232d8eba5596f534692a8b2f8bc6739c",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "dc02883ebac2bb3c683eef458347a4435d4cdd7bfca01890045e5f35e0d28215"
+    }
+  }
 }

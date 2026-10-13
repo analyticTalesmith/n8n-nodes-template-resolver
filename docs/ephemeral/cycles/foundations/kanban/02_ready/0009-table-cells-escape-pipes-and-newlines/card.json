@@ -18,7 +18,7 @@
     "edit": [
       "nodes/TemplateResolver/interpreter.ts"
     ],
-    "frozen": false
+    "frozen": true
   },
   "criteria": [
     {
@@ -60,5 +60,19 @@
   "blast_radius": [
     "template-resolver"
   ],
-  "user_visible": false
+  "user_visible": false,
+  "freeze": {
+    "at": "2026-10-13T21:40:11.202Z",
+    "brief_sha256": "e157242eb9f7189d779aaba356d0c94dca5be0db4ab29e80db3c15ba97724986",
+    "brief_core_sha256": "62bdaf5521da830dfe833bac650970e9fd2181eab3d3c340be01873a1df10d30",
+    "manifest_sha256": "c250af2da6b22861526e058f05d6edfb9e335f98c3709646cb984bba2109ecfd",
+    "criteria_sha256": "5f41699263d53d470cf2915a6b504bf2fd631dffbb69bd4886dac2f95a4e61b6",
+    "scope_sha256": "eb7d9a57b2d239f41141d090801d2f73e144c88d2fb9baa01ac512291fa52176",
+    "scope_parts": {
+      "files_scope": "7f44f9457cf1902f5d454fab596dcc7c0baa434881a92d78ff318a10e0199ca1",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "8029a327c6e98d32df094f16810bcf76119a7c84d2587a5da1c1a53796917520"
+    }
+  }
 }

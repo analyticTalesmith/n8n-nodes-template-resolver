@@ -3,7 +3,7 @@ summary: Foundations cycle design: restore tests, CI, Tier 0 fixes, restructure 
 approved_by: "Jon (front approval)"
 approved_on: 2026-10-13
 approves:
-- c2d666bf4a2b8c2aa4ac8e5747585c28917b348b514b85eb9d3c20052e0b4dd6 docs/ephemeral/cycles/foundations/CYCLE.md
+- 4042fade6f55cb338e30e62dde0c22ffcda5e1cfbca0d3af126ad15a674695e7 docs/ephemeral/cycles/foundations/CYCLE.md
 - 0511630f7ee0068e907bcbc351631404bda87d82f8961ab3ddebe67fdfbc0b94 docs/ephemeral/cycles/foundations/test-plan.md
 - c1b4698142e0f1b62082beca69106292be77e67aab3757f350e0dad47dd70134 docs/living/decisions/adr/0001-house-style-for-every-block.md
 - b6ad28c22ac4c8d9bc2c978853ec65c7b30c53191fa555df8a7ec084986d1a2e docs/living/decisions/adr/0002-standalone-block-tag-lines-vanish.md
@@ -20,7 +20,7 @@ approves:
 - ae4ad6699b79a11775505d40c4a164075d7571a045381009bb1a6d9b3ff8eca4 docs/ephemeral/work/0011-restructure-into-a-pure-core-and-a-thin/spec.md
 - 9f956781ab0dcc49ba7547badb3687861bdd020945d89055c476a61cba2355ef docs/ephemeral/work/0012-derive-variable-and-filter-usage-from-th/spec.md
 - e3f2554709f319230fb35555f24b47478e1b3e40ceedc7ceafab5830f5ee3096 docs/ephemeral/work/0013-add-the-golden-file-test-harness/spec.md
-- 8073f408488516c170b90fe3ce71b111b887ba5de1f73d2c257e66452462a513 docs/ephemeral/work/0004-restore-jest-and-make-it-the-default-tes/spec.md
+- 7d79f6775ab2bbf6b650dfc96307b5039c295313c0b9c855df75180548e2f4b2 docs/ephemeral/work/0004-restore-jest-and-make-it-the-default-tes/spec.md
 cards:
   - .gitkeep
   - 0002-describe-the-template-resolver-as-it-is
@@ -43,7 +43,7 @@ max_spawns: 80
 max_cost:
 cost_unit:
 sweep_rounds: 3
-approval_hash: 3518947ded24fa6c4c76a5f258d1c89886fe6e6c8e4d27b2c16b6e2ce48a9b99
+approval_hash: c8146c42a714180a3fc70684ca672f1cbc11b818ebb8994397a62074a56cae12
 ---
 
 # Design approval
