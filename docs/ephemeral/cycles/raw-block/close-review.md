@@ -1,5 +1,5 @@
 ---
-summary:
+summary: Draft close review awaiting the human.
 approved_by:
 validates: []
 ---
