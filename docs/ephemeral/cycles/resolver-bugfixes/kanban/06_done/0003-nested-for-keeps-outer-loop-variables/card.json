@@ -67,14 +67,11 @@
     "scripts/run-node-tests.mjs",
     ".test-build/test-node/nested-for.test.js"
   ],
-  "claim": {
-    "owner": "build:implementer",
-    "heartbeat": "2026-10-13T18:03:18.666Z"
-  },
+  "claim": null,
   "blocked_on": null,
   "docs_impact": "none",
   "started": "2026-10-13T18:03:18.793Z",
-  "ended": null,
+  "ended": "2026-10-13T18:07:19.486Z",
   "review_rounds": 2,
   "schema_version": 1,
   "blast_radius": [
