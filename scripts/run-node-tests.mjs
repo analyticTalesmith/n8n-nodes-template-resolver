@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { readdirSync, statSync } from 'node:fs';
+import { readdirSync, rmSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -16,6 +16,8 @@ function findTests(dir) {
 	}
 	return found;
 }
+
+rmSync(join(root, '.test-build'), { recursive: true, force: true });
 
 const compile = spawnSync(process.execPath, [tsc, '-p', join(root, 'tsconfig.test.json')], {
 	cwd: root,
