@@ -29,7 +29,10 @@
     ".process/core/scripts/evidence.mjs",
     "."
   ],
-  "claim": null,
+  "claim": {
+    "owner": "research:lead",
+    "heartbeat": "2026-10-13T21:40:50.031Z"
+  },
   "blocked_on": null,
   "docs_impact": "none",
   "started": null,
