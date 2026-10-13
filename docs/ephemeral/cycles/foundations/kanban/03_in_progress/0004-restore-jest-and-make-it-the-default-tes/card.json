@@ -52,10 +52,13 @@
     "--test-reporter=tap",
     "tools/tests/test-runner.test.mjs"
   ],
-  "claim": null,
+  "claim": {
+    "owner": "build:implementer",
+    "heartbeat": "2026-10-13T21:30:19.006Z"
+  },
   "blocked_on": null,
   "docs_impact": "none",
-  "started": null,
+  "started": "2026-10-13T21:30:19.144Z",
   "ended": null,
   "review_rounds": 0,
   "schema_version": 1,
@@ -76,5 +79,6 @@
       "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
       "gate": "3be9dad667157fe0a7cae6a9c53b7fdff9509d8cb2964670e94ada387679567e"
     }
-  }
+  },
+  "base_commit": "2f6aef4db269a9da0dfc8c53483027359d8177eb"
 }
