@@ -1,0 +1,57 @@
+{
+  "id": "0002-describe-the-template-resolver-as-it-is",
+  "title": "Describe the template resolver as it is",
+  "type": "task",
+  "parent": null,
+  "depends_on": [],
+  "origin": "foundations",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [],
+    "frozen": true
+  },
+  "criteria": [
+    {
+      "text": "ar-01: the evidence check reports no findings on the recovered documents",
+      "verify": "tool"
+    },
+    {
+      "text": "ar-02: a fresh claim checker reads every claim against the pinned commit and finds no unsupported claim",
+      "verify": "review"
+    }
+  ],
+  "gate": [
+    "node",
+    ".process/core/scripts/evidence.mjs",
+    "."
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver"
+  ],
+  "user_visible": false,
+  "freeze": {
+    "at": "2026-10-13T21:30:48.738Z",
+    "brief_sha256": "0b1fc4c03874450db49aaeb27ad1dfe49a7b062bda761da414e1d2eb280ef336",
+    "brief_core_sha256": "0e9be728d368558d5e01510541f145a09a1ce96c019774d3c0d848fc5460c03b",
+    "manifest_sha256": "fa323add14990d5263c5132140c476a71f14fb3ff0b38f190a8590bf299820ef",
+    "criteria_sha256": "16656faf442e660cb98b0f179c6311cac4b587ea65a33d12368e50196fa51403",
+    "scope_sha256": "7b24017234b70df70055a94ea8e86d971bb286fca08aa57df2bf4228d75184c9",
+    "scope_parts": {
+      "files_scope": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "91a5d1c8076a23704a0a3cc6f86709d627409db7f8121711ee88d0b340624e42"
+    }
+  }
+}

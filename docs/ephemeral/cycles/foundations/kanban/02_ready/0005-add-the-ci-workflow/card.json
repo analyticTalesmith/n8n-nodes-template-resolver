@@ -59,7 +59,10 @@
     "--test-reporter=tap",
     "tools/tests/ci.test.mjs"
   ],
-  "claim": null,
+  "claim": {
+    "owner": "build:implementer",
+    "heartbeat": "2026-10-13T21:36:04.051Z"
+  },
   "blocked_on": null,
   "docs_impact": "none",
   "started": null,
