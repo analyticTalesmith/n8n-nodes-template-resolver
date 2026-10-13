@@ -70,7 +70,9 @@ Shape: kind bug-fix; intent correct; purpose ship; compatibility preserved; unce
 - `contract` `nf-01` After an inner FOR loop ends, the outer loop variable and its @index values still resolve.
 - `contract` `nf-02` Sibling and doubly nested loops render every iteration with the right outer item.
 - `contract` `nf-03` A TABLE row loop inside an outer FOR keeps the outer loop variable for later rows and text.
-- `contract` `dp-01` A default text after ?? may contain a pipe character and still render whole, with later filters applied.
+- `contract` `dp-01` A double-quoted default text after ?? may contain a pipe character and renders whole.
+- `contract` `dp-02` Filters after a default that contains a pipe still apply to the default text.
+- `contract` `dp-03` A single-quoted default containing a pipe renders whole, and plain defaults and filters behave as before.
 
 ## Won't-haves
 
