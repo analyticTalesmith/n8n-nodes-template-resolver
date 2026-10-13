@@ -133,8 +133,8 @@ export class Parser {
     defaultValue?: string;
     filters?: FilterCall[];
   } {
-    // --- 1. Split filters FIRST ---
-    const parts = expr.split("|").map((p) => p.trim());
+    // --- 1. Split filters FIRST (pipes inside quotes belong to the default) ---
+    const parts = this.splitOutsideQuotes(expr, "|").map((p) => p.trim());
     const core = parts[0];
     const filterExprs = parts.slice(1);
 
@@ -168,6 +168,34 @@ export class Parser {
       defaultValue,
       filters: filters.length > 0 ? filters : undefined,
     };
+  }
+
+  /**
+   * Split on a separator character, ignoring separators inside quotes.
+   * A quote only opens at the start of a value, so an apostrophe inside a
+   * word is plain text.
+   */
+  private splitOutsideQuotes(text: string, separator: string): string[] {
+    const parts: string[] = [];
+    let quote: string | null = null;
+    let start = 0;
+
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (quote) {
+        if (ch === quote) quote = null;
+      } else if (
+        (ch === '"' || ch === "'") &&
+        /(^|\?\?|=)\s*$/.test(text.slice(start, i))
+      ) {
+        quote = ch;
+      } else if (ch === separator) {
+        parts.push(text.slice(start, i));
+        start = i + 1;
+      }
+    }
+    parts.push(text.slice(start));
+    return parts;
   }
 
   /**

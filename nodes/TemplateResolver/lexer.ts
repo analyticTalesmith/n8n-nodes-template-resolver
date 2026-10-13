@@ -243,6 +243,24 @@ export class Lexer {
       );
     }
 
+    if (
+      trimmed !== keyword &&
+      (keyword === "ELSE" || keyword.startsWith("END_"))
+    ) {
+      const isElseIf =
+        keyword === "ELSE" && /^IF(\s|$)/.test(trimmed.slice(4).trim());
+      throw new SyntaxError(
+        isElseIf
+          ? "Invalid tag {{ELSE IF}}"
+          : `Unexpected arguments in {{${keyword}}} tag`,
+        startLine,
+        startColumn,
+        isElseIf
+          ? "Use {{ELSEIF condition}} for an else-if branch"
+          : `Use {{${keyword}}} with no arguments`
+      );
+    }
+
     this.tokens.push({
       type: tokenType,
       value: trimmed,

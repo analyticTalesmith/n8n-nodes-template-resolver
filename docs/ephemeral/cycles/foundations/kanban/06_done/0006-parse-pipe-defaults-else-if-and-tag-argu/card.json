@@ -59,15 +59,12 @@
     "tests/regressions/parse-defaults-and-tag-arguments.test.ts",
     "--reporters=<rootDir>/tools/jest-tap-reporter.cjs"
   ],
-  "claim": {
-    "owner": "build:implementer",
-    "heartbeat": "2026-10-13T21:40:21.666Z"
-  },
+  "claim": null,
   "blocked_on": null,
   "docs_impact": "none",
   "started": "2026-10-13T21:40:21.807Z",
-  "ended": null,
-  "review_rounds": 0,
+  "ended": "2026-10-13T21:51:36.262Z",
+  "review_rounds": 2,
   "schema_version": 1,
   "blast_radius": [
     "template-resolver"
@@ -87,5 +84,5 @@
       "gate": "77d49648b4750ad0b2f928c8b4c128a94706d9e7190ba43ec9d17edf6918b664"
     }
   },
-  "base_commit": "04c46ee174fa772d36538d8866ebfafb8db6510d"
+  "base_commit": "e7069db9c344f65385b3956ece624de0aad10268"
 }
