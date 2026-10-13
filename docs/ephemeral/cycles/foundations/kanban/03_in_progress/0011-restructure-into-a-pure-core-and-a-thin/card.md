@@ -70,7 +70,6 @@ Core public entry core/src/index.ts exports the resolver surface the node and te
 | `n8n/TemplateResolver.node.ts` | add | template-resolver |
 | `n8n/icoTemplateResolver.svg` | add | template-resolver |
 | `n8n/index.ts` | add | template-resolver |
-| `jest.config.js` | edit | template-resolver |
 | `package.json` | edit | template-resolver |
 | `tests/TemplateResolver.node.test.ts` | edit | template-resolver |
 | `tsconfig.json` | edit | template-resolver |
@@ -88,5 +87,5 @@ Core public entry core/src/index.ts exports the resolver surface the node and te
 | `nodes/TemplateResolver/types.ts` | remove | template-resolver |
 | `nodes/TemplateResolver/utils.ts` | remove | template-resolver |
 
-Files scope: `core/`, `jest.config.js`, `n8n/`, `nodes/`, `package.json`, `tests/TemplateResolver.node.test.ts`, `tsconfig.json`
+Files scope: `core/`, `n8n/`, `nodes/`, `package.json`, `tests/TemplateResolver.node.test.ts`, `tsconfig.json`
 <!-- end generated scope -->
