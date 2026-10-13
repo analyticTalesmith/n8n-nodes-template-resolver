@@ -26,7 +26,7 @@
       "core/src/utils.ts",
       "n8n/TemplateResolver.node.ts"
     ],
-    "frozen": false
+    "frozen": true
   },
   "criteria": [
     {
@@ -97,5 +97,19 @@
     "template-resolver"
   ],
   "user_visible": false,
-  "user_docs_waiver": "internal restructuring or tooling; no user-facing document describes it"
+  "user_docs_waiver": "internal restructuring or tooling; no user-facing document describes it",
+  "freeze": {
+    "at": "2026-10-13T21:48:59.287Z",
+    "brief_sha256": "374dd11340f9597d22fee169d58c98bb2e1a9796b90e141fcd87dadc328e4be9",
+    "brief_core_sha256": "b6732d14676c59dbf0c894fc90c25126b0760d3b095b122e2f5fb2f99cbdc1e3",
+    "manifest_sha256": "87fcd6c38f9067dea6f6da0f7450b42b7076bcebb8d848e555d85706df62a5b8",
+    "criteria_sha256": "928b460d70a60e21d892c0e8117c986126ef19876affd78f41412617302db9f1",
+    "scope_sha256": "9373fa319d1e3fbdcfd506fa6b9b0e17dd98a29589343c07a535d3193ec59b95",
+    "scope_parts": {
+      "files_scope": "17f0da7f57e7daf131c1eee1f073045d2dd0014cc9495a6e7fa09c1dfd891dd2",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "bea2aa973c50c4947eff10383b9a38ac1c8866bcfc649047afcd3a30db3cca0d"
+    }
+  }
 }

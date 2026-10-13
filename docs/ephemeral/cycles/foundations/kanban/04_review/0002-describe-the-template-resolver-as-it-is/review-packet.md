@@ -2,16 +2,16 @@
 type: review-packet
 card: 0002-describe-the-template-resolver-as-it-is
 tier: product
-built_at: 2026-10-13T21:41:42.284Z
+built_at: 2026-10-13T21:46:36.761Z
 base: 4cf5b652517cdf9563502648c3437cfb5f2f8842
-head: f1c1357e39d5059a656b16c682fce68a2937613f
+head: 4ebc06d70735d8ae84eb50a4f3ec065f20f654bb
 frozen: true
 brief_sha256: 0b1fc4c03874450db49aaeb27ad1dfe49a7b062bda761da414e1d2eb280ef336
 manifest_sha256: fa323add14990d5263c5132140c476a71f14fb3ff0b38f190a8590bf299820ef
 criteria_sha256: 16656faf442e660cb98b0f179c6311cac4b587ea65a33d12368e50196fa51403
 scope_sha256: 7b24017234b70df70055a94ea8e86d971bb286fca08aa57df2bf4228d75184c9
-diff_sha256: 8bcb3b65b65b6ef39f98a7ec2415df5dcf781cb1b90a3462791ca7159801e7b9
-omitted_paths: 10
+diff_sha256: 01424a7b18b8aeb35287f6fdbd3efa362bcd1b28bad38119e40f442ea672f675
+omitted_paths: 14
 criteria_count: 2
 must_not_count: 2
 ---
@@ -140,7 +140,12 @@ Files scope: none
 
 ### Scope exceptions log (as of now, written during the work)
 
-No scope exceptions are logged.
+Each row is a change outside the card's scope that its lead approved. A builder who can edit the card folder can add a row, so the human gate is the backstop.
+
+| Date | Path | Kind | Reason | Approved by |
+| --- | --- | --- | --- | --- |
+| 2026-10-13 | `docs/living/architecture/overview.md` | edit | corrections of the recovered document by the research lead after review | project lead (front approval) |
+| 2026-10-13 | `docs/living/architecture/modules/template-resolver.md` | edit | corrections of the recovered document by the research lead after review | project lead (front approval) |
 
 ### Manifest and scope
 
@@ -423,10 +428,143 @@ Applied left to right to the string form of the value, after `??`. Syntax per fi
 
 ## 4. Diff
 
-10 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
+14 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
 
 ```diff
+diff --git a/docs/living/architecture/modules/template-resolver.md b/docs/living/architecture/modules/template-resolver.md
+index 98b2ee0..dee9710 100644
+--- a/docs/living/architecture/modules/template-resolver.md
++++ b/docs/living/architecture/modules/template-resolver.md
+@@ -66,7 +66,7 @@ The `value` description says it supports n8n expressions; the code only reads th
+ 8. Outputs `{ [outputField]: resolved }`, plus `_template_metadata` (`detected_variables`, `mapped_variables`, `missing_variables`, `variable_count` = number detected) when `showDetectedVariables` is on; each item carries `pairedItem: { item: itemIndex }` [src: nodes/TemplateResolver/TemplateResolver.node.ts:242-258]
+ 9. Returns `[returnData]` [src: nodes/TemplateResolver/TemplateResolver.node.ts:283]
+ 
+-`extractAllVariables` collects roots from `${{name...}}`, from `{{IF|CASE|FOR name}}` (case-insensitive tag word) and from `{{name ?` patterns, drops names starting with `@`, and returns them unique and sorted [src: nodes/TemplateResolver/utils.ts:16-44]. It does not exclude the `AS` name of a `FOR` tag, so `${{item}}` inside a loop adds `item` to the detected set [src: nodes/TemplateResolver/utils.ts:17-23]. In the node, an unmapped detected name therefore counts as missing, and in strict mode triggers the error in step 5 before resolution [src: nodes/TemplateResolver/TemplateResolver.node.ts:217-229] [open: Q2]
++`extractAllVariables` collects roots from `${{name...}}`, from `{{IF|CASE|FOR name}}` (case-insensitive tag word) and from `{{name ?` patterns, drops names starting with `@`, and returns them unique and sorted [src: nodes/TemplateResolver/utils.ts:16-44]. It does not exclude the `AS` name of a `FOR` tag, so `${{item}}` inside a loop adds `item` to the detected set [src: nodes/TemplateResolver/utils.ts:13-45]. In the node, an unmapped detected name therefore counts as missing, and in strict mode triggers the error in step 5 before resolution [src: nodes/TemplateResolver/TemplateResolver.node.ts:216-229] [answer: Q2] [open: Q10]
+ 
+ ## Behavior
+ 
+@@ -148,14 +148,16 @@ Applied left to right to the string form of the value, after `??`. Syntax per fi
+ ## Open questions
+ 
+ - Q1. Whether n8n expressions typed in a mapping `value` (for example `={{ $json.title }}`) are evaluated before `execute()` sees them is n8n runtime behavior outside this repository; the code only calls `getNodeParameter`. Looked at: `TemplateResolver.node.ts:136-143,181-200`.
+-- Q2. In strict mode, `${{item}}` for a `FOR ... AS item` name appears to be counted as an unmapped variable by `extractAllVariables` and the node's precheck, which would raise the "unmapped variables" error before the loop runs. Whether tests or users exercise this, and what is intended, was not checked (tests not read). Looked at: `utils.ts:16-24`, `TemplateResolver.node.ts:216-229`.
+ - Q3. The lexer comment documents a `{{cond ? "a" : "b"}}` ternary and `utils.ts` detects its condition name, but no lexer or parser path produces it; a tag of that shape reaches the unknown-tag error. Whether the ternary is intended to work is not stated in the code.
+ - Q4. The `FOR` loop clears the entire loop context at its end (`interpreter.ts:231`), so a nested inner loop would remove the outer item and index values for the rest of the outer iteration. Not run; effect on real templates unconfirmed.
+ - Q5. `isTruthy` comment lists `null`, `undefined` and `none` strings as falsy but the code treats them as truthy. Which is intended is unknown.
+ - Q7. `MissingVariableError` suggests enabling "Lenient Mode", while the node parameter is named "Strict Mode". Whether another name for the setting exists is unknown.
+ - Q8. The error-message prefix is double-encoded text in the source; whether tests or consumers depend on the exact bytes is unknown (tests not read). Several comments in `lexer.ts`, `parser.ts`, `filters.ts` and `coercion.ts` show the same encoding damage for arrows.
+ - Q9. The interpreter prints swallowed math errors with `console.log`; whether that output is intended for n8n execution logs is unknown. Looked at: `interpreter.ts:111-118`.
++- Q10. Whether tests exercise a `FOR` item name used as `${{item}}` under strict mode, and whether that behavior is intended, was not checked (tests not read).
+ 
+ ## Answered
+ 
++- Q2. Code path: `extractAllVariables` adds the root of every `${{name}}`, including a `FOR ... AS` item name, to the detected set (`utils.ts:13-45`), and in strict mode the node throws when a detected name has no mapping (`TemplateResolver.node.ts:216-229`). Answered from source by research:lead.
++
+ - Q6. A leading negative number such as `-3 + 1` ends in `MissingVariableError` for the key `-3 + 1` in strict mode and renders empty in lenient mode: the math attempt fails ("Invalid math expression"), the error is swallowed, and normal lookup finds no such key. Answered from source by research:lead (`interpreter.ts:110-119`, `interpreter.ts:468-477`, `expressions.ts:564-566`).
+diff --git a/docs/living/architecture/overview.md b/docs/living/architecture/overview.md
+index 0ecbdf9..001c58f 100644
+--- a/docs/living/architecture/overview.md
++++ b/docs/living/architecture/overview.md
+@@ -32,7 +32,7 @@ Deliberately not read: `README.md`, `AGENTS.md`, `CLAUDE.md`, `changelog.md`, `L
+ - Node codex file `nodes/TemplateResolver/TemplateResolver.node.json` names node `n8n-nodes-template-resolver`, `nodeVersion` `1.0`, `codexVersion` `1.0`, category `Transform`, and a `primaryDocumentation` URL that is a placeholder-looking `https://github.com/org/repo?tab=readme-ov-file` [src: nodes/TemplateResolver/TemplateResolver.node.json:2-12] [open: Q2]
+ - `tsconfig.json` compiler options: `strict`, `module` `commonjs`, `target` `es2019`, `noUnusedLocals`, `declaration`, `sourceMap`, `incremental`, `outDir` `./dist/` [src: tsconfig.json:2-22]
+ - `tsconfig.json` `include` is `nodes/**/*`, `nodes/**/*.json` and `package.json`; `exclude` is `node_modules`, `dist`, `coverage`, `deprecated`, `tests`, `**/*.test.ts` and `**/*.spec.ts` [src: tsconfig.json:24-33]. Tests and the `__mocks__` folder are therefore outside the TypeScript build. [src: tsconfig.json:24-33]
+-- `.gitignore` (7 lines) ignores `dist`, `node_modules`, `*.tgz`, `.vscode/`, `.github/`, `coverage/` and `deprecated/` [src: .gitignore:1-7]. The pinned tree has no `.github/` directory and `.gitignore` ignores it [src: .gitignore:5] [open: Q3]
++- `.gitignore` (7 lines) ignores `dist`, `node_modules`, `*.tgz`, `.vscode/`, `.github/`, `coverage/` and `deprecated/` [src: .gitignore:1-7]. It lists `.github/` [src: .gitignore:5] [open: Q3]
+ - Lint config: `eslint.config.mjs` imports `config` from `@n8n/node-cli/eslint` and exports it unchanged [src: eslint.config.mjs:1-3]
+ - Test config: `jest.config.js` uses preset `ts-jest`, environment `node`, `roots` `<rootDir>/tests`, `testMatch` `**/*.test.ts`, and maps module `n8n-workflow` to `<rootDir>/__mocks__/n8n-workflow.ts` [src: jest.config.js:1-8]
+ 
+@@ -55,15 +55,15 @@ All commands are `package.json` `scripts` [src: package.json:18-29]
+ 
+ - `n8n-node` is declared as a binary in `package-lock.json` [src: package-lock.json:2008]; what the `build`, `dev`, `lint` and `release` steps do internally was not read [open: Q4]
+ - `build:watch` is the only script that calls `tsc` directly [src: package.json:20]
+-- Neither `node_modules/` nor `dist/` is tracked: `.gitignore` ignores both [src: .gitignore:1] [src: .gitignore:2] [open: Q1]
++- `.gitignore` lists `node_modules` and `dist` [src: .gitignore:1] [src: .gitignore:2]; whether either exists in the pinned tree, and so whether any script is runnable as found, was not verified [open: Q8]
+ - The mock replaces `n8n-workflow` for tests with minimal interface declarations and a `NodeOperationError` class whose constructor takes `(node, message)` and sets `name` to `NodeOperationError` [src: __mocks__/n8n-workflow.ts:1-37]
+ 
+ ## Entry points
+ 
+ - n8n loads the single node file listed in the manifest, `dist/nodes/TemplateResolver/TemplateResolver.node.js` [src: package.json:36-38]. Its source is `nodes/TemplateResolver/TemplateResolver.node.ts`, which exports the class `TemplateResolver` and the function `resolveTemplate` [src: nodes/TemplateResolver/TemplateResolver.node.ts:22] [src: nodes/TemplateResolver/TemplateResolver.node.ts:66]
+-- Whether the compiled output lands at `dist/nodes/...` (the path the manifest names) was not observed, because `dist` is gitignored and not tracked [open: Q5]
++- Whether the compiled output lands at `dist/nodes/...` (the path the manifest names) was not observed, because no build was run [open: Q5]
+ - `nodes/TemplateResolver/index.ts` is a barrel that re-exports `types`, `errors`, `coercion`, `filters`, `lexer`, `parser`, `expressions`, `interpreter`, `utils` and `TemplateResolver.node` [src: nodes/TemplateResolver/index.ts:2-29]. It is not named in `package.json`, and no `main` field points at it [src: package.json:1-50]
+-- No CLI, server or script entry exists in the repository root besides the `package.json` scripts above [src: package.json:18-29]
++- The `package.json` scripts above invoke `n8n-node`, `tsc` and `jest` [src: package.json:18-29]; whether any other CLI, server or script entry exists in the repository was not established [open: Q9]
+ 
+ ## Top-level folders
+ 
+@@ -73,7 +73,7 @@ All commands are `package.json` `scripts` [src: package.json:18-29]
+ | `nodes/` | `TemplateResolver/` is the folder named by the manifest's node path [src: package.json:37] |
+ | `tests/` | the jest `roots` entry [src: jest.config.js:4] |
+ | `__mocks__/` | holds the mock that `n8n-workflow` is mapped to [src: jest.config.js:7] |
+-| `docs/` | `archive/`, `ephemeral/`, `living/` (`living/architecture/` held only `.gitkeep` before this recovery) [open: Q7] |
++| `docs/` | `archive/`, `ephemeral/`, `living/` [open: Q7] |
+ | `.process/` | `core/`, `local/`, `shapes/`, `teams/`, `tiers/` and the files `aperture.json`, `managed.json` (process tooling; contents not read) [open: Q7] |
+ | `.claude/` | `skills/` (contents not read) [open: Q7] |
+ 
+@@ -84,12 +84,14 @@ Root files: `.gitignore`, `AGENTS.md`, `CLAUDE.md`, `LICENSE.md`, `README.md`, `
+ 
+ ## Open questions
+ 
+-- Q1. `package.json` omits `jest`, `ts-jest` and `@types/jest` while `jest.config.js` and the `test` scripts need them, and `package-lock.json` lists them as root devDependencies. Which file a fresh install follows, and whether `npm test` passes after install, is unknown; no install or test was run, and neither `node_modules/` nor `dist` is tracked. Looked at: `package.json:40-46`, `package-lock.json:13-18`.
++- Q1. `package.json` omits `jest`, `ts-jest` and `@types/jest` while `jest.config.js` and the `test` scripts need them, and `package-lock.json` lists them as root devDependencies. Which file a fresh install follows, and whether `npm test` passes after install, is unknown; no install or test was run, and installation state was not checked. Looked at: `package.json:40-46`, `package-lock.json:13-18`.
+ - Q2. The codex `primaryDocumentation` URL looks like a placeholder (`org/repo`) while `package.json` `repository.url` names a different GitHub path. Whether it is intentional is not stated in the code. Looked at: `TemplateResolver.node.json:9`, `package.json:14-17`.
+-- Q3. The pinned tree has no `.github/` directory and `.gitignore` ignores it, so no CI or release workflow could be found. Whether CI runs elsewhere is unknown.
++- Q3. `.gitignore` lists `.github/`; whether the pinned tree has a `.github/` directory or any workflow is unverified because no pinned tree listing was read. Whether CI runs elsewhere is unknown.
+ - Q4. What `n8n-node build`, `lint` and `release` do (from `@n8n/node-cli`) was not read because the package is not part of the tracked tree.
+-- Q5. Whether the `n8n-node build` output places the node at `dist/nodes/TemplateResolver/TemplateResolver.node.js`, matching the manifest, is unobserved (`dist` is not tracked).
++- Q5. Whether the `n8n-node build` output places the node at `dist/nodes/TemplateResolver/TemplateResolver.node.js`, matching the manifest, is unobserved (no build was run).
+ - Q6. Whether `icoTemplateResolver.svg` is referenced by anything: the node class references `fa:file-code` and no TypeScript file names the SVG. Looked at: `nodes/TemplateResolver/*.ts`.
+-- Q7. The purpose and contents of `docs/`, `.process/`, `.claude/` and the root documents (`README.md`, `AGENTS.md`, `CLAUDE.md`, `changelog.md`, `LICENSE.md`) were listed but not read, so what they hold is unknown.
++- Q7. The entries for `docs/`, `.process/`, `.claude/` and the root files below come from a directory listing of the working tree, not a pinned-commit tree listing, and their contents were not read, so both their presence at the pin and what they hold are unverified.
++- Q8. Whether `node_modules/` or `dist/` exist or are tracked in the pinned tree was not established; only the `.gitignore` entries were read.
++- Q9. Whether any CLI, server or script entry other than the `package.json` scripts exists at the repository root was not established; only a working-tree listing was seen.
+ 
+ ## Answered
 ```
+
+## 5. Earlier findings and replies
+
+Answer each fix-class (defect or goal-risk) finding below in `responses` with sustain or withdraw and evidence. Raise new findings only about what the revision changed or an in-scope problem newly evidenced.
+
+### f1: The recovered documents are not in the reviewed diff; the card's scope authorizes no writes
+
+- Class: goal-risk
+- Serves: card-goal: The card goal is 'two recovered documents exist'. The base..head diff is empty (only 10 docs/ephemeral paths omitted) and files_scope/manifest add are 'none'. So the review cannot tie the two docs/living/architecture documents to this card's change. Either they predate base, or they were never committed at head, or they were written outside an empty scope.
+- Reproduction: Run 'git diff 4cf5b65..f1c1357 -- docs/living/architecture'. Per the packet's section 4 it shows nothing. Then check card.json files_scope: it is 'none', so no add of docs/living/architecture/overview.md or modules/template-resolver.md is authorized.
+- Status: open
+
+### f2: No frozen test or evidence-check output is supplied for c1, so the goal-critical question cannot be answered yes
+
+- Class: goal-risk
+- Serves: c1: c1 is verify: tool ('the evidence check reports no findings'), but the packet names no test trace, gate command or tool output. A reviewer cannot confirm that the evidence check was run against these documents or that it returned zero findings.
+- Reproduction: Search the packet and card.md for a traces entry or gate command for ar-01: none is listed. Run the evidence check on both documents and attach its zero-findings output; until then c1 is unverified.
+- Status: open
+
+### f3: Absence and 'not tracked' claims are cited to files that cannot support them
+
+- Class: defect
+- Serves: c2: A fresh claim checker reads '[src: .gitignore:1] [src: .gitignore:2]' as support for 'Neither node_modules/ nor dist/ is tracked'. It reads '[src: .gitignore:5]' as support for 'The pinned tree has no .github/ directory', and '[src: package.json:18-29]' as support for 'No CLI, server or script entry exists in the repository root'. A .gitignore entry does not prove a path is untracked or absent (files can be force-added), and a scripts block does not prove that no other entry file exists. Each of these is an unsupported claim, and each is an inference stated as fact (m2).
+- Reproduction: At commit 712fcfd, open .gitignore lines 1-5 and package.json lines 18-29. Neither file says anything about which paths exist or are tracked, so the claims as worded go beyond what is cited. The smallest fix: cite a tree listing (e.g. git ls-tree at the pinned commit) or reword these as 'ignored by .gitignore' with the absence moved to an open question.
+- Status: sustained
+- Review lead ruling: sustain: valid wording or citation problem in the recovered document
+
+### f4: Folder and root-file listings carry only an [open: Q7] tag, not a citation, and one tag points to the wrong question
+
+- Class: defect
+- Serves: c2: The rows for docs/, .process/ and .claude/ and the 'Root files:' line state concrete contents but cite only [open: Q7]. Q7 is about the unread contents of those files, not about the listing, so the listing claims themselves are uncited. The claim 'living/architecture/ held only .gitkeep before this recovery' is a fact with no source. 'Neither node_modules/ nor dist/ is tracked ... [open: Q1]' points to Q1, which is about jest dependencies, not about tracking.
+- Reproduction: In overview.md, read the Top-level folders table and the Root files line: no [src:] tag is present. Read Q7 and Q1: neither one is the listing claim. The smallest fix: cite the tree listing at the pinned commit for each listing and retag the node_modules/dist bullet.
+- Status: sustained
+- Review lead ruling: sustain: valid wording or citation problem in the recovered document
+
+### f5: The module page's body asserts as fact the FOR-AS strict-mode failure that its own Q2 hedges as 'appears'
+
+- Class: defect
+- Serves: m2: The Execute path section states flatly that '${{item}} inside a loop adds item to the detected set' and that in strict mode it 'triggers the error in step 5 before resolution'. Q2 says this behavior only 'appears' to happen and was not checked. The body therefore states an inference as a fact.
+- Reproduction: In template-resolver.md, compare the paragraph ending '[open: Q2]' under Execute path with Open question Q2. The body uses definite wording; Q2 uses 'appears to'. The smallest fix: hedge the body sentence to match Q2, or drop the hedge in Q2 if the source reading is conclusive.
+- Status: sustained
+- Review lead ruling: sustain: valid wording or citation problem in the recovered document
 
 ## Output
 

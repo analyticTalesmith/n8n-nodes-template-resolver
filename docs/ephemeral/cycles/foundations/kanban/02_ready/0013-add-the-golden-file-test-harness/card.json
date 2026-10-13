@@ -19,7 +19,7 @@
     ],
     "remove": [],
     "edit": [],
-    "frozen": false
+    "frozen": true
   },
   "criteria": [
     {
@@ -76,5 +76,19 @@
     "template-resolver"
   ],
   "user_visible": false,
-  "user_docs_waiver": "internal restructuring or tooling; no user-facing document describes it"
+  "user_docs_waiver": "internal restructuring or tooling; no user-facing document describes it",
+  "freeze": {
+    "at": "2026-10-13T21:49:01.695Z",
+    "brief_sha256": "6db13ad33a19b112d8984eeed9f357c0f732bfefd34ca5309bf069bdc0b16714",
+    "brief_core_sha256": "a8cb6b62e1d34274630db9fbc487da7cb25ec14f849a7b5f455b624ec52c3685",
+    "manifest_sha256": "d8c9e79b667bd1f36de28c513d4b95d19e751589536dbca4f6bb0eca84011457",
+    "criteria_sha256": "3bad4f9f1dce4f5da3a0a40a5bf10fc157b19de2f47e120df77993bedcdf0d3d",
+    "scope_sha256": "04e586076441626d0ecf899b1878ef9dd38f92e69f6b5a4c6d72b50eec6bb267",
+    "scope_parts": {
+      "files_scope": "af9dbbae497def23ee20ea02c8c57061ac49229221dfa0af86f47a6a2f4afa1d",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "bdc7080de3d24917fbdc11119776f29841f4a1d6c38ad8a8bfa9bef1546374ba"
+    }
+  }
 }
