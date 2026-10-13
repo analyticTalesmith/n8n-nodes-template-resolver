@@ -32,7 +32,7 @@ Deliberately not read: `README.md`, `AGENTS.md`, `CLAUDE.md`, `changelog.md`, `L
 - Node codex file `nodes/TemplateResolver/TemplateResolver.node.json` names node `n8n-nodes-template-resolver`, `nodeVersion` `1.0`, `codexVersion` `1.0`, category `Transform`, and a `primaryDocumentation` URL that is a placeholder-looking `https://github.com/org/repo?tab=readme-ov-file` [src: nodes/TemplateResolver/TemplateResolver.node.json:2-12] [open: Q2]
 - `tsconfig.json` compiler options: `strict`, `module` `commonjs`, `target` `es2019`, `noUnusedLocals`, `declaration`, `sourceMap`, `incremental`, `outDir` `./dist/` [src: tsconfig.json:2-22]
 - `tsconfig.json` `include` is `nodes/**/*`, `nodes/**/*.json` and `package.json`; `exclude` is `node_modules`, `dist`, `coverage`, `deprecated`, `tests`, `**/*.test.ts` and `**/*.spec.ts` [src: tsconfig.json:24-33]. Tests and the `__mocks__` folder are therefore outside the TypeScript build. [src: tsconfig.json:24-33]
-- `.gitignore` (7 lines) ignores `dist`, `node_modules`, `*.tgz`, `.vscode/`, `.github/`, `coverage/` and `deprecated/` [src: .gitignore:1-7]. The pinned tree has no `.github/` directory and `.gitignore` ignores it [src: .gitignore:5] [open: Q3]
+- `.gitignore` (7 lines) ignores `dist`, `node_modules`, `*.tgz`, `.vscode/`, `.github/`, `coverage/` and `deprecated/` [src: .gitignore:1-7]. It lists `.github/` [src: .gitignore:5] [open: Q3]
 - Lint config: `eslint.config.mjs` imports `config` from `@n8n/node-cli/eslint` and exports it unchanged [src: eslint.config.mjs:1-3]
 - Test config: `jest.config.js` uses preset `ts-jest`, environment `node`, `roots` `<rootDir>/tests`, `testMatch` `**/*.test.ts`, and maps module `n8n-workflow` to `<rootDir>/__mocks__/n8n-workflow.ts` [src: jest.config.js:1-8]
 
@@ -55,15 +55,15 @@ All commands are `package.json` `scripts` [src: package.json:18-29]
 
 - `n8n-node` is declared as a binary in `package-lock.json` [src: package-lock.json:2008]; what the `build`, `dev`, `lint` and `release` steps do internally was not read [open: Q4]
 - `build:watch` is the only script that calls `tsc` directly [src: package.json:20]
-- Neither `node_modules/` nor `dist/` is tracked: `.gitignore` ignores both [src: .gitignore:1] [src: .gitignore:2] [open: Q1]
+- `.gitignore` lists `node_modules` and `dist` [src: .gitignore:1] [src: .gitignore:2]; whether either exists in the pinned tree, and so whether any script is runnable as found, was not verified [open: Q8]
 - The mock replaces `n8n-workflow` for tests with minimal interface declarations and a `NodeOperationError` class whose constructor takes `(node, message)` and sets `name` to `NodeOperationError` [src: __mocks__/n8n-workflow.ts:1-37]
 
 ## Entry points
 
 - n8n loads the single node file listed in the manifest, `dist/nodes/TemplateResolver/TemplateResolver.node.js` [src: package.json:36-38]. Its source is `nodes/TemplateResolver/TemplateResolver.node.ts`, which exports the class `TemplateResolver` and the function `resolveTemplate` [src: nodes/TemplateResolver/TemplateResolver.node.ts:22] [src: nodes/TemplateResolver/TemplateResolver.node.ts:66]
-- Whether the compiled output lands at `dist/nodes/...` (the path the manifest names) was not observed, because `dist` is gitignored and not tracked [open: Q5]
+- Whether the compiled output lands at `dist/nodes/...` (the path the manifest names) was not observed, because no build was run [open: Q5]
 - `nodes/TemplateResolver/index.ts` is a barrel that re-exports `types`, `errors`, `coercion`, `filters`, `lexer`, `parser`, `expressions`, `interpreter`, `utils` and `TemplateResolver.node` [src: nodes/TemplateResolver/index.ts:2-29]. It is not named in `package.json`, and no `main` field points at it [src: package.json:1-50]
-- No CLI, server or script entry exists in the repository root besides the `package.json` scripts above [src: package.json:18-29]
+- The `package.json` scripts above invoke `n8n-node`, `tsc` and `jest` [src: package.json:18-29]; whether any other CLI, server or script entry exists in the repository was not established [open: Q9]
 
 ## Top-level folders
 
@@ -73,7 +73,7 @@ All commands are `package.json` `scripts` [src: package.json:18-29]
 | `nodes/` | `TemplateResolver/` is the folder named by the manifest's node path [src: package.json:37] |
 | `tests/` | the jest `roots` entry [src: jest.config.js:4] |
 | `__mocks__/` | holds the mock that `n8n-workflow` is mapped to [src: jest.config.js:7] |
-| `docs/` | `archive/`, `ephemeral/`, `living/` (`living/architecture/` held only `.gitkeep` before this recovery) [open: Q7] |
+| `docs/` | `archive/`, `ephemeral/`, `living/` [open: Q7] |
 | `.process/` | `core/`, `local/`, `shapes/`, `teams/`, `tiers/` and the files `aperture.json`, `managed.json` (process tooling; contents not read) [open: Q7] |
 | `.claude/` | `skills/` (contents not read) [open: Q7] |
 
@@ -84,12 +84,14 @@ Root files: `.gitignore`, `AGENTS.md`, `CLAUDE.md`, `LICENSE.md`, `README.md`, `
 
 ## Open questions
 
-- Q1. `package.json` omits `jest`, `ts-jest` and `@types/jest` while `jest.config.js` and the `test` scripts need them, and `package-lock.json` lists them as root devDependencies. Which file a fresh install follows, and whether `npm test` passes after install, is unknown; no install or test was run, and neither `node_modules/` nor `dist` is tracked. Looked at: `package.json:40-46`, `package-lock.json:13-18`.
+- Q1. `package.json` omits `jest`, `ts-jest` and `@types/jest` while `jest.config.js` and the `test` scripts need them, and `package-lock.json` lists them as root devDependencies. Which file a fresh install follows, and whether `npm test` passes after install, is unknown; no install or test was run, and installation state was not checked. Looked at: `package.json:40-46`, `package-lock.json:13-18`.
 - Q2. The codex `primaryDocumentation` URL looks like a placeholder (`org/repo`) while `package.json` `repository.url` names a different GitHub path. Whether it is intentional is not stated in the code. Looked at: `TemplateResolver.node.json:9`, `package.json:14-17`.
-- Q3. The pinned tree has no `.github/` directory and `.gitignore` ignores it, so no CI or release workflow could be found. Whether CI runs elsewhere is unknown.
+- Q3. `.gitignore` lists `.github/`; whether the pinned tree has a `.github/` directory or any workflow is unverified because no pinned tree listing was read. Whether CI runs elsewhere is unknown.
 - Q4. What `n8n-node build`, `lint` and `release` do (from `@n8n/node-cli`) was not read because the package is not part of the tracked tree.
-- Q5. Whether the `n8n-node build` output places the node at `dist/nodes/TemplateResolver/TemplateResolver.node.js`, matching the manifest, is unobserved (`dist` is not tracked).
+- Q5. Whether the `n8n-node build` output places the node at `dist/nodes/TemplateResolver/TemplateResolver.node.js`, matching the manifest, is unobserved (no build was run).
 - Q6. Whether `icoTemplateResolver.svg` is referenced by anything: the node class references `fa:file-code` and no TypeScript file names the SVG. Looked at: `nodes/TemplateResolver/*.ts`.
-- Q7. The purpose and contents of `docs/`, `.process/`, `.claude/` and the root documents (`README.md`, `AGENTS.md`, `CLAUDE.md`, `changelog.md`, `LICENSE.md`) were listed but not read, so what they hold is unknown.
+- Q7. The entries for `docs/`, `.process/`, `.claude/` and the root files below come from a directory listing of the working tree, not a pinned-commit tree listing, and their contents were not read, so both their presence at the pin and what they hold are unverified.
+- Q8. Whether `node_modules/` or `dist/` exist or are tracked in the pinned tree was not established; only the `.gitignore` entries were read.
+- Q9. Whether any CLI, server or script entry other than the `package.json` scripts exists at the repository root was not established; only a working-tree listing was seen.
 
 ## Answered
