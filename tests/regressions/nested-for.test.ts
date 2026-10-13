@@ -1,5 +1,5 @@
-import { resolveTemplate } from "../../nodes/TemplateResolver/TemplateResolver.node";
-import { TemplateValue } from "../../nodes/TemplateResolver/types";
+import { resolveTemplate } from "../../core/src/resolve";
+import { TemplateValue } from "../../core/src/types";
 
 // Render, capturing a thrown error as text so a defect shows as a failed
 // expectation rather than an escaping exception.

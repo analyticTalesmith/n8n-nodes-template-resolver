@@ -25,5 +25,5 @@ export * from "./interpreter";
 // Utilities
 export * from "./utils";
 
-// Main node
-export * from "./TemplateResolver.node";
+// Template resolution
+export { resolveTemplate } from "./resolve";

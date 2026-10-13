@@ -1,5 +1,5 @@
-import { resolveTemplate } from "../../nodes/TemplateResolver/TemplateResolver.node";
-import { VariableMap, TemplateValue } from "../../nodes/TemplateResolver/types";
+import { resolveTemplate } from "../../core/src/resolve";
+import { VariableMap, TemplateValue } from "../../core/src/types";
 
 function vars(entries: [string, TemplateValue][] = []): VariableMap {
   return new Map(entries);

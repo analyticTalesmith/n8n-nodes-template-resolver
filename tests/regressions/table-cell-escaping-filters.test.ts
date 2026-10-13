@@ -1,5 +1,5 @@
-import { resolveTemplate } from "../../nodes/TemplateResolver/TemplateResolver.node";
-import { TemplateValue } from "../../nodes/TemplateResolver/types";
+import { resolveTemplate } from "../../core/src/resolve";
+import { TemplateValue } from "../../core/src/types";
 
 function render(
   template: string,

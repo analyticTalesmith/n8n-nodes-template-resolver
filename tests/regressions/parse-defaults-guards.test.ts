@@ -1,5 +1,5 @@
-import { resolveTemplate } from "../../nodes/TemplateResolver/TemplateResolver.node";
-import { VariableMap } from "../../nodes/TemplateResolver/types";
+import { resolveTemplate } from "../../core/src/resolve";
+import { VariableMap } from "../../core/src/types";
 
 function render(template: string): string {
   return resolveTemplate(template, new Map() as VariableMap, {
