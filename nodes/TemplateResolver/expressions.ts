@@ -61,7 +61,7 @@ export function isTruthy(value: any): boolean {
  * - Comparisons: ==, !=, >, <, >=, <=
  * - String ops: contains, startsWith, endsWith
  * - Type checks: isEmpty, isNotEmpty, isArray, isNumber, isObject, isBoolean
- * - Logical: AND, OR, NOT()
+ * - Logical: AND, OR, NOT (also &&, ||, !, case-insensitive)
  * - Parentheses for grouping
  */
 export function evaluateCondition(
@@ -69,14 +69,6 @@ export function evaluateCondition(
   variables: VariableMap
 ): boolean {
   const trimmed = condition.trim();
-
-  // Handle NOT() wrapper - verify the closing paren matches NOT(
-  if (trimmed.startsWith("NOT(") && trimmed.endsWith(")")) {
-    const inner = trimmed.slice(4, -1);
-    if (isBalancedParens(inner)) {
-      return !evaluateCondition(inner, variables);
-    }
-  }
 
   // Handle parentheses for grouping - only if they're matching outer parens
   if (trimmed.startsWith("(") && trimmed.endsWith(")")) {
@@ -91,6 +83,10 @@ export function evaluateCondition(
   const logicalResult = tryEvaluateLogical(trimmed, variables);
   if (logicalResult !== null) return logicalResult;
 
+  // Handle negation: NOT x, NOT (x), !x
+  const negated = trimmed.match(/^(?:NOT\b|!(?!=))\s*([\s\S]+)$/i);
+  if (negated) return !evaluateCondition(negated[1], variables);
+
   // Handle comparison operators
   const comparisonResult = tryEvaluateComparison(trimmed, variables);
   if (comparisonResult !== null) return comparisonResult;
@@ -102,6 +98,15 @@ export function evaluateCondition(
   // Handle type checks
   const typeResult = tryEvaluateTypeCheck(trimmed, variables);
   if (typeResult !== null) return typeResult;
+
+  if (!variables.has(trimmed) && hasBareWhitespace(trimmed)) {
+    throw new TypeError(
+      `Unrecognized condition: ${trimmed}`,
+      1,
+      1,
+      "Use a supported operator: ==, !=, >, <, >=, <=, contains, startsWith, endsWith, AND, OR, NOT"
+    );
+  }
 
   // Simple truthiness check
   const value = resolveValue(trimmed, variables);
@@ -122,36 +127,50 @@ function isBalancedParens(str: string): boolean {
 }
 
 /**
- * Try to evaluate logical operators (AND, OR)
- */
-/**
- * Try to evaluate logical operators (AND, OR)
+ * Try to evaluate logical operators (AND/&&, OR/||) outside parentheses and quotes
  */
 function tryEvaluateLogical(
   expr: string,
   variables: VariableMap
 ): boolean | null {
-  // Find AND/OR not inside parentheses
   let depth = 0;
+  let quoteChar: string | null = null;
   let orPos = -1;
+  let orLen = 0;
   let andPos = -1;
+  let andLen = 0;
 
-  for (let i = 0; i < expr.length - 3; i++) {
-    // -3 to allow for " OR " or "AND"
-    if (expr[i] === "(") depth++;
-    if (expr[i] === ")") depth--;
+  for (let i = 0; i < expr.length; i++) {
+    const char = expr[i];
 
-    if (depth === 0) {
-      // Check for OR (lower precedence, evaluate last)
-      if (expr.slice(i, i + 4) === " OR ") {
-        orPos = i;
-        // Don't break - keep looking for rightmost OR
-      }
-      // Check for AND (higher precedence)
-      if (expr.slice(i, i + 5) === " AND ") {
-        if (orPos === -1) {
-          // Only record AND if no OR found yet
+    if (quoteChar !== null) {
+      if (char === quoteChar && expr[i - 1] !== "\\") quoteChar = null;
+      continue;
+    }
+    if (char === '"' || char === "'") {
+      quoteChar = char;
+      continue;
+    }
+    if (char === "(") depth++;
+    if (char === ")") depth--;
+    if (depth !== 0) continue;
+
+    if (expr.startsWith("||", i)) {
+      orPos = i;
+      orLen = 2;
+    } else if (expr.startsWith("&&", i)) {
+      andPos = i;
+      andLen = 2;
+    } else if (/\s/.test(char)) {
+      const word = expr.slice(i).match(/^\s+(and|or)\s/i);
+      if (word) {
+        const len = word[0].length - 1;
+        if (word[1].toLowerCase() === "or") {
+          orPos = i;
+          orLen = len;
+        } else {
           andPos = i;
+          andLen = len;
         }
       }
     }
@@ -160,7 +179,7 @@ function tryEvaluateLogical(
   // OR has lower precedence - split on rightmost OR first
   if (orPos !== -1) {
     const left = expr.slice(0, orPos).trim();
-    const right = expr.slice(orPos + 4).trim();
+    const right = expr.slice(orPos + orLen).trim();
     return (
       evaluateCondition(left, variables) || evaluateCondition(right, variables)
     );
@@ -169,7 +188,7 @@ function tryEvaluateLogical(
   // Then split on rightmost AND
   if (andPos !== -1) {
     const left = expr.slice(0, andPos).trim();
-    const right = expr.slice(andPos + 5).trim();
+    const right = expr.slice(andPos + andLen).trim();
     return (
       evaluateCondition(left, variables) && evaluateCondition(right, variables)
     );
@@ -177,6 +196,44 @@ function tryEvaluateLogical(
 
   return null;
 }
+
+/**
+ * True when the expression has whitespace outside quotes, meaning it holds
+ * more than one bare word
+ */
+function hasBareWhitespace(expr: string): boolean {
+  let quoteChar: string | null = null;
+  for (let i = 0; i < expr.length; i++) {
+    const char = expr[i];
+    if (quoteChar !== null) {
+      if (char === quoteChar && expr[i - 1] !== "\\") quoteChar = null;
+    } else if (char === '"' || char === "'") {
+      quoteChar = char;
+    } else if (/\s/.test(char)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Numeric value of a number or numeric string, otherwise null
+ */
+function numericOf(value: TemplateValue): number | null {
+  return typeof value === "number" || typeof value === "string"
+    ? tryCoerceToNumber(value)
+    : null;
+}
+
+function valuesEqual(left: TemplateValue, right: TemplateValue): boolean {
+  const l = left === undefined ? null : left;
+  const r = right === undefined ? null : right;
+  const leftNum = numericOf(l);
+  const rightNum = numericOf(r);
+  if (leftNum !== null && rightNum !== null) return leftNum === rightNum;
+  return String(l) == String(r);
+}
+
 /**
  * Try to evaluate comparison operators (==, !=, >, <, >=, <=)
  */
@@ -204,10 +261,10 @@ function tryEvaluateComparison(
 
           switch (op) {
             case "==":
-              return String(left) == String(right);
+              return valuesEqual(left, right);
 
             case "!=":
-              return String(left) != String(right);
+              return !valuesEqual(left, right);
 
             case ">":
             case "<":
@@ -287,7 +344,10 @@ function tryEvaluateStringOp(
 
     if (match) {
       const leftValue = resolveValue(match[1].trim(), variables);
-      const rightValue = match[2].trim().replace(/^["']|["']$/g, "");
+      const rightValue = tryCoerceToString(
+        resolveValue(match[2].trim(), variables)
+      );
+      if (rightValue === null) return false;
 
       const leftStr = tryCoerceToString(leftValue);
       if (leftStr === null) return false;
