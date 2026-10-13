@@ -182,7 +182,8 @@ export class Parser {
       const ch = text[i];
       if (quote) {
         if (ch === quote) quote = null;
-      } else if (ch === '"' || ch === "'") {
+      } else if ((ch === '"' || ch === "'") && text.indexOf(ch, i + 1) !== -1) {
+        // Only a quote that closes later opens one; a lone quote is plain text
         quote = ch;
       } else if (ch === separator) {
         parts.push(text.slice(start, i));
