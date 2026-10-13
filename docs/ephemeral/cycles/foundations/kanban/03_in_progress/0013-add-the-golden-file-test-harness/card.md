@@ -55,8 +55,32 @@ tests/golden/harness.ts exports runGoldenCases(casesDir, render, options).
 <!-- generated scope: from card.json -->
 | Path | Permission (add, edit, remove) | Blast radius |
 | --- | --- | --- |
+| `tests/golden/cases/case-when-default/data.json` | add | template-resolver |
+| `tests/golden/cases/case-when-default/expected.md` | add | template-resolver |
+| `tests/golden/cases/case-when-default/template.md` | add | template-resolver |
+| `tests/golden/cases/default-fallback/data.json` | add | template-resolver |
+| `tests/golden/cases/default-fallback/expected.md` | add | template-resolver |
+| `tests/golden/cases/default-fallback/template.md` | add | template-resolver |
+| `tests/golden/cases/error-missing-variable/data.json` | add | template-resolver |
+| `tests/golden/cases/error-missing-variable/expected-error.txt` | add | template-resolver |
+| `tests/golden/cases/error-missing-variable/template.md` | add | template-resolver |
+| `tests/golden/cases/filter-chain/data.json` | add | template-resolver |
+| `tests/golden/cases/filter-chain/expected.md` | add | template-resolver |
+| `tests/golden/cases/filter-chain/template.md` | add | template-resolver |
+| `tests/golden/cases/for-nested-loops/data.json` | add | template-resolver |
+| `tests/golden/cases/for-nested-loops/expected.md` | add | template-resolver |
+| `tests/golden/cases/for-nested-loops/template.md` | add | template-resolver |
+| `tests/golden/cases/if-elseif-else/data.json` | add | template-resolver |
+| `tests/golden/cases/if-elseif-else/expected.md` | add | template-resolver |
+| `tests/golden/cases/if-elseif-else/template.md` | add | template-resolver |
+| `tests/golden/cases/list-nested-conditional/data.json` | add | template-resolver |
+| `tests/golden/cases/list-nested-conditional/expected.md` | add | template-resolver |
+| `tests/golden/cases/list-nested-conditional/template.md` | add | template-resolver |
+| `tests/golden/cases/table-with-for-rows/data.json` | add | template-resolver |
+| `tests/golden/cases/table-with-for-rows/expected.md` | add | template-resolver |
+| `tests/golden/cases/table-with-for-rows/template.md` | add | template-resolver |
 | `tests/golden/golden.test.ts` | add | template-resolver |
 | `tests/golden/harness.ts` | add | template-resolver |
 
-Files scope: `tests/golden/`
+Files scope: `tests/golden/cases/case-when-default/data.json`, `tests/golden/cases/case-when-default/expected.md`, `tests/golden/cases/case-when-default/template.md`, `tests/golden/cases/default-fallback/data.json`, `tests/golden/cases/default-fallback/expected.md`, `tests/golden/cases/default-fallback/template.md`, `tests/golden/cases/error-missing-variable/data.json`, `tests/golden/cases/error-missing-variable/expected-error.txt`, `tests/golden/cases/error-missing-variable/template.md`, `tests/golden/cases/filter-chain/data.json`, `tests/golden/cases/filter-chain/expected.md`, `tests/golden/cases/filter-chain/template.md`, `tests/golden/cases/for-nested-loops/data.json`, `tests/golden/cases/for-nested-loops/expected.md`, `tests/golden/cases/for-nested-loops/template.md`, `tests/golden/cases/if-elseif-else/data.json`, `tests/golden/cases/if-elseif-else/expected.md`, `tests/golden/cases/if-elseif-else/template.md`, `tests/golden/cases/list-nested-conditional/data.json`, `tests/golden/cases/list-nested-conditional/expected.md`, `tests/golden/cases/list-nested-conditional/template.md`, `tests/golden/cases/table-with-for-rows/data.json`, `tests/golden/cases/table-with-for-rows/expected.md`, `tests/golden/cases/table-with-for-rows/template.md`, `tests/golden/golden.test.ts`, `tests/golden/harness.ts`
 <!-- end generated scope -->
