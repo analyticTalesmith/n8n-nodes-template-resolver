@@ -56,7 +56,8 @@ none: no public interface changes.
 | Path | Permission (add, edit, remove) | Blast radius |
 | --- | --- | --- |
 | `tools/jest-tap-reporter.cjs` | add | build-tooling |
+| `tools/tests/test-runner-load-failure.test.mjs` | add | build-tooling |
 | `package.json` | edit | build-tooling |
 
-Files scope: `package.json`, `tools/jest-tap-reporter.cjs`
+Files scope: `package.json`, `tools/jest-tap-reporter.cjs`, `tools/tests/test-runner-load-failure.test.mjs`
 <!-- end generated scope -->

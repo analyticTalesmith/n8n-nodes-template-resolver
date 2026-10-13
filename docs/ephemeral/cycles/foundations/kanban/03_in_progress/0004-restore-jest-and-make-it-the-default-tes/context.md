@@ -25,3 +25,4 @@ Working memory for this ticket, next to card.md. The lead updates it in small ed
 | Date | Path | Kind | Reason | Approved by |
 | --- | --- | --- | --- | --- |
 | 2026-10-13 | tools/tests/test-runner.test.mjs | edit | the frozen reporter test had a regex typo (\d in a template literal); amendment logged in card.json test_amendments | project lead (front approval) |
+| 2026-10-13 | docs/ephemeral/work/0004-restore-jest-and-make-it-the-default-tes/spec.md | edit | add the tr-04 acceptance line after the sustained review finding | project lead (front approval) |

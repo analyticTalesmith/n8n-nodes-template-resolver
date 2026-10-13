@@ -9,11 +9,13 @@
   "claimed_in": null,
   "files_scope": [
     "package.json",
-    "tools/jest-tap-reporter.cjs"
+    "tools/jest-tap-reporter.cjs",
+    "tools/tests/test-runner-load-failure.test.mjs"
   ],
   "manifest": {
     "add": [
-      "tools/jest-tap-reporter.cjs"
+      "tools/jest-tap-reporter.cjs",
+      "tools/tests/test-runner-load-failure.test.mjs"
     ],
     "remove": [],
     "edit": [
@@ -57,7 +59,10 @@
     "--test-reporter=tap",
     "tools/tests/test-runner.test.mjs"
   ],
-  "claim": null,
+  "claim": {
+    "owner": "build:implementer",
+    "heartbeat": "2026-10-13T21:38:08.084Z"
+  },
   "blocked_on": null,
   "docs_impact": "none",
   "started": "2026-10-13T21:30:19.144Z",
@@ -69,14 +74,14 @@
   ],
   "user_visible": false,
   "freeze": {
-    "at": "2026-10-13T21:34:46.467Z",
+    "at": "2026-10-13T21:38:07.972Z",
     "brief_sha256": "2ed5586dfc90da306a4838733562a2d7b8ee0b1d8ba99af9a1e186ef61256196",
     "brief_core_sha256": "086e063fe1a3e26adf3e99f647b6d8ed5530cc9e9979893fbbb41d118a0991ca",
-    "manifest_sha256": "80a37cb493f907bff56d207c5692304c7f9f9b51e13e1529a8b41937982aa66b",
-    "criteria_sha256": "10e836ffc1d4fa5e60b81add62b6180dc43a56b392c1edefc616eb0f5e66f17f",
-    "scope_sha256": "e4e75af65f594092f399931df9d074ca4cb3518296568e39683f078ec8f3809d",
+    "manifest_sha256": "dc2e8551dc8ce55b050cd08e29f30727e5b6fbf46fe7ebdacdbb7a329a715531",
+    "criteria_sha256": "1a292a2a28d70885a7aa6c9e0efef1b27842a6aba00415184bc6b8b20bb7e51e",
+    "scope_sha256": "e2f62ad3347b1336a7f4577e3d6ccf94ee58698af518d58aed7828f93dc49f0c",
     "scope_parts": {
-      "files_scope": "484a60922cc75bca5e187af4ed7d7572345b8633620b2196e32c1c5f38ce1fc2",
+      "files_scope": "f9bcbc3383a4b9e56d140c905c44a3f281fa276dd1b6496b6b67347c1d22bf9c",
       "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
       "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
       "gate": "3be9dad667157fe0a7cae6a9c53b7fdff9509d8cb2964670e94ada387679567e"
