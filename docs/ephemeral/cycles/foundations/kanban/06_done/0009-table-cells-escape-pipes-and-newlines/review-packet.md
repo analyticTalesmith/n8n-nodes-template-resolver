@@ -2,16 +2,16 @@
 type: review-packet
 card: 0009-table-cells-escape-pipes-and-newlines
 tier: product
-built_at: 2026-10-13T21:42:36.905Z
+built_at: 2026-10-13T21:46:21.028Z
 base: e7069db9c344f65385b3956ece624de0aad10268
-head: 51c77c8650d5865c9adf74e18a432e6de892c0e1
+head: a81a354259094e40cd51c5db9f54e77566159661
 frozen: true
 brief_sha256: e157242eb9f7189d779aaba356d0c94dca5be0db4ab29e80db3c15ba97724986
 manifest_sha256: c250af2da6b22861526e058f05d6edfb9e335f98c3709646cb984bba2109ecfd
 criteria_sha256: 5f41699263d53d470cf2915a6b504bf2fd631dffbb69bd4886dac2f95a4e61b6
 scope_sha256: eb7d9a57b2d239f41141d090801d2f73e144c88d2fb9baa01ac512291fa52176
-diff_sha256: fd242d702eb922999f2cefb5aa870c0cd98da3945032a2242fe960e87fb9e6ab
-omitted_paths: 8
+diff_sha256: dac58adfa3beb283018b7855bb0d6194bf8097d0c8d2cf87181c66d8f8e731f6
+omitted_paths: 12
 criteria_count: 3
 must_not_count: 3
 ---
@@ -147,7 +147,11 @@ Files scope: `nodes/TemplateResolver/interpreter.ts`
 
 ### Scope exceptions log (as of now, written during the work)
 
-No scope exceptions are logged.
+Each row is a change outside the card's scope that its lead approved. A builder who can edit the card folder can add a row, so the human gate is the backstop.
+
+| Date | Path | Kind | Reason | Approved by |
+| --- | --- | --- | --- | --- |
+| 2026-10-13 | `tests/regressions/table-cell-escaping-filters.test.ts` | add | guard test for the sustained finding about already escaped pipes | project lead (front approval) |
 
 ### Manifest and scope
 
@@ -444,11 +448,11 @@ describe("table cell escaping", () => {
 
 ## 4. Diff
 
-8 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
+12 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
 
 ```diff
 diff --git a/nodes/TemplateResolver/interpreter.ts b/nodes/TemplateResolver/interpreter.ts
-index fbdbc50..7169e1c 100644
+index fbdbc50..f978c34 100644
 --- a/nodes/TemplateResolver/interpreter.ts
 +++ b/nodes/TemplateResolver/interpreter.ts
 @@ -401,7 +401,7 @@ export class Interpreter {
@@ -456,11 +460,59 @@ index fbdbc50..7169e1c 100644
      return cells.map((cellNodes) => {
        const content = cellNodes.map((node) => this.visit(node)).join("");
 -      return content.trim();
-+      return content.replace(/\r?\n/g, " ").replace(/\|/g, "\\|").trim();
++      return content.replace(/\r?\n/g, " ").replace(/(?<!\\)\|/g, "\\|").trim();
      });
    }
  
+diff --git a/tests/regressions/table-cell-escaping-filters.test.ts b/tests/regressions/table-cell-escaping-filters.test.ts
+new file mode 100644
+index 0000000..67edd36
+--- /dev/null
++++ b/tests/regressions/table-cell-escaping-filters.test.ts
+@@ -0,0 +1,30 @@
++import { resolveTemplate } from "../../nodes/TemplateResolver/TemplateResolver.node";
++import { TemplateValue } from "../../nodes/TemplateResolver/types";
++
++function render(
++  template: string,
++  entries: [string, TemplateValue][]
++): string {
++  try {
++    return resolveTemplate(template, new Map(entries), { strictMode: false });
++  } catch (e) {
++    return `THROWN: ${(e as Error).message}`;
++  }
++}
++
++describe("table cell escaping with filters", () => {
++  it("a pipe already escaped by escape_md is not escaped again", () => {
++    const out = render(
++      "{{TABLE}}{{ROW}}${{a|escape_md}}|z{{END_ROW}}{{END_TABLE}}",
++      [["a", "x|y"]]
++    );
++    expect(out).toBe("| x\\|y | z |");
++  });
++
++  it("a plain unescaped pipe is still escaped", () => {
++    const out = render("{{TABLE}}{{ROW}}${{a}}|z{{END_ROW}}{{END_TABLE}}", [
++      ["a", "x|y"],
++    ]);
++    expect(out).toBe("| x\\|y | z |");
++  });
++});
 ```
+
+## 5. Earlier findings and replies
+
+Answer each fix-class (defect or goal-risk) finding below in `responses` with sustain or withdraw and evidence. Raise new findings only about what the revision changed or an in-scope problem newly evidenced.
+
+### f1: Unconditional pipe escaping double-escapes escape_md output inside table cells and splits the row again
+
+- Class: goal-risk
+- Serves: m1: Before this change, a template author could make a pipe safe in a cell by writing ${{a|escape_md}}, because escape_md backslash-escapes '|'. The cell rendered as 'x\|y' and the table kept its column count. Now processCellsArray escapes every '|' again, so the cell becomes 'x\\|y'. GFM parses the '\\' as an escaped backslash, so the '|' that follows is a live column delimiter and the row gains an extra column. The fix changes behavior outside the named defect and breaks the very case c1 protects (the row keeps its column count) for already-escaped input.
+- Reproduction: resolveTemplate('{{TABLE}}{{ROW}}${{a|escape_md}}|z{{END_ROW}}{{END_TABLE}}', new Map([['a','x|y']]), {strictMode:false}). Before the fix this gives '| x\|y | z |' (two columns in GFM). After the fix it gives '| x\\|y | z |', which a GFM renderer splits into three cells ('x\', 'y', 'z'). Smallest fix: escape only pipes that are not already preceded by a backslash, for example content.replace(/\r?\n/g, ' ').replace(/(^|[^\\])\|/g, '$1\\|'), applied repeatedly or with a lookbehind (?<!\\)\|. Alternatively, have escape_md and cell escaping agree on a single escaping step.
+- Status: sustained
+- Review lead ruling: sustain: valid: already escaped pipes from escape_md must not be escaped twice
 
 ## Output
 
