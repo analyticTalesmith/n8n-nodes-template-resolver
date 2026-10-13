@@ -234,6 +234,11 @@ export class Lexer {
     const keyword = this.extractKeyword(trimmed);
     const tokenType = this.getTokenType(keyword);
 
+    if (trimmed === "RAW") {
+      this.scanRaw(startLine, startColumn);
+      return;
+    }
+
     if (tokenType === null) {
       throw new SyntaxError(
         `Unknown template tag: {{${keyword}}}`,
@@ -281,6 +286,39 @@ export class Lexer {
       startColumn,
       "Add closing #}}"
     );
+  }
+
+  /**
+   * Scan raw block: {{RAW}} text {{END_RAW}} - the text is emitted literally
+   */
+  private scanRaw(startLine: number, startColumn: number): void {
+    const rest = this.template.slice(this.pos);
+    const closing = /\{\{[ \t]*END_RAW[ \t]*\}\}/.exec(rest);
+
+    if (closing === null) {
+      throw new SyntaxError(
+        "Unclosed {{RAW}} block",
+        startLine,
+        startColumn,
+        "Add {{END_RAW}}"
+      );
+    }
+
+    const textLine = this.line;
+    const textColumn = this.column;
+    const content = rest.slice(0, closing.index);
+
+    this.advance(closing.index);
+    this.advance(closing[0].length);
+
+    if (content.length > 0) {
+      this.tokens.push({
+        type: TokenType.TEXT,
+        value: content.replace(/\r\n/g, "\n"),
+        line: textLine,
+        column: textColumn,
+      });
+    }
   }
 
   /**

@@ -322,6 +322,22 @@ are also supported
 
 ---
 
+### Raw blocks: `{{RAW}}`
+
+Text between `{{RAW}}` and `{{END_RAW}}` is output exactly as written, so it can contain braces and tag-like text. The first `{{END_RAW}}` closes the block, raw blocks do not nest, and an unclosed `{{RAW}}` is a syntax error.
+
+```
+Write ${{name}} like this: {{RAW}}${{name}} and {{IF x}}{{END_RAW}}
+```
+
+With `name = "Ada"` the output is:
+
+```
+Write Ada like this: ${{name}} and {{IF x}}
+```
+
+---
+
 ### Math: `${{a + b}}`
 
 Basic arithmetic in variable expressions:
