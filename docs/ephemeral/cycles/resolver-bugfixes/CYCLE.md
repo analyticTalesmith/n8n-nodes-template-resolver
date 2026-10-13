@@ -94,4 +94,5 @@ Shape: kind bug-fix; intent correct; purpose ship; compatibility preserved; unce
 
 <!-- generated index: replace everything between this line and the end marker -->
 - [test-plan.md](test-plan.md) — The tests this cycle plans at each level, and which requirement lines each one proves.
+- [verification/](verification/INDEX.md) — Index of docs/ephemeral/cycles/resolver-bugfixes/verification.
 <!-- end generated index -->
