@@ -1,0 +1,26 @@
+{
+  "id": "0014-follow-up-a-frozen-test-under-tools-test",
+  "title": "Follow-up: A frozen test under tools/tests was edited (regex escape fix); the change is logged and approved but is outsi",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [],
+  "origin": "foundations",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [],
+    "frozen": false
+  },
+  "criteria": [],
+  "gate": null,
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1
+}

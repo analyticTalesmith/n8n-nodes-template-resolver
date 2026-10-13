@@ -1,13 +1,17 @@
-# Restore jest and make it the default test command
+# Follow-up: A frozen test under tools/tests was edited (regex escape fix); the change is logged and approved but is outsi
 
 Any agent picking this up: read the documents linked below, change only the files listed in Scope as a write (add, edit or remove), treat everything else as read-only, and stop and ask when you need more than this ticket gives you.
 
 ## Goal and why
 
+Source card: 0004-restore-jest-and-make-it-the-default-tes
+Finding: f2 (drift)
+Serves: m1: m1 forbids changing any existing test, and the frozen tools/tests/test-runner.test.mjs changed. The change replaces `\d` with `\\d` inside a template literal passed to new RegExp. The original pattern degraded to `^not ok d+ - `, which could never match, so tr-02 could not pass against any correct reporter. The fix is correct and minimal, and the scope exceptions log records the project lead's approval. It is noted for the lead because the path is not in the card's files_scope or manifest.
+Reproduction: Compare the frozen test at base 2f6aef4 line 338 with the diff hunk at tools/tests/test-runner.test.mjs:51. The path appears only in the scope exceptions log, not in the manifest's files_scope.
+Evidence: diff:tools/tests/test-runner.test.mjs
+Evidence: test:tr-02
+
 <!-- One short paragraph for the model: what must be true when this is done, and why it matters. -->
-
-A clean clone must pass `npm ci && npm test` with the existing 446-test jest suite. jest, ts-jest and @types/jest are in package-lock.json but missing from package.json, so the declared test script cannot run from the manifest. Restore them at the versions the lock resolves, keep the existing suite as the default test command, and add a small jest reporter that prints node:test-style TAP so Aperture's red-first evidence can read jest failures (Aperture reads only node:test TAP).
-
 
 ## Must-haves
 
@@ -15,19 +19,9 @@ A clean clone must pass `npm ci && npm test` with the existing 446-test jest sui
 <!-- Type each line: "- `contract` `id` text" or "- `constraint` `id` must: text". Constraint kinds: must, must-not, evidence-required, human-decides, open-ended. -->
 <!-- In card.json each criterion carries `traces`, a list of test file paths ("test/x.test.mjs#id"), and the gate command names the SOURCE test file, never a compiled copy: the review packet shows the reviewer the test files named there as frozen tests, and a path not at the base commit is a warning. -->
 
-- `contract` `tr-01` package.json lists jest, ts-jest and @types/jest in devDependencies, the lockfile root agrees, and the test script runs jest
-- `contract` `tr-02` the jest TAP reporter prints TAP where a failing assertion is a not ok test carrying code ERR_ASSERTION and a passing test is ok
-- `contract` `tr-03` with dependencies installed the existing suite runs through the jest binary with no failures and at least 446 passing tests
-
-
 ## Must-nots
 
 <!-- Invariants the work must not break: module boundaries, data it must not touch, patterns it must not invent. -->
-
-- change any source under nodes/ or any existing test
-- add a runtime dependency
-- change the jest roots or the module mapper for n8n-workflow
-
 
 ## Context links
 
@@ -37,15 +31,9 @@ A clean clone must pass `npm ci && npm test` with the existing 446-test jest sui
 
 <!-- Say whether a user can see this change. If so, set user_visible true in card.json and list the user-facing documents it updates in user_docs (documents tagged user_facing: true in their frontmatter), or give user_docs_waiver, one line with the reason none changes. If no user can see it, write `none`. -->
 
-none
-
-
 ## Interface contract
 
 <!-- State the public surface this change adds or changes (signatures, shapes or boundaries, whichever apply), or write `none: <reason>`. -->
-
-none: no public interface changes.
-
 
 ## Scope
 
@@ -54,9 +42,6 @@ none: no public interface changes.
 <!-- generated scope: from card.json -->
 | Path | Permission (add, edit, remove) | Blast radius |
 | --- | --- | --- |
-| `tools/jest-tap-reporter.cjs` | add | build-tooling |
-| `package-lock.json` | edit | build-tooling |
-| `package.json` | edit | build-tooling |
 
-Files scope: `package-lock.json`, `package.json`, `tools/jest-tap-reporter.cjs`
+Files scope: none
 <!-- end generated scope -->

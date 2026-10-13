@@ -1,4 +1,4 @@
-# Context for Restore jest and make it the default test command
+# Context for Follow-up: A frozen test under tools/tests was edited (regex escape fix); the change is logged and approved but is outsi
 
 Working memory for this ticket, next to card.md. The lead updates it in small edits as the conversation goes. It moves with the card, reaches the living documents only when the human approves, and is archived at done.
 
