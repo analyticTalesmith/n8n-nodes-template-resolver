@@ -2,16 +2,16 @@
 type: review-packet
 card: 0007-raw-block-outputs-its-text-literally
 tier: product
-built_at: 2026-10-13T18:22:58.900Z
+built_at: 2026-10-13T18:25:09.925Z
 base: 342feb27736239cce79e7d6cb7080bd76bf2c0d5
-head: 9d3d49837984e9869e075a3a7322b1b8b772d8a1
+head: ee00ca2d5b24f9f32b6aaf897893b1f7264d2083
 frozen: true
 brief_sha256: aa635d4690c596935d58667c93f168794c5dffe2aedb3b0d4d87f790aadcc391
 manifest_sha256: 714979ac8bf3072ad555cda59e45e0e10717d6371afa8cf58533bd1425d8a8d2
 criteria_sha256: b217e9548020de61629971995f9cc9101d03a16a15d814ce739850481bc2c5c9
 scope_sha256: 08a956ddda379e7ac16d14102ac383c9e55a7f23c11c25bf93c809b2c36cf6d2
-diff_sha256: 57807016465114b814576ea70f8f00cc16c91b9ecd32aa607f6f064fdc1280d4
-omitted_paths: 11
+diff_sha256: 8663d73e9952679d0825d4a8ceb15d6d0d748f4324d67624e8c55e977ce38c0e
+omitted_paths: 15
 criteria_count: 6
 must_not_count: 2
 ---
@@ -170,6 +170,9 @@ Each row is a change outside the card's scope that its lead approved. A builder 
 | --- | --- | --- | --- | --- |
 | 2026-10-13 | `nodes/TemplateResolver/utils.ts` | edit | review finding f1: the n8n node detects variables by scanning the template text, so a variable tag inside RAW would be reported missing in strict mode; the cycle goal cannot be met in the node without it | project lead |
 | 2026-10-13 | `test-node/raw-block-review.test.ts` | add | regression tests for review findings f1 to f3 | project lead |
+| 2026-10-13 | `docs/ephemeral/backlog/0008-follow-up-closing-tag-match-allows-only/card.json` | add | follow-up ticket filed from review finding f4 | project lead |
+| 2026-10-13 | `docs/ephemeral/backlog/0008-follow-up-closing-tag-match-allows-only/card.md` | add | follow-up ticket filed from review finding f4 | project lead |
+| 2026-10-13 | `docs/ephemeral/backlog/0008-follow-up-closing-tag-match-allows-only/context.md` | add | follow-up ticket filed from review finding f4 | project lead |
 
 ### Manifest and scope
 
@@ -833,7 +836,7 @@ Named by the card but not at the base commit (the implementer's own tests, never
 
 ## 4. Diff
 
-11 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
+15 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
 
 ````diff
 diff --git a/README.md b/README.md
@@ -961,7 +964,7 @@ index bc49703..2468082 100644
     * Scan plain text (everything outside {{ }})
     */
 diff --git a/nodes/TemplateResolver/utils.ts b/nodes/TemplateResolver/utils.ts
-index 67a71f1..c3a48ee 100644
+index 67a71f1..a4f9196 100644
 --- a/nodes/TemplateResolver/utils.ts
 +++ b/nodes/TemplateResolver/utils.ts
 @@ -13,6 +13,10 @@
@@ -970,17 +973,17 @@ index 67a71f1..c3a48ee 100644
  
 +  // RAW blocks print literally, so nothing inside them is a variable.
 +  // An unclosed RAW has no END_RAW to match and is left as is.
-+  template = template.replace(/\{\{RAW\}\}[\s\S]*?\{\{END_RAW\}\}/g, "");
++  template = template.replace(/\{\{\s*RAW\s*\}\}[\s\S]*?\{\{[ \t]*END_RAW[ \t]*\}\}/g, "");
 +
    // Match ${{varName}} and ${{user.name}}
    const varPattern = /\$\{\{([a-zA-Z_@][a-zA-Z0-9_@.]*)/g;
    let match;
 diff --git a/test-node/raw-block-review.test.ts b/test-node/raw-block-review.test.ts
 new file mode 100644
-index 0000000..ab4a7d7
+index 0000000..4c14d99
 --- /dev/null
 +++ b/test-node/raw-block-review.test.ts
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,83 @@
 +import { test } from 'node:test';
 +import assert from 'node:assert/strict';
 +import { Lexer } from '../nodes/TemplateResolver/lexer';
@@ -1027,6 +1030,22 @@ index 0000000..ab4a7d7
 +	);
 +});
 +
++test('rb-01 variable detection ignores a RAW block whose tags have spaces inside the braces', () => {
++	assert.deepEqual(
++		extractAllVariables('{{ RAW }}${{name}}{{ END_RAW }}'),
++		[],
++		'a spaced RAW block hides its variables',
++	);
++});
++
++test('rb-01 variable detection ignores a RAW block closed with a tab inside the braces', () => {
++	assert.deepEqual(
++		extractAllVariables('{{RAW}}${{a}}{{\tEND_RAW }} ${{b}}'),
++		['b'],
++		'only the variable outside the RAW block is detected',
++	);
++});
++
 +test('rb-04 a tag after a multi-line RAW block reports the right position', () => {
 +	const err = lexError('{{RAW}}\nx\r\ny\n{{END_RAW}}\n{{RAW}}z');
 +	assert.match(err.message, /Unclosed/, 'the message says the block is Unclosed');
@@ -1054,36 +1073,13 @@ index 0000000..ab4a7d7
 
 Answer each fix-class (defect or goal-risk) finding below in `responses` with sustain or withdraw and evidence. Raise new findings only about what the revision changed or an in-scope problem newly evidenced.
 
-### f1: Strict Mode / variable detection in the n8n node may still treat ${{name}} inside RAW as a required variable
+### f5: Variable detection strips only the unspaced {{RAW}}/{{END_RAW}} spelling, so the f1 fix misses tag forms the lexer accepts and the living doc documents
 
 - Class: goal-risk
-- Serves: cycle-goal: A prompt template holding a literal code sample such as {{RAW}}${{name}}{{END_RAW}} is run in the n8n node with Strict Mode on (the documented default) and no mapping for 'name'. If the node detects variables by scanning the template text rather than the lexer's tokens, it reports 'name' as missing and errors, so the template still cannot include tag-like text in the node. The detection code is not in the packet, so this is unverified.
-- Reproduction: In the n8n node, set Template to '{{RAW}}${{name}}{{END_RAW}}', leave Variable Mappings empty, keep Strict Mode on and enable Show Detected Variables. Expected: output '${{name}}', no error, and 'name' absent from detected_variables and missing_variables. Failure: a missing-variable error, or 'name' listed. If it fails, the smallest fix is to make detection ignore RAW spans, which needs a scope exception because the node file is out of scope.
+- Serves: cycle-goal: The lexer opens a block on any tag whose trimmed content is RAW and closes it on /\{\{[ \t]*END_RAW[ \t]*\}\}/, and the living doc tells users the closing tag may be written {{ END_RAW }}. extractAllVariables removes only the exact text {{RAW}}...{{END_RAW}}. A node template such as '{{RAW}}${{name}}{{ END_RAW }}' or '{{ RAW }}${{name}}{{END_RAW}}' renders literally in the lexer, but detection still reports 'name'; with Strict Mode on (the default) and no mapping the node raises a missing-variable error, so the template still cannot carry tag-like text in the node. A lesser side effect of the same text-level regex: a literal {{RAW}} inside a comment, followed later by a real block, makes detection drop every variable in between, so Strict Mode would stop flagging them.
+- Reproduction: Call extractAllVariables('{{RAW}}${{name}}{{ END_RAW }}') and extractAllVariables('{{ RAW }}${{name}}{{END_RAW}}'). Expected [] for both; the regex at utils.ts:18 does not match either, so the result is ['name']. In the node: Template '{{RAW}}${{name}}{{ END_RAW }}', no mappings, Strict Mode on; expected output '${{name}}', failure is a missing-variable error. Smallest fix: use the lexer's tag shapes in the strip regex, for example /\{\{\s*RAW\s*\}\}[\s\S]*?\{\{[ \t]*END_RAW[ \t]*\}\}/g, and add these two cases to test-node/raw-block-review.test.ts.
 - Status: fixed
-- Reply (fixed): restate: The node scans template text for variables, so a variable tag inside RAW would be reported missing in strict mode.; verify: extractAllVariables now drops RAW spans before scanning; two new tests failed before and pass after.; evidence: code:nodes/TemplateResolver/utils.ts:17, test:rb-01
-
-### f2: Line and column tracking across multi-line raw content is not demonstrated
-
-- Class: goal-risk
-- Serves: c4: scanRaw skips the content and closing tag with this.advance(closing.index) and this.advance(closing[0].length). The definition of advance is not in the packet. If advance(n) does not count newlines inside the skipped span, every token and error after a multi-line RAW block reports the wrong line and column, including a later unclosed RAW.
-- Reproduction: Lex '{{RAW}}\nx\r\ny\n{{END_RAW}}\n{{RAW}}z'. Expected: SyntaxError 'Unclosed {{RAW}} block' with line 5, column 1. Also lex '{{RAW}}\n\n{{END_RAW}}{{BOGUS}}' and expect the unknown-tag error at line 3, column 12. Any other position is the failure. Smallest fix if it fails: advance character by character with the lexer's existing newline handling, or add these two cases as tests if it already passes.
-- Status: rebutted
-- Reply (rebut, evidence): restate: Line and column tracking after a multi-line raw block was not shown.; verify: Added tests for both reproductions: unclosed RAW after the block reports line 5 column 1 and an unknown tag after an empty block reports line 3 column 12; both passed with no lexer change.; evidence: test:rb-04
-
-### f3: Render-level preservation of leading/trailing whitespace and blank lines in raw text is untested
-
-- Class: goal-risk
-- Serves: c3: c3 says the raw text is not trimmed, but the only rb-03 test stops at the lexer. The raw content is emitted as an ordinary Text token, so any whitespace handling the unchanged parser or interpreter applies to text (trimming block bodies, dropping newlines next to block tags, collapsing blank lines) would also apply to raw content. A multi-line code sample inside an IF or FOR body could then lose its leading newline or indentation. The parser and interpreter are not in the packet, so this is unverified.
-- Reproduction: Render '{{IF t}}{{RAW}}\n\n a\r\n\n\n b \n{{END_RAW}}{{END_IF}}|' with t = true. Expected output exactly '\n\n a\n\n\n b \n|'. Any difference is the failure. Because m1 forbids interpreter changes, a failure needs a lead decision; a pass needs only this case added as a test.
-- Status: rebutted
-- Reply (rebut, evidence): restate: Render-level whitespace in raw text was untested.; verify: Added a render test inside an IF body with leading newlines, indentation and blank lines; output matches exactly with no parser or interpreter change.; evidence: test:rb-03
-
-### f4: Closing-tag match allows only spaces and tabs inside the braces
-
-- Class: drift
-- Serves: card-goal: The spec says the closing tag may have inner spaces 'as other tags do'. Other tags are matched on their trimmed content, which presumably also tolerates a newline inside the braces. The regex /\{\{[ \t]*END_RAW[ \t]*\}\}/ does not, so '{{RAW}}x{{END_RAW\n}}' is reported as an unclosed RAW block. This is a polish-level inconsistency and no criterion fails on it.
-- Reproduction: Lex '{{RAW}}x{{END_RAW\n}}' and compare with how '{{END_IF\n}}' is accepted elsewhere.
-- Status: open
+- Reply (fixed): restate: Variable detection only dropped the unspaced RAW tag spelling the lexer also accepts with spaces.; verify: The regex now accepts whitespace inside both tags like the lexer; two new tests failed before and pass after, suite 28 of 28.; evidence: code:nodes/TemplateResolver/utils.ts:18, test:rb-01
 
 ## Output
 

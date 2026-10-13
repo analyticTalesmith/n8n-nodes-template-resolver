@@ -1,0 +1,26 @@
+{
+  "id": "0009-follow-up-variable-detection-strips-raw",
+  "title": "Follow-up: Variable detection strips RAW blocks at text level, so a {{RAW}} spelling inside a comment or a variable tag",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [],
+  "origin": "raw-block",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [],
+    "frozen": false
+  },
+  "criteria": [],
+  "gate": null,
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1
+}

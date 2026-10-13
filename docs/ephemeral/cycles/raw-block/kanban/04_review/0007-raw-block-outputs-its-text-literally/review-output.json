@@ -1,35 +1,35 @@
 {
-  "restatement": "Add a {{RAW}}...{{END_RAW}} block to the template resolver, implemented only in the lexer: everything between the two tags becomes one ordinary Text token (untrimmed, CRLF turned into LF), so the parser and interpreter need no change and the text renders literally wherever the block sits. An unclosed RAW must fail with a SyntaxError at the RAW tag's line and column. Templates without RAW must behave exactly as before. The README must document the tag with one accurate example. The feature has to work both in the n8n node and as a headless library, with no nesting, escapes or options.",
-  "brief_mismatch": "c5 is marked verify: review and asks that the jest suite and the node:test suite pass, but the packet holds no test-run output and the reviewer may run nothing. I can confirm from the diff only that no jest file is touched and the frozen test file is unchanged; suite passes (including the builder's 'failed before, pass after' claims for f1 to f3) rest on the builder's word. The lead should attach run output or change how c5 is verified.",
+  "restatement": "Add a {{RAW}}...{{END_RAW}} block to the template resolver so that authors can put double braces and tag-like text into a template and have it printed exactly as written. The work is meant to live in the lexer only: on a tag whose trimmed content is exactly RAW it reads up to the first END_RAW tag and emits one ordinary Text token (untrimmed, CRLF turned into LF, nothing for an empty block), so the parser, interpreter and every other tag stay untouched. An unclosed RAW must fail with a SyntaxError at the RAW tag's line and column rather than swallow the rest of the template. Templates without RAW must behave exactly as before. The README gains one RAW section with an example whose output is correct, and the feature has to hold in the n8n node as well as in the headless library.",
+  "brief_mismatch": "Mild, for the lead: the project goal requires correctness in the n8n node, but criteria c1 to c6, the rubric and the manifest cover only the lexer, rendering and the README. The node's variable detection (utils.ts) was brought in through the scope exceptions log and has no criterion or rubric item of its own; its tests are labelled rb-01. The manifest and files_scope still list three files while the diff touches five outside docs/ephemeral.",
   "verification_plan": [
-    "c1: confirm the lexer branches on a tag whose trimmed content is exactly RAW, takes the text up to the first END_RAW verbatim, and pushes exactly one TEXT token with no re-lexing of inner IF tags, variable tags, comment markers or lone braces.",
-    "c1 / cycle-goal: check every other place that reads template text (variable detection for Strict Mode in the node) treats RAW content as literal, for every tag spelling the lexer accepts.",
-    "c2: confirm the token is a plain TEXT token, so FOR repetition and IF skipping come from the unchanged parser and interpreter; check that adjacent Text tokens around the block are harmless.",
-    "c3: confirm no trim is applied to the content, CRLF is replaced by LF, and empty content emits no token.",
-    "c4: confirm the unclosed case throws the lexer's SyntaxError with the line and column of the RAW tag's opening braces (not the position after it), with the spec's message and hint.",
-    "Rubric line/column: confirm the lexer position, line and column are advanced over the raw content and the closing tag with newline counting, so later tokens and errors report correct positions.",
-    "c5 / m1: confirm the diff touches no parser, interpreter, jest file or frozen test; confirm the new branch is reachable only for a tag that was previously an unknown-tag error; confirm END_RAW alone still raises the unknown-tag error.",
-    "m2: confirm there is no nesting, escape or option handling.",
-    "c6: work through the README example by hand against the lexer semantics and check the shown output; check the living doc matches what was built.",
-    "Scope: confirm every changed path is in the manifest or the scope exceptions log.",
-    "Earlier findings: check each reply's evidence actually exercises the reproduction given."
+    "c1: trace the frozen rb-01 template through the lexer change and confirm exactly one Text token whose value is the raw content, with IF tags, variable tags, comment markers and lone braces untouched.",
+    "c1 / goal-critical question 1: confirm RAW is recognised before the unknown-tag throw, only when the trimmed tag content is exactly RAW, and that the first END_RAW closes the block.",
+    "c2: confirm the block becomes an ordinary Text token so FOR repeats it and an untaken IF drops it with no parser or interpreter change; trace both frozen rb-02 templates.",
+    "c3: confirm the content is sliced without trimming and that only CRLF is rewritten to LF; trace the frozen rb-03 input.",
+    "c4 / goal-critical question 2: confirm a missing END_RAW throws the lexer's SyntaxError with the RAW tag's start line and column (line 1, column 2 for 'a{{RAW}}b'), the message 'Unclosed {{RAW}} block' and the hint, before any input is consumed.",
+    "Rubric, line and column tracking: confirm the lexer position, line and column are advanced over both the raw content and the closing tag, including multi-line and CRLF content, so later tokens and errors report correct positions.",
+    "c5 / rubric, templates without RAW unaltered: confirm the new lexer branch is reachable only for a RAW tag, an orphan END_RAW still gives the unknown-tag error, no jest suite file and no frozen test appears in the diff, and any out-of-scope edit leaves RAW-free templates unchanged.",
+    "m1: confirm the diff does not touch the parser, the interpreter, the Token or AST types, or any other tag's branch.",
+    "m2: confirm there is no nesting, escape or option handling (for example '{{RAW x}}' is not accepted).",
+    "c6 / polish question: evaluate the README example by hand against the lexer rules and compare with the printed output; confirm there is exactly one example and that the prose matches the built behaviour.",
+    "Project goal, n8n node: confirm the node path, in particular Strict Mode variable detection, agrees with the lexer on what counts as a RAW block for every tag spelling the lexer accepts.",
+    "Scope: confirm every changed path is in the manifest or in the scope exceptions log.",
+    "Limit of this blind review: the rest of lexer.ts (advance, the scanTag preamble), the parser, the interpreter and the test run results are not in the packet, so claims that depend on them (the 28 of 28 pass, no output post-processing of Text tokens) are taken from the diff and the builder's reply, not confirmed independently."
   ],
   "findings": [
     {
-      "title": "Variable detection strips only the unspaced {{RAW}}/{{END_RAW}} spelling, so the f1 fix misses tag forms the lexer accepts and the living doc documents",
-      "class": "goal-risk",
+      "title": "Variable detection strips RAW blocks at text level, so a {{RAW}} spelling inside a comment or a variable tag named RAW hides real variables from Strict Mode",
+      "class": "drift",
       "serves": {
-        "target": "cycle-goal",
-        "scenario": "The lexer opens a block on any tag whose trimmed content is RAW and closes it on /\\{\\{[ \\t]*END_RAW[ \\t]*\\}\\}/, and the living doc tells users the closing tag may be written {{ END_RAW }}. extractAllVariables removes only the exact text {{RAW}}...{{END_RAW}}. A node template such as '{{RAW}}${{name}}{{ END_RAW }}' or '{{ RAW }}${{name}}{{END_RAW}}' renders literally in the lexer, but detection still reports 'name'; with Strict Mode on (the default) and no mapping the node raises a missing-variable error, so the template still cannot carry tag-like text in the node. A lesser side effect of the same text-level regex: a literal {{RAW}} inside a comment, followed later by a real block, makes detection drop every variable in between, so Strict Mode would stop flagging them."
+        "target": "project-goal",
+        "scenario": "In the n8n node, the strip regex in extractAllVariables is not aware of comments or of the '${{' variable prefix, unlike the lexer. For '{{# wrap samples in {{RAW}} #}} ${{b}} {{RAW}}x{{END_RAW}}' the lexer renders b as a variable, but detection removes everything from the '{{RAW}}' inside the comment to the real END_RAW, so b is never detected and Strict Mode does not flag it when unmapped. The same happens for a variable literally named RAW followed later by a real block: '${{RAW}} ${{b}} {{RAW}}x{{END_RAW}}' detects neither RAW nor b. The failure is silent under-detection (an empty string instead of a missing-variable error), never a wrong render, and the triggers are uncommon."
       },
-      "rubric": "goal-critical question 1: does everything between RAW and END_RAW come out exactly as written, including double braces and tag-like text (in the n8n node, per the project goal)",
-      "reproduction": "Call extractAllVariables('{{RAW}}${{name}}{{ END_RAW }}') and extractAllVariables('{{ RAW }}${{name}}{{END_RAW}}'). Expected [] for both; the regex at utils.ts:18 does not match either, so the result is ['name']. In the node: Template '{{RAW}}${{name}}{{ END_RAW }}', no mappings, Strict Mode on; expected output '${{name}}', failure is a missing-variable error. Smallest fix: use the lexer's tag shapes in the strip regex, for example /\\{\\{\\s*RAW\\s*\\}\\}[\\s\\S]*?\\{\\{[ \\t]*END_RAW[ \\t]*\\}\\}/g, and add these two cases to test-node/raw-block-review.test.ts.",
+      "rubric": "The raw scan does not alter templates without RAW (applied to the node's detection path); project goal: correct for the n8n node",
+      "reproduction": "Call extractAllVariables('{{# use {{RAW}} #}} ${{b}} {{RAW}}x{{END_RAW}}'): expected ['b'], the regex at utils.ts:18 yields []. Call extractAllVariables('${{RAW}} ${{b}} {{RAW}}x{{END_RAW}}'): expected ['RAW','b'], yields []. This is the 'lesser side effect' already named in f5 and left unaddressed by its fix, plus the '${{RAW}}' variant; noted for the lead (for example as an addition to follow-up 0008), not a fix request. A possible narrow change is to strip comments before stripping RAW blocks and to add a '(?<!\\$)' lookbehind on the opening tag.",
       "evidence": [
-        "diff:nodes/TemplateResolver/utils.ts",
         "code:nodes/TemplateResolver/utils.ts:18",
         "code:nodes/TemplateResolver/lexer.ts:237",
-        "code:nodes/TemplateResolver/lexer.ts:296",
-        "doc:docs/living/product/raw-block.md",
+        "diff:nodes/TemplateResolver/utils.ts",
         "test:rb-01 variable detection ignores everything inside a RAW block"
       ],
       "location": "nodes/TemplateResolver/utils.ts:18"
@@ -37,30 +37,13 @@
   ],
   "responses": [
     {
-      "finding": "f1",
+      "finding": "f5",
       "verdict": "withdraw",
       "evidence": [
         "code:nodes/TemplateResolver/utils.ts:18",
-        "test:rb-01 variable detection ignores everything inside a RAW block",
-        "test:rb-01 variable detection still finds variables outside a RAW block"
-      ]
-    },
-    {
-      "finding": "f2",
-      "verdict": "withdraw",
-      "evidence": [
-        "test:rb-04 a tag after a multi-line RAW block reports the right position",
-        "test:rb-04 an unknown tag right after a RAW block reports the right position",
-        "diff:test-node/raw-block-review.test.ts"
-      ]
-    },
-    {
-      "finding": "f3",
-      "verdict": "withdraw",
-      "evidence": [
-        "test:rb-03 a RAW block keeps blank lines and spaces when rendered inside an IF",
-        "test:rb-03 RAW keeps leading and trailing spaces and turns CRLF into LF",
-        "diff:test-node/raw-block-review.test.ts"
+        "code:nodes/TemplateResolver/lexer.ts:296",
+        "test:rb-01 variable detection ignores a RAW block whose tags have spaces inside the braces",
+        "test:rb-01 variable detection ignores a RAW block closed with a tab inside the braces"
       ]
     }
   ],
@@ -68,10 +51,10 @@
     "kind": "fallback",
     "label": "opus fallback (same model family as the builder; has repository access)"
   },
-  "at": "2026-10-13T18:24:11.161Z",
+  "at": "2026-10-13T18:26:48.109Z",
   "card": "0007-raw-block-outputs-its-text-literally",
   "tier": "product",
-  "packet_sha256": "e3987fa8b9cb846f6b5a8da1d7d56f73badf5c08e7f20ce5783867c6a867c3ec",
-  "diff_sha256": "57807016465114b814576ea70f8f00cc16c91b9ecd32aa607f6f064fdc1280d4",
+  "packet_sha256": "77127ddef9866bfe660ee02dd71cdea7dd9c62e667716c6323a27c1ab090f9ec",
+  "diff_sha256": "8663d73e9952679d0825d4a8ceb15d6d0d748f4324d67624e8c55e977ce38c0e",
   "dropped": []
 }

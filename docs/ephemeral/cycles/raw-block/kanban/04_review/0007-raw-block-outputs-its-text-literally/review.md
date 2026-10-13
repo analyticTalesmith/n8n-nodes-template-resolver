@@ -26,6 +26,18 @@ Restatement: Add a {{RAW}}...{{END_RAW}} block to the template resolver, impleme
 - Response to f2: withdraw (evidence: test:rb-04 a tag after a multi-line RAW block reports the right position, test:rb-04 an unknown tag right after a RAW block reports the right position, diff:test-node/raw-block-review.test.ts)
 - Response to f3: withdraw (evidence: test:rb-03 a RAW block keeps blank lines and spaces when rendered inside an IF, test:rb-03 RAW keeps leading and trailing spaces and turns CRLF into LF, diff:test-node/raw-block-review.test.ts)
 
+## Round 3
+
+- Reviewer: opus fallback (same model family as the builder; has repository access)
+- At: 2026-10-13T18:26:48.369Z
+- Stalled: no
+- Brief mismatch: Mild, for the lead: the project goal requires correctness in the n8n node, but criteria c1 to c6, the rubric and the manifest cover only the lexer, rendering and the README. The node's variable detection (utils.ts) was brought in through the scope exceptions log and has no criterion or rubric item of its own; its tests are labelled rb-01. The manifest and files_scope still list three files while the diff touches five outside docs/ephemeral.
+- Raised: f6
+
+Restatement: Add a {{RAW}}...{{END_RAW}} block to the template resolver so that authors can put double braces and tag-like text into a template and have it printed exactly as written. The work is meant to live in the lexer only: on a tag whose trimmed content is exactly RAW it reads up to the first END_RAW tag and emits one ordinary Text token (untrimmed, CRLF turned into LF, nothing for an empty block), so the parser, interpreter and every other tag stay untouched. An unclosed RAW must fail with a SyntaxError at the RAW tag's line and column rather than swallow the rest of the template. Templates without RAW must behave exactly as before. The README gains one RAW section with an example whose output is correct, and the feature has to hold in the n8n node as well as in the headless library.
+
+- Response to f5: withdraw (evidence: code:nodes/TemplateResolver/utils.ts:18, code:nodes/TemplateResolver/lexer.ts:296, test:rb-01 variable detection ignores a RAW block whose tags have spaces inside the braces, test:rb-01 variable detection ignores a RAW block closed with a tab inside the braces)
+
 ## Findings
 
 ### f1: Strict Mode / variable detection in the n8n node may still treat ${{name}} inside RAW as a required variable
@@ -70,9 +82,18 @@ Restatement: Add a {{RAW}}...{{END_RAW}} block to the template resolver, impleme
 ### f5: Variable detection strips only the unspaced {{RAW}}/{{END_RAW}} spelling, so the f1 fix misses tag forms the lexer accepts and the living doc documents
 
 - Class: goal-risk
-- Status: fixed
+- Status: withdrawn
 - Serves: cycle-goal: The lexer opens a block on any tag whose trimmed content is RAW and closes it on /\{\{[ \t]*END_RAW[ \t]*\}\}/, and the living doc tells users the closing tag may be written {{ END_RAW }}. extractAllVariables removes only the exact text {{RAW}}...{{END_RAW}}. A node template such as '{{RAW}}${{name}}{{ END_RAW }}' or '{{ RAW }}${{name}}{{END_RAW}}' renders literally in the lexer, but detection still reports 'name'; with Strict Mode on (the default) and no mapping the node raises a missing-variable error, so the template still cannot carry tag-like text in the node. A lesser side effect of the same text-level regex: a literal {{RAW}} inside a comment, followed later by a real block, makes detection drop every variable in between, so Strict Mode would stop flagging them.
 - Raised in round 2; sustained 0, failed fixes 0
 - Reproduction: Call extractAllVariables('{{RAW}}${{name}}{{ END_RAW }}') and extractAllVariables('{{ RAW }}${{name}}{{END_RAW}}'). Expected [] for both; the regex at utils.ts:18 does not match either, so the result is ['name']. In the node: Template '{{RAW}}${{name}}{{ END_RAW }}', no mappings, Strict Mode on; expected output '${{name}}', failure is a missing-variable error. Smallest fix: use the lexer's tag shapes in the strip regex, for example /\{\{\s*RAW\s*\}\}[\s\S]*?\{\{[ \t]*END_RAW[ \t]*\}\}/g, and add these two cases to test-node/raw-block-review.test.ts.
 - Evidence: diff:nodes/TemplateResolver/utils.ts, code:nodes/TemplateResolver/utils.ts:18, code:nodes/TemplateResolver/lexer.ts:237, code:nodes/TemplateResolver/lexer.ts:296, doc:docs/living/product/raw-block.md, test:rb-01 variable detection ignores everything inside a RAW block
 - Reply after round 2 (fixed): restate: Variable detection only dropped the unspaced RAW tag spelling the lexer also accepts with spaces.; verify: The regex now accepts whitespace inside both tags like the lexer; two new tests failed before and pass after, suite 28 of 28.; evidence: code:nodes/TemplateResolver/utils.ts:18, test:rb-01
+
+### f6: Variable detection strips RAW blocks at text level, so a {{RAW}} spelling inside a comment or a variable tag named RAW hides real variables from Strict Mode
+
+- Class: drift
+- Status: filed (0009-follow-up-variable-detection-strips-raw)
+- Serves: project-goal: In the n8n node, the strip regex in extractAllVariables is not aware of comments or of the '${{' variable prefix, unlike the lexer. For '{{# wrap samples in {{RAW}} #}} ${{b}} {{RAW}}x{{END_RAW}}' the lexer renders b as a variable, but detection removes everything from the '{{RAW}}' inside the comment to the real END_RAW, so b is never detected and Strict Mode does not flag it when unmapped. The same happens for a variable literally named RAW followed later by a real block: '${{RAW}} ${{b}} {{RAW}}x{{END_RAW}}' detects neither RAW nor b. The failure is silent under-detection (an empty string instead of a missing-variable error), never a wrong render, and the triggers are uncommon.
+- Raised in round 3; sustained 0, failed fixes 0
+- Reproduction: Call extractAllVariables('{{# use {{RAW}} #}} ${{b}} {{RAW}}x{{END_RAW}}'): expected ['b'], the regex at utils.ts:18 yields []. Call extractAllVariables('${{RAW}} ${{b}} {{RAW}}x{{END_RAW}}'): expected ['RAW','b'], yields []. This is the 'lesser side effect' already named in f5 and left unaddressed by its fix, plus the '${{RAW}}' variant; noted for the lead (for example as an addition to follow-up 0008), not a fix request. A possible narrow change is to strip comments before stripping RAW blocks and to add a '(?<!\$)' lookbehind on the opening tag.
+- Evidence: code:nodes/TemplateResolver/utils.ts:18, code:nodes/TemplateResolver/lexer.ts:237, diff:nodes/TemplateResolver/utils.ts, test:rb-01 variable detection ignores everything inside a RAW block
