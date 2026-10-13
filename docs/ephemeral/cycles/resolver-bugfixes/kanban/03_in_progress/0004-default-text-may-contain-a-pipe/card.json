@@ -67,10 +67,13 @@
     "scripts/run-node-tests.mjs",
     ".test-build/test-node/default-pipe.test.js"
   ],
-  "claim": null,
+  "claim": {
+    "owner": "build:implementer",
+    "heartbeat": "2026-10-13T18:08:43.645Z"
+  },
   "blocked_on": null,
   "docs_impact": "none",
-  "started": null,
+  "started": "2026-10-13T18:08:43.812Z",
   "ended": null,
   "review_rounds": 0,
   "schema_version": 1,
@@ -94,5 +97,6 @@
       "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
       "gate": "5c50d9f3ce990cecd582422fca1e453afece7d197664eb82cc6881f9173868c7"
     }
-  }
+  },
+  "base_commit": "785fa6a058a08210d56a2278c92c5e0459b6c284"
 }
