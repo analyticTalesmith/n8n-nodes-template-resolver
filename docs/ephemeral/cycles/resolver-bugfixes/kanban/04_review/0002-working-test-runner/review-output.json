@@ -1,0 +1,68 @@
+{
+  "restatement": "Give the repository a minimal, dependency-free node:test runner so the later bug cards can prove a regression test fails first. `npm run test:node` must compile nodes/ and test-node/ with the repo's own tsc into a git-ignored build directory, then run the compiled tests with node:test and print TAP on stdout. It must exit 0 on pass, nonzero on a test failure or a tsc error, and work on a clean clone after `npm ci`. The jest suite, nodes/, jest.config.js and __mocks__/ stay untouched, and @types/node is the only new dependency.",
+  "brief_mismatch": "The card's scope table lists scripts/run-node-tests.test.mjs as 'edit', but the packet treats that file as a frozen test and files_scope omits it. The card also lists scripts/run-node-tests.mjs as 'add' while the manifest says 'edit' (a stub existed at base). Neither affects the verdict, since the frozen test is unchanged in the diff. Separately, the goal-critical question about tsc failure has no frozen test behind it, so it can only be answered by reading the code.",
+  "verification_plan": [
+    "c1: the package.json script test:node invokes the runner, and the runner spawns the repo's own typescript (node_modules/typescript/bin/tsc) with -p tsconfig.test.json before any test runs.",
+    "c1: tsconfig.test.json emits commonjs into .test-build with a rootDir that makes .test-build/test-node/**/*.test.js exist and keeps the relative imports into nodes/ resolvable.",
+    "c1: the runner's exit status is the node --test status (0 on pass, nonzero on fail), with no path that swallows a failure or a null status.",
+    "c1 / goal-critical: a nonzero or null tsc status exits nonzero before any test is spawned.",
+    "c1: with arguments the runner runs exactly those files; with none it runs every compiled test-node test, and nothing else such as stale or unrelated files.",
+    "c1 / spec goal: the runner works on a clean clone after npm ci, meaning package.json and package-lock.json are consistent and @types/node resolves for types:[\"node\"].",
+    "c2: the test run uses --test-reporter=tap, its stdout reaches the runner's stdout, nothing is printed before 'TAP version' on a passing run, and a failing test prints 'not ok'.",
+    "c2: the runner still emits TAP when it is itself launched from inside a node --test process, as the frozen test does.",
+    "c3 / m1: .gitignore has .test-build/, and the diff has no path under tests/, nodes/, __mocks__/ or jest.config.js.",
+    "m2: package.json and package-lock.json add only @types/node, as a devDependency.",
+    "Frozen test: scripts/run-node-tests.test.mjs is not modified in the diff.",
+    "Rubric: the runner is under 60 lines and imports only node built-ins; the smoke test asserts a rendered string.",
+    "Polish: no shell:true, no exec with a command string, and paths are built with path.join/resolve."
+  ],
+  "findings": [
+    {
+      "title": "The runner never clears .test-build, so compiled tests from deleted, renamed or other-branch sources keep running",
+      "class": "goal-risk",
+      "serves": {
+        "target": "cycle-goal",
+        "scenario": "The two bug cards each need a 'fails first, then passes' reading from this runner. A compiled test left in .test-build/test-node/ by one card's branch still runs after the .ts source is renamed, deleted or absent on another branch, because findTests walks whatever .test.js is on disk and tsc never removes orphaned output. The gate then reads a 'not ok' and a nonzero exit (or an extra 'ok') for a test that does not exist in the tree under test."
+      },
+      "rubric": "c1 / tr-01: exits 0 when the tests pass and nonzero when one fails. Smallest fix: remove .test-build (rmSync with recursive and force) before spawning tsc.",
+      "reproduction": "1. Add test-node/tmp.test.ts containing a failing test. 2. Run npm run test:node; it exits nonzero as expected. 3. Delete test-node/tmp.test.ts. 4. Run npm run test:node again. tsc succeeds, but .test-build/test-node/tmp.test.js is still found and run, so stdout has 'not ok' and the exit is nonzero although every test in the source tree passes.",
+      "evidence": [
+        "code:scripts/run-node-tests.mjs:10",
+        "code:scripts/run-node-tests.mjs:20",
+        "code:scripts/run-node-tests.mjs:29",
+        "diff:scripts/run-node-tests.mjs",
+        "doc:spec.md"
+      ],
+      "location": "scripts/run-node-tests.mjs:20"
+    },
+    {
+      "title": "package-lock.json looks hand-edited: one root line added, no resolved @types/node entry in the diff, so npm ci on a clean clone is unproven",
+      "class": "goal-risk",
+      "serves": {
+        "target": "card-goal",
+        "scenario": "The spec goal is a developer running npm run test:node on a clean clone after npm ci. The lock diff adds only the root devDependencies line for @types/node@^24.10.2 and no packages entry; the card expected about 20 lines. The root lock entry also still lists @types/jest and jest, which the package.json hunk does not show, and an npm-regenerated lock would have dropped them. If the lock has no node_modules/@types/node entry satisfying ^24.10.2, npm ci fails as out of sync; if @types/node is not installed at the root, tsc fails on types:[\"node\"] and no test can run. I cannot see the rest of the lock, so this is a risk to confirm, not a proven failure."
+      },
+      "rubric": "c1 / spec Goal: works on a clean clone after npm ci. Smallest fix: regenerate the lock with npm install --package-lock-only so it carries a resolved @types/node entry matching package.json, and confirm npm ci then npm run test:node exits 0.",
+      "reproduction": "1. Fresh clone at head 51e95a8. 2. Run npm ci. The finding holds if npm ci reports a missing or invalid @types/node from the lock file. 3. If it passes, run npm run test:node and check that node_modules/@types/node exists at 24.x and tsc reports no TS2688. The finding is refuted if both succeed.",
+      "evidence": [
+        "diff:package-lock.json",
+        "diff:package.json",
+        "diff:tsconfig.test.json",
+        "doc:spec.md",
+        "doc:card.md"
+      ],
+      "location": "package-lock.json:14"
+    }
+  ],
+  "responses": [],
+  "reviewer": {
+    "kind": "fallback",
+    "label": "opus fallback (same model family as the builder; has repository access)"
+  },
+  "at": "2026-10-13T17:54:19.379Z",
+  "card": "0002-working-test-runner",
+  "tier": "product",
+  "packet_sha256": "2e894a9c75310edbbca1f943099968750036a44a05934ee26481233545fe7a78",
+  "diff_sha256": "a28d9b0ee1da07822f338f054d2c87caa5b47c4393632c155da6b00adb5bf6d2",
+  "dropped": []
+}

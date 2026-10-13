@@ -1,0 +1,114 @@
+{
+  "card": "0002-working-test-runner",
+  "rounds": [
+    {
+      "number": 1,
+      "at": "2026-10-13T17:54:25.046Z",
+      "reviewer": {
+        "kind": "fallback",
+        "label": "opus fallback (same model family as the builder; has repository access)"
+      },
+      "output_sha256": "275aae9e40f55a1c5e98b3c98cddb07b01c57bf47dc9be417881946eb11a5d02",
+      "diff_sha256": "a28d9b0ee1da07822f338f054d2c87caa5b47c4393632c155da6b00adb5bf6d2",
+      "restatement": "Give the repository a minimal, dependency-free node:test runner so the later bug cards can prove a regression test fails first. `npm run test:node` must compile nodes/ and test-node/ with the repo's own tsc into a git-ignored build directory, then run the compiled tests with node:test and print TAP on stdout. It must exit 0 on pass, nonzero on a test failure or a tsc error, and work on a clean clone after `npm ci`. The jest suite, nodes/, jest.config.js and __mocks__/ stay untouched, and @types/node is the only new dependency.",
+      "brief_mismatch": "The card's scope table lists scripts/run-node-tests.test.mjs as 'edit', but the packet treats that file as a frozen test and files_scope omits it. The card also lists scripts/run-node-tests.mjs as 'add' while the manifest says 'edit' (a stub existed at base). Neither affects the verdict, since the frozen test is unchanged in the diff. Separately, the goal-critical question about tsc failure has no frozen test behind it, so it can only be answered by reading the code.",
+      "evidence": [
+        "code:scripts/run-node-tests.mjs:10",
+        "code:scripts/run-node-tests.mjs:20",
+        "code:scripts/run-node-tests.mjs:29",
+        "diff:package-lock.json",
+        "diff:package.json",
+        "diff:scripts/run-node-tests.mjs",
+        "diff:tsconfig.test.json",
+        "doc:card.md",
+        "doc:spec.md",
+        "patch:a28d9b0ee1da07822f338f054d2c87caa5b47c4393632c155da6b00adb5bf6d2"
+      ],
+      "stalled": false,
+      "raised": [
+        "f1",
+        "f2"
+      ],
+      "responses": []
+    }
+  ],
+  "findings": [
+    {
+      "title": "The runner never clears .test-build, so compiled tests from deleted, renamed or other-branch sources keep running",
+      "class": "goal-risk",
+      "serves": {
+        "target": "cycle-goal",
+        "scenario": "The two bug cards each need a 'fails first, then passes' reading from this runner. A compiled test left in .test-build/test-node/ by one card's branch still runs after the .ts source is renamed, deleted or absent on another branch, because findTests walks whatever .test.js is on disk and tsc never removes orphaned output. The gate then reads a 'not ok' and a nonzero exit (or an extra 'ok') for a test that does not exist in the tree under test."
+      },
+      "rubric": "c1 / tr-01: exits 0 when the tests pass and nonzero when one fails. Smallest fix: remove .test-build (rmSync with recursive and force) before spawning tsc.",
+      "reproduction": "1. Add test-node/tmp.test.ts containing a failing test. 2. Run npm run test:node; it exits nonzero as expected. 3. Delete test-node/tmp.test.ts. 4. Run npm run test:node again. tsc succeeds, but .test-build/test-node/tmp.test.js is still found and run, so stdout has 'not ok' and the exit is nonzero although every test in the source tree passes.",
+      "evidence": [
+        "code:scripts/run-node-tests.mjs:10",
+        "code:scripts/run-node-tests.mjs:20",
+        "code:scripts/run-node-tests.mjs:29",
+        "diff:scripts/run-node-tests.mjs",
+        "doc:spec.md"
+      ],
+      "location": "scripts/run-node-tests.mjs:20",
+      "label": "f1",
+      "raised_in": 1,
+      "status": "fixed",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "The runner kept stale compiled tests in .test-build after sources were deleted.",
+          "verify": "Added rmSync of .test-build before the tsc compile; reran the repro and only the live smoke test runs.",
+          "action": "fixed",
+          "evidence": [
+            "code:scripts/run-node-tests.mjs:11"
+          ]
+        }
+      ],
+      "rulings": []
+    },
+    {
+      "title": "package-lock.json looks hand-edited: one root line added, no resolved @types/node entry in the diff, so npm ci on a clean clone is unproven",
+      "class": "goal-risk",
+      "serves": {
+        "target": "card-goal",
+        "scenario": "The spec goal is a developer running npm run test:node on a clean clone after npm ci. The lock diff adds only the root devDependencies line for @types/node@^24.10.2 and no packages entry; the card expected about 20 lines. The root lock entry also still lists @types/jest and jest, which the package.json hunk does not show, and an npm-regenerated lock would have dropped them. If the lock has no node_modules/@types/node entry satisfying ^24.10.2, npm ci fails as out of sync; if @types/node is not installed at the root, tsc fails on types:[\"node\"] and no test can run. I cannot see the rest of the lock, so this is a risk to confirm, not a proven failure."
+      },
+      "rubric": "c1 / spec Goal: works on a clean clone after npm ci. Smallest fix: regenerate the lock with npm install --package-lock-only so it carries a resolved @types/node entry matching package.json, and confirm npm ci then npm run test:node exits 0.",
+      "reproduction": "1. Fresh clone at head 51e95a8. 2. Run npm ci. The finding holds if npm ci reports a missing or invalid @types/node from the lock file. 3. If it passes, run npm run test:node and check that node_modules/@types/node exists at 24.x and tsc reports no TS2688. The finding is refuted if both succeed.",
+      "evidence": [
+        "diff:package-lock.json",
+        "diff:package.json",
+        "diff:tsconfig.test.json",
+        "doc:spec.md",
+        "doc:card.md"
+      ],
+      "location": "package-lock.json:14",
+      "label": "f2",
+      "raised_in": 1,
+      "status": "withdrawn",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "package-lock.json may be hand-edited so npm ci on a clean clone is unproven.",
+          "verify": "A fresh clone at head ran npm ci, then the runner exited 0; the lock already pinned @types/node 24.10.2 so only the root devDependencies line was needed.",
+          "action": "rebut",
+          "ground": "evidence",
+          "evidence": [
+            "code:package-lock.json:14"
+          ]
+        }
+      ],
+      "rulings": [
+        {
+          "after_round": 1,
+          "ruling": "withdraw",
+          "note": "Lock already has a resolved @types/node 24.10.2 entry (line 2540) matching package.json; fresh-clone npm ci then runner exit 0 meets the finding's refutation condition."
+        }
+      ]
+    }
+  ]
+}
