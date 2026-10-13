@@ -42,6 +42,13 @@
       "traces": [
         "tools/tests/test-runner.test.mjs#tr-03"
       ]
+    },
+    {
+      "text": "tr-04: a test file that fails to load is reported as a not ok entry",
+      "verify": "test",
+      "traces": [
+        "tools/tests/test-runner-load-failure.test.mjs#tr-04"
+      ]
     }
   ],
   "gate": [
@@ -55,7 +62,7 @@
   "docs_impact": "none",
   "started": "2026-10-13T21:30:19.144Z",
   "ended": null,
-  "review_rounds": 0,
+  "review_rounds": 1,
   "schema_version": 1,
   "blast_radius": [
     "build-tooling"

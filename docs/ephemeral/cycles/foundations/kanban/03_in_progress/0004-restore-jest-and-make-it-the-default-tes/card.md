@@ -18,6 +18,7 @@ A clean clone must pass `npm ci && npm test` with the existing 446-test jest sui
 - `contract` `tr-01` package.json lists jest, ts-jest and @types/jest in devDependencies, the lockfile root agrees, and the test script runs jest
 - `contract` `tr-02` the jest TAP reporter prints TAP where a failing assertion is a not ok test carrying code ERR_ASSERTION and a passing test is ok
 - `contract` `tr-03` with dependencies installed the existing suite runs through the jest binary with no failures and at least 446 passing tests
+- `contract` `tr-04` a test file that fails to load is reported as a not ok entry
 
 
 ## Must-nots
