@@ -39,15 +39,15 @@ Shape: kind bug-fix; intent correct; purpose ship; compatibility preserved; unce
 - stg-research-archaeology skipped: bug locations reproduced by hand in interpreter.ts and parser.ts; no recovery needed
 - stg-test-strategy done: unit tests per card in test-node via node:test; plan in test-plan.md
 - stg-red-first-tests done: red evidence written per card; nested loop card red recorded with 4 assertion failures
-- stg-workspace todo
-- stg-build-slices todo
-- stg-mechanical-gate todo
-- stg-cleanup todo
-- stg-midflight-triage todo
-- stg-independent-review todo
-- stg-unit-regression todo
-- stg-integrity-audit todo
-- stg-final-review todo
+- stg-workspace done: one worktree per card under .worktrees, branches feature/test-runner, feature/nested-for, feature/default-pipe
+- stg-build-slices done: three cards built by a fresh implementer each to the frozen manifest
+- stg-mechanical-gate done: gate ran on every move; all three cards reached done
+- stg-cleanup skipped: changes are 12 to 80 lines each with no dead code left; cleanup spawn judged not worth a spawn
+- stg-midflight-triage done: review findings answered in rounds; two follow-up tickets filed
+- stg-independent-review done: blind fallback review per card (opus, same family), one fix round on card 0004
+- stg-unit-regression done: node:test suite 14 of 14 and the old jest suite 446 of 446 from a copy with jest installed
+- stg-integrity-audit skipped: no cross-card change; the cards touch separate files
+- stg-final-review skipped: waiting for the human close review
 - stg-branch-merge todo
 - stg-record todo
 
