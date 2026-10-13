@@ -42,8 +42,6 @@ function runCase(
 
   const expectedFile = path.join(dir, "expected.md");
   const errorFile = path.join(dir, "expected-error.txt");
-  const wantsError =
-    fs.existsSync(errorFile) && !(update && fs.existsSync(expectedFile));
 
   let output = "";
   let thrown: string | null = null;
@@ -53,11 +51,18 @@ function runCase(
     thrown = error instanceof Error ? error.message : String(error);
   }
 
-  if (wantsError) {
-    if (update && thrown !== null) {
+  if (update) {
+    if (thrown !== null) {
       fs.writeFileSync(errorFile, thrown);
-      return { name, passed: true };
+      fs.rmSync(expectedFile, { force: true });
+    } else {
+      fs.writeFileSync(expectedFile, output);
+      fs.rmSync(errorFile, { force: true });
     }
+    return { name, passed: true };
+  }
+
+  if (fs.existsSync(errorFile)) {
     const expectedError = fs.readFileSync(errorFile, "utf8").trim();
     if (thrown === null) {
       return {
@@ -82,10 +87,6 @@ function runCase(
       passed: false,
       message: `${name}: render threw ${JSON.stringify(thrown)}`,
     };
-  }
-  if (update) {
-    fs.writeFileSync(expectedFile, output);
-    return { name, passed: true };
   }
   const expected = readIfExists(expectedFile);
   if (expected === null) {
