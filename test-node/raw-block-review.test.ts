@@ -44,6 +44,22 @@ test('rb-01 variable detection still finds variables outside a RAW block', () =>
 	);
 });
 
+test('rb-01 variable detection ignores a RAW block whose tags have spaces inside the braces', () => {
+	assert.deepEqual(
+		extractAllVariables('{{ RAW }}${{name}}{{ END_RAW }}'),
+		[],
+		'a spaced RAW block hides its variables',
+	);
+});
+
+test('rb-01 variable detection ignores a RAW block closed with a tab inside the braces', () => {
+	assert.deepEqual(
+		extractAllVariables('{{RAW}}${{a}}{{\tEND_RAW }} ${{b}}'),
+		['b'],
+		'only the variable outside the RAW block is detected',
+	);
+});
+
 test('rb-04 a tag after a multi-line RAW block reports the right position', () => {
 	const err = lexError('{{RAW}}\nx\r\ny\n{{END_RAW}}\n{{RAW}}z');
 	assert.match(err.message, /Unclosed/, 'the message says the block is Unclosed');

@@ -15,7 +15,7 @@ export function extractAllVariables(template: string): string[] {
 
   // RAW blocks print literally, so nothing inside them is a variable.
   // An unclosed RAW has no END_RAW to match and is left as is.
-  template = template.replace(/\{\{RAW\}\}[\s\S]*?\{\{END_RAW\}\}/g, "");
+  template = template.replace(/\{\{\s*RAW\s*\}\}[\s\S]*?\{\{[ \t]*END_RAW[ \t]*\}\}/g, "");
 
   // Match ${{varName}} and ${{user.name}}
   const varPattern = /\$\{\{([a-zA-Z_@][a-zA-Z0-9_@.]*)/g;
