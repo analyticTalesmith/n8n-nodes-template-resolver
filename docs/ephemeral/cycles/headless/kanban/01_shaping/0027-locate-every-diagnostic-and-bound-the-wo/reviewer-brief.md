@@ -20,5 +20,5 @@ goal-critical: do the limits stop a runaway template, including nested loops, be
 
 ## Design context
 
-- docs/ephemeral/cycles/headless/design.md
+- docs/living/architecture/headless-contract.md
 - docs/living/decisions/adr/0003-unknown-names-are-always-errors.md
