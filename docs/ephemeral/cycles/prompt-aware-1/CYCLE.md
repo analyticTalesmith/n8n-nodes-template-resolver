@@ -100,5 +100,7 @@ A person judges the cycle done when a prompt template with sections, fences and 
 <!-- Session instructions: the depth script adds a dated one-line list under a Session instructions heading here, created on first use. Do not write instructions by hand or leave them only in chat. -->
 
 <!-- generated index: replace everything between this line and the end marker -->
+- [deltas/](deltas/INDEX.md) — Index of docs/ephemeral/cycles/prompt-aware-1/deltas.
+- [design-approval.md](design-approval.md) — Prompt-aware cycle: whitespace, RAW, SECTION, FENCE, heading offset, escape modes and their surfaces.
 - [test-plan.md](test-plan.md) — The tests this cycle plans at each level, and which requirement lines each one proves.
 <!-- end generated index -->
