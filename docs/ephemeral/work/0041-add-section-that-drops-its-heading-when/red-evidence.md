@@ -1,8 +1,8 @@
 ---
-summary: Red evidence for 0041-add-section-that-drops-its-heading-when: 86 failing tests across 6 criteria.
+summary: Red evidence for 0041-add-section-that-drops-its-heading-when: 94 failing tests across 6 criteria.
 command: ["node","node_modules/jest/bin/jest.js","--runTestsByPath","tests/promptaware/section.test.ts","--json"]
 exit_status: 1
-tests_sha256: 8fcc4fa2267e
+tests_sha256: 96dda8abf75a
 ---
 
 # Red evidence for 0041-add-section-that-drops-its-heading-when
@@ -31,6 +31,10 @@ Written by `node .process/core/scripts/red-evidence.mjs` from the first run of t
 | sc-heading: heading, body trimming and spacing between sections sc-heading: FOR producing sections on own lines, standaloneLines false | sc-heading | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
 | sc-heading: heading, body trimming and spacing between sections sc-heading: FOR inside a section | sc-heading | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
 | sc-heading: heading, body trimming and spacing between sections sc-heading: nested sections | sc-heading | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
+| sc-heading: heading, body trimming and spacing between sections sc-heading: adjacent sections get no blank line added | sc-heading | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
+| sc-heading: heading, body trimming and spacing between sections sc-heading: adjacent sections on own lines, standaloneLines true: still no blank line | sc-heading | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
+| sc-heading: heading, body trimming and spacing between sections sc-heading: CRLF line breaks in the body become LF | sc-heading | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
+| sc-heading: heading, body trimming and spacing between sections sc-heading: CRLF template with own-line tags, standaloneLines true | sc-heading | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
 | sc-heading: heading, body trimming and spacing between sections sc-heading: IF inside a section | sc-heading | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
 | sc-level: level default, clamping and non-integer sc-level: level omitted is 2 | sc-level | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
 | sc-level: level default, clamping and non-integer sc-level: level=1 | sc-level | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
@@ -63,19 +67,22 @@ Written by `node .process/core/scripts/red-evidence.mjs` from the first run of t
 | sc-empty: an empty section disappears and is counted sc-empty: an outer section whose only content is an empty inner section is omitted too | sc-empty | assertion failed: Error: expect(received).toEqual(expected) // deep equality |
 | sc-empty: an empty section disappears and is counted sc-empty: a non-empty inner section keeps the outer section | sc-empty | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
 | sc-empty: an empty section disappears and is counted sc-empty: two omitted sections in a row are counted separately | sc-empty | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
-| sc-keep: skip_empty=false keeps the heading sc-keep: an empty section keeps its heading and is not counted | sc-keep | assertion failed: Error: expect(received).toMatch(expected) |
-| sc-keep: skip_empty=false keeps the heading sc-keep: a whitespace-only body keeps the heading, the whitespace is dropped | sc-keep | assertion failed: Error: expect(received).toMatch(expected) |
-| sc-keep: skip_empty=false keeps the heading sc-keep: level and skip_empty combine in either order | sc-keep | assertion failed: Error: expect(received).toMatch(expected) |
-| sc-keep: skip_empty=false keeps the heading sc-keep: text around a kept empty section stays where it was | sc-keep | assertion failed: Error: expect(received).toMatch(expected) |
-| sc-keep: skip_empty=false keeps the heading sc-keep: an inner empty section kept by skip_empty=false keeps the outer one non-empty | sc-keep | assertion failed: Error: expect(received).toMatch(expected) |
+| sc-keep: skip_empty=false keeps the heading sc-keep: an empty section keeps its heading and is not counted | sc-keep | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
+| sc-keep: skip_empty=false keeps the heading sc-keep: a whitespace-only body keeps the heading, the whitespace is dropped | sc-keep | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
+| sc-keep: skip_empty=false keeps the heading sc-keep: level and skip_empty combine in either order | sc-keep | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
+| sc-keep: skip_empty=false keeps the heading sc-keep: text around a kept empty section stays where it was | sc-keep | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
+| sc-keep: skip_empty=false keeps the heading sc-keep: an inner empty section kept by skip_empty=false keeps the outer one non-empty | sc-keep | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
 | sc-keep: skip_empty=false keeps the heading sc-keep: skip_empty=false on a non-empty section changes nothing | sc-keep | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
-| sc-keep: skip_empty=false keeps the heading sc-keep: inside FOR, kept empty sections are not counted and omitted ones still are | sc-keep | assertion failed: Error: expect(received).toMatch(expected) |
+| sc-keep: skip_empty=false keeps the heading sc-keep: inside FOR, kept empty sections are not counted and omitted ones still are | sc-keep | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
 | sc-errors: invalid sections and depth sc-errors: empty quoted title | sc-errors | assertion failed: Error: expect(received).toMatchObject(expected) |
 | sc-errors: invalid sections and depth sc-errors: missing title | sc-errors | assertion failed: Error: expect(received).toMatchObject(expected) |
 | sc-errors: invalid sections and depth sc-errors: missing title with only a level | sc-errors | assertion failed: Error: expect(received).toMatchObject(expected) |
 | sc-errors: invalid sections and depth sc-errors: variable title that is an empty string | sc-errors | assertion failed: Error: expect(received).toMatchObject(expected) |
 | sc-errors: invalid sections and depth sc-errors: variable title that is a number | sc-errors | assertion failed: Error: expect(received).toMatchObject(expected) |
 | sc-errors: invalid sections and depth sc-errors: variable title that is an array | sc-errors | assertion failed: Error: expect(received).toMatchObject(expected) |
+| sc-errors: invalid sections and depth sc-errors: stray END_SECTION | sc-errors | assertion failed: Error: expect(received).not.toMatch(expected) |
+| sc-errors: invalid sections and depth sc-errors: non-boolean skip_empty (string) | sc-errors | assertion failed: Error: expect(received).toMatchObject(expected) |
+| sc-errors: invalid sections and depth sc-errors: non-boolean skip_empty (number) | sc-errors | assertion failed: Error: expect(received).toMatchObject(expected) |
 | sc-errors: invalid sections and depth sc-errors: unclosed SECTION is located at its tag | sc-errors | assertion failed: Error: expect(received).not.toMatch(expected) |
 | sc-errors: invalid sections and depth sc-errors: unclosed inner SECTION is located at the inner tag | sc-errors | assertion failed: Error: expect(received).toMatchObject(expected) |
 | sc-errors: invalid sections and depth sc-errors: unclosed SECTION inside an IF | sc-errors | assertion failed: Error: expect(received).not.toMatch(expected) |
@@ -91,6 +98,7 @@ Written by `node .process/core/scripts/red-evidence.mjs` from the first run of t
 | sc-analyze: analyze and spec know SECTION sc-analyze: sections are counted next to other blocks | sc-analyze | assertion failed: Error: expect(received).toMatchObject(expected) |
 | sc-analyze: analyze and spec know SECTION sc-analyze: a variable title is read as a required variable | sc-analyze | assertion failed: Error: expect(received).toEqual(expected) // deep equality |
 | sc-analyze: analyze and spec know SECTION sc-analyze: a dotted title path is recorded under its root name | sc-analyze | assertion failed: Error: expect(received).toMatchObject(expected) |
+| sc-analyze: analyze and spec know SECTION sc-analyze: variables in a title or body have usedIn output | sc-analyze | assertion failed: Error: expect(received).toEqual(expected) // deep equality |
 | sc-analyze: analyze and spec know SECTION sc-analyze: variables in the body are read | sc-analyze | assertion failed: Error: expect(received).toEqual(expected) // deep equality |
 | sc-analyze: analyze and spec know SECTION sc-analyze: title and body variables are both read | sc-analyze | assertion failed: Error: expect(received).toEqual(expected) // deep equality |
 | sc-analyze: analyze and spec know SECTION sc-analyze: a loop variable used as title is not an input | sc-analyze | assertion failed: Error: expect(received).toEqual(expected) // deep equality |

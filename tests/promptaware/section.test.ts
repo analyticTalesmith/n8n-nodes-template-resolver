@@ -156,6 +156,28 @@ describe("sc-heading: heading, body trimming and spacing between sections", () =
       output: "# O\n\nintro\n## I\n\nin\n",
     },
     {
+      name: "adjacent sections get no blank line added",
+      template: '{{SECTION "A"}}a{{END_SECTION}}{{SECTION "B"}}b{{END_SECTION}}',
+      output: "## A\n\na\n## B\n\nb\n",
+    },
+    {
+      name: "adjacent sections on own lines, standaloneLines true: still no blank line",
+      template: '{{SECTION "A"}}\na\n{{END_SECTION}}\n{{SECTION "B"}}\nb\n{{END_SECTION}}\n',
+      options: ON,
+      output: "## A\n\na\n## B\n\nb\n",
+    },
+    {
+      name: "CRLF line breaks in the body become LF",
+      template: '{{SECTION "A"}}a\r\nb\r\n{{END_SECTION}}',
+      output: "## A\n\na\nb\n",
+    },
+    {
+      name: "CRLF template with own-line tags, standaloneLines true",
+      template: '{{SECTION "A"}}\r\nx\r\n{{END_SECTION}}\r\n',
+      options: ON,
+      output: "## A\n\nx\n",
+    },
+    {
       name: "IF inside a section",
       template: '{{SECTION "A"}}{{IF f}}yes{{ELSE}}no{{END_IF}}{{END_SECTION}}',
       data: { f: true },
@@ -329,34 +351,34 @@ describe("sc-empty: an empty section disappears and is counted", () => {
 describe("sc-keep: skip_empty=false keeps the heading", () => {
   it("sc-keep: an empty section keeps its heading and is not counted", () => {
     const r = run('{{SECTION "A" skip_empty=false}}{{END_SECTION}}');
-    expect(r.output).toMatch(/^## A\n+$/);
+    expect(r.output).toBe("## A\n");
     expect(r.ok).toBe(true);
     expect(r.stats.sectionsOmitted).toBe(0);
   });
 
   it("sc-keep: a whitespace-only body keeps the heading, the whitespace is dropped", () => {
     const r = run('{{SECTION "A" skip_empty=false}}  \n \n{{END_SECTION}}');
-    expect(r.output).toMatch(/^## A\n+$/);
+    expect(r.output).toBe("## A\n");
     expect(r.stats.sectionsOmitted).toBe(0);
   });
 
   it("sc-keep: level and skip_empty combine in either order", () => {
     const a = run('{{SECTION "A" level=4 skip_empty=false}}{{END_SECTION}}');
     const b = run('{{SECTION "A" skip_empty=false level=4}}{{END_SECTION}}');
-    expect(a.output).toMatch(/^#### A\n+$/);
-    expect(b.output).toMatch(/^#### A\n+$/);
+    expect(a.output).toBe("#### A\n");
+    expect(b.output).toBe("#### A\n");
     expect(a.stats.sectionsOmitted + b.stats.sectionsOmitted).toBe(0);
   });
 
   it("sc-keep: text around a kept empty section stays where it was", () => {
     const r = run('a\n{{SECTION "A" skip_empty=false}}{{END_SECTION}}b');
-    expect(r.output).toMatch(/^a\n## A\n+b$/);
+    expect(r.output).toBe("a\n## A\nb");
     expect(r.stats.sectionsOmitted).toBe(0);
   });
 
   it("sc-keep: an inner empty section kept by skip_empty=false keeps the outer one non-empty", () => {
     const r = run('{{SECTION "O"}}{{SECTION "I" skip_empty=false}}{{END_SECTION}}{{END_SECTION}}');
-    expect(r.output).toMatch(/^## O\n\n## I\n+$/);
+    expect(r.output).toBe("## O\n\n## I\n");
     expect(r.stats.sectionsOmitted).toBe(0);
   });
 
@@ -371,7 +393,7 @@ describe("sc-keep: skip_empty=false keeps the heading", () => {
       '{{FOR xs AS x}}{{SECTION x skip_empty=false}}{{END_SECTION}}{{END_FOR}}{{SECTION "Z"}}{{END_SECTION}}',
       { xs: ["a", "b"] }
     );
-    expect(r.output).toMatch(/^## a\n+## b\n+$/);
+    expect(r.output).toBe("## a\n## b\n");
     expect(r.stats.sectionsOmitted).toBe(1);
   });
 });
@@ -414,6 +436,21 @@ describe("sc-errors: invalid sections and depth", () => {
       name: "variable title that is an array",
       template: "{{SECTION t}}x{{END_SECTION}}",
       data: { t: ["a"] },
+      code: "type-error",
+      line: 1,
+      column: 1,
+    },
+    { name: "stray END_SECTION", template: "a\n  {{END_SECTION}}", code: "syntax-error", line: 2, column: 3 },
+    {
+      name: "non-boolean skip_empty (string)",
+      template: 'a\n  {{SECTION "T" skip_empty="no"}}x{{END_SECTION}}',
+      code: "type-error",
+      line: 2,
+      column: 3,
+    },
+    {
+      name: "non-boolean skip_empty (number)",
+      template: '{{SECTION "T" skip_empty=2}}x{{END_SECTION}}',
       code: "type-error",
       line: 1,
       column: 1,
@@ -503,6 +540,12 @@ describe("sc-analyze: analyze and spec know SECTION", () => {
   it("sc-analyze: a dotted title path is recorded under its root name", () => {
     const a = analyze("{{SECTION doc.title}}x{{END_SECTION}}");
     expect(a.variables[0]).toMatchObject({ name: "doc", paths: ["doc.title"], required: true });
+  });
+
+  it("sc-analyze: variables in a title or body have usedIn output", () => {
+    const a = analyze("{{SECTION t}}${{b}}{{END_SECTION}}");
+    const used = Object.fromEntries(a.variables.map((v) => [v.name, v.usedIn]));
+    expect(used).toEqual({ t: ["output"], b: ["output"] });
   });
 
   it("sc-analyze: variables in the body are read", () => {
