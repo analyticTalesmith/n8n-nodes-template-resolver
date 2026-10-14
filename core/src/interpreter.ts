@@ -11,6 +11,7 @@ import {
   TableNode,
   TableRowNode,
   TernaryNode,
+  SectionNode,
   VariableMap,
   TemplateValue,
   Limits,
@@ -54,6 +55,7 @@ export class Interpreter {
   private strictMode: boolean;
   private limits: Limits;
   private iterations = 0;
+  private omittedSections = 0;
   private loopContext: Map<string, TemplateValue> = new Map();
 
   constructor(
@@ -72,10 +74,18 @@ export class Interpreter {
   }
 
   /**
+   * Sections dropped for an empty body by the latest interpret call
+   */
+  get sectionsOmitted(): number {
+    return this.omittedSections;
+  }
+
+  /**
    * Main interpretation entry point
    */
   interpret(ast: ProgramNode): string {
     this.iterations = 0;
+    this.omittedSections = 0;
     return this.visitProgram(ast);
   }
 
@@ -149,6 +159,8 @@ export class Interpreter {
         return this.visitList(node as ListNode);
       case "Table":
         return this.visitTable(node as TableNode);
+      case "Section":
+        return this.visitSection(node as SectionNode);
       case "Ternary":
         return this.at(node, () => this.visitTernary(node as TernaryNode));
       case "Comment":
@@ -312,6 +324,44 @@ export class Interpreter {
     this.restoreLoopContext(outerLoopContext);
 
     return results.join("");
+  }
+
+  /**
+   * Visit SECTION: the heading, a blank line and the body without its
+   * leading and trailing blank lines; nothing when the body is blank and
+   * skipEmpty is set
+   */
+  private visitSection(node: SectionNode): string {
+    const title = this.at(node, () => this.sectionTitle(node));
+    const heading = `${"#".repeat(node.level)} ${title}\n`;
+    const body = node.body
+      .map((child) => this.visit(child))
+      .join("")
+      .replace(/\r\n/g, "\n");
+
+    if (body.trim() === "") {
+      if (!node.skipEmpty) return heading;
+      this.omittedSections++;
+      return "";
+    }
+    const trimmed = body
+      .replace(/^([ \t]*\n)+/, "")
+      .replace(/(\n[ \t]*)+$/, "");
+    return `${heading}\n${trimmed}\n`;
+  }
+
+  private sectionTitle(node: SectionNode): string {
+    if (node.title.kind === "literal") return node.title.text;
+    const value = this.resolveNestedPath(node.title.path);
+    if (typeof value !== "string" || value === "") {
+      throw new TypeError(
+        `SECTION title must be a non-empty string, got ${describeValue(value)}`,
+        node.line,
+        node.column,
+        "Map the title variable to a non-empty string"
+      );
+    }
+    return value;
   }
 
   private restoreLoopContext(saved: Map<string, TemplateValue>): void {
