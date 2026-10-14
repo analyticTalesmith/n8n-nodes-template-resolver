@@ -85,6 +85,35 @@ function parseParam(param: string, params: Record<string, string>): void {
 }
 
 /**
+ * Every filter applyFilter accepts
+ */
+export const FILTERS: { name: string; params: string; description: string }[] =
+  [
+    {
+      name: "head",
+      params: "head=N",
+      description:
+        "First N characters; a negative N drops the last |N| characters",
+    },
+    {
+      name: "tail",
+      params: "tail=N",
+      description:
+        "Last N characters; a negative N drops the first |N| characters",
+    },
+    {
+      name: "trim",
+      params: "",
+      description: "Leading and trailing whitespace removed",
+    },
+    {
+      name: "escape_md",
+      params: "",
+      description: "Markdown special characters escaped with a backslash",
+    },
+  ];
+
+/**
  * Apply single filter to text
  */
 export function applyFilter(text: string, filter: FilterCall): string {

@@ -1,16 +1,20 @@
+import { Limits, TemplateValue, withDefaultLimits } from "./types";
+import { DiagnosticCode, TemplateError } from "./errors";
+import { Lexer } from "./lexer";
+import { Parser } from "./parser";
+import { Interpreter } from "./interpreter";
+import { analyze } from "./analyze";
+import { estimateTokens } from "./estimate";
+
 export interface RenderOptions {
   strictMode?: boolean;
-  limits?: {
-    maxIterations?: number;
-    maxOutputChars?: number;
-    maxDepth?: number;
-  };
+  limits?: Partial<Limits>;
   tokenEstimator?: (text: string) => number;
 }
 
 export interface Diagnostic {
   severity: "error" | "warning";
-  code: string;
+  code: DiagnosticCode | "invalid-input" | "analysis-warning";
   message: string;
   line: number;
   column: number;
@@ -30,25 +34,92 @@ export interface RenderResult {
   diagnostics: Diagnostic[];
 }
 
-/** Signature-only stub: render a template to a structured result. */
+/**
+ * Render a template against data. Template and data problems never throw:
+ * they come back as ok false, an empty output and the error first in
+ * diagnostics.
+ */
 export function render(
-  _template: string,
-  _data: Record<string, unknown>,
-  _options?: RenderOptions
+  template: string,
+  data: Record<string, unknown>,
+  options?: RenderOptions
 ): RenderResult {
+  const limits = withDefaultLimits(options?.limits);
+  const interpreter = new Interpreter(
+    new Map(Object.entries(data)) as Map<string, TemplateValue>,
+    { strictMode: options?.strictMode, limits }
+  );
+
+  let output: string;
+  try {
+    const tokens = new Lexer(template).tokenize();
+    const ast = new Parser(tokens, { maxDepth: limits.maxDepth }).parse();
+    output = interpreter.interpret(ast);
+  } catch (error) {
+    if (!(error instanceof TemplateError)) throw error;
+    return {
+      ok: false,
+      output: "",
+      messages: [],
+      stats: {
+        chars: 0,
+        estTokens: 0,
+        sectionsOmitted: 0,
+        iterations: interpreter.iterationCount,
+      },
+      diagnostics: [toDiagnostic(error)],
+    };
+  }
+
+  const estimate = options?.tokenEstimator ?? estimateTokens;
   return {
-    ok: false,
-    output: "",
+    ok: true,
+    output,
     messages: [],
-    stats: { chars: 0, estTokens: 0, sectionsOmitted: 0, iterations: 0 },
+    stats: {
+      chars: output.length,
+      estTokens: estimate(output),
+      sectionsOmitted: 0,
+      iterations: interpreter.iterationCount,
+    },
     diagnostics: [],
   };
 }
 
-/** Signature-only stub: check a template without data. */
-export function validate(_template: string): {
-  ok: boolean;
-  diagnostics: Diagnostic[];
-} {
-  return { ok: false, diagnostics: [] };
+/**
+ * Check a template without data: syntax errors and unknown filters are
+ * errors; conditions that only some data could satisfy are warnings.
+ */
+export function validate(
+  template: string,
+  options?: { limits?: Partial<Limits> }
+): { ok: boolean; diagnostics: Diagnostic[] } {
+  let diagnostics: Diagnostic[];
+  try {
+    diagnostics = analyze(template, options).diagnostics.map(
+      ({ code, message, line, column }): Diagnostic =>
+        code === "unknown-filter"
+          ? { severity: "error", code, message, line, column }
+          : { severity: "warning", code: "analysis-warning", message, line, column }
+    );
+  } catch (error) {
+    if (!(error instanceof TemplateError)) throw error;
+    diagnostics = [toDiagnostic(error)];
+  }
+  return {
+    ok: diagnostics.every((d) => d.severity !== "error"),
+    diagnostics,
+  };
+}
+
+function toDiagnostic(error: TemplateError): Diagnostic {
+  const diagnostic: Diagnostic = {
+    severity: "error",
+    code: error.code,
+    message: error.detail,
+    line: error.line,
+    column: error.column,
+  };
+  if (error.suggestion !== undefined) diagnostic.suggestion = error.suggestion;
+  return diagnostic;
 }

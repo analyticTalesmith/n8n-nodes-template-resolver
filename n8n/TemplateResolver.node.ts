@@ -1,4 +1,10 @@
-import { VariableMap, analyze, resolveTemplate } from "../core/src";
+import {
+  Diagnostic,
+  TemplateAnalysis,
+  TemplateError,
+  analyze,
+  render,
+} from "../core/src";
 import {
   IExecuteFunctions,
   INodeExecutionData,
@@ -170,7 +176,17 @@ By \${{author}}
         ) as string;
 
         // Extract variables from template
-        const analysis = analyze(template);
+        let analysis: TemplateAnalysis;
+        try {
+          analysis = analyze(template);
+        } catch (error) {
+          if (!(error instanceof TemplateError)) throw error;
+          throw new NodeOperationError(
+            this.getNode(),
+            located(error.detail, error.line, error.column),
+            { itemIndex }
+          );
+        }
         const detectedVariables = analysis.variables
           .map((v) => v.name)
           .sort();
@@ -179,7 +195,7 @@ By \${{author}}
         );
 
         // Build variable map
-        const variables: VariableMap = new Map();
+        const variables = new Map<string, string>();
         if (variableMappings.mappings?.length) {
           for (const mapping of variableMappings.mappings) {
             if (mapping.variableName && mapping.value !== undefined) {
@@ -199,11 +215,18 @@ By \${{author}}
         );
 
         if (strictMode && missingRequired.length > 0) {
+          const attempt = render(template, Object.fromEntries(variables), {
+            strictMode,
+          });
+          const firstError = attempt.ok
+            ? ""
+            : ` First error: ${describe(attempt.diagnostics[0])}.`;
           throw new NodeOperationError(
             this.getNode(),
             `Template requires unmapped variables: ${missingRequired.join(", ")}. ` +
               `Add mappings or disable "Strict Mode". ` +
-              `Detected variables: ${detectedVariables.join(", ")}`,
+              `Detected variables: ${detectedVariables.join(", ")}` +
+              firstError,
             { itemIndex }
           );
         }
@@ -215,12 +238,20 @@ By \${{author}}
           }
         }
 
-        // Resolve template
-        const resolved = resolveTemplate(template, variables, { strictMode });
+        const result = render(template, Object.fromEntries(variables), {
+          strictMode,
+        });
+        if (!result.ok) {
+          throw new NodeOperationError(
+            this.getNode(),
+            describe(result.diagnostics[0]),
+            { itemIndex }
+          );
+        }
 
         // Build output
         const outputData: { [key: string]: string | TemplateMetadata } = {
-          [outputField]: resolved,
+          [outputField]: result.output,
         };
 
         if (showDetectedVariables) {
@@ -262,4 +293,12 @@ By \${{author}}
 
     return [returnData];
   }
+}
+
+function located(message: string, line: number, column: number): string {
+  return `${message} (line ${line}, column ${column})`;
+}
+
+function describe(diagnostic: Diagnostic): string {
+  return located(diagnostic.message, diagnostic.line, diagnostic.column);
 }

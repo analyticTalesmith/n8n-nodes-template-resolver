@@ -65,6 +65,13 @@ export class Interpreter {
   }
 
   /**
+   * FOR iterations run by the latest interpret call
+   */
+  get iterationCount(): number {
+    return this.iterations;
+  }
+
+  /**
    * Main interpretation entry point
    */
   interpret(ast: ProgramNode): string {
