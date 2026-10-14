@@ -127,5 +127,6 @@
         ]
       }
     }
-  ]
+  ],
+  "user_docs_waiver": "README.md and changelog.md are the user documentation and carry no user_facing frontmatter"
 }
