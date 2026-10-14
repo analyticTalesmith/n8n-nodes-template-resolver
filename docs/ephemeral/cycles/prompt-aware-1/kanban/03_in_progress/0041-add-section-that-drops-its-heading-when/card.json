@@ -83,7 +83,7 @@
   },
   "blocked_on": null,
   "docs_impact": "none",
-  "started": null,
+  "started": "2026-10-14T02:34:44.818Z",
   "ended": null,
   "review_rounds": 0,
   "schema_version": 1,
@@ -103,5 +103,6 @@
       "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
       "gate": "dd4d2f9d8c3577063af85d987e59632d8c37a5082d5bc27a929c48771d69bf45"
     }
-  }
+  },
+  "base_commit": "f3d44d299f9503ff27604e42e9a6a2b56c2888da"
 }
