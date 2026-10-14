@@ -1,4 +1,4 @@
-import { VariableMap } from "./types";
+import { Limits, VariableMap } from "./types";
 import { Lexer } from "./lexer";
 import { Parser } from "./parser";
 import { Interpreter } from "./interpreter";
@@ -14,7 +14,7 @@ import { Interpreter } from "./interpreter";
 export function resolveTemplate(
   template: string,
   variables: VariableMap,
-  options?: { strictMode?: boolean }
+  options?: { strictMode?: boolean; limits?: Partial<Limits> }
 ): string {
   // Tokenize
   const lexer = new Lexer(template);

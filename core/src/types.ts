@@ -230,3 +230,21 @@ export interface VariableMappingsCollection {
     value: string;
   }>;
 }
+
+/**
+ * Work limits for one render
+ */
+export interface Limits {
+  maxIterations: number;
+  maxOutputChars: number;
+  maxDepth: number;
+}
+
+/**
+ * Default limits (signature-only stub: neutral values until implemented)
+ */
+export const DEFAULT_LIMITS: Limits = {
+  maxIterations: 0,
+  maxOutputChars: 0,
+  maxDepth: 0,
+};
