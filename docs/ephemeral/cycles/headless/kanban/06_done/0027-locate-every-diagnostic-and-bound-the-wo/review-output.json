@@ -1,0 +1,75 @@
+{
+  "restatement": "The headless core must report every template error, at parse time or at runtime, as a TemplateError with a diagnostic code (syntax-error, missing-variable, unknown-filter, type-error, limit-*) and the 1-based line and column of the node that failed, never a 1:1 placeholder. It must also bound the work with configurable limits: total FOR iterations, output length and block nesting depth. The defaults are 10000 / 1000000 / 32 and are exported as DEFAULT_LIMITS, and a partial limits option keeps the remaining defaults. The work must not change what a passing template renders, must not add runtime dependencies, and must not bring n8n or I/O into core. This is the engine surface that the structured render result, the API and the CLI will report from.",
+  "brief_mismatch": "m1 (do not change what any currently passing template renders) cannot fully hold alongside c6's mandated defaults. A template that renders today with more than 10000 total FOR iterations, more than 1000000 output characters or nesting deeper than 32 will throw once this change lands, including through the n8n node, which uses the default limits. The criteria only promise 'a template under every limit renders as before', so m1 should be read as limited to templates under every default limit. The lead should confirm that reading.",
+  "verification_plan": [
+    "Run the frozen gate (diagnostics.test.ts, limits.test.ts) and the full suite. Confirm everything passes and that no existing golden or regression test changed (m1).",
+    "Check that each TemplateError subclass carries the right code: syntax-error, missing-variable, unknown-filter, type-error, and the limit-iterations, limit-output and limit-depth codes.",
+    "Check that runtime errors thrown with placeholder 1:1 (filters, math, condition evaluation) are relocated to the evaluating node, including inside FOR, IF, ELSEIF, CASE, LIST item conditions, TABLE cells and ternaries.",
+    "Check that the iteration count is global across the render, includes nested loops and TABLE FOR rows, and throws at the FOR that crosses the limit.",
+    "Check that output length is bounded, located, and checked often enough that a runaway loop cannot allocate unbounded output before the check.",
+    "Check that depth is enforced in the parser before recursion can overflow the stack, located at the opening tag of the too-deep block, and counts every block kind.",
+    "Check that DEFAULT_LIMITS values and the partial merge match c6, and that resolveTemplate passes limits to both the parser and the interpreter.",
+    "Check that there are no new dependencies in package.json and no n8n or fs imports in core/src.",
+    "Check that the diff touches only the manifest paths, and judge whether the change to the frozen test is a correct fix or a weakening.",
+    "Answer the brief's questions: probe runtime errors deep in a template (line 5 or later, inside FOR/IF), and runaway nested loops."
+  ],
+  "findings": [
+    {
+      "title": "Frozen test diagnostics.test.ts was edited (column 8 -> 10); the edit is a correct recount, not a weakening",
+      "class": "drift",
+      "serves": {
+        "target": "c1",
+        "scenario": "A frozen test changed after the freeze could hide an unmet criterion. Here line 3 '  ${{i}} ${{nope}}' puts '${{nope}}' at column 10, so the original 8 was wrong and the amended expectation is the stricter, correct one."
+      },
+      "rubric": "each criterion is met by the diff and its test",
+      "reproduction": "Count the columns of line 3 in 'a\\n{{FOR xs AS i}}\\n  ${{i}} ${{nope}}\\n{{END_FOR}}': two spaces, '${{i}}' at 3-8, a space at 9, '${{nope}}' starting at 10.",
+      "evidence": [
+        "diff:tests/headless/diagnostics.test.ts",
+        "test:dg-syntax: missing variable inside a FOR body is located at the variable"
+      ],
+      "location": "tests/headless/diagnostics.test.ts:110"
+    },
+    {
+      "title": "The parser's default maxDepth now also makes analyze() throw limit-depth for nesting deeper than 32, and analyze has no way to pass limits",
+      "class": "drift",
+      "serves": {
+        "target": "cycle-goal",
+        "scenario": "analyze() of a template nested 40 deep succeeded at base and now throws LimitError limit-depth at line 33. analyze.ts is outside the card's scope and was not updated to pass limits, so analyze/validate behaviour changed silently through the Parser constructor default."
+      },
+      "rubric": "no change outside the card scope",
+      "reproduction": "Run analyze('{{IF t}}\\n'.repeat(40) + 'x' + '{{END_IF}}'.repeat(40)) at head: it throws code limit-depth, line 33. At base fa7fa47 it returns an analysis.",
+      "evidence": [
+        "code:core/src/analyze.ts:70",
+        "code:core/src/parser.ts:34",
+        "diff:core/src/parser.ts"
+      ],
+      "location": "core/src/parser.ts:34"
+    },
+    {
+      "title": "A very long ELSEIF chain still overflows the stack with an uncoded RangeError instead of a located diagnostic",
+      "class": "drift",
+      "serves": {
+        "target": "card-goal",
+        "scenario": "'errors carry code, line and column everywhere': ELSEIF is parsed and interpreted as recursive nested IfNodes that the depth counter does not count. A chain of about 20000 ELSEIFs (a template of about 260 KB) throws 'RangeError: Maximum call stack size exceeded' with no code, line or column. This was already true at base and is not a block-nesting case under c5, so it is noted rather than raised as a fix request."
+      },
+      "rubric": "each criterion is met by the diff and its test",
+      "reproduction": "Call resolveTemplate('{{IF t}}a' + '{{ELSEIF t}}b'.repeat(20000) + '{{END_IF}}', new Map([['t','x']]), {strictMode:true}): it throws RangeError with undefined code, line and column. With 5000 it renders.",
+      "evidence": [
+        "code:core/src/parser.ts:300",
+        "code:core/src/interpreter.ts:232"
+      ],
+      "location": "core/src/parser.ts:355"
+    }
+  ],
+  "responses": [],
+  "reviewer": {
+    "kind": "fallback",
+    "label": "opus fallback (same model family as the builder; has repository access)"
+  },
+  "at": "2026-10-14T00:55:55.729Z",
+  "card": "0027-locate-every-diagnostic-and-bound-the-wo",
+  "tier": "product",
+  "packet_sha256": "e3c57940ecd6354787c706599d105bb8ea8d1ad5af647e8aa0053e90d6ccd854",
+  "diff_sha256": "3b28e217c6e453d89af4b5ffa8cde2e259b3a06ebca5447e9009e11ebda213fb",
+  "dropped": []
+}

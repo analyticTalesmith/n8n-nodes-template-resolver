@@ -1,0 +1,26 @@
+{
+  "id": "0032-follow-up-a-very-long-elseif-chain-still",
+  "title": "Follow-up: A very long ELSEIF chain still overflows the stack with an uncoded RangeError instead of a located diagnostic",
+  "type": "bug",
+  "parent": null,
+  "depends_on": [],
+  "origin": "headless",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [],
+    "frozen": false
+  },
+  "criteria": [],
+  "gate": null,
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1
+}
