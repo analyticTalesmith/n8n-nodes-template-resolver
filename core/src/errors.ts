@@ -1,16 +1,41 @@
+export type LimitCode = "limit-iterations" | "limit-output" | "limit-depth";
+
+export type DiagnosticCode =
+  | "syntax-error"
+  | "type-error"
+  | "missing-variable"
+  | "unknown-filter"
+  | LimitCode;
+
 /**
  * Base template error with rich context
  */
 export class TemplateError extends Error {
   constructor(
-    message: string,
-    public readonly line: number,
-    public readonly column: number,
-    public readonly suggestion?: string
+    public readonly detail: string,
+    public line: number,
+    public column: number,
+    public readonly suggestion: string | undefined,
+    public readonly code: DiagnosticCode
   ) {
-    super(TemplateError.formatMessage(message, line, column, suggestion));
+    super(TemplateError.formatMessage(detail, line, column, suggestion));
     this.name = "TemplateError";
     Object.setPrototypeOf(this, TemplateError.prototype);
+  }
+
+  /**
+   * Move the error to the template node that evaluated it
+   */
+  locate(line: number, column: number): this {
+    this.line = line;
+    this.column = column;
+    this.message = TemplateError.formatMessage(
+      this.detail,
+      line,
+      column,
+      this.suggestion
+    );
+    return this;
   }
 
   private static formatMessage(
@@ -37,7 +62,7 @@ export class SyntaxError extends TemplateError {
     column: number,
     suggestion?: string
   ) {
-    super(message, line, column, suggestion);
+    super(message, line, column, suggestion, "syntax-error");
     this.name = "SyntaxError";
     Object.setPrototypeOf(this, SyntaxError.prototype);
   }
@@ -53,9 +78,20 @@ export class TypeError extends TemplateError {
     column: number,
     suggestion?: string
   ) {
-    super(message, line, column, suggestion);
+    super(message, line, column, suggestion, "type-error");
     this.name = "TypeError";
     Object.setPrototypeOf(this, TypeError.prototype);
+  }
+}
+
+/**
+ * Math expression that cannot be parsed (unmatched parentheses, dangling operators)
+ */
+export class MathSyntaxError extends TypeError {
+  constructor(message: string, line: number, column: number) {
+    super(message, line, column);
+    this.name = "MathSyntaxError";
+    Object.setPrototypeOf(this, MathSyntaxError.prototype);
   }
 }
 
@@ -74,8 +110,56 @@ export class MissingVariableError extends TemplateError {
       availableVariables.length > 0
         ? `Available variables: ${availableVariables.join(", ")}\nCheck variable name or enable Lenient Mode`
         : "No variables defined. Check variable mappings.";
-    super(message, line, column, suggestion);
+    super(message, line, column, suggestion, "missing-variable");
     this.name = "MissingVariableError";
     Object.setPrototypeOf(this, MissingVariableError.prototype);
   }
+}
+
+/**
+ * Filter name that does not exist
+ */
+export class UnknownFilterError extends TemplateError {
+  constructor(filterName: string, line: number, column: number) {
+    super(
+      `Unknown filter: ${filterName}`,
+      line,
+      column,
+      "Available filters: head, tail, trim, escape_md",
+      "unknown-filter"
+    );
+    this.name = "UnknownFilterError";
+    Object.setPrototypeOf(this, UnknownFilterError.prototype);
+  }
+}
+
+/**
+ * Render work crossed a configured limit
+ */
+export class LimitError extends TemplateError {
+  constructor(
+    code: LimitCode,
+    message: string,
+    line: number,
+    column: number,
+    suggestion?: string
+  ) {
+    super(message, line, column, suggestion, code);
+    this.name = "LimitError";
+    Object.setPrototypeOf(this, LimitError.prototype);
+  }
+}
+
+/**
+ * The error located at the node that evaluated it. A plain Error (bad filter
+ * parameters, failed math) becomes a type error there.
+ */
+export function locateError(
+  error: unknown,
+  line: number,
+  column: number
+): unknown {
+  if (error instanceof TemplateError) return error.locate(line, column);
+  if (error instanceof Error) return new TypeError(error.message, line, column);
+  return error;
 }

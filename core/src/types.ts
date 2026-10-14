@@ -241,10 +241,22 @@ export interface Limits {
 }
 
 /**
- * Default limits (signature-only stub: neutral values until implemented)
+ * Default limits: total FOR iterations across the render, output length,
+ * and nesting of blocks
  */
 export const DEFAULT_LIMITS: Limits = {
-  maxIterations: 0,
-  maxOutputChars: 0,
-  maxDepth: 0,
+  maxIterations: 10000,
+  maxOutputChars: 1000000,
+  maxDepth: 32,
 };
+
+/**
+ * The given limits, with every limit left out taking its default
+ */
+export function withDefaultLimits(limits?: Partial<Limits>): Limits {
+  return {
+    maxIterations: limits?.maxIterations ?? DEFAULT_LIMITS.maxIterations,
+    maxOutputChars: limits?.maxOutputChars ?? DEFAULT_LIMITS.maxOutputChars,
+    maxDepth: limits?.maxDepth ?? DEFAULT_LIMITS.maxDepth,
+  };
+}
