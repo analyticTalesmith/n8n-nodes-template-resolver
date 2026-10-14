@@ -6,7 +6,7 @@
     "tools/tests/headless-docs.test.mjs"
   ],
   "exit_status": 0,
-  "ran_at": "2026-10-14T01:55:04.290Z",
+  "ran_at": "2026-10-14T01:55:16.489Z",
   "tests": {
     "passed": 6,
     "failed": 0
