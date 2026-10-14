@@ -78,7 +78,8 @@ export function check(actual: unknown, message: string): jest.Matchers<void> {
         try {
           return value.apply(target, args);
         } catch (e) {
-          (e as Error).message = `${message}\n${(e as Error).message}`;
+          (e as Error).message = `${(e as Error).message}
+Expected behavior: ${message}`;
           throw e;
         }
       };
