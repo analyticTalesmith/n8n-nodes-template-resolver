@@ -4,7 +4,7 @@ type: adr
 domain: architecture
 status: accepted
 date: 2026-10-13
-state: planned
+state: built
 ---
 
 # Dependency-free token estimator with a tokenizer hook

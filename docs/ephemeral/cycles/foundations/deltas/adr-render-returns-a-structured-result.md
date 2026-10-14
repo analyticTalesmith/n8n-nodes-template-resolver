@@ -2,7 +2,7 @@
 summary: "Record settled design decision: render-returns-a-structured-result"
 op: add
 target: docs/living/decisions/adr/0004-render-returns-a-structured-result.md
-status: open
+status: applied
 ---
 
 # Proposed change

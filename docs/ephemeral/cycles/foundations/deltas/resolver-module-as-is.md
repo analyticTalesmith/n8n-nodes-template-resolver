@@ -2,7 +2,7 @@
 summary: Recover the template resolver module as it is
 op: recover
 target: docs/living/architecture/modules/template-resolver.md
-status: open
+status: applied
 ---
 
 # Proposed change

@@ -2,7 +2,7 @@
 summary: "Record settled design decision: standalone-block-tag-lines-vanish"
 op: add
 target: docs/living/decisions/adr/0002-standalone-block-tag-lines-vanish.md
-status: open
+status: applied
 ---
 
 # Proposed change

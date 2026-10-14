@@ -113,7 +113,6 @@ export class Interpreter {
         const result = evaluateMathExpression(pathStr, this.getAllVariables());
         return String(result);
       } catch (error) {
-        console.log("Invalid math expression error:", error);
         // Not a valid math expression, continue with normal resolution
       }
     }

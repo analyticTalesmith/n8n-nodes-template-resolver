@@ -1,12 +1,14 @@
 ---
 summary: Surface map of the repository at the recovered commit: manifests, scripts, build and test setup, entry points and folders.
-state: planned
+state: built
 provenance: recovered
 recovered_at: 712fcfd7f7af0b329e6506120a25f0db8e58de06
 recovered_in: 0002-describe-the-template-resolver-as-it-is
 ---
 
 # Repository overview
+
+> Since recovery: the source folder `nodes/` is now `core/src/` (pure library, no n8n imports) and `n8n/` (the node), jest and ts-jest are declared again, CI runs on GitHub Actions, and `.github/` is no longer ignored. Tags in this document cite the recovered commit.
 
 ## Purpose
 

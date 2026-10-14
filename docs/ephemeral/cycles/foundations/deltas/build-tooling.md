@@ -2,7 +2,7 @@
 summary: Plan the build tooling module
 op: add
 target: docs/living/architecture/modules/build-tooling.md
-status: open
+status: applied
 ---
 
 # Proposed change

@@ -2,7 +2,7 @@
 summary: "Record settled design decision: house-style-for-every-block"
 op: add
 target: docs/living/decisions/adr/0001-house-style-for-every-block.md
-status: open
+status: applied
 ---
 
 # Proposed change

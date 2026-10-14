@@ -248,7 +248,7 @@ export class Lexer {
       (keyword === "ELSE" || keyword.startsWith("END_"))
     ) {
       const isElseIf =
-        keyword === "ELSE" && /^IF(\s|$)/.test(trimmed.slice(4).trim());
+        keyword === "ELSE" && /^IF(\s|$)/i.test(trimmed.slice(4).trim());
       throw new SyntaxError(
         isElseIf
           ? "Invalid tag {{ELSE IF}}"
