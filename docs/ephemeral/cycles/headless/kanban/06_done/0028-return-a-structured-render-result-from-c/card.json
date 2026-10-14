@@ -1,0 +1,462 @@
+{
+  "id": "0028-return-a-structured-render-result-from-c",
+  "title": "Return a structured render result from core and the n8n node",
+  "type": "task",
+  "parent": null,
+  "depends_on": [
+    "0027-locate-every-diagnostic-and-bound-the-wo"
+  ],
+  "origin": "headless",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "core/src/",
+    "docs/ephemeral/cycles/headless/test-plan.md",
+    "docs/ephemeral/work/0028-return-a-structured-render-result-from-c",
+    "n8n/",
+    "package.json",
+    "tests/headless",
+    "tsconfig.json"
+  ],
+  "manifest": {
+    "add": [
+      "tests/headless/render-robust.test.ts"
+    ],
+    "remove": [],
+    "edit": [
+      "core/src/analyze.ts",
+      "core/src/estimate.ts",
+      "core/src/filters.ts",
+      "core/src/index.ts",
+      "core/src/interpreter.ts",
+      "core/src/render.ts",
+      "core/src/spec.ts",
+      "docs/ephemeral/cycles/headless/test-plan.md",
+      "docs/ephemeral/work/0028-return-a-structured-render-result-from-c/spec.md",
+      "n8n/TemplateResolver.node.ts",
+      "package.json",
+      "tsconfig.json"
+    ],
+    "frozen": true
+  },
+  "criteria": [
+    {
+      "text": "rr-result: render returns ok, output, messages, stats (chars, estTokens, sectionsOmitted, iterations) and diagnostics; on a template or data error it does not throw, returns ok false, an empty output and the located error first in diagnostics",
+      "verify": "test",
+      "traces": [
+        "tests/headless/render.test.ts#rr-result"
+      ]
+    },
+    {
+      "text": "rr-validate: validate returns ok and diagnostics for syntax errors and unknown filters without needing data",
+      "verify": "test",
+      "traces": [
+        "tests/headless/render.test.ts#rr-validate"
+      ]
+    },
+    {
+      "text": "rr-analyze: analyze variables carry required (the opposite of optional) and the result carries blocks, a count per block kind",
+      "verify": "test",
+      "traces": [
+        "tests/headless/render.test.ts#rr-analyze"
+      ]
+    },
+    {
+      "text": "rr-spec: spec lists blocks, filters, operators, limits and a version, and every filter the engine accepts appears in it",
+      "verify": "test",
+      "traces": [
+        "tests/headless/spec.test.ts#rr-spec"
+      ]
+    },
+    {
+      "text": "rr-estimator: estTokens is ceil(chars/4) by default and a tokenEstimator option replaces it",
+      "verify": "test",
+      "traces": [
+        "tests/headless/render.test.ts#rr-estimator"
+      ]
+    },
+    {
+      "text": "rr-compat: resolveTemplate still returns a string and throws, and limits in render options bound the render with their diagnostics",
+      "verify": "test",
+      "traces": [
+        "tests/headless/render.test.ts#rr-compat"
+      ]
+    },
+    {
+      "text": "nd-output: the n8n node writes the render output to the configured field, and a failed render throws a node error whose message carries the first diagnostic with line and column",
+      "verify": "test",
+      "traces": [
+        "tests/headless/node.test.ts#nd-output"
+      ]
+    },
+    {
+      "text": "nd-nodeps: package.json declares no runtime dependencies, tsconfig builds api and cli folders, and package.json exposes the template-resolver bin",
+      "verify": "test",
+      "traces": [
+        "tests/headless/nodeps.test.ts#nd-nodeps"
+      ]
+    },
+    {
+      "text": "rr-robust: render and validate never throw for non-object data (null, array, string), cyclic data values or a cyclic value looped over in strict mode; each returns ok false with a diagnostic",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "traces": [
+        "tests/headless/render-robust.test.ts#rr-robust"
+      ]
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/headless/render.test.ts",
+    "tests/headless/spec.test.ts",
+    "tests/headless/node.test.ts",
+    "tests/headless/nodeps.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": "2026-10-14T00:56:19.663Z",
+  "ended": "2026-10-14T01:12:53.258Z",
+  "review_rounds": 2,
+  "schema_version": 1,
+  "blast_radius": [
+    "none"
+  ],
+  "freeze": {
+    "at": "2026-10-14T00:38:39.555Z",
+    "brief_sha256": "cdb7e38fcd2a306d8703ec1343835b9a32914650638d4105f29e6f16254d8117",
+    "brief_core_sha256": "071cb80bc3f31001b99d893a1f5296b367c8fb5b666cb0417d4ab56099b3c8c6",
+    "manifest_sha256": "2826426587c69e5e375c928a5cdc13b0bce0d06002d70cffa555d86a916f72da",
+    "criteria_sha256": "816ed2ccbf0616e4214963f5d742e48f5697cbc47bf4c7834e82e579e24b0d4f",
+    "scope_sha256": "ef1e3f14186e4ae78a2115497e78455e596da1418ae8252a67afe90075f3ce96",
+    "scope_parts": {
+      "files_scope": "a21a173da9ae55da0b1ae642dc7a9ac5fa1d7cff2f5c7ae36eaad9a5b7320861",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "47522fcafb15c20f0da4e11e569bfff0837c31e0b35ec8ed72f9e5241595f939"
+    }
+  },
+  "base_commit": "02dd2d32a9f7f781f327ee35005413fbb04eccd9",
+  "manifest_amendments": [
+    {
+      "at": "2026-10-14T01:07:05.433Z",
+      "by": "lead",
+      "reason": "the test writer's stubs already existed so the new modules are edits; the shared filter list and an iteration count needed filters and interpreter; resolve and a stray entry were not changed",
+      "from": {
+        "manifest": {
+          "add": [
+            "core/src/estimate.ts",
+            "core/src/render.ts",
+            "core/src/spec.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/index.ts",
+            "core/src/resolve.ts",
+            "n8n/TemplateResolver.node.ts",
+            "package.json",
+            "tsconfig.json",
+            "x"
+          ]
+        },
+        "files_scope": [
+          "core/src/",
+          "n8n/",
+          "package.json",
+          "tsconfig.json"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/filters.ts",
+            "core/src/index.ts",
+            "core/src/interpreter.ts",
+            "n8n/TemplateResolver.node.ts",
+            "package.json",
+            "tsconfig.json"
+          ]
+        },
+        "files_scope": [
+          "core/src/",
+          "n8n/",
+          "package.json",
+          "tsconfig.json"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    },
+    {
+      "at": "2026-10-14T01:07:12.739Z",
+      "by": "lead",
+      "reason": "stubs from the test writer already existed so these modules are edits",
+      "from": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/filters.ts",
+            "core/src/index.ts",
+            "core/src/interpreter.ts",
+            "n8n/TemplateResolver.node.ts",
+            "package.json",
+            "tsconfig.json"
+          ]
+        },
+        "files_scope": [
+          "core/src/",
+          "n8n/",
+          "package.json",
+          "tsconfig.json"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/estimate.ts",
+            "core/src/filters.ts",
+            "core/src/index.ts",
+            "core/src/interpreter.ts",
+            "core/src/render.ts",
+            "core/src/spec.ts",
+            "n8n/TemplateResolver.node.ts",
+            "package.json",
+            "tsconfig.json"
+          ]
+        },
+        "files_scope": [
+          "core/src/",
+          "n8n/",
+          "package.json",
+          "tsconfig.json"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    },
+    {
+      "at": "2026-10-14T01:09:05.175Z",
+      "by": "lead",
+      "reason": "new robustness test is a card test",
+      "from": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/estimate.ts",
+            "core/src/filters.ts",
+            "core/src/index.ts",
+            "core/src/interpreter.ts",
+            "core/src/render.ts",
+            "core/src/spec.ts",
+            "n8n/TemplateResolver.node.ts",
+            "package.json",
+            "tsconfig.json"
+          ]
+        },
+        "files_scope": [
+          "core/src/",
+          "n8n/",
+          "package.json",
+          "tsconfig.json"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/estimate.ts",
+            "core/src/filters.ts",
+            "core/src/index.ts",
+            "core/src/interpreter.ts",
+            "core/src/render.ts",
+            "core/src/spec.ts",
+            "n8n/TemplateResolver.node.ts",
+            "package.json",
+            "tests/headless/render-robust.test.ts",
+            "tsconfig.json"
+          ]
+        },
+        "files_scope": [
+          "core/src/",
+          "n8n/",
+          "package.json",
+          "tests/headless",
+          "tsconfig.json"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    },
+    {
+      "at": "2026-10-14T01:11:06.397Z",
+      "by": "lead",
+      "reason": "drop the wrong-kind entry",
+      "from": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/estimate.ts",
+            "core/src/filters.ts",
+            "core/src/index.ts",
+            "core/src/interpreter.ts",
+            "core/src/render.ts",
+            "core/src/spec.ts",
+            "n8n/TemplateResolver.node.ts",
+            "package.json",
+            "tests/headless/render-robust.test.ts",
+            "tsconfig.json"
+          ]
+        },
+        "files_scope": [
+          "core/src/",
+          "n8n/",
+          "package.json",
+          "tests/headless",
+          "tsconfig.json"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/estimate.ts",
+            "core/src/filters.ts",
+            "core/src/index.ts",
+            "core/src/interpreter.ts",
+            "core/src/render.ts",
+            "core/src/spec.ts",
+            "n8n/TemplateResolver.node.ts",
+            "package.json",
+            "tsconfig.json"
+          ]
+        },
+        "files_scope": [
+          "core/src/",
+          "n8n/",
+          "package.json",
+          "tests/headless",
+          "tsconfig.json"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    },
+    {
+      "at": "2026-10-14T01:11:06.517Z",
+      "by": "lead",
+      "reason": "the robustness test is new; the criterion line is added to the spec and the test plan",
+      "from": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/estimate.ts",
+            "core/src/filters.ts",
+            "core/src/index.ts",
+            "core/src/interpreter.ts",
+            "core/src/render.ts",
+            "core/src/spec.ts",
+            "n8n/TemplateResolver.node.ts",
+            "package.json",
+            "tsconfig.json"
+          ]
+        },
+        "files_scope": [
+          "core/src/",
+          "n8n/",
+          "package.json",
+          "tests/headless",
+          "tsconfig.json"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [
+            "tests/headless/render-robust.test.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/estimate.ts",
+            "core/src/filters.ts",
+            "core/src/index.ts",
+            "core/src/interpreter.ts",
+            "core/src/render.ts",
+            "core/src/spec.ts",
+            "docs/ephemeral/cycles/headless/test-plan.md",
+            "docs/ephemeral/work/0028-return-a-structured-render-result-from-c/spec.md",
+            "n8n/TemplateResolver.node.ts",
+            "package.json",
+            "tsconfig.json"
+          ]
+        },
+        "files_scope": [
+          "core/src/",
+          "docs/ephemeral/cycles/headless/test-plan.md",
+          "docs/ephemeral/work/0028-return-a-structured-render-result-from-c",
+          "n8n/",
+          "package.json",
+          "tests/headless",
+          "tsconfig.json"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    }
+  ],
+  "criteria_amendments": [
+    {
+      "at": "2026-10-14T01:09:05.054Z",
+      "by": "lead",
+      "reason": "review found render can still throw for cyclic data and for non-object data",
+      "added": [
+        {
+          "text": "rr-robust: render and validate never throw for non-object data (null, array, string), cyclic data values or a cyclic value looped over in strict mode; each returns ok false with a diagnostic",
+          "verify": "test"
+        }
+      ]
+    }
+  ]
+}

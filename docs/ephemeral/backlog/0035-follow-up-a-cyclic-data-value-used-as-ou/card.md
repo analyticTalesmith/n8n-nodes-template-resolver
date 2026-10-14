@@ -1,13 +1,19 @@
-# Return a structured render result from core and the n8n node
+# Follow-up: A cyclic data value used as output renders ok true with empty text instead of ok false with a diagnostic, and
 
 Any agent picking this up: read the documents linked below, change only the files listed in Scope as a write (add, edit or remove), treat everything else as read-only, and stop and ask when you need more than this ticket gives you.
 
 ## Goal and why
 
+Source card: 0028-return-a-structured-render-result-from-c
+Finding: f4 (drift)
+Serves: c9: c9 requires that render returns ok false with a diagnostic for cyclic data values. For render('${{a}}', {a: cyclic}, {strictMode: true}), render instead returns ok true, output '' and no diagnostics: a data problem passes silently as an empty substitution. The new rr-robust test only asserts typeof r.ok === 'boolean' and checks diagnostics only when ok is false, so it passes either way and does not verify the criterion.
+Reproduction: Compile core/src with tsc and run: const a={x:'v'}; a.self=a; render('a\n${{a}}', {a}, {strictMode:true}). The result is {ok:true, output:'a\n', diagnostics:[]}. render('${{a.self.self.x}}', {a}) behaves the same way. The cause is Interpreter.valueToString (core/src/interpreter.ts ~608): it calls tryCoerceToString, which swallows the JSON.stringify failure and returns null, and valueToString then turns null into ''. Smallest fix: make render report this case. One way is an interpreter option set only by render that throws a located type-error when an object value cannot be stringified. Then tighten the rr-robust cases to expect ok false. Keeping the change behind a render-only option leaves resolveTemplate's output unchanged (m1).
+Evidence: code:core/src/interpreter.ts:608
+Evidence: code:core/src/coercion.ts:305
+Evidence: diff:tests/headless/render-robust.test.ts
+Evidence: test:rr-robust: strict the cyclic value itself does not throw
+
 <!-- One short paragraph for the model: what must be true when this is done, and why it matters. -->
-
-render() returns {ok, output, messages, stats, diagnostics} and never throws for template or data problems; validate, spec and the estimator exist; analyze reports required and block counts; the n8n node renders through the structured result.
-
 
 ## Must-haves
 
@@ -15,24 +21,9 @@ render() returns {ok, output, messages, stats, diagnostics} and never throws for
 <!-- Type each line: "- `contract` `id` text" or "- `constraint` `id` must: text". Constraint kinds: must, must-not, evidence-required, human-decides, open-ended. -->
 <!-- In card.json each criterion carries `traces`, a list of test file paths ("test/x.test.mjs#id"), and the gate command names the SOURCE test file, never a compiled copy: the review packet shows the reviewer the test files named there as frozen tests, and a path not at the base commit is a warning. The gate must print a report the red-evidence check can read: `["node", "--test", "--test-reporter=tap", "test/x.test.mjs"]`, `["npx", "jest", "--json", "src/x.test.ts"]`, or `["npx", "vitest", "run", "--reporter=json", "--outputFile=<report file>", "src/x.test.ts"]` (the report file is rewritten by every run). -->
 
-- `contract` `rr-result` render returns ok, output, messages, stats (chars, estTokens, sectionsOmitted, iterations) and diagnostics; on a template or data error it does not throw, returns ok false, an empty output and the located error first in diagnostics
-- `contract` `rr-validate` validate returns ok and diagnostics for syntax errors and unknown filters without needing data
-- `contract` `rr-analyze` analyze variables carry required (the opposite of optional) and the result carries blocks, a count per block kind
-- `contract` `rr-spec` spec lists blocks, filters, operators, limits and a version, and every filter the engine accepts appears in it
-- `contract` `rr-estimator` estTokens is ceil(chars/4) by default and a tokenEstimator option replaces it
-- `contract` `rr-compat` resolveTemplate still returns a string and throws, and limits in render options bound the render with their diagnostics
-- `contract` `nd-output` the n8n node writes the render output to the configured field, and a failed render throws a node error whose message carries the first diagnostic with line and column
-- `contract` `nd-nodeps` package.json declares no runtime dependencies, tsconfig builds api and cli folders, and package.json exposes the template-resolver bin
-
-
 ## Must-nots
 
 <!-- Invariants the work must not break: module boundaries, data it must not touch, patterns it must not invent. -->
-
-- change what resolveTemplate returns for any passing template
-- add a runtime dependency
-- import n8n or do I/O in core
-
 
 ## Context links
 
@@ -42,15 +33,9 @@ render() returns {ok, output, messages, stats, diagnostics} and never throws for
 
 <!-- Say whether a user can see this change. If so, set user_visible true in card.json and list the user-facing documents it updates in user_docs (documents tagged user_facing: true in their frontmatter), or give user_docs_waiver, one line with the reason none changes. If no user can see it, write `none`. -->
 
-none: the README card documents the surface.
-
-
 ## Interface contract
 
 <!-- State the public surface this change adds or changes (signatures, shapes or boundaries, whichever apply), or write `none: <reason>`. -->
-
-render, validate, spec, estimateTokens, RenderOptions, RenderResult, Diagnostic exported from core (see design.md).
-
 
 ## Scope
 
@@ -59,15 +44,6 @@ render, validate, spec, estimateTokens, RenderOptions, RenderResult, Diagnostic 
 <!-- generated scope: from card.json -->
 | Path | Permission (add, edit, remove) | Blast radius |
 | --- | --- | --- |
-| `core/src/estimate.ts` | add | none |
-| `core/src/render.ts` | add | none |
-| `core/src/spec.ts` | add | none |
-| `core/src/analyze.ts` | edit | none |
-| `core/src/index.ts` | edit | none |
-| `core/src/resolve.ts` | edit | none |
-| `n8n/TemplateResolver.node.ts` | edit | none |
-| `package.json` | edit | none |
-| `tsconfig.json` | edit | none |
 
-Files scope: `core/src/`, `n8n/`, `package.json`, `tsconfig.json`
+Files scope: none
 <!-- end generated scope -->
