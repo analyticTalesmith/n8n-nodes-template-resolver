@@ -48,10 +48,20 @@
       "location": "core/src/whitespace.ts:60",
       "label": "f1",
       "raised_in": 1,
-      "status": "sustained",
+      "status": "fixed",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "whitespace-only RAW content was dropped by the standalone rule",
+          "verify": "RAW content never joins a standalone run; rows added on and off",
+          "action": "fixed",
+          "evidence": [
+            "test:tests/promptaware/whitespace.test.ts"
+          ]
+        }
+      ],
       "rulings": [
         {
           "after_round": 1,

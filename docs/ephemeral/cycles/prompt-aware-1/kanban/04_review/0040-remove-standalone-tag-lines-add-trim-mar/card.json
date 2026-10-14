@@ -22,7 +22,8 @@
       "core/src/resolve.ts",
       "core/src/spec.ts",
       "core/src/types.ts",
-      "tests/promptaware/raw.test.ts"
+      "tests/promptaware/raw.test.ts",
+      "tests/promptaware/whitespace.test.ts"
     ],
     "frozen": true
   },
@@ -95,7 +96,7 @@
     "at": "2026-10-14T02:19:29.157Z",
     "brief_sha256": "39a6c5080770d89a8907ca5706d87e5d26841bcc52a58cbf2f6150c56b170b68",
     "brief_core_sha256": "915f9e44e0bb29a4f1dba3f9b5aa4e660f98527e72da1ad8374be7766255f812",
-    "manifest_sha256": "083bc645730a06e61eb6925a8a5d76631c325e50e99ba37ba85810713af2f4fb",
+    "manifest_sha256": "2ce4fbac7c640b0ad333e1ce5399ff035dd922e7608aa9b8d10fbe2c9741f509",
     "criteria_sha256": "d89bcee88cbb17763b7d242a10a39611361678a02f8f05ba3ca764234560ac59",
     "scope_sha256": "e6b888c5222f7e41cd7d6da8ce0d6b588d48519ea0e9d4a9e6cbc33574663479",
     "scope_parts": {
@@ -245,12 +246,69 @@
           "none"
         ]
       }
+    },
+    {
+      "at": "2026-10-14T02:31:20.777Z",
+      "by": "lead",
+      "reason": "table rows added to a frozen test after review",
+      "from": {
+        "manifest": {
+          "add": [
+            "core/src/whitespace.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "core/src/lexer.ts",
+            "core/src/render.ts",
+            "core/src/resolve.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts",
+            "tests/promptaware/raw.test.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/",
+          "tests/promptaware"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [
+            "core/src/whitespace.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "core/src/lexer.ts",
+            "core/src/render.ts",
+            "core/src/resolve.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts",
+            "tests/promptaware/raw.test.ts",
+            "tests/promptaware/whitespace.test.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/",
+          "tests/promptaware"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
     }
   ],
   "test_amendments": [
     {
       "path": "tests/promptaware/raw.test.ts",
       "reason": "add whitespace-only RAW cases found in review (table rows only)",
+      "approved_by": "project lead"
+    },
+    {
+      "path": "tests/promptaware/whitespace.test.ts",
+      "reason": "add standalone-on whitespace-only RAW rows (table rows only)",
       "approved_by": "project lead"
     }
   ]

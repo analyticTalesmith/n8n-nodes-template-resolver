@@ -17,11 +17,12 @@ Restatement: Add prompt-friendly whitespace and literal-brace handling to the he
 ### f1: Whitespace-only RAW content on a tag line is deleted under the standalone rule
 
 - Class: defect
-- Status: sustained
+- Status: fixed
 - Serves: c4: With render's default standaloneLines=true, a RAW block whose literal content is only spaces or tabs and that sits on its own line loses that content: the RAW content TEXT token is treated as blank padding between two standalone tags, so the line (content included) is cut. RAW must keep spaces.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: render("x\n{{RAW}}\t{{END_RAW}}\ny", {}) returns "x\ny" (expected "x\n\t\ny"); render("x\n {{RAW}} {{END_RAW}} \ny", {}) returns "x\ny". With standaloneLines false the content is kept ("x\n\t\ny"). Smallest fix: in removeStandaloneLines, never treat the TEXT token emitted by scanRaw as blank (mark it, e.g. a raw flag on the token, and exclude it in isBlank / do not cut it).
 - Evidence: code:core/src/whitespace.ts:22, code:core/src/whitespace.ts:60, code:core/src/lexer.ts:288, doc:docs/living/architecture/prompt-aware-contract.md
+- Reply after round 1 (fixed): restate: whitespace-only RAW content was dropped by the standalone rule; verify: RAW content never joins a standalone run; rows added on and off; evidence: test:tests/promptaware/whitespace.test.ts
 - Review lead ruling after round 1: sustain: RAW content is literal; whitespace-only RAW content must survive the standalone rule
 
 ### f2: A leading trim marker on a standalone tag line does not also remove the tag line's own line break, contrary to the contract

@@ -64,6 +64,7 @@ RenderOptions.standaloneLines; resolveTemplate options.standaloneLines; RAW bloc
 | `core/src/spec.ts` | edit | none |
 | `core/src/types.ts` | edit | none |
 | `tests/promptaware/raw.test.ts` | edit | none |
+| `tests/promptaware/whitespace.test.ts` | edit | none |
 
 Files scope: `core/src/`, `tests/promptaware`
 <!-- end generated scope -->
