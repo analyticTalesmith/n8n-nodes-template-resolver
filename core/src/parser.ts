@@ -17,8 +17,9 @@ import {
   TableRowNode,
   CommentNode,
   FilterCall,
+  DEFAULT_LIMITS,
 } from "./types";
-import { SyntaxError } from "./errors";
+import { SyntaxError, LimitError } from "./errors";
 
 /**
  * Parser: Builds Abstract Syntax Tree from tokens
@@ -27,8 +28,15 @@ import { SyntaxError } from "./errors";
  */
 export class Parser {
   private pos = 0;
+  private depth = 0;
+  private readonly maxDepth: number;
 
-  constructor(private tokens: Token[]) {}
+  constructor(
+    private tokens: Token[],
+    options?: { maxDepth?: number }
+  ) {
+    this.maxDepth = options?.maxDepth ?? DEFAULT_LIMITS.maxDepth;
+  }
 
   /**
    * Main parsing entry point
@@ -63,15 +71,15 @@ export class Parser {
       case TokenType.VARIABLE:
         return this.parseVariable();
       case TokenType.IF:
-        return this.parseIf();
+        return this.nested(() => this.parseIf());
       case TokenType.CASE:
-        return this.parseCase();
+        return this.nested(() => this.parseCase());
       case TokenType.FOR:
-        return this.parseFor();
+        return this.nested(() => this.parseFor());
       case TokenType.LIST:
-        return this.parseList();
+        return this.nested(() => this.parseList());
       case TokenType.TABLE:
-        return this.parseTable();
+        return this.nested(() => this.parseTable());
       case TokenType.HEADER:
         return this.parseTableHeader();
       case TokenType.ROW:
@@ -88,6 +96,27 @@ export class Parser {
           "Check template syntax"
         );
     }
+  }
+
+  /**
+   * Parse a block one level deeper, rejecting it at its opening tag when the
+   * nesting would exceed maxDepth
+   */
+  private nested<T>(parseBlock: () => T): T {
+    if (this.depth >= this.maxDepth) {
+      const token = this.current();
+      throw new LimitError(
+        "limit-depth",
+        `Block nesting exceeds the maximum depth of ${this.maxDepth}`,
+        token.line,
+        token.column,
+        "Flatten nested blocks or raise limits.maxDepth"
+      );
+    }
+    this.depth++;
+    const node = parseBlock();
+    this.depth--;
+    return node;
   }
 
   /**
@@ -707,7 +736,7 @@ export class Parser {
         rows.push(this.parseTableRow());
       } else if (this.check(TokenType.FOR)) {
         // Allow FOR loops to generate rows
-        const forNode = this.parseFor();
+        const forNode = this.nested(() => this.parseFor());
 
         // Wrap in a special TableRowNode
         rows.push({

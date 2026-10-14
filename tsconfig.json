@@ -21,7 +21,7 @@
     "skipLibCheck": true,
     "outDir": "./dist/"
   },
-  "include": ["core/**/*", "n8n/**/*", "n8n/**/*.json", "package.json"],
+  "include": ["core/**/*", "n8n/**/*", "api/**/*", "cli/**/*", "n8n/**/*.json", "package.json"],
   "exclude": [
     "node_modules",
     "dist",

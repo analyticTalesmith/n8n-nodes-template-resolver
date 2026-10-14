@@ -1,0 +1,281 @@
+{
+  "id": "0029-serve-render-validate-analyze-and-spec-o",
+  "title": "Serve render, validate, analyze and spec over HTTP",
+  "type": "task",
+  "parent": null,
+  "depends_on": [
+    "0028-return-a-structured-render-result-from-c"
+  ],
+  "origin": "headless",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "api/",
+    "tests/headless"
+  ],
+  "manifest": {
+    "add": [
+      "api/.gitattributes",
+      "api/server.ts"
+    ],
+    "remove": [],
+    "edit": [
+      "api/index.ts",
+      "api/openapi.json",
+      "api/routes.ts",
+      "tests/headless/api.test.ts"
+    ],
+    "frozen": true
+  },
+  "criteria": [
+    {
+      "text": "ap-routes: POST /v1/render, /v1/validate, /v1/analyze and GET /v1/spec return the documented 200 bodies, and a template error is a 200 with ok false and located diagnostics",
+      "verify": "test",
+      "traces": [
+        "tests/headless/api.test.ts#ap-routes"
+      ]
+    },
+    {
+      "text": "ap-errors: bad JSON, a missing or non-string template, a non-object data and bad option types return 400 invalid-request; unknown paths 404 not-found; wrong methods 405 method-not-allowed with Allow; bodies over maxBodyBytes 413 payload-too-large; a non-JSON POST content type 415 unsupported-media-type; every response is JSON",
+      "verify": "test",
+      "traces": [
+        "tests/headless/api.test.ts#ap-errors"
+      ]
+    },
+    {
+      "text": "ap-limits: request limits can only lower the server limits and a request cannot raise them",
+      "verify": "test",
+      "traces": [
+        "tests/headless/api.test.ts#ap-limits"
+      ]
+    },
+    {
+      "text": "oa-doc: GET /v1/openapi.json serves api/openapi.json byte for byte, it is OpenAPI 3.1, and its paths and methods equal the router table",
+      "verify": "test",
+      "traces": [
+        "tests/headless/api.test.ts#oa-doc"
+      ]
+    },
+    {
+      "text": "e2-server: the end-to-end test listens on port 0 on 127.0.0.1, exercises every route over real HTTP with node's http client, and closes the server",
+      "verify": "test",
+      "traces": [
+        "tests/headless/e2e-api.test.ts#e2-server"
+      ]
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/headless/api.test.ts",
+    "tests/headless/e2e-api.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": "2026-10-14T01:12:58.803Z",
+  "ended": "2026-10-14T01:42:51.651Z",
+  "review_rounds": 2,
+  "schema_version": 1,
+  "blast_radius": [
+    "none"
+  ],
+  "freeze": {
+    "at": "2026-10-14T00:38:41.673Z",
+    "brief_sha256": "1f310d0c269ddc91f944ef1702a31b5fdf9d9e4247f7f679375b3141cfcaecdf",
+    "brief_core_sha256": "481f75ae6fcb777d17a2ae8eb8a7b5ecd8e095d93f1dd158cd00bdbc211f726a",
+    "manifest_sha256": "aa27a09c8b56f2d9c6c7d5ba78ab51116c28e2742c66ac7ed84bcd3fe8b4c58b",
+    "criteria_sha256": "00e14b675d25fbb91ffe114f55c22b35c7e508e749d4a2c8ded36988c7bb9888",
+    "scope_sha256": "6adfe2398f2d500cb3449e8ffb5afdec6125624fe7b5150468071dd4fc65a05b",
+    "scope_parts": {
+      "files_scope": "b000651fe9ce456a12cf94eb3c8dc0c952e1ffda04a07bcd0ac39c09cde6d10d",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "482c76add4886d694a73d8d616eda856c63a76889c6728de446ce55c2e1bbe66"
+    }
+  },
+  "base_commit": "fa65aa2f0b504ab9f9827c090d1cf01cbb550e0d",
+  "manifest_amendments": [
+    {
+      "at": "2026-10-14T01:36:49.978Z",
+      "by": "lead",
+      "reason": "stubs existed so these files are edits; stray entry removed",
+      "from": {
+        "manifest": {
+          "add": [
+            "api/index.ts",
+            "api/openapi.json",
+            "api/routes.ts",
+            "api/server.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "x"
+          ]
+        },
+        "files_scope": [
+          "api/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [
+            "api/server.ts"
+          ],
+          "remove": [],
+          "edit": []
+        },
+        "files_scope": [
+          "api/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    },
+    {
+      "at": "2026-10-14T01:36:50.081Z",
+      "by": "lead",
+      "reason": "stubs from the test writer already existed so these files are edits",
+      "from": {
+        "manifest": {
+          "add": [
+            "api/server.ts"
+          ],
+          "remove": [],
+          "edit": []
+        },
+        "files_scope": [
+          "api/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [
+            "api/server.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "api/index.ts",
+            "api/openapi.json",
+            "api/routes.ts"
+          ]
+        },
+        "files_scope": [
+          "api/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    },
+    {
+      "at": "2026-10-14T01:40:39.598Z",
+      "by": "lead",
+      "reason": "review fixes: line-ending pin and one more table case",
+      "from": {
+        "manifest": {
+          "add": [
+            "api/server.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "api/index.ts",
+            "api/openapi.json",
+            "api/routes.ts"
+          ]
+        },
+        "files_scope": [
+          "api/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [
+            "api/.gitattributes",
+            "api/server.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "api/index.ts",
+            "api/openapi.json",
+            "api/routes.ts",
+            "tests/headless/api.test.ts"
+          ]
+        },
+        "files_scope": [
+          "api/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    },
+    {
+      "at": "2026-10-14T01:41:31.398Z",
+      "by": "lead",
+      "reason": "a table row added to a frozen test is a card test change",
+      "from": {
+        "manifest": {
+          "add": [
+            "api/.gitattributes",
+            "api/server.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "api/index.ts",
+            "api/openapi.json",
+            "api/routes.ts",
+            "tests/headless/api.test.ts"
+          ]
+        },
+        "files_scope": [
+          "api/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [
+            "api/.gitattributes",
+            "api/server.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "api/index.ts",
+            "api/openapi.json",
+            "api/routes.ts",
+            "tests/headless/api.test.ts"
+          ]
+        },
+        "files_scope": [
+          "api/",
+          "tests/headless"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    }
+  ],
+  "test_amendments": [
+    {
+      "path": "tests/headless/api.test.ts",
+      "reason": "add null data and null options cases to the malformed-request table after review found them accepted",
+      "approved_by": "project lead"
+    }
+  ]
+}

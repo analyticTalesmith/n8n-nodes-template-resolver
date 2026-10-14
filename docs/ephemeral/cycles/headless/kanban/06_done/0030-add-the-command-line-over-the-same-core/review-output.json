@@ -1,0 +1,45 @@
+{
+  "restatement": "Give the headless template-resolver core a command line (template-resolver) with render, validate, analyze, spec and serve subcommands, built only on node built-ins over the existing core and HTTP API. It reads a template and data from files or stdin (only one from stdin), prints only the result on stdout, prints located diagnostics on stderr, and uses the exit codes design.md documents: 0 ok, 1 template error, 2 usage or I/O error. Render limits and strictness are passed through as flags, serve starts the API and shuts down cleanly, and main(argv, io) is exported so it can be tested without spawning a process.",
+  "brief_mismatch": "m2 says stdout carries nothing but the result, but the frozen cl-serve test reads the listening address from stdout. The diff prints 'listening on http://host:port' there. That is reasonable if the address counts as serve's result, but the brief should say so.",
+  "verification_plan": [
+    "c1: render with a template file and a data file prints exactly result.output with no added newline and exits 0. Template or data from '-' reads stdin. No --data means empty data.",
+    "c1: a template error (missing variable in strict mode, or a syntax error) leaves stdout empty, writes file:line:col: error code: message to stderr with the real file name and line, and exits 1.",
+    "c1: --json prints the full RenderResult on success and on failure, and the exit code stays 0 or 1.",
+    "c2: validate prints {ok, diagnostics} JSON and exits 1 when not ok. analyze prints JSON including required and blocks. spec prints the spec JSON with every top-level key.",
+    "c3: no args, an unknown subcommand, an unknown option, a missing template or data file, invalid or non-object data JSON, both inputs on stdin and a non-numeric limit each exit 2 with stderr text and empty stdout. --help prints usage on stdout and exits 0.",
+    "c4: each of --strict, --no-strict, --max-iterations, --max-output-chars and --max-depth changes the render options (check the limit-* diagnostic codes, and that a run within a limit passes).",
+    "c5: serve listens on the given host and port, answers POST /v1/render, and closes the server and its connections when the signal aborts.",
+    "m1: package.json has no new runtime dependency. Imports are fs, util, core and api only.",
+    "m2: nothing other than the result goes to stdout (no logs or debug output).",
+    "m3: the serve test closes its server and leaves no open handle.",
+    "Scope: only files under cli/ change. The bin entry resolves to the built cli/index.js and the compiled binary behaves the same as main()."
+  ],
+  "findings": [
+    {
+      "title": "analyze on an unparseable template prints a stderr diagnostic instead of JSON",
+      "class": "drift",
+      "serves": {
+        "target": "c2",
+        "scenario": "design.md says analyze prints JSON. When the template has a syntax error, analyze writes '<file>:1:1: error syntax-error: ...' to stderr, leaves stdout empty and exits 1. A caller that pipes analyze into a JSON parser gets no JSON. The criterion does not specify the error case, so this is noted rather than asked to be fixed."
+      },
+      "rubric": "each criterion is met by the diff and its test",
+      "reproduction": "printf '{{IF a}}x' | template-resolver analyze -  -> stderr '<stdin>:1:1: error syntax-error: Unclosed {{IF}} block...', stdout empty, exit 1",
+      "evidence": [
+        "diff:cli/main.ts",
+        "doc:docs/living/architecture/headless-contract.md"
+      ],
+      "location": "cli/main.ts:819"
+    }
+  ],
+  "responses": [],
+  "reviewer": {
+    "kind": "fallback",
+    "label": "opus fallback (same model family as the builder; has repository access)"
+  },
+  "at": "2026-10-14T01:49:21.910Z",
+  "card": "0030-add-the-command-line-over-the-same-core",
+  "tier": "product",
+  "packet_sha256": "b6393c5663b42372ae65c203b1c26a84613a215deb59287b2c4b2fbdfab38ea6",
+  "diff_sha256": "d7eaba5c818974d16caaa68d73ca56051e9bc7cf80d77194be94574683041983",
+  "dropped": []
+}

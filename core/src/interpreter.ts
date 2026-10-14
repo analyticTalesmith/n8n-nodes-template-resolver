@@ -13,8 +13,16 @@ import {
   TernaryNode,
   VariableMap,
   TemplateValue,
+  Limits,
+  withDefaultLimits,
 } from "./types";
-import { TypeError, MissingVariableError } from "./errors";
+import {
+  TypeError,
+  MissingVariableError,
+  MathSyntaxError,
+  LimitError,
+  locateError,
+} from "./errors";
 import {
   tryCoerceToArray,
   tryCoerceStringForPathSegment,
@@ -44,19 +52,30 @@ import { parseFilter, applyFilters } from "./filters";
  */
 export class Interpreter {
   private strictMode: boolean;
+  private limits: Limits;
+  private iterations = 0;
   private loopContext: Map<string, TemplateValue> = new Map();
 
   constructor(
     private variables: VariableMap,
-    options?: { strictMode?: boolean }
+    options?: { strictMode?: boolean; limits?: Partial<Limits> }
   ) {
     this.strictMode = options?.strictMode ?? true;
+    this.limits = withDefaultLimits(options?.limits);
+  }
+
+  /**
+   * FOR iterations run by the latest interpret call
+   */
+  get iterationCount(): number {
+    return this.iterations;
   }
 
   /**
    * Main interpretation entry point
    */
   interpret(ast: ProgramNode): string {
+    this.iterations = 0;
     return this.visitProgram(ast);
   }
 
@@ -64,7 +83,51 @@ export class Interpreter {
    * Visit program node (root)
    */
   private visitProgram(node: ProgramNode): string {
-    return node.body.map((child) => this.visit(child)).join("");
+    const parts: string[] = [];
+    let length = 0;
+    for (const child of node.body) {
+      const output = this.visit(child);
+      length += output.length;
+      this.checkOutputLength(length, child);
+      parts.push(output);
+    }
+    return parts.join("");
+  }
+
+  /**
+   * Run a node's own evaluation, locating any error it throws at the node
+   */
+  private at<T>(node: ASTNode, evaluate: () => T): T {
+    try {
+      return evaluate();
+    } catch (error) {
+      throw locateError(error, node.line, node.column);
+    }
+  }
+
+  private countIteration(node: ForNode): void {
+    this.iterations++;
+    if (this.iterations > this.limits.maxIterations) {
+      throw new LimitError(
+        "limit-iterations",
+        `Loops ran more than ${this.limits.maxIterations} iterations in total`,
+        node.line,
+        node.column,
+        "Iterate over less data or raise limits.maxIterations"
+      );
+    }
+  }
+
+  private checkOutputLength(length: number, node: ASTNode): void {
+    if (length > this.limits.maxOutputChars) {
+      throw new LimitError(
+        "limit-output",
+        `Output is longer than ${this.limits.maxOutputChars} characters`,
+        node.line,
+        node.column,
+        "Render less content or raise limits.maxOutputChars"
+      );
+    }
   }
 
   /**
@@ -75,7 +138,7 @@ export class Interpreter {
       case "Text":
         return this.visitText(node as TextNode);
       case "Variable":
-        return this.visitVariable(node as VariableNode);
+        return this.at(node, () => this.visitVariable(node as VariableNode));
       case "If":
         return this.visitIf(node as IfNode);
       case "Case":
@@ -87,7 +150,7 @@ export class Interpreter {
       case "Table":
         return this.visitTable(node as TableNode);
       case "Ternary":
-        return this.visitTernary(node as TernaryNode);
+        return this.at(node, () => this.visitTernary(node as TernaryNode));
       case "Comment":
         return ""; // Comments excluded from output
       default:
@@ -108,17 +171,27 @@ export class Interpreter {
   private visitVariable(node: VariableNode): string {
     // Check if this is a math expression (contains operators)
     const pathStr = node.path.join(".");
+    let mathError: unknown = null;
     if (this.isMathExpression(pathStr)) {
       try {
         const result = evaluateMathExpression(pathStr, this.getAllVariables());
         return String(result);
       } catch (error) {
         // Not a valid math expression, continue with normal resolution
+        mathError = error;
       }
     }
 
     const allowUndefined = node.defaultValue !== undefined;
-    let value = this.resolveNestedPath(node.path, allowUndefined);
+    let value: TemplateValue;
+    try {
+      value = this.resolveNestedPath(node.path, allowUndefined);
+    } catch (error) {
+      const unparseableMath =
+        error instanceof MissingVariableError &&
+        mathError instanceof MathSyntaxError;
+      throw unparseableMath ? mathError : error;
+    }
 
     // Apply default operator if value is falsy
     if (node.defaultValue !== undefined && !isTruthy(value)) {
@@ -149,7 +222,9 @@ export class Interpreter {
    * Visit IF node
    */
   private visitIf(node: IfNode): string {
-    const result = evaluateCondition(node.condition, this.getAllVariables());
+    const result = this.at(node, () =>
+      evaluateCondition(node.condition, this.getAllVariables())
+    );
 
     if (result) {
       return node.consequent.map((child) => this.visit(child)).join("");
@@ -172,7 +247,9 @@ export class Interpreter {
    * Visit CASE node
    */
   private visitCase(node: CaseNode): string {
-    const value = this.resolveNestedPath(node.expression.split("."));
+    const value = this.at(node, () =>
+      this.resolveNestedPath(node.expression.split("."))
+    );
     const valueStr = this.valueToString(value);
 
     // Check WHEN clauses
@@ -194,13 +271,13 @@ export class Interpreter {
    * Visit FOR loop
    */
   private visitFor(node: ForNode): string {
-    const iterable = this.resolveNestedPath(node.iterable);
+    const iterable = this.at(node, () => this.resolveNestedPath(node.iterable));
     const array = tryCoerceToArray(iterable);
 
     if (array === null) {
       if (this.strictMode) {
         throw new TypeError(
-          `Cannot iterate over non-array value: ${JSON.stringify(iterable)}`,
+          `Cannot iterate over non-array value: ${describeValue(iterable)}`,
           node.line,
           node.column,
           "Ensure the value is an array or can be coerced to one"
@@ -210,9 +287,12 @@ export class Interpreter {
     }
 
     const results: string[] = [];
+    let length = 0;
     const outerLoopContext = new Map(this.loopContext);
 
     for (let i = 0; i < array.length; i++) {
+      this.countIteration(node);
+
       // Set loop context
       this.loopContext.set(node.itemName, array[i]);
       this.loopContext.set("@index0", i);
@@ -224,6 +304,8 @@ export class Interpreter {
 
       // Render body
       const output = node.body.map((child) => this.visit(child)).join("");
+      length += output.length;
+      this.checkOutputLength(length, node);
       results.push(output);
     }
 
@@ -268,7 +350,10 @@ export class Interpreter {
   ): string | null {
     // Check condition
     if (node.condition) {
-      const result = evaluateCondition(node.condition, this.getAllVariables());
+      const condition = node.condition;
+      const result = this.at(node, () =>
+        evaluateCondition(condition, this.getAllVariables())
+      );
       if (!result) {
         // Show fallback if provided
         return node.fallback || null;
@@ -312,12 +397,16 @@ export class Interpreter {
         const forNode = rowNode.cells[0][0] as ForNode;
 
         // Iterate and generate rows
-        const iterable = this.resolveNestedPath(forNode.iterable);
+        const iterable = this.at(forNode, () =>
+          this.resolveNestedPath(forNode.iterable)
+        );
         const array = tryCoerceToArray(iterable);
 
         if (array) {
           const outerLoopContext = new Map(this.loopContext);
           for (let i = 0; i < array.length; i++) {
+            this.countIteration(forNode);
+
             // Set loop context
             this.loopContext.set(forNode.itemName, array[i]);
             this.loopContext.set("@index0", i);
@@ -532,5 +621,17 @@ export class Interpreter {
       combined.set(key, value);
     }
     return combined;
+  }
+}
+
+/**
+ * The value as JSON, or its plain string form when JSON cannot hold it
+ * (a cycle, a BigInt)
+ */
+function describeValue(value: unknown): string {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
   }
 }
