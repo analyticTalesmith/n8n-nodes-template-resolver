@@ -11,6 +11,28 @@ Written by `node .process/core/scripts/red-evidence.mjs` from the first run of t
 
 | Test | Criterion | Reason |
 | --- | --- | --- |
+| sf-api: options.standaloneLines on POST /v1/render sf-api: IF lines, option omitted (default on) | sf-api | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
+| sf-api: options.standaloneLines on POST /v1/render sf-api: IF lines, true | sf-api | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
+| sf-api: options.standaloneLines on POST /v1/render sf-api: IF lines, false | sf-api | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
+| sf-api: options.standaloneLines on POST /v1/render sf-api: FOR lines, true | sf-api | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
+| sf-api: options.standaloneLines on POST /v1/render sf-api: FOR lines, false | sf-api | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
+| sf-api: options.standaloneLines on POST /v1/render sf-api: a non-boolean standaloneLines (string false) is 400 invalid-request | sf-api | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
+| sf-api: options.standaloneLines on POST /v1/render sf-api: a non-boolean standaloneLines (number 0) is 400 invalid-request | sf-api | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
+| sf-api: options.standaloneLines on POST /v1/render sf-api: a non-boolean standaloneLines (number 1) is 400 invalid-request | sf-api | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
+| sf-api: options.standaloneLines on POST /v1/render sf-api: a non-boolean standaloneLines (string yes) is 400 invalid-request | sf-api | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
+| sf-api: options.standaloneLines on POST /v1/render sf-api: a non-boolean standaloneLines (array) is 400 invalid-request | sf-api | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
+| sf-api: options.standaloneLines on POST /v1/render sf-api: a non-boolean standaloneLines (object) is 400 invalid-request | sf-api | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
+| sf-api: options.standaloneLines on POST /v1/render sf-api: the OpenAPI document describes options.standaloneLines as a boolean and is still served byte for byte | sf-api | assertion failed: Error: expect(received).toBeGreaterThan(expected) |
+| sf-cli: --standalone-lines and --no-standalone-lines sf-cli: no flag (default on) | sf-cli | assertion failed: Error: expect(received).toEqual(expected) // deep equality |
+| sf-cli: --standalone-lines and --no-standalone-lines sf-cli: --standalone-lines | sf-cli | assertion failed: Error: expect(received).toEqual(expected) // deep equality |
+| sf-cli: --standalone-lines and --no-standalone-lines sf-cli: --no-standalone-lines | sf-cli | assertion failed: Error: expect(received).toEqual(expected) // deep equality |
+| sf-cli: --standalone-lines and --no-standalone-lines sf-cli: both flags together (on then off) is a usage error, exit 2 | sf-cli | assertion failed: Error: expect(received).toEqual(expected) // deep equality |
+| sf-cli: --standalone-lines and --no-standalone-lines sf-cli: both flags together (off then on) is a usage error, exit 2 | sf-cli | assertion failed: Error: expect(received).toEqual(expected) // deep equality |
+| sf-cli: --standalone-lines and --no-standalone-lines sf-cli: the usage text lists both flags | sf-cli | assertion failed: Error: expect(received).toContain(expected) // indexOf |
+| sf-node: the standalone lines option sf-node: the node lists a boolean standaloneLines option that defaults to true | sf-node | assertion failed: Error: expect(received).toBeDefined() |
+| sf-node: the standalone lines option sf-node: true removes the tag lines | sf-node | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
+| sf-node: the standalone lines option sf-node: parameter absent defaults to removing them | sf-node | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
+| sf-node: the standalone lines option sf-node: false keeps the blank lines | sf-node | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
 | sf-golden: prompt-aware golden cases rendered through render sf-golden: case prompt-escape-block-standalone-off renders to its expected file | sf-golden | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
 | sf-golden: prompt-aware golden cases rendered through render sf-golden: case prompt-escape-block-standalone-on renders to its expected file | sf-golden | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
 | sf-golden: prompt-aware golden cases rendered through render sf-golden: case prompt-fence-standalone-off renders to its expected file | sf-golden | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
@@ -43,25 +65,3 @@ Written by `node .process/core/scripts/red-evidence.mjs` from the first run of t
 | sf-docs: README documents the prompt-aware constructs sf-docs: the README describes the standalone option on the API, the CLI and the node | sf-docs | assertion failed: Error: expect(received).toMatch(expected) |
 | sf-docs: README documents the prompt-aware constructs sf-docs: the README explains that a backslash before the brace pair outputs it literally | sf-docs | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
 | sf-docs: README documents the prompt-aware constructs sf-docs: the changelog mentions SECTION and FENCE | sf-docs | assertion failed: Error: expect(received).toContain(expected) // indexOf |
-| sf-api: options.standaloneLines on POST /v1/render sf-api: IF lines, option omitted (default on) | sf-api | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
-| sf-api: options.standaloneLines on POST /v1/render sf-api: IF lines, true | sf-api | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
-| sf-api: options.standaloneLines on POST /v1/render sf-api: IF lines, false | sf-api | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
-| sf-api: options.standaloneLines on POST /v1/render sf-api: FOR lines, true | sf-api | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
-| sf-api: options.standaloneLines on POST /v1/render sf-api: FOR lines, false | sf-api | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
-| sf-api: options.standaloneLines on POST /v1/render sf-api: a non-boolean standaloneLines (string false) is 400 invalid-request | sf-api | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
-| sf-api: options.standaloneLines on POST /v1/render sf-api: a non-boolean standaloneLines (number 0) is 400 invalid-request | sf-api | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
-| sf-api: options.standaloneLines on POST /v1/render sf-api: a non-boolean standaloneLines (number 1) is 400 invalid-request | sf-api | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
-| sf-api: options.standaloneLines on POST /v1/render sf-api: a non-boolean standaloneLines (string yes) is 400 invalid-request | sf-api | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
-| sf-api: options.standaloneLines on POST /v1/render sf-api: a non-boolean standaloneLines (array) is 400 invalid-request | sf-api | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
-| sf-api: options.standaloneLines on POST /v1/render sf-api: a non-boolean standaloneLines (object) is 400 invalid-request | sf-api | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
-| sf-api: options.standaloneLines on POST /v1/render sf-api: the OpenAPI document describes options.standaloneLines as a boolean and is still served byte for byte | sf-api | assertion failed: Error: expect(received).toBeGreaterThan(expected) |
-| sf-cli: --standalone-lines and --no-standalone-lines sf-cli: no flag (default on) | sf-cli | assertion failed: Error: expect(received).toEqual(expected) // deep equality |
-| sf-cli: --standalone-lines and --no-standalone-lines sf-cli: --standalone-lines | sf-cli | assertion failed: Error: expect(received).toEqual(expected) // deep equality |
-| sf-cli: --standalone-lines and --no-standalone-lines sf-cli: --no-standalone-lines | sf-cli | assertion failed: Error: expect(received).toEqual(expected) // deep equality |
-| sf-cli: --standalone-lines and --no-standalone-lines sf-cli: both flags together (on then off) is a usage error, exit 2 | sf-cli | assertion failed: Error: expect(received).toEqual(expected) // deep equality |
-| sf-cli: --standalone-lines and --no-standalone-lines sf-cli: both flags together (off then on) is a usage error, exit 2 | sf-cli | assertion failed: Error: expect(received).toEqual(expected) // deep equality |
-| sf-cli: --standalone-lines and --no-standalone-lines sf-cli: the usage text lists both flags | sf-cli | assertion failed: Error: expect(received).toContain(expected) // indexOf |
-| sf-node: the standalone lines option sf-node: the node lists a boolean standaloneLines option that defaults to true | sf-node | assertion failed: Error: expect(received).toBeDefined() |
-| sf-node: the standalone lines option sf-node: true removes the tag lines | sf-node | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
-| sf-node: the standalone lines option sf-node: parameter absent defaults to removing them | sf-node | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
-| sf-node: the standalone lines option sf-node: false keeps the blank lines | sf-node | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
