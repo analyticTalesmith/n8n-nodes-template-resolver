@@ -1,5 +1,8 @@
-import { Token, TokenType } from "./types";
+import { Token, TokenType, WhitespaceOptions } from "./types";
 import { SyntaxError } from "./errors";
+import { applyWhitespace } from "./whitespace";
+
+const RAW_CLOSER = /\{\{-?[ \t]*END_RAW[ \t]*-?\}\}/y;
 
 /**
  * Lexer: Converts template string into array of tokens with position tracking
@@ -13,6 +16,8 @@ import { SyntaxError } from "./errors";
  * - Lists: {{LIST}}, {{LIST_ITEM}}, {{END_LIST}}
  * - Ternary: {{condition ? "true" : "false"}}
  * - Comments: {{# comment #}}
+ * - Literal blocks: {{RAW}}...{{END_RAW}}; \{{ is a literal brace pair
+ * - Trim markers: {{- TAG}} and {{TAG -}}
  */
 export class Lexer {
   private pos = 0;
@@ -20,7 +25,10 @@ export class Lexer {
   private column = 1;
   private tokens: Token[] = [];
 
-  constructor(private template: string) {}
+  constructor(
+    private template: string,
+    private options: WhitespaceOptions = {}
+  ) {}
 
   /**
    * Validate that all blocks are properly closed
@@ -170,7 +178,9 @@ export class Lexer {
     // Validate blocks are properly closed
     this.validateBlocks();
 
-    return this.tokens;
+    return applyWhitespace(this.tokens, this.options).filter(
+      (t) => t.type !== TokenType.RAW && t.type !== TokenType.END_RAW
+    );
   }
   /**
    * Scan variable substitution: ${{name}}, ${{user.name | filter}}
@@ -218,16 +228,21 @@ export class Lexer {
     // Consume {{
     this.advance(2);
 
+    const trimBefore = this.peek() === "-";
+    if (trimBefore) this.advance();
+
     // Skip whitespace
     this.skipWhitespace();
 
     // Check for comment: {{# ... #}}
     if (this.peek() === "#") {
-      this.scanComment(startLine, startColumn);
+      this.scanComment(startLine, startColumn, trimBefore);
       return;
     }
 
-    const content = this.scanUntilClosing();
+    let content = this.scanUntilClosing();
+    const trimAfter = content.endsWith("-");
+    if (trimAfter) content = content.slice(0, -1);
     const trimmed = content.trim();
 
     // Parse keyword
@@ -245,7 +260,7 @@ export class Lexer {
 
     if (
       trimmed !== keyword &&
-      (keyword === "ELSE" || keyword.startsWith("END_"))
+      (keyword === "ELSE" || keyword === "RAW" || keyword.startsWith("END_"))
     ) {
       const isElseIf =
         keyword === "ELSE" && /^IF(\s|$)/i.test(trimmed.slice(4).trim());
@@ -261,31 +276,109 @@ export class Lexer {
       );
     }
 
+    if (tokenType === TokenType.END_RAW) {
+      throw new SyntaxError(
+        "Unexpected {{END_RAW}} without matching {{RAW}}",
+        startLine,
+        startColumn,
+        "Check template structure"
+      );
+    }
+
     this.tokens.push({
       type: tokenType,
       value: trimmed,
       line: startLine,
       column: startColumn,
+      trimBefore,
+      trimAfter,
+    });
+
+    if (tokenType === TokenType.RAW) this.scanRaw(startLine, startColumn);
+  }
+
+  /**
+   * Scan the literal content of a RAW block and its {{END_RAW}} closer
+   */
+  private scanRaw(startLine: number, startColumn: number): void {
+    const contentLine = this.line;
+    const contentColumn = this.column;
+    let content = "";
+
+    while (this.pos < this.template.length) {
+      RAW_CLOSER.lastIndex = this.pos;
+      if (RAW_CLOSER.test(this.template)) {
+        if (content.length > 0) {
+          this.tokens.push({
+            type: TokenType.TEXT,
+            value: content.replace(/\r\n/g, "\n"),
+            line: contentLine,
+            column: contentColumn,
+          });
+        }
+        this.scanRawCloser();
+        return;
+      }
+      content += this.current();
+      this.advance();
+    }
+
+    throw new SyntaxError(
+      `Unclosed RAW block starting at line ${startLine}`,
+      startLine,
+      startColumn,
+      "Add {{END_RAW}}"
+    );
+  }
+
+  /**
+   * Scan {{END_RAW}}, with its optional trim markers
+   */
+  private scanRawCloser(): void {
+    const line = this.line;
+    const column = this.column;
+    this.advance(2);
+    const trimBefore = this.peek() === "-";
+    const content = this.scanUntilClosing();
+    this.tokens.push({
+      type: TokenType.END_RAW,
+      value: "END_RAW",
+      line,
+      column,
+      trimBefore,
+      trimAfter: content.endsWith("-"),
     });
   }
 
   /**
    * Scan comment: {{# comment text #}}
    */
-  private scanComment(startLine: number, startColumn: number): void {
+  private scanComment(
+    startLine: number,
+    startColumn: number,
+    trimBefore: boolean
+  ): void {
     // Consume #
     this.advance();
 
     let content = "";
     while (this.pos < this.template.length) {
-      if (this.peek() === "#" && this.peek(1) === "}" && this.peek(2) === "}") {
-        // Found closing #}}
-        this.advance(3);
+      const trimAfter = this.peek(1) === "-";
+      const closer = trimAfter ? 1 : 0;
+      if (
+        this.peek() === "#" &&
+        this.peek(1 + closer) === "}" &&
+        this.peek(2 + closer) === "}"
+      ) {
+        // Found closing #}} or #-}}
+        this.advance(3 + closer);
         this.tokens.push({
           type: TokenType.COMMENT,
           value: content,
           line: startLine,
           column: startColumn,
+          trimBefore,
+          trimAfter,
         });
         return;
       }
@@ -315,6 +408,23 @@ export class Lexer {
         break;
       }
       if (this.peek() === "{" && this.peek(1) === "{") {
+        break;
+      }
+      if (this.peek() === "\\" && this.peek(1) === "{" && this.peek(2) === "{") {
+        // \{{ is a literal {{
+        content += "{{";
+        this.advance(3);
+        continue;
+      }
+      if (
+        this.peek() === "\\" &&
+        this.peek(1) === "\\" &&
+        this.peek(2) === "{" &&
+        this.peek(3) === "{"
+      ) {
+        // \\{{ is a literal backslash followed by an active tag
+        content += "\\";
+        this.advance(2);
         break;
       }
       content += this.current();
@@ -406,6 +516,8 @@ export class Lexer {
       ROW: TokenType.ROW,
       END_ROW: TokenType.END_ROW,
       END_TABLE: TokenType.END_TABLE,
+      RAW: TokenType.RAW,
+      END_RAW: TokenType.END_RAW,
     };
 
     return mapping[keyword] || null;

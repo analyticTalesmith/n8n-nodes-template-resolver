@@ -52,6 +52,8 @@ export enum TokenType {
   ROW = "ROW",
   END_ROW = "END_ROW",
   END_TABLE = "END_TABLE",
+  RAW = "RAW",
+  END_RAW = "END_RAW",
   COMMENT = "COMMENT",
   EOF = "EOF",
 }
@@ -64,6 +66,18 @@ export interface Token {
   value: string;
   line: number;
   column: number;
+  /** A minus marker after the opening braces: trim all whitespace before the tag */
+  trimBefore?: boolean;
+  /** A minus marker before the closing braces: trim all whitespace after the tag */
+  trimAfter?: boolean;
+}
+
+/**
+ * Whitespace handling. With standaloneLines on, a line holding only block
+ * tags and whitespace is removed together with its line break.
+ */
+export interface WhitespaceOptions {
+  standaloneLines?: boolean;
 }
 
 /**
