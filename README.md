@@ -551,7 +551,7 @@ Every render, whether through the command line (`--json`), the HTTP API (`POST /
 
 ### Diagnostics
 
-A diagnostic is `{ severity, code, message, line, column, suggestion? }`. `severity` is `"error"` or `"warning"`; `line` and `column` are 1-based and point at the template tag or placeholder that failed, including runtime errors such as a missing variable or a bad filter parameter. `suggestion` is present when the engine has a hint.
+Render and validate results (`render`, `validate`, `POST /v1/render`, `POST /v1/validate`) carry diagnostics of the shape `{ severity, code, message, line, column, suggestion? }`; `analyze` results use a smaller shape, described [below](#analysis-diagnostics). `severity` is `"error"` or `"warning"`; `line` and `column` are 1-based and point at the template tag or placeholder that failed, including runtime errors such as a missing variable or a bad filter parameter. `suggestion` is present when the engine has a hint.
 
 | Code               | Severity | When                                                                                                   |
 | ------------------ | -------- | ------------------------------------------------------------------------------------------------------ |
@@ -564,6 +564,18 @@ A diagnostic is `{ severity, code, message, line, column, suggestion? }`. `sever
 | `limit-depth`      | error    | Blocks nest deeper than `maxDepth`                                                                     |
 | `invalid-input`    | error    | Core `render` was given data that is not an object (the CLI and the API reject such data before rendering) |
 | `analysis-warning` | warning  | `validate` only: a condition the engine cannot read, such as `{{IF status is active}}`                 |
+
+#### Analysis diagnostics
+
+`analyze` (`template-resolver analyze` and `POST /v1/analyze`) reports diagnostics as `{ code, message, line, column }`, with no `severity` and no `suggestion`. Its codes:
+
+| Code                     | When                                                                                         |
+| ------------------------ | -------------------------------------------------------------------------------------------- |
+| `unknown-filter`         | A filter other than `head`, `tail`, `trim`, `escape_md`                                      |
+| `unrecognized-condition` | A condition the engine cannot read, such as `{{IF status is active}}` (`validate` reports it as `analysis-warning`) |
+| `syntax-error`, `limit-depth` | `POST /v1/analyze` only: the template does not parse; the result has empty `variables`, `filters` and `blocks` and this one diagnostic |
+
+For a template that does not parse, `template-resolver analyze` prints no JSON: it prints the error to stderr in the format below and exits 1.
 
 The command line prints diagnostics to stderr as `file:line:column: severity code: message`:
 

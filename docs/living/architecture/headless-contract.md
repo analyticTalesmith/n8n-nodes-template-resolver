@@ -26,6 +26,7 @@ spec(): { version: string; blocks: {name, closes?, args, description}[]; filters
 - On failure `ok` is false, `output` is `""`, and the only diagnostic is the error that stopped rendering.
 - `validate` maps `analyze`'s diagnostics: `unknown-filter` stays an error; every other analysis finding (an unrecognized condition) becomes a warning with code `analysis-warning`. A template that does not parse gives its error. `ok` is false only when an error is present.
 - `analyze` still throws a `TemplateError` for a template that does not parse; its callers (validate, the API, the CLI, the node) turn that into a diagnostic or an error.
+- `analyze`'s own diagnostics have the analysis shape `{ code, message, line, column }` (no `severity`, no `suggestion`), with codes `unknown-filter` and `unrecognized-condition`. `POST /v1/analyze` puts a parse failure (`syntax-error` or `limit-depth`) in that same shape; `template-resolver analyze` prints it to stderr instead.
 - `spec().version` is the template language version, `"1.0"`, not the package version.
 - Estimator default: `Math.ceil(chars / 4)`, documented as an estimate with roughly +/-30 percent error for English prose.
 - `resolveTemplate` (throwing string API) keeps its behavior, accepts `limits`, and is implemented over the same engine.

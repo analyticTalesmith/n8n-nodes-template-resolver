@@ -35,7 +35,7 @@ Limits left out take core's defaults (`maxIterations` 10000, `maxOutputChars` 10
 
 - `data` defaults to `{}`, `options.strictMode` to core's default (strict).
 - `options.limits` may only lower the server's limits: each given value must be a non-negative integer and the effective limit is `min(requested, server)`.
-- `validate` and `analyze` run with the server's `maxDepth`. An `analyze` of a template that does not parse answers 200 with empty `variables`, `filters` and `blocks` and the parse error in `diagnostics`.
+- `validate` and `analyze` run with the server's `maxDepth`. An `analyze` of a template that does not parse answers 200 with empty `variables`, `filters` and `blocks` and the parse error (`syntax-error` or `limit-depth`) in `diagnostics`. Analysis diagnostics have the shape `{code, message, line, column}`, without the `severity` and `suggestion` of render and validate diagnostics; besides parse errors their codes are `unknown-filter` and `unrecognized-condition`.
 - The query string is ignored when matching a route. The OpenAPI document is served in the committed file's exact serialization.
 
 ## Failure handling
