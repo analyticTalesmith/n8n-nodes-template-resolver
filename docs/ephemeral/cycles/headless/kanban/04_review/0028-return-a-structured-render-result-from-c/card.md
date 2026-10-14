@@ -60,6 +60,7 @@ render, validate, spec, estimateTokens, RenderOptions, RenderResult, Diagnostic 
 <!-- generated scope: from card.json -->
 | Path | Permission (add, edit, remove) | Blast radius |
 | --- | --- | --- |
+| `tests/headless/render-robust.test.ts` | add | none |
 | `core/src/analyze.ts` | edit | none |
 | `core/src/estimate.ts` | edit | none |
 | `core/src/filters.ts` | edit | none |
@@ -67,10 +68,11 @@ render, validate, spec, estimateTokens, RenderOptions, RenderResult, Diagnostic 
 | `core/src/interpreter.ts` | edit | none |
 | `core/src/render.ts` | edit | none |
 | `core/src/spec.ts` | edit | none |
+| `docs/ephemeral/cycles/headless/test-plan.md` | edit | none |
+| `docs/ephemeral/work/0028-return-a-structured-render-result-from-c/spec.md` | edit | none |
 | `n8n/TemplateResolver.node.ts` | edit | none |
 | `package.json` | edit | none |
-| `tests/headless/render-robust.test.ts` | edit | none |
 | `tsconfig.json` | edit | none |
 
-Files scope: `core/src/`, `n8n/`, `package.json`, `tests/headless`, `tsconfig.json`
+Files scope: `core/src/`, `docs/ephemeral/cycles/headless/test-plan.md`, `docs/ephemeral/work/0028-return-a-structured-render-result-from-c`, `n8n/`, `package.json`, `tests/headless`, `tsconfig.json`
 <!-- end generated scope -->
