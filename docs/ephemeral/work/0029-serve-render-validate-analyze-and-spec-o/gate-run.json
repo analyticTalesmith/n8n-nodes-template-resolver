@@ -1,0 +1,18 @@
+{
+  "command": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/headless/api.test.ts",
+    "tests/headless/e2e-api.test.ts",
+    "--json"
+  ],
+  "exit_status": 0,
+  "ran_at": "2026-10-14T01:36:55.776Z",
+  "tests": {
+    "passed": 43,
+    "failed": 0
+  },
+  "failing": [],
+  "failing_total": 0
+}

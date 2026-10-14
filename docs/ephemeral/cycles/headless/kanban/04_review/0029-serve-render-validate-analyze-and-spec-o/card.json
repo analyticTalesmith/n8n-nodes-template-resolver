@@ -14,14 +14,13 @@
   ],
   "manifest": {
     "add": [
-      "api/server.ts",
-      "api/routes.ts",
-      "api/index.ts",
-      "api/openapi.json"
+      "api/server.ts"
     ],
     "remove": [],
     "edit": [
-      "x"
+      "api/index.ts",
+      "api/openapi.json",
+      "api/routes.ts"
     ],
     "frozen": true
   },
@@ -87,7 +86,7 @@
     "at": "2026-10-14T00:38:41.673Z",
     "brief_sha256": "1f310d0c269ddc91f944ef1702a31b5fdf9d9e4247f7f679375b3141cfcaecdf",
     "brief_core_sha256": "481f75ae6fcb777d17a2ae8eb8a7b5ecd8e095d93f1dd158cd00bdbc211f726a",
-    "manifest_sha256": "820e4f9818a2ecc863119668273e3db7d9c7c24d882f49c4e867ea17c9e61c53",
+    "manifest_sha256": "920b6a380abe6441cbf858af90181eb275d386141640d5c9414500769c4e1b78",
     "criteria_sha256": "00e14b675d25fbb91ffe114f55c22b35c7e508e749d4a2c8ded36988c7bb9888",
     "scope_sha256": "7f469748c8517efad4a538b4f2434f60dd06feeb9dc5927097ead67d2434b788",
     "scope_parts": {
@@ -97,5 +96,86 @@
       "gate": "482c76add4886d694a73d8d616eda856c63a76889c6728de446ce55c2e1bbe66"
     }
   },
-  "base_commit": "fa65aa2f0b504ab9f9827c090d1cf01cbb550e0d"
+  "base_commit": "fa65aa2f0b504ab9f9827c090d1cf01cbb550e0d",
+  "manifest_amendments": [
+    {
+      "at": "2026-10-14T01:36:49.978Z",
+      "by": "lead",
+      "reason": "stubs existed so these files are edits; stray entry removed",
+      "from": {
+        "manifest": {
+          "add": [
+            "api/index.ts",
+            "api/openapi.json",
+            "api/routes.ts",
+            "api/server.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "x"
+          ]
+        },
+        "files_scope": [
+          "api/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [
+            "api/server.ts"
+          ],
+          "remove": [],
+          "edit": []
+        },
+        "files_scope": [
+          "api/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    },
+    {
+      "at": "2026-10-14T01:36:50.081Z",
+      "by": "lead",
+      "reason": "stubs from the test writer already existed so these files are edits",
+      "from": {
+        "manifest": {
+          "add": [
+            "api/server.ts"
+          ],
+          "remove": [],
+          "edit": []
+        },
+        "files_scope": [
+          "api/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [
+            "api/server.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "api/index.ts",
+            "api/openapi.json",
+            "api/routes.ts"
+          ]
+        },
+        "files_scope": [
+          "api/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    }
+  ]
 }

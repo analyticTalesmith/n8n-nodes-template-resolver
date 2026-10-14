@@ -56,11 +56,10 @@ createServer(options) and listen helper from api/index.ts; the HTTP surface in d
 <!-- generated scope: from card.json -->
 | Path | Permission (add, edit, remove) | Blast radius |
 | --- | --- | --- |
-| `api/index.ts` | add | none |
-| `api/openapi.json` | add | none |
-| `api/routes.ts` | add | none |
 | `api/server.ts` | add | none |
-| `x` | edit | none |
+| `api/index.ts` | edit | none |
+| `api/openapi.json` | edit | none |
+| `api/routes.ts` | edit | none |
 
 Files scope: `api/`
 <!-- end generated scope -->
