@@ -10,7 +10,8 @@
   "tier": null,
   "claimed_in": null,
   "files_scope": [
-    "api/"
+    "api/",
+    "tests/headless"
   ],
   "manifest": {
     "add": [
@@ -90,9 +91,9 @@
     "brief_core_sha256": "481f75ae6fcb777d17a2ae8eb8a7b5ecd8e095d93f1dd158cd00bdbc211f726a",
     "manifest_sha256": "aa27a09c8b56f2d9c6c7d5ba78ab51116c28e2742c66ac7ed84bcd3fe8b4c58b",
     "criteria_sha256": "00e14b675d25fbb91ffe114f55c22b35c7e508e749d4a2c8ded36988c7bb9888",
-    "scope_sha256": "7f469748c8517efad4a538b4f2434f60dd06feeb9dc5927097ead67d2434b788",
+    "scope_sha256": "6adfe2398f2d500cb3449e8ffb5afdec6125624fe7b5150468071dd4fc65a05b",
     "scope_parts": {
-      "files_scope": "c18034657b82c101a1c2735fab0a0cb81f164f9fc9d401618c7c1a2e2b4288a5",
+      "files_scope": "b000651fe9ce456a12cf94eb3c8dc0c952e1ffda04a07bcd0ac39c09cde6d10d",
       "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
       "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
       "gate": "482c76add4886d694a73d8d616eda856c63a76889c6728de446ce55c2e1bbe66"
@@ -218,6 +219,54 @@
         },
         "files_scope": [
           "api/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    },
+    {
+      "at": "2026-10-14T01:41:31.398Z",
+      "by": "lead",
+      "reason": "a table row added to a frozen test is a card test change",
+      "from": {
+        "manifest": {
+          "add": [
+            "api/.gitattributes",
+            "api/server.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "api/index.ts",
+            "api/openapi.json",
+            "api/routes.ts",
+            "tests/headless/api.test.ts"
+          ]
+        },
+        "files_scope": [
+          "api/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [
+            "api/.gitattributes",
+            "api/server.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "api/index.ts",
+            "api/openapi.json",
+            "api/routes.ts",
+            "tests/headless/api.test.ts"
+          ]
+        },
+        "files_scope": [
+          "api/",
+          "tests/headless"
         ],
         "blast_radius": [
           "none"

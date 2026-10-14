@@ -63,5 +63,5 @@ createServer(options) and listen helper from api/index.ts; the HTTP surface in d
 | `api/routes.ts` | edit | none |
 | `tests/headless/api.test.ts` | edit | none |
 
-Files scope: `api/`
+Files scope: `api/`, `tests/headless`
 <!-- end generated scope -->
