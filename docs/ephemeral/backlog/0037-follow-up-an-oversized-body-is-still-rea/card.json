@@ -1,0 +1,26 @@
+{
+  "id": "0037-follow-up-an-oversized-body-is-still-rea",
+  "title": "Follow-up: An oversized body is still read to the end before the 413 is sent",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [],
+  "origin": "headless",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [],
+    "frozen": false
+  },
+  "criteria": [],
+  "gate": null,
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1
+}

@@ -104,5 +104,7 @@ A person judges the cycle done when `npm ci && npm test && npm run build` is gre
 <!-- Session instructions: the depth script adds a dated one-line list under a Session instructions heading here, created on first use. Do not write instructions by hand or leave them only in chat. -->
 
 <!-- generated index: replace everything between this line and the end marker -->
+- [deltas/](deltas/INDEX.md) — Index of docs/ephemeral/cycles/headless/deltas.
+- [design-approval.md](design-approval.md) — Headless cycle design: structured result, located diagnostics, limits, HTTP API, OpenAPI document, CLI.
 - [test-plan.md](test-plan.md) — The tests this cycle plans at each level, and which requirement lines each one proves.
 <!-- end generated index -->

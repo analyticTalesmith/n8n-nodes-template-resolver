@@ -1,0 +1,64 @@
+{
+  "restatement": "Expose the headless template core over a dependency-free node http server: POST /v1/render, /v1/validate, /v1/analyze and GET /v1/spec return the documented result bodies (template problems are 200 with ok false and located diagnostics), GET /v1/openapi.json serves the committed OpenAPI 3.1 document byte for byte and that document matches the router table, malformed or hostile requests get JSON 400/404/405/413/415 errors without crashing, request limits can only lower the server's limits, and an end-to-end test drives every route on an ephemeral 127.0.0.1 port and closes it.",
+  "brief_mismatch": null,
+  "verification_plan": [
+    "Check each route handler returns the documented body: RenderResult for render, {ok, diagnostics} for validate, analysis with required and blocks for analyze, spec() for spec; a template error yields 200, ok false, empty output and located diagnostics first.",
+    "Check request validation: bad JSON, non-object body, missing or non-string template, non-object data (including null and arrays), non-object options, non-boolean strictMode, non-object or bad-typed limits all give 400 invalid-request with {error:{code,message}} only.",
+    "Check 404 for unknown paths, 405 with an Allow header for known paths with the wrong method, 413 via Content-Length and streamed size, 415 for non-JSON POST content types while accepting a charset parameter; every response has a JSON content type.",
+    "Check hostile bodies (oversized, wrong type, wrong content type, engine exceptions) produce a JSON reply and never an unhandled rejection or thrown error in the request handler.",
+    "Check limit merging takes min(request, server) per key and that omitted keys keep the server value.",
+    "Check GET /v1/openapi.json bytes equal api/openapi.json on disk on every platform, the document is 3.1, its paths and methods equal the routes table, and its schemas match what core actually returns.",
+    "Check the e2e test binds 127.0.0.1 port 0, uses node's http client for all five routes, and closes the server; check afterEach stops servers in the unit tests.",
+    "Check no runtime dependency is added and the default listen host is 127.0.0.1.",
+    "Check earlier findings f1 (CRLF byte equality) and f2 (null data/options) are fixed, and the frozen test change is only added table rows.",
+    "Run the gate command."
+  ],
+  "findings": [
+    {
+      "title": "After a 413 or 415 the server reads and discards the whole remaining body before replying, with no cap",
+      "class": "drift",
+      "serves": {
+        "target": "card-goal",
+        "scenario": "A client that declares or streams a body far over maxBodyBytes (or an endless chunked body, or a huge text/plain body) keeps the connection and the server's read loop busy until it stops sending or node's requestTimeout fires; the process does not crash and memory is not retained, so the goal-critical question is still answered adequately, but request limits do not bound the work spent on a rejected request."
+      },
+      "rubric": "each criterion is met by the diff and its test",
+      "reproduction": "Start createServer({maxBodyBytes: 64}); send POST /v1/render with content-type application/json, Transfer-Encoding chunked, and keep writing chunks; no 413 arrives until the client ends the body (sendError waits for req 'end' after req.resume()).",
+      "evidence": [
+        "code:api/server.ts:1643",
+        "diff:api/server.ts"
+      ],
+      "location": "api/server.ts:1647"
+    }
+  ],
+  "responses": [
+    {
+      "finding": "f1",
+      "verdict": "withdraw",
+      "evidence": [
+        "diff:api/.gitattributes",
+        "code:api/.gitattributes:1",
+        "test:oa-doc: GET /v1/openapi.json serves api/openapi.json byte for byte"
+      ]
+    },
+    {
+      "finding": "f2",
+      "verdict": "withdraw",
+      "evidence": [
+        "code:api/routes.ts:1464",
+        "code:api/routes.ts:1466",
+        "test:ap-errors: 400 invalid-request for null data",
+        "test:ap-errors: 400 invalid-request for null options"
+      ]
+    }
+  ],
+  "reviewer": {
+    "kind": "fallback",
+    "label": "opus fallback (same model family as the builder; has repository access)"
+  },
+  "at": "2026-10-14T01:42:39.263Z",
+  "card": "0029-serve-render-validate-analyze-and-spec-o",
+  "tier": "product",
+  "packet_sha256": "d20bc4b00870b90ba2b35ae6dd84cf52bc7aeaec41b779740f2937e36f8baf70",
+  "diff_sha256": "dafe7668bc7829e3c498a61ef7192521a41116e55922cf22db17dc88efc5d403",
+  "dropped": []
+}

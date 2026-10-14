@@ -1,4 +1,4 @@
-# Serve render, validate, analyze and spec over HTTP
+# Locate every diagnostic and bound the work with limits
 
 Any agent picking this up: read the documents linked below, change only the files listed in Scope as a write (add, edit or remove), treat everything else as read-only, and stop and ask when you need more than this ticket gives you.
 
@@ -6,7 +6,7 @@ Any agent picking this up: read the documents linked below, change only the file
 
 <!-- One short paragraph for the model: what must be true when this is done, and why it matters. -->
 
-A stateless HTTP API over core using only node's http module, an OpenAPI document served and committed, and an end-to-end test that starts the server on an ephemeral port.
+Every template error carries a code and the line and column of the node that failed, and the engine stops runaway work at configurable limits. This is the engine surface the structured render result, the API and the CLI report from.
 
 
 ## Must-haves
@@ -15,20 +15,21 @@ A stateless HTTP API over core using only node's http module, an OpenAPI documen
 <!-- Type each line: "- `contract` `id` text" or "- `constraint` `id` must: text". Constraint kinds: must, must-not, evidence-required, human-decides, open-ended. -->
 <!-- In card.json each criterion carries `traces`, a list of test file paths ("test/x.test.mjs#id"), and the gate command names the SOURCE test file, never a compiled copy: the review packet shows the reviewer the test files named there as frozen tests, and a path not at the base commit is a warning. The gate must print a report the red-evidence check can read: `["node", "--test", "--test-reporter=tap", "test/x.test.mjs"]`, `["npx", "jest", "--json", "src/x.test.ts"]`, or `["npx", "vitest", "run", "--reporter=json", "--outputFile=<report file>", "src/x.test.ts"]` (the report file is rewritten by every run). -->
 
-- `contract` `ap-routes` POST /v1/render, /v1/validate, /v1/analyze and GET /v1/spec return the documented 200 bodies, and a template error is a 200 with ok false and located diagnostics
-- `contract` `ap-errors` bad JSON, a missing or non-string template, a non-object data and bad option types return 400 invalid-request; unknown paths 404 not-found; wrong methods 405 method-not-allowed with Allow; bodies over maxBodyBytes 413 payload-too-large; a non-JSON POST content type 415 unsupported-media-type; every response is JSON
-- `contract` `ap-limits` request limits can only lower the server limits and a request cannot raise them
-- `contract` `oa-doc` GET /v1/openapi.json serves api/openapi.json byte for byte, it is OpenAPI 3.1, and its paths and methods equal the router table
-- `contract` `e2-server` the end-to-end test listens on port 0 on 127.0.0.1, exercises every route over real HTTP with node's http client, and closes the server
+- `contract` `dg-syntax` syntax, missing-variable and unknown-filter errors carry the codes syntax-error, missing-variable and unknown-filter with the line and column of the failing tag or variable
+- `contract` `dg-runtime` math, filter-parameter and type errors carry the line and column of the node that evaluates them, not a placeholder 1:1, and the code type-error
+- `contract` `lm-iterations` more total FOR iterations than limits.maxIterations throws limit-iterations located at the loop
+- `contract` `lm-output` output longer than limits.maxOutputChars throws limit-output
+- `contract` `lm-depth` block nesting deeper than limits.maxDepth throws limit-depth located at the offending block
+- `contract` `lm-defaults` DEFAULT_LIMITS is exported with maxIterations 10000, maxOutputChars 1000000 and maxDepth 32, a partial limits option keeps the other defaults, and a template under every limit renders as before
 
 
 ## Must-nots
 
 <!-- Invariants the work must not break: module boundaries, data it must not touch, patterns it must not invent. -->
 
+- change what any currently passing template renders
 - add a runtime dependency
-- listen on any host but 127.0.0.1 unless asked
-- leave a server or socket open after a test
+- import n8n or do I/O in core
 
 
 ## Context links
@@ -39,14 +40,14 @@ A stateless HTTP API over core using only node's http module, an OpenAPI documen
 
 <!-- Say whether a user can see this change. If so, set user_visible true in card.json and list the user-facing documents it updates in user_docs (documents tagged user_facing: true in their frontmatter), or give user_docs_waiver, one line with the reason none changes. If no user can see it, write `none`. -->
 
-none: the README card documents the surface.
+none: no user-visible surface until the structured result card.
 
 
 ## Interface contract
 
 <!-- State the public surface this change adds or changes (signatures, shapes or boundaries, whichever apply), or write `none: <reason>`. -->
 
-createServer(options) and listen helper from api/index.ts; the HTTP surface in design.md.
+TemplateError.code; resolveTemplate options.limits; DEFAULT_LIMITS (see docs/living/architecture/headless-contract.md, engine surface).
 
 
 ## Scope
@@ -56,10 +57,14 @@ createServer(options) and listen helper from api/index.ts; the HTTP surface in d
 <!-- generated scope: from card.json -->
 | Path | Permission (add, edit, remove) | Blast radius |
 | --- | --- | --- |
-| `api/index.ts` | add | none |
-| `api/openapi.json` | add | none |
-| `api/routes.ts` | add | none |
-| `api/server.ts` | add | none |
+| `core/src/errors.ts` | edit | none |
+| `core/src/expressions.ts` | edit | none |
+| `core/src/filters.ts` | edit | none |
+| `core/src/interpreter.ts` | edit | none |
+| `core/src/parser.ts` | edit | none |
+| `core/src/resolve.ts` | edit | none |
+| `core/src/types.ts` | edit | none |
+| `tests/headless/diagnostics.test.ts` | edit | none |
 
-Files scope: `api/`
+Files scope: `core/src/`, `tests/headless`
 <!-- end generated scope -->

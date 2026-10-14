@@ -1,0 +1,164 @@
+{
+  "id": "0027-locate-every-diagnostic-and-bound-the-wo",
+  "title": "Locate every diagnostic and bound the work with limits",
+  "type": "task",
+  "parent": null,
+  "depends_on": [],
+  "origin": "headless",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "core/src/",
+    "tests/headless"
+  ],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [
+      "core/src/errors.ts",
+      "core/src/expressions.ts",
+      "core/src/filters.ts",
+      "core/src/interpreter.ts",
+      "core/src/parser.ts",
+      "core/src/resolve.ts",
+      "core/src/types.ts",
+      "tests/headless/diagnostics.test.ts"
+    ],
+    "frozen": true
+  },
+  "criteria": [
+    {
+      "text": "dg-syntax: syntax, missing-variable and unknown-filter errors carry the codes syntax-error, missing-variable and unknown-filter with the line and column of the failing tag or variable",
+      "verify": "test",
+      "traces": [
+        "tests/headless/diagnostics.test.ts#dg-syntax"
+      ]
+    },
+    {
+      "text": "dg-runtime: math, filter-parameter and type errors carry the line and column of the node that evaluates them, not a placeholder 1:1, and the code type-error",
+      "verify": "test",
+      "traces": [
+        "tests/headless/diagnostics.test.ts#dg-runtime"
+      ]
+    },
+    {
+      "text": "lm-iterations: more total FOR iterations than limits.maxIterations throws limit-iterations located at the loop",
+      "verify": "test",
+      "traces": [
+        "tests/headless/limits.test.ts#lm-iterations"
+      ]
+    },
+    {
+      "text": "lm-output: output longer than limits.maxOutputChars throws limit-output",
+      "verify": "test",
+      "traces": [
+        "tests/headless/limits.test.ts#lm-output"
+      ]
+    },
+    {
+      "text": "lm-depth: block nesting deeper than limits.maxDepth throws limit-depth located at the offending block",
+      "verify": "test",
+      "traces": [
+        "tests/headless/limits.test.ts#lm-depth"
+      ]
+    },
+    {
+      "text": "lm-defaults: DEFAULT_LIMITS is exported with maxIterations 10000, maxOutputChars 1000000 and maxDepth 32, a partial limits option keeps the other defaults, and a template under every limit renders as before",
+      "verify": "test",
+      "traces": [
+        "tests/headless/limits.test.ts#lm-defaults"
+      ]
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/headless/diagnostics.test.ts",
+    "tests/headless/limits.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": "2026-10-14T00:38:39.291Z",
+  "ended": "2026-10-14T00:56:14.403Z",
+  "review_rounds": 1,
+  "schema_version": 1,
+  "blast_radius": [
+    "none"
+  ],
+  "freeze": {
+    "at": "2026-10-14T00:38:37.376Z",
+    "brief_sha256": "1dac4fd1df4a20cf191098429ea1ab68e1b0e4556491f9babdbe397997ef6c85",
+    "brief_core_sha256": "fd313a6a23c98438b36089f5fd114d5bb884a99b404f49c23f74305205b0c9e4",
+    "manifest_sha256": "0e55ce53b32c0e14ef2ff41819850127b6c8b054a882297769d3a94d3ee065f7",
+    "criteria_sha256": "e169f603becf81304fda05ee1829bf3ad11697a98b38e55b83e091adf7b797ff",
+    "scope_sha256": "c5efdb3c0b55580888310f6734f85babc903e77d412fd4e9daaf0b3749c54b10",
+    "scope_parts": {
+      "files_scope": "c4aeb3bfceb47157a684fa403f4d9ed42093374fb5b51d49b1985f602fa54138",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "e99d9963a6d7211b40b9f95bd1982c0bbd7318f0e393f6a12127d45790815ae4"
+    }
+  },
+  "base_commit": "fa7fa47cac614faaf0b7c88b5eac665a6a4338e8",
+  "test_amendments": [
+    {
+      "path": "tests/headless/diagnostics.test.ts",
+      "reason": "the expected column of the second variable on line 3 was miscounted (the dollar sign is at column 10, not 8)",
+      "approved_by": "project lead"
+    }
+  ],
+  "manifest_amendments": [
+    {
+      "at": "2026-10-14T00:53:29.626Z",
+      "by": "lead",
+      "reason": "a frozen test had a miscounted column and was corrected",
+      "from": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/errors.ts",
+            "core/src/expressions.ts",
+            "core/src/filters.ts",
+            "core/src/interpreter.ts",
+            "core/src/parser.ts",
+            "core/src/resolve.ts",
+            "core/src/types.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/errors.ts",
+            "core/src/expressions.ts",
+            "core/src/filters.ts",
+            "core/src/interpreter.ts",
+            "core/src/parser.ts",
+            "core/src/resolve.ts",
+            "core/src/types.ts",
+            "tests/headless/diagnostics.test.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/",
+          "tests/headless"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    }
+  ]
+}
