@@ -1,0 +1,212 @@
+{
+  "card": "0042-add-the-auto-sized-fence-heading-offset",
+  "rounds": [
+    {
+      "number": 1,
+      "at": "2026-10-14T02:55:55.571Z",
+      "reviewer": {
+        "kind": "fallback",
+        "label": "opus fallback (same model family as the builder; has repository access)"
+      },
+      "output_sha256": "db0598f292797a2160b45261c22bf15d214ad0fc9d2be4246f1b754877733b07",
+      "diff_sha256": "898547edb49e911fde3ac00e8072d64aab707402a54c685e9e925c1cb964feef",
+      "restatement": "Add a FENCE block and a fence filter that wrap content in a backtick code fence. The fence is sized to be longer than any backtick run inside the content, takes an optional lang from a quoted string or a variable path, drops one leading and one trailing line break, and ends with a line break after the closing fence. Add a heading_offset=N filter that shifts ATX headings outside fenced code, clamped to levels 1-6. Give escape_md an inline mode and a block mode, where block also neutralises line-start structure. Wire all of this through the lexer, parser, interpreter, analyze, spec and the standalone-line rule. An unclosed FENCE is a located syntax-error and FENCE counts toward maxDepth. Plain escape_md output and every existing test expectation stay unchanged, and no runtime dependency is added. The point is prompt-shaped output from a deterministic, no-eval core in which data cannot break the markdown structure the template author intended.",
+      "brief_mismatch": "The frozen test 'standalone on: a FENCE tag sharing its line with text is not removed' expected \"a ```\\nx\\n``` b\\n\". That contradicts c1 and the contract, which put a line break after the closing fence. The builder's corrected expectation is right on the merits, but it collides with m1 and with the rule that changing a frozen test is a deviation. The lead amended the manifest for it, so it is recorded here and as a drift finding, not as a fix request.",
+      "evidence": [
+        "code:core/src/filters.ts:215",
+        "code:core/src/filters.ts:242",
+        "code:core/src/filters.ts:246",
+        "code:core/src/filters.ts:270",
+        "code:core/src/filters.ts:284",
+        "code:core/src/interpreter.ts:383",
+        "code:core/src/render.ts:39",
+        "diff:core/src/filters.ts",
+        "diff:tests/promptaware/fence.test.ts",
+        "doc:docs/living/architecture/prompt-aware-contract.md",
+        "patch:898547edb49e911fde3ac00e8072d64aab707402a54c685e9e925c1cb964feef"
+      ],
+      "stalled": false,
+      "raised": [
+        "f1",
+        "f2",
+        "f3",
+        "f4",
+        "f5",
+        "f6"
+      ],
+      "responses": []
+    }
+  ],
+  "findings": [
+    {
+      "title": "A large value makes render throw a RangeError, because fence sizing spreads every backtick run into Math.max",
+      "class": "defect",
+      "serves": {
+        "target": "c1",
+        "scenario": "A FENCE body with about 130k backtick runs (a 260 KB value, well under maxOutputChars of 1,000,000) overflows the call stack in Math.max(...runs). The FENCE block lets a raw RangeError escape render(), which promises that template and data problems never throw. The fence filter returns a misleading type-error, 'Maximum call stack size exceeded', instead of the fenced value. Either way, valid input within the limits gets no c1 output."
+      },
+      "rubric": "each criterion is met by the diff and its test (c1: FENCE outputs a fence longer than the longest backtick run in its body)",
+      "reproduction": "render('{{FENCE}}${{b}}{{END_FENCE}}', {b: '`a'.repeat(130000)}, {standaloneLines:false}) throws RangeError: Maximum call stack size exceeded. render('${{ b | fence }}', same data) returns ok:false with type-error 'Maximum call stack size exceeded'. With 100000 repeats both still succeed. Smallest fix: find the longest run with a loop or reduce over body.match(/`+/g) instead of spreading into Math.max.",
+      "evidence": [
+        "diff:core/src/filters.ts",
+        "code:core/src/filters.ts:242",
+        "code:core/src/render.ts:39"
+      ],
+      "location": "core/src/filters.ts:242",
+      "label": "f1",
+      "raised_in": 1,
+      "status": "sustained",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [
+        {
+          "after_round": 1,
+          "ruling": "sustain",
+          "note": "real defect in a new surface; fix with a test row"
+        }
+      ]
+    },
+    {
+      "title": "A lang value from data can contain a line break or a backtick and break the fence or close it early",
+      "class": "goal-risk",
+      "serves": {
+        "target": "card-goal",
+        "scenario": "Goal-critical question 'can any body make the fence close early?': the body cannot, but lang is written raw onto the opening fence line. With {{FENCE lang=l}} and l = \"md\\n```\\n# injected\", the output is \"```md\\n```\\n# injected\\nx\\n```\\n\". The fence closes on line 2, '# injected' renders as a real heading, and the body escapes the code block. A lang containing a backtick (\"a`b\") makes the opening line an invalid backtick fence in CommonMark, so the body is not fenced at all. Data controls whether the fence holds, which defeats the purpose of an auto-sized fence."
+      },
+      "rubric": "each criterion is met by the diff and its test (c1 and c2: the output is a code fence; lang may be a variable path)",
+      "reproduction": "render('{{FENCE lang=l}}x{{END_FENCE}}', {l: 'md\\n```\\n# injected'}, {standaloneLines:false}) returns ok:true with output \"```md\\n```\\n# injected\\nx\\n```\\n\". render('{{FENCE lang=l}}# x{{END_FENCE}}', {l: 'a`b'}) returns \"```a`b\\n# x\\n```\\n\", which is not a valid fence. Smallest fix: in fenceLang, and in the fence filter, make a lang that contains a line break or a backtick a type-error at the FENCE tag or the variable.",
+      "evidence": [
+        "code:core/src/interpreter.ts:383",
+        "code:core/src/filters.ts:246",
+        "doc:docs/living/architecture/prompt-aware-contract.md"
+      ],
+      "location": "core/src/interpreter.ts:383",
+      "label": "f2",
+      "raised_in": 1,
+      "status": "sustained",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [
+        {
+          "after_round": 1,
+          "ruling": "sustain",
+          "note": "real defect in a new surface; fix with a test row"
+        }
+      ]
+    },
+    {
+      "title": "heading_offset takes a line that starts with a three-backtick code span for an opening fence and stops shifting the headings after it",
+      "class": "defect",
+      "serves": {
+        "target": "c4",
+        "scenario": "The value line '```js``` text' is inline code: a backtick fence's info string may not contain backticks. heading_offset treats it as an unclosed fence opener, so every later heading in the value is left unshifted. That violates 'shifts every ATX heading line'."
+      },
+      "rubric": "each criterion is met by the diff and its test (c4)",
+      "reproduction": "render('${{ v | heading_offset=1 }}', {v: '```js``` text\\n# h'}, {standaloneLines:false}).output is '```js``` text\\n# h'; the expected output is '```js``` text\\n## h'. Smallest fix: count a backtick fence opener only when the rest of its line contains no backtick.",
+      "evidence": [
+        "code:core/src/filters.ts:270",
+        "diff:core/src/filters.ts"
+      ],
+      "location": "core/src/filters.ts:270",
+      "label": "f3",
+      "raised_in": 1,
+      "status": "sustained",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [
+        {
+          "after_round": 1,
+          "ruling": "sustain",
+          "note": "real defect in a new surface; fix with a test row"
+        }
+      ]
+    },
+    {
+      "title": "A frozen fence test expectation was changed",
+      "class": "drift",
+      "serves": {
+        "target": "m1",
+        "scenario": "In tests/promptaware/fence.test.ts, the expectation of 'a FENCE tag sharing its line with text is not removed' changed from \"a ```\\nx\\n``` b\\n\" to \"a ```\\nx\\n```\\n b\\n\". The new expectation matches c1 and the contract (a line break after the closing fence), and the lead amended the manifest. It is still a change to a frozen test and, read literally, to an existing expectation."
+      },
+      "rubric": "no change outside the card scope",
+      "reproduction": "git diff b12a2ac..ff6d7ff -- tests/promptaware/fence.test.ts shows the one-line change to the expectation.",
+      "evidence": [
+        "diff:tests/promptaware/fence.test.ts"
+      ],
+      "location": "tests/promptaware/fence.test.ts:193",
+      "label": "f4",
+      "raised_in": 1,
+      "status": "filed",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [
+        {
+          "after_round": 1,
+          "ruling": "drift",
+          "note": "the correction is logged as a test amendment and manifest amendment"
+        }
+      ],
+      "ticket": "0047-follow-up-a-frozen-fence-test-expectatio"
+    },
+    {
+      "title": "escape_md in the named-parameter form silently falls back to inline",
+      "class": "drift",
+      "serves": {
+        "target": "c5",
+        "scenario": "'${{ v | escape_md:mode=block }}', and any 'escape_md:x=y', sets no params.value, so the filter runs as plain inline instead of raising a type-error. '- x' comes out unescaped although the author asked for block. c5 speaks only of the 'escape_md=mode' form, so this is noted, not a fix request."
+      },
+      "rubric": "each criterion is met by the diff and its test (c5)",
+      "reproduction": "render('${{ v | escape_md:mode=block }}', {v:'- x'}) returns ok:true with output '- x'.",
+      "evidence": [
+        "code:core/src/filters.ts:215"
+      ],
+      "location": "core/src/filters.ts:215",
+      "label": "f5",
+      "raised_in": 1,
+      "status": "filed",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [
+        {
+          "after_round": 1,
+          "ruling": "drift",
+          "note": "named-parameter form; ticketed"
+        }
+      ],
+      "ticket": "0048-follow-up-escape-md-in-the-named-paramet"
+    },
+    {
+      "title": "Indented ATX headings (one to three leading spaces) are not shifted, although indented fences are recognised",
+      "class": "drift",
+      "serves": {
+        "target": "c4",
+        "scenario": "'  # h' is an ATX heading in CommonMark, but heading_offset leaves it alone, while the fence detector accepts up to three spaces of indent. The contract defines a heading as '#' followed by a space, so this meets the letter of c4; it is noted for the lead."
+      },
+      "rubric": "each criterion is met by the diff and its test (c4)",
+      "reproduction": "render('${{ v | heading_offset=1 }}', {v:'  # h'}).output is '  # h'.",
+      "evidence": [
+        "code:core/src/filters.ts:284"
+      ],
+      "location": "core/src/filters.ts:284",
+      "label": "f6",
+      "raised_in": 1,
+      "status": "filed",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [
+        {
+          "after_round": 1,
+          "ruling": "drift",
+          "note": "indented headings; ticketed"
+        }
+      ],
+      "ticket": "0049-follow-up-indented-atx-headings-one-to-t"
+    }
+  ]
+}

@@ -27,7 +27,8 @@
       "core/src/spec.ts",
       "core/src/types.ts",
       "core/src/whitespace.ts",
-      "tests/promptaware/fence.test.ts"
+      "tests/promptaware/fence.test.ts",
+      "tests/promptaware/heading-offset.test.ts"
     ],
     "frozen": true
   },
@@ -92,7 +93,7 @@
   "docs_impact": "none",
   "started": "2026-10-14T02:41:31.570Z",
   "ended": null,
-  "review_rounds": 0,
+  "review_rounds": 1,
   "schema_version": 1,
   "blast_radius": [
     "none"
@@ -101,7 +102,7 @@
     "at": "2026-10-14T02:19:33.329Z",
     "brief_sha256": "c0514066958eb9ccaa2533d891e5356b4ed22c6e701f9cd7a50c1fdbc52cbcf3",
     "brief_core_sha256": "bf04b07a9f0aa6c48a32c7dc52afdd6686a78201eb05456093f7515cd6b85818",
-    "manifest_sha256": "09e3c6c848d64cfde269f526318f19c6d4670ec28bbce4660cf24b78cd068cf6",
+    "manifest_sha256": "3f2d211c7a93e544ff62c519e983f075b7ba1e321623f0ab71427cddfcb6ee8f",
     "criteria_sha256": "27823a9a6eca29b5e945629126122c2081f5160e011639132cff8f8c6ac0a5d6",
     "scope_sha256": "d97d7f6843e00da2c842e72e84c9750efef456ac37a5a665ad4a35269156be7f",
     "scope_parts": {
@@ -276,6 +277,64 @@
           "none"
         ]
       }
+    },
+    {
+      "at": "2026-10-14T02:56:07.384Z",
+      "by": "lead",
+      "reason": "review fixes add table rows to the heading offset and fence tests",
+      "from": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/errors.ts",
+            "core/src/filters.ts",
+            "core/src/interpreter.ts",
+            "core/src/lexer.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts",
+            "core/src/whitespace.ts",
+            "tests/promptaware/fence.test.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/",
+          "tests/headless",
+          "tests/promptaware"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/errors.ts",
+            "core/src/filters.ts",
+            "core/src/interpreter.ts",
+            "core/src/lexer.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts",
+            "core/src/whitespace.ts",
+            "tests/promptaware/fence.test.ts",
+            "tests/promptaware/heading-offset.test.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/",
+          "tests/headless",
+          "tests/promptaware"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
     }
   ],
   "test_amendments": [
@@ -287,6 +346,11 @@
     {
       "path": "tests/promptaware/fence.test.ts",
       "reason": "one expected value omitted the trailing line break the contract gives every fence",
+      "approved_by": "project lead"
+    },
+    {
+      "path": "tests/promptaware/heading-offset.test.ts",
+      "reason": "add rows for a backtick span line and a huge value found in review",
       "approved_by": "project lead"
     }
   ]
