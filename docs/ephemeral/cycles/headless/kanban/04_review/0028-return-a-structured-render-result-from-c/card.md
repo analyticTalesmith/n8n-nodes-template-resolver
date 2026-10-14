@@ -23,6 +23,7 @@ render() returns {ok, output, messages, stats, diagnostics} and never throws for
 - `contract` `rr-compat` resolveTemplate still returns a string and throws, and limits in render options bound the render with their diagnostics
 - `contract` `nd-output` the n8n node writes the render output to the configured field, and a failed render throws a node error whose message carries the first diagnostic with line and column
 - `contract` `nd-nodeps` package.json declares no runtime dependencies, tsconfig builds api and cli folders, and package.json exposes the template-resolver bin
+- `contract` `rr-robust` render and validate never throw for non-object data (null, array, string), cyclic data values or a cyclic value looped over in strict mode; each returns ok false with a diagnostic
 
 
 ## Must-nots
@@ -68,7 +69,8 @@ render, validate, spec, estimateTokens, RenderOptions, RenderResult, Diagnostic 
 | `core/src/spec.ts` | edit | none |
 | `n8n/TemplateResolver.node.ts` | edit | none |
 | `package.json` | edit | none |
+| `tests/headless/render-robust.test.ts` | edit | none |
 | `tsconfig.json` | edit | none |
 
-Files scope: `core/src/`, `n8n/`, `package.json`, `tsconfig.json`
+Files scope: `core/src/`, `n8n/`, `package.json`, `tests/headless`, `tsconfig.json`
 <!-- end generated scope -->

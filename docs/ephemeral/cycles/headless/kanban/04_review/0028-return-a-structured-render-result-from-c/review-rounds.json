@@ -1,0 +1,112 @@
+{
+  "card": "0028-return-a-structured-render-result-from-c",
+  "rounds": [
+    {
+      "number": 1,
+      "at": "2026-10-14T01:08:55.260Z",
+      "reviewer": {
+        "kind": "fallback",
+        "label": "opus fallback (same model family as the builder; has repository access)"
+      },
+      "output_sha256": "fa804437ca59abc901d736ae8707d9e6602d23efc229f9bce33e330ac7c84487",
+      "diff_sha256": "180874d225494c77118bc3341d2e92db214522abfbf12bc4ac1dd0f1cdb9a5af",
+      "restatement": "Core should expose a single structured render contract that the API, the CLI and the n8n node all consume. render(template, data, options) returns {ok, output, messages, stats{chars, estTokens, sectionsOmitted, iterations}, diagnostics} and never throws for template or data problems: on failure it returns ok false, an empty output and the located error first. Alongside it come validate (no data needed), spec (blocks, filters, operators, limits, version, covering every filter the engine accepts), a dependency-free ceil(chars/4) estimator that a tokenEstimator option can replace, and analyze, which now reports required and per-block-kind counts. resolveTemplate keeps returning strings and throwing. The n8n node renders through the structured result, writes output to its configured field and turns failures into NodeOperationErrors that carry line and column. No runtime dependency is added, core gets no n8n imports or I/O, and the build and bin are prepared for api/ and cli/.",
+      "brief_mismatch": null,
+      "evidence": [
+        "code:core/src/coercion.ts:316",
+        "code:core/src/interpreter.ts:280",
+        "diff:core/src/analyze.ts",
+        "diff:core/src/filters.ts",
+        "diff:core/src/render.ts",
+        "doc:docs/living/architecture/headless-contract.md",
+        "patch:180874d225494c77118bc3341d2e92db214522abfbf12bc4ac1dd0f1cdb9a5af",
+        "test:rr-spec: lists exactly the engine's filters"
+      ],
+      "stalled": false,
+      "raised": [
+        "f1",
+        "f2",
+        "f3"
+      ],
+      "responses": []
+    }
+  ],
+  "findings": [
+    {
+      "title": "render throws a raw TypeError for cyclic data in a strict FOR over a non-array value",
+      "class": "defect",
+      "serves": {
+        "target": "c1",
+        "scenario": "A data problem (a FOR target that is a cyclic object) escapes render as an uncaught native TypeError instead of ok false with a located type-error diagnostic, which breaks the 'never throws for template or data problems' contract. API, CLI and node callers would get a crash or 500 instead of a result."
+      },
+      "rubric": "each criterion is met by the diff and its test (c1: on a template or data error it does not throw)",
+      "reproduction": "const o = {}; o.self = o; render('{{FOR o AS x}}a{{END_FOR}}', { o }) throws 'TypeError: Converting circular structure to JSON'. Verified by compiling core/src with tsc and calling render from node. The throw comes from JSON.stringify(iterable) while the interpreter builds its own TemplateError message (core/src/interpreter.ts:280). render then rethrows it because it is not a TemplateError (core/src/render.ts, 'if (!(error instanceof TemplateError)) throw error'). Smallest fix: build that message with the existing safe coercion (tryCoerceToString, which already catches stringify failures) instead of a bare JSON.stringify.",
+      "evidence": [
+        "code:core/src/interpreter.ts:280",
+        "code:core/src/coercion.ts:316",
+        "diff:core/src/render.ts",
+        "doc:docs/living/architecture/headless-contract.md"
+      ],
+      "location": "core/src/interpreter.ts:280",
+      "label": "f1",
+      "raised_in": 1,
+      "status": "open",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": []
+    },
+    {
+      "title": "render throws when data is null or not an object, because data conversion sits outside the try",
+      "class": "goal-risk",
+      "serves": {
+        "target": "card-goal",
+        "scenario": "One contract for API, CLI and node: render(template, null) throws 'Cannot convert undefined or null to object' from Object.entries(data) before the try block, so a JS or CLI caller that passes JSON 'null' as data gets an exception. The contract reserves an invalid-input diagnostic code for exactly this case."
+      },
+      "rubric": "each criterion is met by the diff and its test (c1: data error does not throw)",
+      "reproduction": "render('${{x}}', null as any) throws TypeError 'Cannot convert undefined or null to object' (verified with compiled core). Smallest fix: move the Map construction into the try, or check that data is a non-null object and return ok false with an 'invalid-input' diagnostic at 1:1.",
+      "evidence": [
+        "diff:core/src/render.ts",
+        "doc:docs/living/architecture/headless-contract.md"
+      ],
+      "location": "core/src/render.ts:61",
+      "label": "f2",
+      "raised_in": 1,
+      "status": "open",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": []
+    },
+    {
+      "title": "spec's filter list is a hand-maintained copy beside applyFilter's switch, not derived from it",
+      "class": "drift",
+      "serves": {
+        "target": "c4",
+        "scenario": "A filter added to applyFilter but not to FILTERS would be missing from spec. It would also be rejected by analyze/validate as unknown-filter, because KNOWN_FILTERS now derives from FILTERS, while render accepts it. The frozen test pins a fixed fixture list, so it would not catch the divergence."
+      },
+      "rubric": "each criterion is met by the diff and its test",
+      "reproduction": "Add a 'case \"upper\"' to applyFilter only. spec().filters lacks it, validate('${{a | upper}}') reports unknown-filter, and render succeeds. Note for the lead: dispatching applyFilter from FILTERS, or asserting the two match in a test, would close it.",
+      "evidence": [
+        "diff:core/src/filters.ts",
+        "diff:core/src/analyze.ts",
+        "test:rr-spec: lists exactly the engine's filters"
+      ],
+      "location": "core/src/filters.ts:955",
+      "label": "f3",
+      "raised_in": 1,
+      "status": "filed",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [
+        {
+          "after_round": 1,
+          "ruling": "drift",
+          "note": "valid maintenance risk, outside the criteria; ticketed"
+        }
+      ],
+      "ticket": "0034-follow-up-spec-s-filter-list-is-a-hand-m"
+    }
+  ]
+}

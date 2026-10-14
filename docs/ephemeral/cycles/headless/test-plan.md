@@ -19,6 +19,7 @@ Status: planned.
 |---|---|---|
 | t-rr-01 | hl-result | render returns ok, output, messages, stats and diagnostics and never throws |
 | t-rr-02 | hl-result | validate, spec and analyze (required, blocks) shapes |
+| t-rr-04 | hl-result | render and validate never throw for non-object or cyclic data |
 | t-rr-03 | hl-result | the estimator default and the tokenEstimator hook |
 | t-dg-01 | hl-locations | syntax, type, missing-variable and unknown-filter diagnostics carry the node line and column |
 | t-dg-02 | hl-locations | math and filter-parameter errors carry the node location, not 1:1 |

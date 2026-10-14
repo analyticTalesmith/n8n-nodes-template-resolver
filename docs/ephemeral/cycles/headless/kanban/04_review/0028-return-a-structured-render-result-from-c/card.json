@@ -13,6 +13,7 @@
     "core/src/",
     "n8n/",
     "package.json",
+    "tests/headless",
     "tsconfig.json"
   ],
   "manifest": {
@@ -28,6 +29,7 @@
       "core/src/spec.ts",
       "n8n/TemplateResolver.node.ts",
       "package.json",
+      "tests/headless/render-robust.test.ts",
       "tsconfig.json"
     ],
     "frozen": true
@@ -88,6 +90,15 @@
       "traces": [
         "tests/headless/nodeps.test.ts#nd-nodeps"
       ]
+    },
+    {
+      "text": "rr-robust: render and validate never throw for non-object data (null, array, string), cyclic data values or a cyclic value looped over in strict mode; each returns ok false with a diagnostic",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "traces": [
+        "tests/headless/render-robust.test.ts#rr-robust"
+      ]
     }
   ],
   "gate": [
@@ -108,7 +119,7 @@
   "docs_impact": "none",
   "started": "2026-10-14T00:56:19.663Z",
   "ended": null,
-  "review_rounds": 0,
+  "review_rounds": 1,
   "schema_version": 1,
   "blast_radius": [
     "none"
@@ -117,11 +128,11 @@
     "at": "2026-10-14T00:38:39.555Z",
     "brief_sha256": "cdb7e38fcd2a306d8703ec1343835b9a32914650638d4105f29e6f16254d8117",
     "brief_core_sha256": "071cb80bc3f31001b99d893a1f5296b367c8fb5b666cb0417d4ab56099b3c8c6",
-    "manifest_sha256": "f23362f4c7f1b95929ba9d1174d0ce1f5d53ba121c624428f480c84bf1ad6a3b",
-    "criteria_sha256": "8c6b3d937679f6f5df7dceac474e7b9f18e11c05b293d5c7ddfd95bcc6ad4343",
-    "scope_sha256": "fba9b75c29ad033871fcc0f67bd500f3bbde0447a7955d561d239f03f4d76613",
+    "manifest_sha256": "737f37ac2bc0cf6dea308cdb13a80e3cc258d59a5fef7251054e98d74152cc4c",
+    "criteria_sha256": "816ed2ccbf0616e4214963f5d742e48f5697cbc47bf4c7834e82e579e24b0d4f",
+    "scope_sha256": "4106a75ad479b584990b15da020b7d4f28040d62f0b4553cedb029783c463db4",
     "scope_parts": {
-      "files_scope": "da6d8288024f9dc507a93cf6b59e91454f0f9ceeabbad8ccb5163eddd81e8e9b",
+      "files_scope": "83bc6426165114a9d8fc082c28ab4430c20c72d4e637e4f525f5077c40493437",
       "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
       "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
       "gate": "47522fcafb15c20f0da4e11e569bfff0837c31e0b35ec8ed72f9e5241595f939"
@@ -241,6 +252,80 @@
           "none"
         ]
       }
+    },
+    {
+      "at": "2026-10-14T01:09:05.175Z",
+      "by": "lead",
+      "reason": "new robustness test is a card test",
+      "from": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/estimate.ts",
+            "core/src/filters.ts",
+            "core/src/index.ts",
+            "core/src/interpreter.ts",
+            "core/src/render.ts",
+            "core/src/spec.ts",
+            "n8n/TemplateResolver.node.ts",
+            "package.json",
+            "tsconfig.json"
+          ]
+        },
+        "files_scope": [
+          "core/src/",
+          "n8n/",
+          "package.json",
+          "tsconfig.json"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/estimate.ts",
+            "core/src/filters.ts",
+            "core/src/index.ts",
+            "core/src/interpreter.ts",
+            "core/src/render.ts",
+            "core/src/spec.ts",
+            "n8n/TemplateResolver.node.ts",
+            "package.json",
+            "tests/headless/render-robust.test.ts",
+            "tsconfig.json"
+          ]
+        },
+        "files_scope": [
+          "core/src/",
+          "n8n/",
+          "package.json",
+          "tests/headless",
+          "tsconfig.json"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    }
+  ],
+  "criteria_amendments": [
+    {
+      "at": "2026-10-14T01:09:05.054Z",
+      "by": "lead",
+      "reason": "review found render can still throw for cyclic data and for non-object data",
+      "added": [
+        {
+          "text": "rr-robust: render and validate never throw for non-object data (null, array, string), cyclic data values or a cyclic value looped over in strict mode; each returns ok false with a diagnostic",
+          "verify": "test"
+        }
+      ]
     }
   ]
 }
