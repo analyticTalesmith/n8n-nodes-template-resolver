@@ -58,8 +58,8 @@
   ],
   "user_visible": true,
   "freeze": {
-    "at": "2026-10-14T00:38:08.744Z",
-    "brief_sha256": "ab8a250856619ad15911dda403f06904480d930310a844dc93cb86346f5f8504",
+    "at": "2026-10-14T00:38:48.624Z",
+    "brief_sha256": "d9b3a24cd8d834259c490f636a4846f11c783b5ad3ba3ef9f3220cf5ae18b053",
     "brief_core_sha256": "167793303c81c6bd2794f5f5d2206ee8bbb3e961033bcd22b35200a8e74c297a",
     "manifest_sha256": "e1ceb29f6dd08f8dd379ece78e8d9b9382776f3cbdf77722f04fed1600ed8300",
     "criteria_sha256": "b236ed166b77c70801b9fce875a63b1e7dd35ec3547f392d5395d4be4558a3a9",
