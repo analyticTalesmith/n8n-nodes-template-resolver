@@ -82,14 +82,13 @@ describe("em-modes: escape_md=block escapes line starts so a value cannot fake s
   });
 
   it("em-modes: a digit run followed by a dot or a parenthesis is escaped at the line start", () => {
-    // The contract puts the backslash "before ... a digit run followed by . or )": either the
-    // backslash before the digits or the conventional "1\." form is accepted here; plain text is not.
+    // Contract: the backslash goes before the dot or parenthesis: "1." and "2)".
     const dot = esc("block", "1. one").output;
-    expect(["1\\. one", "\\1. one"]).toContain(dot);
+    expect(dot).toBe("1\\. one");
     const paren = esc("block", "2) two").output;
-    expect(["2\\) two", "\\2\\) two"]).toContain(paren);
+    expect(paren).toBe("2\\) two");
     const multi = esc("block", "10. ten").output;
-    expect(["10\\. ten", "\\10. ten"]).toContain(multi);
+    expect(multi).toBe("10\\. ten");
   });
 
   it("em-modes: a digit run in the middle of a line is not escaped", () => {
