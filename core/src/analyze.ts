@@ -16,6 +16,7 @@ import {
   Limits,
   ListItemNode,
   ListNode,
+  SectionNode,
   TableHeaderNode,
   TableNode,
   TableRowNode,
@@ -56,7 +57,7 @@ export interface AnalysisDiagnostic {
   column: number;
 }
 
-export type BlockKind = "IF" | "CASE" | "FOR" | "LIST" | "TABLE";
+export type BlockKind = "IF" | "CASE" | "FOR" | "LIST" | "TABLE" | "SECTION";
 
 export interface TemplateAnalysis {
   variables: VariableUsage[];
@@ -140,6 +141,9 @@ class Walker {
       case "Table":
         this.countBlock("TABLE");
         return this.visitTable(node as TableNode);
+      case "Section":
+        this.countBlock("SECTION");
+        return this.visitSection(node as SectionNode);
       case "Header":
       case "TableRow":
         return this.visitCells(node as TableHeaderNode | TableRowNode);
@@ -192,6 +196,13 @@ class Walker {
     this.scopes.push(node.itemName);
     this.visitAll(node.body);
     this.scopes.pop();
+  }
+
+  private visitSection(node: SectionNode): void {
+    if (node.title.kind === "path") {
+      this.record(node.title.path.join("."), "output", false);
+    }
+    this.visitAll(node.body);
   }
 
   private visitListItem(node: ListItemNode): void {

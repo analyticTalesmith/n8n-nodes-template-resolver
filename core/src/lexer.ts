@@ -4,6 +4,17 @@ import { applyWhitespace } from "./whitespace";
 
 const RAW_CLOSER = /\{\{-?[ \t]*END_RAW[ \t]*-?\}\}/y;
 
+/** Block closers checked for balance, each with the opener it closes */
+const CLOSERS: Partial<Record<TokenType, TokenType>> = {
+  [TokenType.END_IF]: TokenType.IF,
+  [TokenType.END_FOR]: TokenType.FOR,
+  [TokenType.END_CASE]: TokenType.CASE,
+  [TokenType.END_TABLE]: TokenType.TABLE,
+  [TokenType.END_LIST]: TokenType.LIST,
+  [TokenType.END_SECTION]: TokenType.SECTION,
+};
+const OPENERS = new Set(Object.values(CLOSERS));
+
 /**
  * Lexer: Converts template string into array of tokens with position tracking
  *
@@ -14,6 +25,7 @@ const RAW_CLOSER = /\{\{-?[ \t]*END_RAW[ \t]*-?\}\}/y;
  * - Loops: {{FOR items AS item}}, {{END_FOR}}
  * - Tables: {{TABLE}}, {{HEADER}}, {{ROW}}, {{END_TABLE}}
  * - Lists: {{LIST}}, {{LIST_ITEM}}, {{END_LIST}}
+ * - Sections: {{SECTION "Title" level=2}}, {{END_SECTION}}
  * - Ternary: {{condition ? "true" : "false"}}
  * - Comments: {{# comment #}}
  * - Literal blocks: {{RAW}}...{{END_RAW}}; \{{ is a literal brace pair
@@ -31,117 +43,52 @@ export class Lexer {
   ) {}
 
   /**
-   * Validate that all blocks are properly closed
+   * Validate that all blocks are properly closed. An open SECTION that meets
+   * another block's closer, or the end of the template, is reported at the
+   * latest SECTION tag opened inside it.
    */
   private validateBlocks(): void {
-    const stack: Array<{ type: string; line: number; column: number }> = [];
+    const stack: Token[] = [];
+    let latestSection: Token | null = null;
 
     for (const token of this.tokens) {
-      // Opening blocks
-      if (
-        [
-          TokenType.IF,
-          TokenType.FOR,
-          TokenType.CASE,
-          TokenType.TABLE,
-          TokenType.LIST,
-        ].includes(token.type)
-      ) {
-        stack.push({
-          type: token.type,
-          line: token.line,
-          column: token.column,
-        });
+      if (OPENERS.has(token.type)) {
+        stack.push(token);
+        if (token.type === TokenType.SECTION) latestSection = token;
+        continue;
       }
 
-      // Closing blocks
-      if (token.type === TokenType.END_IF) {
-        if (
-          stack.length === 0 ||
-          stack[stack.length - 1].type !== TokenType.IF
-        ) {
-          throw new SyntaxError(
-            `Unexpected {{END_IF}} without matching {{IF}}`,
-            token.line,
-            token.column,
-            "Check template structure"
-          );
-        }
+      const opener = CLOSERS[token.type];
+      if (opener === undefined) continue;
+      const top = stack[stack.length - 1];
+      if (top?.type === opener) {
         stack.pop();
+        continue;
       }
-
-      if (token.type === TokenType.END_FOR) {
-        if (
-          stack.length === 0 ||
-          stack[stack.length - 1].type !== TokenType.FOR
-        ) {
-          throw new SyntaxError(
-            `Unexpected {{END_FOR}} without matching {{FOR}}`,
-            token.line,
-            token.column,
-            "Check template structure"
-          );
-        }
-        stack.pop();
-      }
-
-      if (token.type === TokenType.END_CASE) {
-        if (
-          stack.length === 0 ||
-          stack[stack.length - 1].type !== TokenType.CASE
-        ) {
-          throw new SyntaxError(
-            `Unexpected {{END_CASE}} without matching {{CASE}}`,
-            token.line,
-            token.column,
-            "Check template structure"
-          );
-        }
-        stack.pop();
-      }
-
-      if (token.type === TokenType.END_TABLE) {
-        if (
-          stack.length === 0 ||
-          stack[stack.length - 1].type !== TokenType.TABLE
-        ) {
-          throw new SyntaxError(
-            `Unexpected {{END_TABLE}} without matching {{TABLE}}`,
-            token.line,
-            token.column,
-            "Check template structure"
-          );
-        }
-        stack.pop();
-      }
-
-      if (token.type === TokenType.END_LIST) {
-        if (
-          stack.length === 0 ||
-          stack[stack.length - 1].type !== TokenType.LIST
-        ) {
-          throw new SyntaxError(
-            `Unexpected {{END_LIST}} without matching {{LIST}}`,
-            token.line,
-            token.column,
-            "Check template structure"
-          );
-        }
-        stack.pop();
-      }
-    }
-
-    // Check for unclosed blocks
-    if (stack.length > 0) {
-      const unclosed = stack[stack.length - 1];
-      const typeName = unclosed.type.replace("_", " ");
+      if (top?.type === TokenType.SECTION) this.unclosed(latestSection ?? top);
       throw new SyntaxError(
-        `Unclosed {{${typeName}}} block starting at line ${unclosed.line}`,
-        unclosed.line,
-        unclosed.column,
-        `Add {{END_${typeName}}}`
+        `Unexpected {{${token.type}}} without matching {{${opener}}}`,
+        token.line,
+        token.column,
+        "Check template structure"
       );
     }
+
+    const unclosed = stack[stack.length - 1];
+    if (unclosed === undefined) return;
+    this.unclosed(
+      unclosed.type === TokenType.SECTION ? latestSection ?? unclosed : unclosed
+    );
+  }
+
+  private unclosed(opener: Token): never {
+    const typeName = opener.type.replace("_", " ");
+    throw new SyntaxError(
+      `Unclosed {{${typeName}}} block starting at line ${opener.line}`,
+      opener.line,
+      opener.column,
+      `Add {{END_${typeName}}}`
+    );
   }
 
   /**
@@ -518,6 +465,8 @@ export class Lexer {
       END_TABLE: TokenType.END_TABLE,
       RAW: TokenType.RAW,
       END_RAW: TokenType.END_RAW,
+      SECTION: TokenType.SECTION,
+      END_SECTION: TokenType.END_SECTION,
     };
 
     return mapping[keyword] || null;
