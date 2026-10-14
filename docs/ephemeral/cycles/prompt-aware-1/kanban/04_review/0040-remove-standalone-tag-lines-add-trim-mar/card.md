@@ -57,9 +57,8 @@ RenderOptions.standaloneLines; resolveTemplate options.standaloneLines; RAW bloc
 <!-- generated scope: from card.json -->
 | Path | Permission (add, edit, remove) | Blast radius |
 | --- | --- | --- |
-| `core/src/interpreter.ts` | edit | none |
+| `core/src/whitespace.ts` | add | none |
 | `core/src/lexer.ts` | edit | none |
-| `core/src/parser.ts` | edit | none |
 | `core/src/render.ts` | edit | none |
 | `core/src/resolve.ts` | edit | none |
 | `core/src/spec.ts` | edit | none |

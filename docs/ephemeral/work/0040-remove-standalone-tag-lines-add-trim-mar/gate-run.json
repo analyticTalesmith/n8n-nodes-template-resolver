@@ -1,0 +1,18 @@
+{
+  "command": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/promptaware/whitespace.test.ts",
+    "tests/promptaware/raw.test.ts",
+    "--json"
+  ],
+  "exit_status": 0,
+  "ran_at": "2026-10-14T02:26:10.721Z",
+  "tests": {
+    "passed": 211,
+    "failed": 0
+  },
+  "failing": [],
+  "failing_total": 0
+}

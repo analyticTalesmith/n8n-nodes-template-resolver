@@ -11,16 +11,16 @@
     "core/src/"
   ],
   "manifest": {
-    "add": [],
+    "add": [
+      "core/src/whitespace.ts"
+    ],
     "remove": [],
     "edit": [
       "core/src/lexer.ts",
-      "core/src/parser.ts",
-      "core/src/types.ts",
-      "core/src/interpreter.ts",
       "core/src/render.ts",
       "core/src/resolve.ts",
-      "core/src/spec.ts"
+      "core/src/spec.ts",
+      "core/src/types.ts"
     ],
     "frozen": true
   },
@@ -93,7 +93,7 @@
     "at": "2026-10-14T02:19:29.157Z",
     "brief_sha256": "39a6c5080770d89a8907ca5706d87e5d26841bcc52a58cbf2f6150c56b170b68",
     "brief_core_sha256": "915f9e44e0bb29a4f1dba3f9b5aa4e660f98527e72da1ad8374be7766255f812",
-    "manifest_sha256": "562b5b410a628d505752d5062b66a747e1ca8433764af2ccea520bf981650e0a",
+    "manifest_sha256": "15ec337cac4cfdb8c8fb53f339757ae23bb2075915c1cbc16f81707da721f8f2",
     "criteria_sha256": "d89bcee88cbb17763b7d242a10a39611361678a02f8f05ba3ca764234560ac59",
     "scope_sha256": "948dceecc1f8923c15de377dec959f9f684da9a27565046cfd2c8d621d285633",
     "scope_parts": {
@@ -103,5 +103,97 @@
       "gate": "40362e57e6360dc19f6d608a2a3e03e77ea04657d1ef41669f2400fbead5b298"
     }
   },
-  "base_commit": "0687324cf97f7455deadb7d36ba1f3d204b4dc32"
+  "base_commit": "0687324cf97f7455deadb7d36ba1f3d204b4dc32",
+  "manifest_amendments": [
+    {
+      "at": "2026-10-14T02:26:07.588Z",
+      "by": "lead",
+      "reason": "interpreter and parser needed no change",
+      "from": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/interpreter.ts",
+            "core/src/lexer.ts",
+            "core/src/parser.ts",
+            "core/src/render.ts",
+            "core/src/resolve.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/lexer.ts",
+            "core/src/render.ts",
+            "core/src/resolve.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    },
+    {
+      "at": "2026-10-14T02:26:07.696Z",
+      "by": "lead",
+      "reason": "whitespace handling lives in its own module",
+      "from": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/lexer.ts",
+            "core/src/render.ts",
+            "core/src/resolve.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [
+            "core/src/whitespace.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "core/src/lexer.ts",
+            "core/src/render.ts",
+            "core/src/resolve.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    }
+  ]
 }
