@@ -238,13 +238,26 @@ function escapeLineStart(line: string): string {
  * backtick run in it, after removing one leading and one trailing line break
  */
 export function fenced(text: string, lang: string): string {
+  checkFenceLang(lang);
   const body = text.replace(/^\r?\n/, "").replace(/\r?\n$/, "");
-  const longestRun = Math.max(
-    0,
-    ...(body.match(/`+/g) ?? []).map((run) => run.length)
-  );
+  let longestRun = 0;
+  for (const run of body.matchAll(/`+/g)) {
+    longestRun = Math.max(longestRun, run[0].length);
+  }
   const fence = "`".repeat(Math.max(3, longestRun + 1));
   return `${fence}${lang}\n${body}\n${fence}\n`;
+}
+
+/**
+ * Reject a fence language that would break the opening fence line: a line
+ * break ends it and a backtick makes it no longer a fence
+ */
+export function checkFenceLang(lang: string): void {
+  if (/[\r\n`]/.test(lang)) {
+    throw new Error(
+      `Fence lang must not contain a line break or a backtick, got ${JSON.stringify(lang)}`
+    );
+  }
 }
 
 /**
@@ -267,17 +280,17 @@ function applyHeadingOffsetFilter(
   return text
     .split("\n")
     .map((line) => {
-      const fence = /^ {0,3}(`{3,}|~{3,})/.exec(line)?.[1];
+      const [, fence, info] = /^ {0,3}(`{3,}|~{3,})([^\n]*)/.exec(line) ?? [];
       if (openFence !== null) {
         const closes =
           fence !== undefined &&
           fence[0] === openFence[0] &&
           fence.length >= openFence.length &&
-          line.trim() === fence;
+          info.trim() === "";
         if (closes) openFence = null;
         return line;
       }
-      if (fence !== undefined) {
+      if (fence !== undefined && !(fence[0] === "`" && info.includes("`"))) {
         openFence = fence;
         return line;
       }

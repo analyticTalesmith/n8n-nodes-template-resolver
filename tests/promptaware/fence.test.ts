@@ -162,6 +162,18 @@ describe("fe-autosize: FENCE sizes its fence from the longest backtick run in it
       //   so L1 = "`````\n````\n```\nx\n```\n````\n`````\n".
       expected: "`````\n````\n```\nx\n```\n````\n`````\n",
     },
+    {
+      name: "a large body with 300000 backtick runs is sized without failing",
+      template: FB,
+      data: { b: "`a".repeat(300000) + run(10) },
+      expected: `${run(11)}\n${"`a".repeat(300000)}${run(10)}\n${run(11)}\n`,
+    },
+    {
+      name: "the fence filter sizes a large value with 300000 backtick runs",
+      template: "${{ b | fence=md }}",
+      data: { b: run(5) + "x``".repeat(300000) },
+      expected: `${run(6)}md\n${run(5)}${"x``".repeat(300000)}\n${run(6)}\n`,
+    },
   ]);
 });
 
@@ -344,6 +356,45 @@ describe("fe-errors: unclosed FENCE, depth and standalone", () => {
       code: "limit-depth",
       line: 1,
       column: 10,
+    },
+    {
+      name: "a lang variable holding a line break is a type-error at the FENCE tag",
+      template: "x\n  {{FENCE lang=l}}y{{END_FENCE}}",
+      data: { l: "md\n# injected" },
+      code: "type-error",
+      line: 2,
+      column: 3,
+    },
+    {
+      name: "a lang variable holding a backtick is a type-error at the FENCE tag",
+      template: "{{FENCE lang=l}}y{{END_FENCE}}",
+      data: { l: "md`" },
+      code: "type-error",
+      line: 1,
+      column: 1,
+    },
+    {
+      name: "a quoted lang holding a backtick is a type-error at the FENCE tag",
+      template: 'a\n{{FENCE lang="a`b"}}y{{END_FENCE}}',
+      code: "type-error",
+      line: 2,
+      column: 1,
+    },
+    {
+      name: "a fence filter lang holding a backtick is a type-error at the variable",
+      template: "a\n  ${{ b | fence=a`b }}",
+      data: { b: "x" },
+      code: "type-error",
+      line: 2,
+      column: 3,
+    },
+    {
+      name: "a fence filter lang holding a line break is a type-error at the variable",
+      template: '${{ b | fence="a\nb" }}',
+      data: { b: "x" },
+      code: "type-error",
+      line: 1,
+      column: 1,
     },
   ];
   it.each(cases)("fe-errors: $name", (c) => {

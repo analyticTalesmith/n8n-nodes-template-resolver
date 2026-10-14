@@ -54,7 +54,10 @@ const cases: Case[] = [
   { name: "an unclosed tilde fence protects everything after it", draft: "# before\n~~~\n# in", offset: 1, expected: "## before\n~~~\n# in" },
   { name: "headings between two fenced blocks shift, headings inside do not", draft: `${F3}\n# a\n${F3}\n# mid\n${F3}\n# b\n${F3}`, offset: 1, expected: `${F3}\n# a\n${F3}\n## mid\n${F3}\n# b\n${F3}` },
   { name: "negative offset also spares fenced headings", draft: `### out\n${F3}\n### in\n${F3}`, offset: -1, expected: `## out\n${F3}\n### in\n${F3}` },
-  { name: "CRLF fenced block is spared", draft: `# a\r\n${F3}\r\n# in\r\n${F3}\r\n# b`, offset: 1, expected: `## a\r\n${F3}\r\n# in\r\n${F3}\r\n## b` },
+  { name: "a backtick line whose info text holds a backtick is not a fence opener", draft: `${F3}x${F3}\n# a`, offset: 1, expected: `${F3}x${F3}\n## a` },
+  { name: "a backtick line with a code span in its info text is not a fence opener", draft: `# a\n${F3}js \`y\`\n## b`, offset: 1, expected: `## a\n${F3}js \`y\`\n### b` },
+  { name: "a tilde fence's info text may hold a backtick", draft: "~~~x`y\n# in\n~~~\n# out", offset: 1, expected: "~~~x`y\n# in\n~~~\n## out" },
+  { name: "CRLF fenced block is spared",draft: `# a\r\n${F3}\r\n# in\r\n${F3}\r\n# b`, offset: 1, expected: `## a\r\n${F3}\r\n# in\r\n${F3}\r\n## b` },
 ];
 
 describe("ho-offset: heading_offset shifts ATX headings, clamped to 1 through 6, sparing fenced code", () => {

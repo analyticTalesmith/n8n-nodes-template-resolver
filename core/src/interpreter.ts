@@ -35,7 +35,12 @@ import {
   evaluateMathExpression,
   isTruthy,
 } from "./expressions";
-import { parseFilter, applyFilters, fenced } from "./filters";
+import {
+  parseFilter,
+  applyFilters,
+  fenced,
+  checkFenceLang,
+} from "./filters";
 
 /**
  * Interpreter: Walks AST and produces output string
@@ -372,7 +377,11 @@ export class Interpreter {
    * Visit FENCE: the rendered body in a code fence sized to it
    */
   private visitFence(node: FenceNode): string {
-    const lang = this.at(node, () => this.fenceLang(node));
+    const lang = this.at(node, () => {
+      const value = this.fenceLang(node);
+      checkFenceLang(value);
+      return value;
+    });
     const body = node.body.map((child) => this.visit(child)).join("");
     return fenced(body, lang);
   }
