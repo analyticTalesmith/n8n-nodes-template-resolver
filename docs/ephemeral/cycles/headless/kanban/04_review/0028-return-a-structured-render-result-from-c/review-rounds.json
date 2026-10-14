@@ -50,10 +50,20 @@
       "location": "core/src/interpreter.ts:280",
       "label": "f1",
       "raised_in": 1,
-      "status": "open",
+      "status": "fixed",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "render could throw for this input",
+          "verify": "rr-robust tests pass 7 of 7, full suite 678 pass",
+          "action": "fixed",
+          "evidence": [
+            "test:tests/headless/render-robust.test.ts"
+          ]
+        }
+      ],
       "rulings": []
     },
     {
@@ -72,10 +82,20 @@
       "location": "core/src/render.ts:61",
       "label": "f2",
       "raised_in": 1,
-      "status": "open",
+      "status": "fixed",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "render could throw for this input",
+          "verify": "rr-robust tests pass 7 of 7, full suite 678 pass",
+          "action": "fixed",
+          "evidence": [
+            "test:tests/headless/render-robust.test.ts"
+          ]
+        }
+      ],
       "rulings": []
     },
     {
