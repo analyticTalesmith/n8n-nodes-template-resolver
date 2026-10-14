@@ -88,5 +88,6 @@ A person judges the cycle done when the template from the verification report re
 <!-- Session instructions: the depth script adds a dated one-line list under a Session instructions heading here, created on first use. Do not write instructions by hand or leave them only in chat. -->
 
 <!-- generated index: replace everything between this line and the end marker -->
+- [design-approval.md](design-approval.md) — Fix the math tokenizer hang on unknown characters.
 - [test-plan.md](test-plan.md) — The tests this cycle plans at each level, and which requirement lines each one proves.
 <!-- end generated index -->

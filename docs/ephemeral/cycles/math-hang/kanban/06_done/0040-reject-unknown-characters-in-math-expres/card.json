@@ -34,14 +34,11 @@
     "tests/regressions/math-unknown-character.test.ts",
     "--json"
   ],
-  "claim": {
-    "owner": "build:implementer",
-    "heartbeat": "2026-10-14T02:12:23.407Z"
-  },
+  "claim": null,
   "blocked_on": null,
   "docs_impact": "none",
   "started": "2026-10-14T02:12:23.558Z",
-  "ended": null,
+  "ended": "2026-10-14T02:16:40.329Z",
   "review_rounds": 2,
   "schema_version": 1,
   "blast_radius": [
