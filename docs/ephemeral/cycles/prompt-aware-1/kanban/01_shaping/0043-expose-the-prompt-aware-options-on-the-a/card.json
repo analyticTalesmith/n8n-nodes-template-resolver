@@ -33,7 +33,7 @@
       "docs/living/architecture/modules/cli.md",
       "docs/living/architecture/modules/template-resolver.md"
     ],
-    "frozen": false
+    "frozen": true
   },
   "criteria": [
     {
@@ -95,5 +95,19 @@
   "blast_radius": [
     "none"
   ],
-  "user_visible": true
+  "user_visible": true,
+  "freeze": {
+    "at": "2026-10-14T02:19:23.078Z",
+    "brief_sha256": "6a0d501dc01b5827595e0c0437c2325f0cbcb21b285465fbae54bcc0bb6525e2",
+    "brief_core_sha256": "2825038f8623a1f15dbbd9cc274c25f42b7254aa29879784481392f480f70ebc",
+    "manifest_sha256": "c7f5c7047d21e48074d2b937d11a36a0403b3844398d87e7d9f9546bf2087675",
+    "criteria_sha256": "19f447000ef82110e35cb6d55d9924b0d7acf4d1adce92bba3be9d8cb8f74b4f",
+    "scope_sha256": "39baeaa8c9a4fa8bf5ef7656d29785c40545978e1c8e1ab23b615f2f17b55c68",
+    "scope_parts": {
+      "files_scope": "0b1b17ae8acd5bb70a475ef7c1d10b070992145d9e13acddd151d059babdcdf2",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "07d8bc8be3d81071c30bd3b9de183cedf4a46b7ccd5820f5fd0541605c424e02"
+    }
+  }
 }
