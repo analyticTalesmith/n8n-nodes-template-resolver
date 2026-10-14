@@ -1,5 +1,5 @@
 ---
-summary: Contract for the first prompt-aware language additions: standalone-line whitespace, trim markers, RAW and brace escaping, SECTION, heading offset, auto-sized FENCE and escape modes.
+summary: First half of the prompt-aware language: whitespace rules, RAW and escaping, SECTION, FENCE, heading offset and escape modes.
 state: planned
 ---
 
