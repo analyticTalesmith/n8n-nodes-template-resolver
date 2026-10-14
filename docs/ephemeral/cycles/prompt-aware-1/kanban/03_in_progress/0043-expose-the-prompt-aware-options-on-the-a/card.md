@@ -67,6 +67,7 @@ options.standaloneLines (API), --standalone-lines and --no-standalone-lines (CLI
 | `docs/living/architecture/modules/template-resolver.md` | edit | none |
 | `docs/living/architecture/prompt-aware-contract.md` | edit | none |
 | `n8n/TemplateResolver.node.ts` | edit | none |
+| `tests/promptaware/surfaces.test.ts` | edit | none |
 
-Files scope: `README.md`, `api/`, `changelog.md`, `cli/`, `docs/living/`, `n8n/`, `tests/golden/`
+Files scope: `README.md`, `api/`, `changelog.md`, `cli/`, `docs/living/`, `n8n/`, `tests/golden/`, `tests/promptaware`
 <!-- end generated scope -->
