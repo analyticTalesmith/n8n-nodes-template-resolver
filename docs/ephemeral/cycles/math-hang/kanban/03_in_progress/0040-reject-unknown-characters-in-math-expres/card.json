@@ -34,10 +34,13 @@
     "tests/regressions/math-unknown-character.test.ts",
     "--json"
   ],
-  "claim": null,
+  "claim": {
+    "owner": "build:implementer",
+    "heartbeat": "2026-10-14T02:12:23.407Z"
+  },
   "blocked_on": null,
   "docs_impact": "none",
-  "started": null,
+  "started": "2026-10-14T02:12:23.558Z",
   "ended": null,
   "review_rounds": 0,
   "schema_version": 1,
@@ -57,5 +60,6 @@
       "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
       "gate": "497d95104eed499568e236effc1ac0683ae7a464a20f830e1d8d21fb56bb6706"
     }
-  }
+  },
+  "base_commit": "1841245a4190fc635e7e5626ca12bf27fb6493c1"
 }
