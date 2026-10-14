@@ -37,6 +37,10 @@ Shape: kind feature; intent add; purpose ship; compatibility additive; uncertain
 - stg-test-strategy done: unit, integration and one end-to-end over real HTTP; see test-plan.md
 - stg-ready-check done: cards carry criteria, gate, manifest and red evidence before ready
 - stg-plan-approval done: front approval recorded in design-approval.md
+- stg-build-slices done: 5 cards, each built in its own worktree and merged into the cycle branch
+- stg-unit-regression done: 759 jest tests in 22 suites and 19 tooling tests pass on the merged branch
+- stg-record done: cards done, deltas recorded, planned documents written
+- stg-go-no-go done: go: all cards done with clear reviews, suite green
 
 ## Who and why
 
