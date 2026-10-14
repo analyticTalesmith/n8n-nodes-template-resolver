@@ -1,4 +1,9 @@
-import { Limits, TemplateValue, withDefaultLimits } from "./types";
+import {
+  Limits,
+  TemplateValue,
+  WhitespaceOptions,
+  withDefaultLimits,
+} from "./types";
 import { DiagnosticCode, TemplateError } from "./errors";
 import { Lexer } from "./lexer";
 import { Parser } from "./parser";
@@ -6,7 +11,7 @@ import { Interpreter } from "./interpreter";
 import { analyze } from "./analyze";
 import { estimateTokens } from "./estimate";
 
-export interface RenderOptions {
+export interface RenderOptions extends WhitespaceOptions {
   strictMode?: boolean;
   limits?: Partial<Limits>;
   tokenEstimator?: (text: string) => number;
@@ -65,7 +70,9 @@ export function render(
 
   let output: string;
   try {
-    const tokens = new Lexer(template).tokenize();
+    const tokens = new Lexer(template, {
+      standaloneLines: options?.standaloneLines ?? true,
+    }).tokenize();
     const ast = new Parser(tokens, { maxDepth: limits.maxDepth }).parse();
     output = interpreter.interpret(ast);
   } catch (error) {

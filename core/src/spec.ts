@@ -7,7 +7,8 @@ export interface Spec {
   filters: { name: string; params: string; description: string }[];
   operators: string[];
   limits: Limits;
-  syntax: { variable: string; comment: string };
+  options: { name: string; default: string; description: string }[];
+  syntax: { variable: string; comment: string; trim: string; escape: string };
 }
 
 const LANGUAGE_VERSION = "1.0";
@@ -85,6 +86,22 @@ const BLOCKS: Spec["blocks"] = [
     args: "",
     description: "Inside TABLE: row cells separated by |",
   },
+  {
+    name: "RAW",
+    closes: "END_RAW",
+    args: "",
+    description:
+      "Outputs its content literally: tags, variables and comments inside are not interpreted",
+  },
+];
+
+const OPTIONS: Spec["options"] = [
+  {
+    name: "standaloneLines",
+    default: "true for render, false for resolveTemplate",
+    description:
+      "Removes a line holding only block tags and whitespace, with its line break; LIST, TABLE and their parts keep their own spacing",
+  },
 ];
 
 const OPERATORS = [
@@ -119,9 +136,12 @@ export function spec(): Spec {
     filters: FILTERS.map((f) => ({ ...f })),
     operators: [...OPERATORS],
     limits: { ...DEFAULT_LIMITS },
+    options: OPTIONS.map((o) => ({ ...o })),
     syntax: {
       variable: "${{path.to.value ?? \"default\" | filter=arg}}",
       comment: "{{# comment #}}",
+      trim: "{{- TAG}} trims whitespace before a tag and {{TAG -}} after it; comments take {{-# comment #-}}",
+      escape: "\\{{ outputs {{ literally",
     },
   };
 }
