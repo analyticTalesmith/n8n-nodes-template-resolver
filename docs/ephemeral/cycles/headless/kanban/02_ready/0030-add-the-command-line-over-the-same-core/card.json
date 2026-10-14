@@ -67,7 +67,10 @@
     "tests/headless/cli.test.ts",
     "--json"
   ],
-  "claim": null,
+  "claim": {
+    "owner": "build:implementer",
+    "heartbeat": "2026-10-14T00:38:48.146Z"
+  },
   "blocked_on": null,
   "docs_impact": "none",
   "started": null,
