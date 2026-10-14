@@ -76,10 +76,13 @@
     "tests/headless/limits.test.ts",
     "--json"
   ],
-  "claim": null,
+  "claim": {
+    "owner": "build:implementer",
+    "heartbeat": "2026-10-14T00:38:39.101Z"
+  },
   "blocked_on": null,
   "docs_impact": "none",
-  "started": null,
+  "started": "2026-10-14T00:38:39.291Z",
   "ended": null,
   "review_rounds": 0,
   "schema_version": 1,
@@ -99,5 +102,6 @@
       "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
       "gate": "e99d9963a6d7211b40b9f95bd1982c0bbd7318f0e393f6a12127d45790815ae4"
     }
-  }
+  },
+  "base_commit": "fa7fa47cac614faaf0b7c88b5eac665a6a4338e8"
 }
