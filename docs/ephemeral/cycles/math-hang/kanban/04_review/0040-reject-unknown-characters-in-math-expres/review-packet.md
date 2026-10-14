@@ -2,16 +2,16 @@
 type: review-packet
 card: 0040-reject-unknown-characters-in-math-expres
 tier: product
-built_at: 2026-10-14T02:13:38.842Z
+built_at: 2026-10-14T02:15:18.361Z
 base: 1841245a4190fc635e7e5626ca12bf27fb6493c1
-head: 2cdc3396c17015f69522f8694ecdbba08c3ce7ad
+head: 3d9be1684a1a117c7b96df142246585119717b13
 frozen: true
 brief_sha256: 7ee4590e4f2d38dfc43384eff74cc8aa5da8358c996d9ad52936e20ca555bea2
 manifest_sha256: 75f476f33d2bb46eb59193d9dbeb0a0c874abc9cad7fa7652242e1d64cae7ac8
 criteria_sha256: decfc00fc0fc7f71350caa12b848dbeba4a395b17c8ab3a8a88483f6ccfd00f9
 scope_sha256: 096622d7c536e40ead065333da3515185c2dc8a158a74c7783cbbfd5f847b92d
-diff_sha256: bd0485a32d93bed74a732d268e173f3a61b2759987e456c01c63767b7da50ef4
-omitted_paths: 5
+diff_sha256: 407209db6ab7e965f35ca7137f66df2f0e37cf9e731c958c5f7716c3f89235d9
+omitted_paths: 9
 criteria_count: 1
 must_not_count: 1
 ---
@@ -485,14 +485,14 @@ describe("mh-no-hang: unknown characters in math expressions", () => {
 
 ## 4. Diff
 
-5 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
+9 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
 
 ```diff
 diff --git a/core/src/expressions.ts b/core/src/expressions.ts
-index e30109c..94e28d6 100644
+index e30109c..bc5afc3 100644
 --- a/core/src/expressions.ts
 +++ b/core/src/expressions.ts
-@@ -685,19 +685,26 @@ function tokenizeMath(
+@@ -685,19 +685,25 @@ function tokenizeMath(
        i++;
      }
  
@@ -509,11 +509,10 @@ index e30109c..94e28d6 100644
 -      }
 -      tokens.push(num);
 +    if (!varName) {
-+      throw new TypeError(
++      throw new MathSyntaxError(
 +        `Unexpected character ${JSON.stringify(char)} in math expression`,
 +        1,
-+        1,
-+        "Math expressions may contain numbers, variable names, + - * / % and parentheses"
++        1
 +      );
 +    }
 +
@@ -539,6 +538,19 @@ The card's gate command as it last ran, before this packet was built. Output onl
 - Exit status: 0
 - Tests: 14 passed, 0 failed
 - Failing tests: none
+
+## 5. Earlier findings and replies
+
+Answer each fix-class (defect or goal-risk) finding below in `responses` with sustain or withdraw and evidence. Raise new findings only about what the revision changed or an in-scope problem newly evidenced.
+
+### f1: Unknown-character error is thrown as plain TypeError, so the interpreter discards it: strict mode reports a misleading missing-variable diagnostic and lenient mode renders ok with no diagnostic
+
+- Class: goal-risk
+- Serves: c1: Interpreter.visitVariable swallows math errors and only re-surfaces them when they are MathSyntaxError (interpreter.ts:190-193). The new throw uses TypeError, so for ${{ 1 + "x" }} strict render reports code missing-variable, message "Variable '1 + \"x\"' not found" (the unknown-character message never reaches the user), and render(t, {}, {strictMode:false}) returns ok:true, output "", diagnostics [] - no diagnostic at all, contrary to c1 'returns promptly with a diagnostic' and the cycle goal 'ends the render with a located error'. The hang is fixed; the diagnostic is not.
+- Reproduction: In the worktree, transpile-require core/src and run render('${{ 1 + "x" }}', {}) -> diagnostics[0] = {code:'missing-variable', message:"Variable '1 + \"x\"' not found"}; then render('${{ 1 + "x" }}', {}, {strictMode:false}) -> {ok:true, output:'', diagnostics:[]}. Same for '${{ 1 + é }}'. Smallest fix: throw MathSyntaxError (already defined in errors.ts:90 and used for 'Unmatched parentheses' at expressions.ts:723) instead of TypeError at expressions.ts:689, so the interpreter surfaces the unknown-character message in strict mode (lenient-mode masking via MissingVariableError path should then be checked as well).
+- Status: fixed
+- Reply (fixed): restate: the unknown character error was swallowed by the math fallback; verify: strict render now reports type-error Unexpected character with a location; evidence: code:core/src/expressions.ts
+- Review lead ruling: sustain: the math fallback swallowed the plain TypeError
 
 ## Output
 

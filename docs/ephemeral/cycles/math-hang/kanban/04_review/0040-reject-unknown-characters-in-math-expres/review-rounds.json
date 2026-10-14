@@ -27,6 +27,45 @@
         "f2"
       ],
       "responses": []
+    },
+    {
+      "number": 2,
+      "at": "2026-10-14T02:16:28.889Z",
+      "reviewer": {
+        "kind": "fallback",
+        "label": "opus fallback (same model family as the builder; has repository access)"
+      },
+      "output_sha256": "314c0fc6dcfe9275d812379161e1cd4089729038efdf7f2f0e0b9a5757d55249",
+      "diff_sha256": "407209db6ab7e965f35ca7137f66df2f0e37cf9e731c958c5f7716c3f89235d9",
+      "restatement": "When a math expression inside ${{...}} contains a character the math tokenizer does not recognise (a quote, backslash, non-ASCII letter and so on), tokenizing must stop with an error instead of spinning forever, and render must come back promptly with ok false and a located diagnostic, while every valid math expression keeps evaluating to exactly the same value as before. The only file in scope is core/src/expressions.ts.",
+      "brief_mismatch": null,
+      "evidence": [
+        "code:core/src/expressions.ts",
+        "code:core/src/expressions.ts:688",
+        "code:core/src/expressions.ts:688-694",
+        "code:core/src/expressions.ts:689",
+        "code:core/src/interpreter.ts:185-194",
+        "code:core/src/interpreter.ts:190-193",
+        "patch:407209db6ab7e965f35ca7137f66df2f0e37cf9e731c958c5f7716c3f89235d9",
+        "test:mh-no-hang: render returns ok false with a diagnostic for quote after plus",
+        "test:mh-no-hang: resolveTemplate terminates and reports an error for backslash operand"
+      ],
+      "stalled": false,
+      "raised": [
+        "f3",
+        "f4"
+      ],
+      "responses": [
+        {
+          "finding": "f1",
+          "verdict": "withdraw",
+          "evidence": [
+            "code:core/src/expressions.ts:689",
+            "code:core/src/interpreter.ts:190-193",
+            "test:mh-no-hang: render returns ok false with a diagnostic for quote after plus"
+          ]
+        }
+      ]
     }
   ],
   "findings": [
@@ -49,7 +88,7 @@
       "location": "core/src/expressions.ts:689",
       "label": "f1",
       "raised_in": 1,
-      "status": "fixed",
+      "status": "withdrawn",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [
@@ -98,6 +137,63 @@
         }
       ],
       "ticket": "0041-follow-up-frozen-test-s-backslash-operan"
+    },
+    {
+      "title": "The frozen test's 'backslash operand' case contains no backslash, so backslash coverage rests on code reading only",
+      "class": "drift",
+      "serves": {
+        "target": "c1",
+        "scenario": "In the TypeScript source \"${{ 2 * \\ }}\", the sequence backslash-space is an escape that yields a plain space, so the template is '${{ 2 *  }}' and fails as 'Invalid math expression', never reaching the unknown-character branch. The gate passes without ever feeding a backslash to tokenizeMath. The implementation does handle a real backslash (verified manually: render returns type-error 'Unexpected character \"\\\\\"'), so this is a test-plan gap, not a defect in the diff."
+      },
+      "rubric": "each criterion is met by the diff and its test",
+      "reproduction": "In the worktree, node -e 'console.log(JSON.stringify(\"${{ 2 * \\ }}\"))' prints \"${{ 2 *  }}\". Rendering a template read from a file that contains a real backslash gives diagnostic 'Unexpected character \"\\\\\" in math expression'.",
+      "evidence": [
+        "test:mh-no-hang: resolveTemplate terminates and reports an error for backslash operand",
+        "code:core/src/expressions.ts:688"
+      ],
+      "location": "tests/regressions/math-unknown-character.test.ts:421",
+      "label": "f3",
+      "raised_in": 2,
+      "status": "withdrawn",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [
+        {
+          "after_round": 2,
+          "ruling": "withdraw",
+          "note": "duplicate of the ticketed test gap from round one"
+        }
+      ]
+    },
+    {
+      "title": "In lenient mode the unknown-character error is still swallowed: render returns ok true, empty output and no diagnostic",
+      "class": "drift",
+      "serves": {
+        "target": "cycle-goal",
+        "scenario": "render('${{ 1 + \"x\" }}', {}, { strictMode: false }) returns { ok: true, output: '', diagnostics: [] }. The hang is gone, but the render does not end with a located error in lenient mode. This is the pre-existing behavior for every math error (interpreter.ts only re-raises a MathSyntaxError when lookup throws MissingVariableError), lives in interpreter.ts outside the card's scope, and c1 is met in the default strict mode, so it is noted for the lead rather than asked as a fix."
+      },
+      "rubric": "no change outside the card scope",
+      "reproduction": "Transpile-require core/src in the worktree and call render('${{ 1 + \"x\" }}', {}, { strictMode: false }); observe ok true and diagnostics [].",
+      "evidence": [
+        "code:core/src/interpreter.ts:185-194",
+        "code:core/src/expressions.ts:688-694"
+      ],
+      "location": "core/src/interpreter.ts:190",
+      "label": "f4",
+      "raised_in": 2,
+      "status": "filed",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [
+        {
+          "after_round": 2,
+          "ruling": "drift",
+          "note": "lenient mode treats unparseable math as a plain variable path by design; ticketed"
+        }
+      ],
+      "ticket": "0042-follow-up-in-lenient-mode-the-unknown-ch"
     }
   ]
 }
