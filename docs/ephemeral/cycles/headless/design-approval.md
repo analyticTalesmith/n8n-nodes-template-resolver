@@ -4,7 +4,7 @@ approved_by: "Jon (front approval)"
 approved_on: 2026-10-14
 approves:
 - 0f968b1921f843573d9f1173b93246e3df537ce7aa814db1ff434f8931efb359 docs/ephemeral/cycles/headless/CYCLE.md
-- e383f3aa5d1c38fe266bb7a00138c0f5cde64baea2573f55ed884c24627959b7 docs/ephemeral/cycles/headless/design.md
+- 9f77104c64d012ddab3e44f0a521aa9daff561323f231eedeeb5dd2452c6b8c4 docs/living/architecture/headless-contract.md
 - c74a6586ff9a124b584db881bbd0a3a3085bedffcd94338b5f2f236c1f111869 docs/ephemeral/cycles/headless/test-plan.md
 - 1143fc529a5b2c2b58490de144ce32462a867f77fe1785a74a00969b9bf4b815 docs/ephemeral/work/0027-locate-every-diagnostic-and-bound-the-wo/spec.md
 - 9b72a582e7ea8a6247f86b6fbac3c564be39838c356432c5b0e3d9a97b40e6e3 docs/ephemeral/work/0028-return-a-structured-render-result-from-c/spec.md
@@ -26,7 +26,7 @@ max_spawns: 80
 max_cost:
 cost_unit:
 sweep_rounds: 3
-approval_hash: e3de25853bc5f76eb26bfeb1ea2c022e6b5d86b6372c053cc15e0b3dbc1e357d
+approval_hash: 27a823161eaf48150ea213b4f575a0fe5abba12417cf9a5e8addbaed52232302
 ---
 
 # Design approval
