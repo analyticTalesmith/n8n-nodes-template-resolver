@@ -1,4 +1,9 @@
-import { Limits, VariableMap, withDefaultLimits } from "./types";
+import {
+  Limits,
+  VariableMap,
+  WhitespaceOptions,
+  withDefaultLimits,
+} from "./types";
 import { Lexer } from "./lexer";
 import { Parser } from "./parser";
 import { Interpreter } from "./interpreter";
@@ -8,18 +13,23 @@ import { Interpreter } from "./interpreter";
  *
  * @param template - Template string with conditional markdown syntax
  * @param variables - Variable mappings (name → value)
- * @param options - Configuration options (strictMode, limits; omitted limits take DEFAULT_LIMITS)
+ * @param options - Configuration options (strictMode, limits, standaloneLines; omitted limits take DEFAULT_LIMITS, standaloneLines defaults to false)
  * @returns Resolved markdown string
  */
 export function resolveTemplate(
   template: string,
   variables: VariableMap,
-  options?: { strictMode?: boolean; limits?: Partial<Limits> }
+  options?: {
+    strictMode?: boolean;
+    limits?: Partial<Limits>;
+  } & WhitespaceOptions
 ): string {
   const limits = withDefaultLimits(options?.limits);
 
   // Tokenize
-  const lexer = new Lexer(template);
+  const lexer = new Lexer(template, {
+    standaloneLines: options?.standaloneLines ?? false,
+  });
   const tokens = lexer.tokenize();
 
   // Parse to AST
