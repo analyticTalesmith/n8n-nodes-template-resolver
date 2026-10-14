@@ -21,6 +21,9 @@ const STANDALONE_TAGS = new Set<TokenType>([
 
 const isText = (token: Token | undefined) => token?.type === TokenType.TEXT;
 const isBlank = (token: Token) => isText(token) && /^[ \t]*$/.test(token.value);
+/** The lexer emits RAW content as one text token right after the RAW tag */
+const isRawContent = (tokens: Token[], index: number) =>
+  isText(tokens[index]) && tokens[index - 1]?.type === TokenType.RAW;
 
 /**
  * Apply trim markers, then (when standaloneLines is on) remove the lines that
@@ -46,7 +49,8 @@ function applyTrimMarkers(tokens: Token[]): void {
  * Find each run of standalone tags sharing one line (separated only by
  * spaces and tabs), decide on the unchanged text whether that line holds
  * nothing else, then cut the line's indentation, the whitespace between the
- * tags and the line break after them.
+ * tags and the line break after them. RAW content is literal: only a line
+ * break right after the RAW tag can go.
  */
 function removeStandaloneLines(tokens: Token[]): void {
   const cuts = new Map<Token, { start: number; end: number }>();
@@ -70,7 +74,7 @@ function removeStandaloneLines(tokens: Token[]): void {
     let j = i + 1;
     while (j < tokens.length) {
       if (STANDALONE_TAGS.has(tokens[j].type)) last = j;
-      else if (!isBlank(tokens[j])) break;
+      else if (!isBlank(tokens[j]) || isRawContent(tokens, j)) break;
       j++;
     }
 
@@ -99,6 +103,9 @@ function indentationStart(tokens: Token[], index: number): number | null {
   if (index === 0) return 0;
   const before = tokens[index - 1];
   if (!isText(before)) return null;
+  if (isRawContent(tokens, index - 1)) {
+    return before.value.endsWith("\n") ? before.value.length : null;
+  }
   const match = /(^|\n)[ \t]*$/.exec(before.value);
   if (!match) return null;
   if (match[1] === "" && index - 1 > 0) return null;
@@ -113,6 +120,7 @@ function lineBreakEnd(tokens: Token[], index: number): number | null {
   const after = tokens[index + 1];
   if (!after || after.type === TokenType.EOF) return 0;
   if (!isText(after)) return null;
+  if (isRawContent(tokens, index + 1)) return after.value.startsWith("\n") ? 1 : null;
   const match = /^[ \t]*(\n|$)/.exec(after.value);
   if (!match) return null;
   if (match[1] === "" && tokens[index + 2]?.type !== TokenType.EOF) return null;

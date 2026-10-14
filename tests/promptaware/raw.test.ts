@@ -105,6 +105,24 @@ const RAW: Raw[] = [
     data: { n: "X" },
     out: "a X b {{",
   },
+  {
+    name: "whitespace-only content inline is kept",
+    template: "x{{RAW}} \t {{END_RAW}}y",
+    data: {},
+    out: "x \t y",
+  },
+  {
+    name: "whitespace-only content alone on a line is kept",
+    template: "a\n{{RAW}}   {{END_RAW}}\nb",
+    data: {},
+    out: "a\n   \nb",
+  },
+  {
+    name: "whitespace-only multi-line content is kept",
+    template: "a\n{{RAW}}\n  \n\t\n{{END_RAW}}\nb",
+    data: {},
+    out: "a\n\n  \n\t\n\nb",
+  },
 ];
 
 describe("rw-raw: RAW blocks output their content literally", () => {
