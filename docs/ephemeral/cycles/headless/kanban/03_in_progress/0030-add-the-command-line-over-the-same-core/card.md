@@ -56,9 +56,8 @@ the template-resolver command and its exit codes (design.md); main(argv, io) exp
 <!-- generated scope: from card.json -->
 | Path | Permission (add, edit, remove) | Blast radius |
 | --- | --- | --- |
-| `cli/index.ts` | add | none |
-| `cli/main.ts` | add | none |
-| `x` | edit | none |
+| `cli/index.ts` | edit | none |
+| `cli/main.ts` | edit | none |
 
 Files scope: `cli/`
 <!-- end generated scope -->

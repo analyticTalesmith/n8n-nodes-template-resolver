@@ -13,13 +13,11 @@
     "cli/"
   ],
   "manifest": {
-    "add": [
-      "cli/main.ts",
-      "cli/index.ts"
-    ],
+    "add": [],
     "remove": [],
     "edit": [
-      "x"
+      "cli/index.ts",
+      "cli/main.ts"
     ],
     "frozen": true
   },
@@ -73,7 +71,7 @@
   },
   "blocked_on": null,
   "docs_impact": "none",
-  "started": null,
+  "started": "2026-10-14T01:42:57.694Z",
   "ended": null,
   "review_rounds": 0,
   "schema_version": 1,
@@ -84,7 +82,7 @@
     "at": "2026-10-14T00:38:43.718Z",
     "brief_sha256": "ea06bf4d0d7d3566e21c7c3d88779c228fe7fb467f684bf0dfe6839a2f5d2dd5",
     "brief_core_sha256": "4ec9abe89198c5d0f28de851ff65899c1460bcc6e0acd41ca163cab2dc649698",
-    "manifest_sha256": "2ce1bb731c0d065a578f5873b21ee15cea767384c9077cf9029b93ab4cce4286",
+    "manifest_sha256": "196f829ae21092a9f4f4f854918f7237e244d53951c7540595246974e120b85c",
     "criteria_sha256": "c26a79011b211e39bea70225f01d7cd3b240735fde7213bbeffd9cef44d63616",
     "scope_sha256": "d6506ef1fd33beffb71eca80e037463758f5619ddc40399787b36f0936e0784e",
     "scope_parts": {
@@ -93,5 +91,78 @@
       "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
       "gate": "4da00cb1e04649cbf22687e4a9731abdc53f061658b68770307dcf96326cd1de"
     }
-  }
+  },
+  "base_commit": "1d8de70765118ad49822252052ff7edafe1476a7",
+  "manifest_amendments": [
+    {
+      "at": "2026-10-14T01:42:57.796Z",
+      "by": "lead",
+      "reason": "stubs from the test writer exist so these are edits; stray entry",
+      "from": {
+        "manifest": {
+          "add": [
+            "cli/index.ts",
+            "cli/main.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "x"
+          ]
+        },
+        "files_scope": [
+          "cli/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": []
+        },
+        "files_scope": [
+          "cli/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    },
+    {
+      "at": "2026-10-14T01:42:57.903Z",
+      "by": "lead",
+      "reason": "stubs exist so edits",
+      "from": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": []
+        },
+        "files_scope": [
+          "cli/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "cli/index.ts",
+            "cli/main.ts"
+          ]
+        },
+        "files_scope": [
+          "cli/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    }
+  ]
 }
