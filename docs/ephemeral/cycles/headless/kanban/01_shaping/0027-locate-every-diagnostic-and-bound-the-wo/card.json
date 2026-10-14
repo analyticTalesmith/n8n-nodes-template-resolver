@@ -22,7 +22,7 @@
       "core/src/resolve.ts",
       "core/src/types.ts"
     ],
-    "frozen": false
+    "frozen": true
   },
   "criteria": [
     {
@@ -69,8 +69,8 @@
     }
   ],
   "gate": [
-    "npx",
-    "jest",
+    "node",
+    "node_modules/jest/bin/jest.js",
     "--runTestsByPath",
     "tests/headless/diagnostics.test.ts",
     "tests/headless/limits.test.ts",
@@ -85,5 +85,19 @@
   "schema_version": 1,
   "blast_radius": [
     "none"
-  ]
+  ],
+  "freeze": {
+    "at": "2026-10-14T00:37:57.540Z",
+    "brief_sha256": "094c847462d5e4a76eb329c473b003b17f1c1bd2ce4eebcf2eab38e4941d5d11",
+    "brief_core_sha256": "fd313a6a23c98438b36089f5fd114d5bb884a99b404f49c23f74305205b0c9e4",
+    "manifest_sha256": "4f61ae808165084e1bc602205eddbe61a25aaafa49f846b6a8ee29b319cd5802",
+    "criteria_sha256": "e169f603becf81304fda05ee1829bf3ad11697a98b38e55b83e091adf7b797ff",
+    "scope_sha256": "5086679caf9c0bfcb5dc24c86a55284881ba858cf42903e4dcc9cd5222e02370",
+    "scope_parts": {
+      "files_scope": "6a6be1dcc3b03a31d1e0d3050332ccc88585a4ca5c643dde65fa2502418a275f",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "e99d9963a6d7211b40b9f95bd1982c0bbd7318f0e393f6a12127d45790815ae4"
+    }
+  }
 }
