@@ -51,14 +51,11 @@
     "--test-reporter=tap",
     "tools/tests/headless-docs.test.mjs"
   ],
-  "claim": {
-    "owner": "build:implementer",
-    "heartbeat": "2026-10-14T00:38:49.155Z"
-  },
+  "claim": null,
   "blocked_on": null,
   "docs_impact": "none",
   "started": "2026-10-14T01:49:36.994Z",
-  "ended": null,
+  "ended": "2026-10-14T01:59:50.641Z",
   "review_rounds": 2,
   "schema_version": 1,
   "blast_radius": [
