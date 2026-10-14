@@ -107,12 +107,15 @@ function sendError(req: http.IncomingMessage, res: http.ServerResponse, error: u
     return;
   }
   if (error instanceof MethodNotAllowed) res.setHeader("Allow", error.allow.join(", "));
-  if (!req.complete) {
-    // The unread body is discarded and the connection closed once the reply is out.
-    res.setHeader("Connection", "close");
-    req.resume();
+  const reply = () => send(res, error.status, { error: { code: error.code, message: error.message } });
+  if (req.complete) {
+    reply();
+    return;
   }
-  send(res, error.status, { error: { code: error.code, message: error.message } });
+  // Replying before the client has sent its whole body resets the connection
+  // and the client never reads the status, so the rest is read and discarded first.
+  req.once("end", reply);
+  req.resume();
 }
 
 function send(res: http.ServerResponse, status: number, body: unknown): void {

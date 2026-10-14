@@ -1,5 +1,3 @@
-import * as fs from "fs";
-import * as path from "path";
 import {
   analyze,
   Limits,
@@ -9,8 +7,7 @@ import {
   TemplateError,
   validate,
 } from "../core/src";
-// Imported so the compiler copies the document next to the compiled routes.
-import "./openapi.json";
+import openapi from "./openapi.json";
 
 export class RequestError extends Error {
   constructor(
@@ -34,7 +31,9 @@ export interface Route {
   handle(body: Record<string, unknown>, context: RouteContext): unknown;
 }
 
-const openapiDocument = fs.readFileSync(path.join(__dirname, "openapi.json"));
+// The committed file is kept in this exact serialization, so the bytes served
+// match it whether the document is loaded from source or from the build.
+const openapiDocument = Buffer.from(JSON.stringify(openapi, null, 2) + "\n", "utf8");
 
 export const routes: ReadonlyArray<Route> = [
   { method: "POST", path: "/v1/render", handle: renderRoute },

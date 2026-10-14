@@ -5,7 +5,11 @@
     "version": "1.0.0",
     "description": "A stateless JSON API over the template engine. Template problems are results (200 with ok false and diagnostics), not HTTP errors. Server limits are a ceiling: a request may only lower a limit."
   },
-  "servers": [{ "url": "http://127.0.0.1:3000" }],
+  "servers": [
+    {
+      "url": "http://127.0.0.1:3000"
+    }
+  ],
   "paths": {
     "/v1/render": {
       "post": {
@@ -14,21 +18,39 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": { "schema": { "$ref": "#/components/schemas/RenderRequest" } }
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenderRequest"
+              }
+            }
           }
         },
         "responses": {
           "200": {
             "description": "The render result; ok is false when the template or data has a problem",
             "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/RenderResult" } }
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenderResult"
+                }
+              }
             }
           },
-          "400": { "$ref": "#/components/responses/InvalidRequest" },
-          "405": { "$ref": "#/components/responses/MethodNotAllowed" },
-          "413": { "$ref": "#/components/responses/PayloadTooLarge" },
-          "415": { "$ref": "#/components/responses/UnsupportedMediaType" },
-          "500": { "$ref": "#/components/responses/InternalError" }
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
         }
       }
     },
@@ -39,21 +61,39 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": { "schema": { "$ref": "#/components/schemas/TemplateRequest" } }
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateRequest"
+              }
+            }
           }
         },
         "responses": {
           "200": {
             "description": "Whether the template is valid, with its diagnostics",
             "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/ValidateResult" } }
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidateResult"
+                }
+              }
             }
           },
-          "400": { "$ref": "#/components/responses/InvalidRequest" },
-          "405": { "$ref": "#/components/responses/MethodNotAllowed" },
-          "413": { "$ref": "#/components/responses/PayloadTooLarge" },
-          "415": { "$ref": "#/components/responses/UnsupportedMediaType" },
-          "500": { "$ref": "#/components/responses/InternalError" }
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
         }
       }
     },
@@ -64,21 +104,39 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": { "schema": { "$ref": "#/components/schemas/TemplateRequest" } }
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateRequest"
+              }
+            }
           }
         },
         "responses": {
           "200": {
             "description": "The analysis; a template that does not parse has empty lists and its error in diagnostics",
             "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/Analysis" } }
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Analysis"
+                }
+              }
             }
           },
-          "400": { "$ref": "#/components/responses/InvalidRequest" },
-          "405": { "$ref": "#/components/responses/MethodNotAllowed" },
-          "413": { "$ref": "#/components/responses/PayloadTooLarge" },
-          "415": { "$ref": "#/components/responses/UnsupportedMediaType" },
-          "500": { "$ref": "#/components/responses/InternalError" }
+          "400": {
+            "$ref": "#/components/responses/InvalidRequest"
+          },
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
         }
       }
     },
@@ -90,10 +148,16 @@
           "200": {
             "description": "Blocks, filters, condition operators, default limits and syntax",
             "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/Spec" } }
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Spec"
+                }
+              }
             }
           },
-          "405": { "$ref": "#/components/responses/MethodNotAllowed" }
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          }
         }
       }
     },
@@ -104,9 +168,17 @@
         "responses": {
           "200": {
             "description": "The OpenAPI document",
-            "content": { "application/json": { "schema": { "type": "object" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
           },
-          "405": { "$ref": "#/components/responses/MethodNotAllowed" }
+          "405": {
+            "$ref": "#/components/responses/MethodNotAllowed"
+          }
         }
       }
     }
@@ -115,49 +187,102 @@
     "schemas": {
       "Limits": {
         "type": "object",
-        "required": ["maxIterations", "maxOutputChars", "maxDepth"],
+        "required": [
+          "maxIterations",
+          "maxOutputChars",
+          "maxDepth"
+        ],
         "properties": {
-          "maxIterations": { "type": "integer", "minimum": 0, "description": "Total FOR iterations across one render" },
-          "maxOutputChars": { "type": "integer", "minimum": 0, "description": "Length of the output" },
-          "maxDepth": { "type": "integer", "minimum": 0, "description": "Nesting of blocks" }
+          "maxIterations": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Total FOR iterations across one render"
+          },
+          "maxOutputChars": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Length of the output"
+          },
+          "maxDepth": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Nesting of blocks"
+          }
         }
       },
       "RequestLimits": {
         "type": "object",
         "description": "Each given limit lowers the server's limit; a value above it is capped at it",
         "properties": {
-          "maxIterations": { "type": "integer", "minimum": 0 },
-          "maxOutputChars": { "type": "integer", "minimum": 0 },
-          "maxDepth": { "type": "integer", "minimum": 0 }
+          "maxIterations": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "maxOutputChars": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "maxDepth": {
+            "type": "integer",
+            "minimum": 0
+          }
         }
       },
       "RenderRequest": {
         "type": "object",
-        "required": ["template"],
+        "required": [
+          "template"
+        ],
         "properties": {
-          "template": { "type": "string" },
-          "data": { "type": "object", "additionalProperties": true, "default": {} },
+          "template": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": true,
+            "default": {}
+          },
           "options": {
             "type": "object",
             "properties": {
-              "strictMode": { "type": "boolean" },
-              "limits": { "$ref": "#/components/schemas/RequestLimits" }
+              "strictMode": {
+                "type": "boolean"
+              },
+              "limits": {
+                "$ref": "#/components/schemas/RequestLimits"
+              }
             }
           }
         }
       },
       "TemplateRequest": {
         "type": "object",
-        "required": ["template"],
+        "required": [
+          "template"
+        ],
         "properties": {
-          "template": { "type": "string" }
+          "template": {
+            "type": "string"
+          }
         }
       },
       "Diagnostic": {
         "type": "object",
-        "required": ["severity", "code", "message", "line", "column"],
+        "required": [
+          "severity",
+          "code",
+          "message",
+          "line",
+          "column"
+        ],
         "properties": {
-          "severity": { "type": "string", "enum": ["error", "warning"] },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "error",
+              "warning"
+            ]
+          },
           "code": {
             "type": "string",
             "enum": [
@@ -172,75 +297,176 @@
               "analysis-warning"
             ]
           },
-          "message": { "type": "string" },
-          "line": { "type": "integer", "minimum": 1 },
-          "column": { "type": "integer", "minimum": 1 },
-          "suggestion": { "type": "string" }
+          "message": {
+            "type": "string"
+          },
+          "line": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "column": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "suggestion": {
+            "type": "string"
+          }
         }
       },
       "RenderResult": {
         "type": "object",
-        "required": ["ok", "output", "messages", "stats", "diagnostics"],
+        "required": [
+          "ok",
+          "output",
+          "messages",
+          "stats",
+          "diagnostics"
+        ],
         "properties": {
-          "ok": { "type": "boolean" },
-          "output": { "type": "string", "description": "Empty when ok is false" },
-          "messages": { "type": "array", "items": {} },
+          "ok": {
+            "type": "boolean"
+          },
+          "output": {
+            "type": "string",
+            "description": "Empty when ok is false"
+          },
+          "messages": {
+            "type": "array",
+            "items": {}
+          },
           "stats": {
             "type": "object",
-            "required": ["chars", "estTokens", "sectionsOmitted", "iterations"],
+            "required": [
+              "chars",
+              "estTokens",
+              "sectionsOmitted",
+              "iterations"
+            ],
             "properties": {
-              "chars": { "type": "integer", "minimum": 0 },
-              "estTokens": { "type": "integer", "minimum": 0 },
-              "sectionsOmitted": { "type": "integer", "minimum": 0 },
-              "iterations": { "type": "integer", "minimum": 0 }
+              "chars": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "estTokens": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "sectionsOmitted": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "iterations": {
+                "type": "integer",
+                "minimum": 0
+              }
             }
           },
           "diagnostics": {
             "type": "array",
             "description": "When ok is false, the error that stopped the render comes first",
-            "items": { "$ref": "#/components/schemas/Diagnostic" }
+            "items": {
+              "$ref": "#/components/schemas/Diagnostic"
+            }
           }
         }
       },
       "ValidateResult": {
         "type": "object",
-        "required": ["ok", "diagnostics"],
+        "required": [
+          "ok",
+          "diagnostics"
+        ],
         "properties": {
-          "ok": { "type": "boolean" },
-          "diagnostics": { "type": "array", "items": { "$ref": "#/components/schemas/Diagnostic" } }
+          "ok": {
+            "type": "boolean"
+          },
+          "diagnostics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Diagnostic"
+            }
+          }
         }
       },
       "AnalysisDiagnostic": {
         "type": "object",
-        "required": ["code", "message", "line", "column"],
+        "required": [
+          "code",
+          "message",
+          "line",
+          "column"
+        ],
         "properties": {
-          "code": { "type": "string" },
-          "message": { "type": "string" },
-          "line": { "type": "integer", "minimum": 1 },
-          "column": { "type": "integer", "minimum": 1 }
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "line": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "column": {
+            "type": "integer",
+            "minimum": 1
+          }
         }
       },
       "Analysis": {
         "type": "object",
-        "required": ["variables", "filters", "blocks", "diagnostics"],
+        "required": [
+          "variables",
+          "filters",
+          "blocks",
+          "diagnostics"
+        ],
         "properties": {
           "variables": {
             "type": "array",
             "items": {
               "type": "object",
-              "required": ["name", "paths", "usedIn", "optional", "required"],
+              "required": [
+                "name",
+                "paths",
+                "usedIn",
+                "optional",
+                "required"
+              ],
               "properties": {
-                "name": { "type": "string", "description": "Root name, the part before the first dot" },
-                "paths": { "type": "array", "items": { "type": "string" } },
+                "name": {
+                  "type": "string",
+                  "description": "Root name, the part before the first dot"
+                },
+                "paths": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
                 "usedIn": {
                   "type": "array",
                   "items": {
                     "type": "string",
-                    "enum": ["output", "if", "elseif", "case", "for", "list_item", "table"]
+                    "enum": [
+                      "output",
+                      "if",
+                      "elseif",
+                      "case",
+                      "for",
+                      "list_item",
+                      "table"
+                    ]
                   }
                 },
-                "optional": { "type": "boolean", "description": "Every read supplies a ?? default" },
-                "required": { "type": "boolean", "description": "Some read has no ?? default" }
+                "optional": {
+                  "type": "boolean",
+                  "description": "Every read supplies a ?? default"
+                },
+                "required": {
+                  "type": "boolean",
+                  "description": "Some read has no ?? default"
+                }
               }
             }
           },
@@ -248,10 +474,18 @@
             "type": "array",
             "items": {
               "type": "object",
-              "required": ["name", "count"],
+              "required": [
+                "name",
+                "count"
+              ],
               "properties": {
-                "name": { "type": "string" },
-                "count": { "type": "integer", "minimum": 1 }
+                "name": {
+                  "type": "string"
+                },
+                "count": {
+                  "type": "integer",
+                  "minimum": 1
+                }
               }
             }
           },
@@ -259,32 +493,73 @@
             "type": "object",
             "description": "Count per block kind present in the template",
             "properties": {
-              "IF": { "type": "integer", "minimum": 1 },
-              "CASE": { "type": "integer", "minimum": 1 },
-              "FOR": { "type": "integer", "minimum": 1 },
-              "LIST": { "type": "integer", "minimum": 1 },
-              "TABLE": { "type": "integer", "minimum": 1 }
+              "IF": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "CASE": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "FOR": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "LIST": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "TABLE": {
+                "type": "integer",
+                "minimum": 1
+              }
             },
             "additionalProperties": false
           },
-          "diagnostics": { "type": "array", "items": { "$ref": "#/components/schemas/AnalysisDiagnostic" } }
+          "diagnostics": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnalysisDiagnostic"
+            }
+          }
         }
       },
       "Spec": {
         "type": "object",
-        "required": ["version", "blocks", "filters", "operators", "limits", "syntax"],
+        "required": [
+          "version",
+          "blocks",
+          "filters",
+          "operators",
+          "limits",
+          "syntax"
+        ],
         "properties": {
-          "version": { "type": "string" },
+          "version": {
+            "type": "string"
+          },
           "blocks": {
             "type": "array",
             "items": {
               "type": "object",
-              "required": ["name", "args", "description"],
+              "required": [
+                "name",
+                "args",
+                "description"
+              ],
               "properties": {
-                "name": { "type": "string" },
-                "closes": { "type": "string" },
-                "args": { "type": "string" },
-                "description": { "type": "string" }
+                "name": {
+                  "type": "string"
+                },
+                "closes": {
+                  "type": "string"
+                },
+                "args": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                }
               }
             }
           },
@@ -292,34 +567,63 @@
             "type": "array",
             "items": {
               "type": "object",
-              "required": ["name", "params", "description"],
+              "required": [
+                "name",
+                "params",
+                "description"
+              ],
               "properties": {
-                "name": { "type": "string" },
-                "params": { "type": "string" },
-                "description": { "type": "string" }
+                "name": {
+                  "type": "string"
+                },
+                "params": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                }
               }
             }
           },
-          "operators": { "type": "array", "items": { "type": "string" } },
-          "limits": { "$ref": "#/components/schemas/Limits" },
+          "operators": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "limits": {
+            "$ref": "#/components/schemas/Limits"
+          },
           "syntax": {
             "type": "object",
-            "required": ["variable", "comment"],
+            "required": [
+              "variable",
+              "comment"
+            ],
             "properties": {
-              "variable": { "type": "string" },
-              "comment": { "type": "string" }
+              "variable": {
+                "type": "string"
+              },
+              "comment": {
+                "type": "string"
+              }
             }
           }
         }
       },
       "Error": {
         "type": "object",
-        "required": ["error"],
+        "required": [
+          "error"
+        ],
         "additionalProperties": false,
         "properties": {
           "error": {
             "type": "object",
-            "required": ["code", "message"],
+            "required": [
+              "code",
+              "message"
+            ],
             "properties": {
               "code": {
                 "type": "string",
@@ -332,7 +636,10 @@
                   "internal-error"
                 ]
               },
-              "message": { "type": "string", "minLength": 1 }
+              "message": {
+                "type": "string",
+                "minLength": 1
+              }
             }
           }
         }
@@ -341,30 +648,71 @@
     "responses": {
       "InvalidRequest": {
         "description": "Bad JSON, a body that is not an object, a missing or non-string template, a non-object data, or an option of the wrong type (invalid-request)",
-        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
       },
       "NotFound": {
         "description": "No route has this path (not-found)",
-        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
       },
       "MethodNotAllowed": {
         "description": "The path exists but not for this method (method-not-allowed)",
         "headers": {
-          "Allow": { "description": "The methods the path accepts", "schema": { "type": "string" } }
+          "Allow": {
+            "description": "The methods the path accepts",
+            "schema": {
+              "type": "string"
+            }
+          }
         },
-        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
       },
       "PayloadTooLarge": {
         "description": "The body exceeds the server's maxBodyBytes (payload-too-large)",
-        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
       },
       "UnsupportedMediaType": {
         "description": "The Content-Type is not application/json (unsupported-media-type)",
-        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
       },
       "InternalError": {
         "description": "An unexpected failure inside the engine (internal-error)",
-        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
       }
     }
   }
