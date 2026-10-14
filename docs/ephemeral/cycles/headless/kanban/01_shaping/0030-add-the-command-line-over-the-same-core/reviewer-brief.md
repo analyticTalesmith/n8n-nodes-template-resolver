@@ -19,4 +19,4 @@ goal-critical: are stdout and stderr and the exit codes exactly as specified for
 
 ## Design context
 
-- docs/ephemeral/cycles/headless/design.md
+- docs/living/architecture/headless-contract.md

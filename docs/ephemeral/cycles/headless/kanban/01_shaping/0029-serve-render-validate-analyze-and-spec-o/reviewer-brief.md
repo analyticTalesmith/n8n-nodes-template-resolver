@@ -20,4 +20,4 @@ goal-critical: does the OpenAPI document describe what the server actually retur
 
 ## Design context
 
-- docs/ephemeral/cycles/headless/design.md
+- docs/living/architecture/headless-contract.md

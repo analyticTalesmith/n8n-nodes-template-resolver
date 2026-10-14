@@ -20,7 +20,7 @@ goal-critical: does the node still pass its existing tests and keep the old outp
 
 ## Design context
 
-- docs/ephemeral/cycles/headless/design.md
+- docs/living/architecture/headless-contract.md
 - docs/living/decisions/adr/0004-render-returns-a-structured-result.md
 - docs/living/decisions/adr/0005-dependency-free-token-estimator.md
 - docs/living/decisions/adr/0006-n8n-node-imports-core-directly.md

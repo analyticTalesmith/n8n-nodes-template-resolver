@@ -18,4 +18,4 @@ goal-critical: run each example; does it match the README text?
 
 ## Design context
 
-- docs/ephemeral/cycles/headless/design.md
+- docs/living/architecture/headless-contract.md
