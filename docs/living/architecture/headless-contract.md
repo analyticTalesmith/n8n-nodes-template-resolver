@@ -1,5 +1,6 @@
 ---
 summary: Contract for the headless cycle: the structured render result, diagnostics, limits, the HTTP API, the OpenAPI document and the CLI.
+state: planned
 ---
 
 # Headless contract
