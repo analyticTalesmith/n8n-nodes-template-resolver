@@ -81,8 +81,8 @@
     "none"
   ],
   "freeze": {
-    "at": "2026-10-14T00:38:01.667Z",
-    "brief_sha256": "2d64e44b3e914011bc081e1d638672cb0f8943dc886531e59a0c6f6536cffbb6",
+    "at": "2026-10-14T00:38:41.673Z",
+    "brief_sha256": "1f310d0c269ddc91f944ef1702a31b5fdf9d9e4247f7f679375b3141cfcaecdf",
     "brief_core_sha256": "481f75ae6fcb777d17a2ae8eb8a7b5ecd8e095d93f1dd158cd00bdbc211f726a",
     "manifest_sha256": "820e4f9818a2ecc863119668273e3db7d9c7c24d882f49c4e867ea17c9e61c53",
     "criteria_sha256": "00e14b675d25fbb91ffe114f55c22b35c7e508e749d4a2c8ded36988c7bb9888",
