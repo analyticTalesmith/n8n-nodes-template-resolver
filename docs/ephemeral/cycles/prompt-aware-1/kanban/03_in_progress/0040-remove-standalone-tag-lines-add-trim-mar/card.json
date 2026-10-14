@@ -76,10 +76,13 @@
     "tests/promptaware/raw.test.ts",
     "--json"
   ],
-  "claim": null,
+  "claim": {
+    "owner": "build:implementer",
+    "heartbeat": "2026-10-14T02:19:30.818Z"
+  },
   "blocked_on": null,
   "docs_impact": "none",
-  "started": null,
+  "started": "2026-10-14T02:19:30.959Z",
   "ended": null,
   "review_rounds": 0,
   "schema_version": 1,
@@ -99,5 +102,6 @@
       "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
       "gate": "40362e57e6360dc19f6d608a2a3e03e77ea04657d1ef41669f2400fbead5b298"
     }
-  }
+  },
+  "base_commit": "0687324cf97f7455deadb7d36ba1f3d204b4dc32"
 }
