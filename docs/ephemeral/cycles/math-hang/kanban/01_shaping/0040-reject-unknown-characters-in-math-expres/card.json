@@ -1,0 +1,47 @@
+{
+  "id": "0040-reject-unknown-characters-in-math-expres",
+  "title": "Reject unknown characters in math expressions",
+  "type": "bug",
+  "parent": null,
+  "depends_on": [],
+  "origin": "math-hang",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "core/src/expressions.ts"
+  ],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [
+      "core/src/expressions.ts"
+    ],
+    "frozen": false
+  },
+  "criteria": [
+    {
+      "text": "mh-no-hang: rendering a template whose math expression contains an unknown character such as a quote returns promptly with a diagnostic and does not loop, while valid math still renders",
+      "verify": "test",
+      "traces": [
+        "tests/regressions/math-unknown-character.test.ts#mh-no-hang"
+      ]
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/regressions/math-unknown-character.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1,
+  "blast_radius": [
+    "none"
+  ]
+}
