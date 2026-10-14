@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { lstatSync, readFileSync, readlinkSync, realpathSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import { PROCESS_ROOT, isProcessPath } from './card-files.mjs';
 
 const MAX_BUFFER = 64 * 1024 * 1024;
@@ -222,7 +222,7 @@ function newFileBlock(path, content) {
   return `${head}--- /dev/null\n+++ b/${path}\n@@ -0,0 +1,${rows.length} @@\n${body}`;
 }
 
-/** @typedef {{ include?: string[] }} PatchOptions include: exact project-relative paths under docs/ephemeral that stay in the patch and the fingerprint */
+/** @typedef {{ include?: string[], own?: string[] | null }} PatchOptions include: exact project-relative paths under docs/ephemeral that stay in the patch and the fingerprint; own: paths and folders the review fingerprint is limited to (null for all, an empty list for none) */
 
 /** The exact paths of `include` that are a changed path (or a rename source) of `changes`, sorted. A folder or a glob matches none. */
 function changedIncluded(changes, include) {
@@ -277,9 +277,15 @@ export function workingPatch(cwd, base, run = runGit, io = {}, { include = [] } 
 }
 
 /** Fingerprint the reviewed working state independently of Git's rendering of untracked versus committed files. */
-function reviewStateHash(cwd, base, run, include) {
+function reviewStateHash(cwd, base, run, include, own = null) {
   const paths = new Set();
-  const shown = (path) => !isProcessPath(path) || include.includes(path);
+  const ownLower = own === null ? null : own.map((entry) => (CASE_INSENSITIVE.has(process.platform) ? entry.toLowerCase() : entry));
+  const owned = (path) => {
+    if (ownLower === null || include.includes(path)) return true;
+    const key = CASE_INSENSITIVE.has(process.platform) ? path.toLowerCase() : path;
+    return ownLower.some((entry) => key === entry || key.startsWith(`${entry}/`));
+  };
+  const shown = (path) => (!isProcessPath(path) || include.includes(path)) && owned(path);
   for (const change of changedFiles(cwd, base, run)) {
     if (shown(change.path)) paths.add(change.path);
     if (change.from !== undefined && shown(change.from)) paths.add(change.from);
@@ -319,14 +325,16 @@ function reviewStateHash(cwd, base, run, include) {
  * @param {string} cwd
  * @param {string} base
  * @param {GitRunner} [run]
- * @param {PatchOptions} [options] the include paths stay in the patch and in the fingerprint
+ * @param {PatchOptions} [options] the include paths stay in the patch and in the fingerprint; `own`, when given, narrows the
+ *   fingerprint (not the patch) to those paths and the folders under them plus the include paths, so a change elsewhere in the tree, such as a
+ *   merge of another card's work, leaves it unchanged
  * @returns {{ base: string, patch: string, omitted: number, included: string[], sha256: string }} base is the full sha the patch starts from
  */
-export function reviewPatch(cwd, base, run = runGit, { include = [] } = {}) {
+export function reviewPatch(cwd, base, run = runGit, { include = [], own = null } = {}) {
   const fork = effectiveBase(cwd, base, run);
   const baseSha = run(cwd, ['rev-parse', '--verify', `${fork}^{commit}`]).trim();
   const { patch, omitted, included } = workingPatch(cwd, baseSha, run, {}, { include });
-  return { base: baseSha, patch, omitted, included, sha256: reviewStateHash(cwd, baseSha, run, included) };
+  return { base: baseSha, patch, omitted, included, sha256: reviewStateHash(cwd, baseSha, run, included, own) };
 }
 
 /**
@@ -496,4 +504,20 @@ export function assertTopLevel(cwd, { run = runGit, platform = process.platform 
 export function headCommit(cwd, { short = true, run = runGit } = {}) {
   const args = short ? ['rev-parse', `--short=${SHORT_SHA_LENGTH}`, 'HEAD'] : ['rev-parse', 'HEAD'];
   return run(cwd, args).trim();
+}
+
+/**
+ * The main checkout of the repository a directory belongs to: the directory itself in the main checkout or outside any
+ * repository, the main checkout's folder from a linked worktree. Read from the repository's common git directory.
+ * @param {string} cwd
+ * @param {{ run?: GitRunner }} [options]
+ * @returns {string}
+ */
+export function projectRootOf(cwd, { run = runGit } = {}) {
+  try {
+    const common = resolve(cwd, run(cwd, ['rev-parse', '--git-common-dir']).trim());
+    return basename(common) === '.git' ? dirname(common) : cwd;
+  } catch {
+    return cwd;
+  }
 }

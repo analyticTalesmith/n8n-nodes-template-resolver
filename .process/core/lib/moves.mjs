@@ -1,10 +1,14 @@
+import { existsSync, readFileSync } from 'node:fs';
 import { archivedIds, cardPath, isCardId } from './board.mjs';
 import { VERIFY_TYPES } from './card.mjs';
+import { CARD_FILES, workFile } from './card-files.mjs';
+import { checkFrozen } from './checks/frozen.mjs';
+import { parseRedEvidence } from './checks/red-evidence.mjs';
 import { CycleError, readCycle } from './cycle.mjs';
 
 /** @typedef {import('../scripts/validate.mjs').Finding} Finding */
 /** @typedef {import('./card.mjs').Card} Card */
-/** @typedef {{ projectDir: string, card: Card, from: string, to: string, tier: string, concerns?: Record<string, string>, reason?: string }} MoveContext */
+/** @typedef {{ projectDir: string, card: Card, from: string, to: string, tier: string, concerns?: Record<string, string>, reason?: string, resume?: boolean }} MoveContext */
 /** @typedef {(ctx: MoveContext) => Finding[]} Guard */
 
 export const ALLOWED_MOVES = Object.freeze(
@@ -105,6 +109,43 @@ const noReason = ({ card, from, to, reason }) =>
         ),
       ];
 
+/** The one edge a resume may take: back into work from the shaping a correction was made in. */
+export const RESUME_EDGE = Object.freeze(['01_shaping', '03_in_progress']);
+
+const sameList = (a, b) => Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((part, index) => part === b[index]);
+
+/** A resumed card was started once: it has the base commit its diff is measured from. */
+const resumeNeedsBase = ({ card }) =>
+  typeof card.base_commit === 'string' && card.base_commit !== ''
+    ? []
+    : [finding('move-resume-no-base', `Card ${card.id} has no base commit, so it was never started and has nothing to resume. Move it to ready and then in progress the usual way.`)];
+
+/**
+ * A resumed card skips the red-first run because its red evidence already exists: the log was written from a failing run
+ * of this same gate command before the build. A card with no gate command has no red run to reuse.
+ */
+const resumeNeedsRedEvidence = ({ projectDir, card }) => {
+  if (card.gate === null) return [];
+  let evidence = null;
+  try {
+    const file = workFile(projectDir, card.id, CARD_FILES.redEvidence);
+    if (existsSync(file)) ({ evidence } = parseRedEvidence(readFileSync(file, 'utf8')));
+  } catch {
+    evidence = null;
+  }
+  return evidence !== null && evidence.exit_status !== 0 && sameList(evidence.command, card.gate)
+    ? []
+    : [
+        finding(
+          'move-resume-no-red-evidence',
+          `Card ${card.id} cannot resume: no red-evidence log written from a failing run of its gate command (${CARD_FILES.redEvidence} in its work folder) was found, so the red-first run cannot be skipped. Move it to ready and run the red-first check the usual way.`,
+        ),
+      ];
+};
+
+/** The corrected manifest, criteria and brief must be frozen again before work resumes on them. */
+const resumeNeedsFreeze = ({ projectDir, card }) => checkFrozen({ projectDir, card });
+
 const bugNeedsRepro = ({ card }) =>
   card.type === 'bug' && card.criteria.some((c) => c.verify === 'test')
     ? []
@@ -134,15 +175,21 @@ const BUILT_IN = {
  */
 export function checkMove(ctx) {
   const { from, to, card } = ctx;
-  const listed = ALLOWED_MOVES.some((edge) => edge[0] === from && edge[1] === to);
+  const resumeEdge = from === RESUME_EDGE[0] && to === RESUME_EDGE[1];
+  if (ctx.resume === true && !resumeEdge) {
+    return [finding('move-resume-not-shaping', `Only a card in shaping can be resumed into in progress (card-move <id> in_progress --resume); card ${card.id} is moving from ${humanColumn(from)} to ${humanColumn(to)}. Leave out --resume.`)];
+  }
+  const listed = ALLOWED_MOVES.some((edge) => edge[0] === from && edge[1] === to) || (resumeEdge && ctx.resume === true);
   const bugSkip = card.type === 'bug' && from === '00_backlog' && to === '02_ready';
   if (!listed && !bugSkip) {
     const next = ALLOWED_MOVES.filter((edge) => edge[0] === from).map((edge) => humanColumn(edge[1]));
     const hint = next.length ? `From ${humanColumn(from)} it can move to: ${next.join(', ')}.` : `Nothing moves out of ${humanColumn(from)}.`;
-    return [finding('move-not-allowed', `Card ${card.id} cannot move from ${humanColumn(from)} to ${humanColumn(to)}. ${hint}`)];
+    const resumeHint = resumeEdge ? ' A card that was built and sent back to shaping for a correction goes back to work with --resume (card-move <id> in_progress --resume), after it is frozen again.' : '';
+    return [finding('move-not-allowed', `Card ${card.id} cannot move from ${humanColumn(from)} to ${humanColumn(to)}. ${hint}${resumeHint}`)];
   }
   const key = edgeKey(from, to);
-  const guards = [...(bugSkip ? [bugNeedsRepro] : []), ...(BUILT_IN[key] ?? []), ...(registered.get(key) ?? []).map((e) => e.guard)];
+  const resumeGuards = resumeEdge && ctx.resume === true ? [noCriteria, resumeNeedsBase, resumeNeedsRedEvidence, resumeNeedsFreeze] : [];
+  const guards = [...(bugSkip ? [bugNeedsRepro] : []), ...resumeGuards, ...(BUILT_IN[key] ?? []), ...(registered.get(key) ?? []).map((e) => e.guard)];
   return guards.flatMap((guard) => {
     try {
       return guard(ctx);

@@ -1,5 +1,5 @@
 import { isCardId } from '../board.mjs';
-import { isCardProcessPath, isCycleOwnPath, isNotePath } from '../card-files.mjs';
+import { isCardProcessPath, isCycleOwnPath, isNotePath, isOtherCardKanbanPath } from '../card-files.mjs';
 import { frozenTestPaths } from '../packet-parts.mjs';
 import { BACKLOG_DIR, COLUMNS, CYCLES_DIR, isCycleName } from '../layout.mjs';
 
@@ -10,7 +10,7 @@ import { BACKLOG_DIR, COLUMNS, CYCLES_DIR, isCycleName } from '../layout.mjs';
 
 export const MANIFEST_ADD_AT_BASE = 'manifest-add-at-base';
 const FILL_HINT =
-  'Fill manifest and files_scope in card.json (a bug card skips shaping, so its lead fills them before the move to review); a frozen manifest changes only by going back to shaping (card-move <id> shaping --reason <text>, then freeze.mjs).';
+  'Fill manifest and files_scope in card.json (a bug card skips shaping, so its lead fills them before the move to review); a frozen manifest changes only when the lead amends it (freeze.mjs <projectDir> <id> --amend-manifest --reason <text> --add|--edit|--remove|--drop <path> --scope <folder>; logged and shown to the reviewer) or by going back to shaping (card-move <id> shaping --reason <text>, then freeze.mjs, then card-move <id> in_progress --resume).';
 const KIND_OF_STATUS = { A: 'add', C: 'add', D: 'remove', M: 'edit', T: 'edit', U: 'edit' };
 /** Platforms whose filesystems are conventionally case-insensitive. */
 const CASE_INSENSITIVE = new Set(['win32', 'darwin']);
@@ -81,7 +81,7 @@ export function checkManifest({ card, changes, existsAtBase = () => false, platf
   const protectedCycleRecord = (path) => /^docs\/ephemeral\/cycles\/[^/]+\/(?:cycle\.md|verification\/close-review\.md)$/i.test(slashes(path));
   // Routine records belong to the card's claimed cycle. Any cycle brief or close review can change a gate, so it must be planned.
   const exempt = (path) =>
-    !climbs(path) && (isCardProcessPath(slashes(path), card.id) ||
+    !climbs(path) && (isCardProcessPath(slashes(path), card.id) || isOtherCardKanbanPath(slashes(path), card.id) ||
       (claimedCycle !== null && isCycleOwnPath(slashes(path)) && key(path).startsWith(`${key(claimedCycle)}/`) && !protectedCycleRecord(path)) ||
       (exemptDocs.has(key(path)) && !protectedCycleRecord(path)));
 

@@ -1,3 +1,4 @@
+import { recordGateRun } from '../gate-run.mjs';
 import { WINDOWS_LAUNCHER_HINT, runCommand } from './boundary.mjs';
 
 /** @typedef {import('../../scripts/validate.mjs').Finding} Finding */
@@ -14,9 +15,9 @@ const isArgv = (value) => Array.isArray(value) && value.length > 0 && value.ever
 /**
  * Runs the card's gate command once, without a shell. Returns its result, or a card-gate-command-failed finding and no
  * result when the gate is not an argv, the command timed out, could not start or ended by a signal. The exit status is
- * not judged here.
+ * not judged here. startedAt is the time the run began, in milliseconds.
  * @param {{ projectDir: string, card: Card, run?: CommandRunner, platform?: string }} input
- * @returns {{ result: CommandResult | null, findings: Finding[] }}
+ * @returns {{ result: CommandResult | null, findings: Finding[], startedAt?: number }}
  */
 export function runCardGate({ projectDir, card, run = runCommand, platform = process.platform }) {
   const argv = card.gate;
@@ -24,6 +25,7 @@ export function runCardGate({ projectDir, card, run = runCommand, platform = pro
   if (!isArgv(argv)) {
     return failed('The card gate must be a non-empty array of non-empty strings (program, then its arguments), run without a shell. Fix gate in card.json.');
   }
+  const startedAt = Date.now();
   const result = run(argv, { cwd: projectDir, timeoutMs: CARD_GATE_TIMEOUT_MS });
   const code = /** @type {any} */ (result.error)?.code;
   if (code === 'ETIMEDOUT') {
@@ -36,7 +38,7 @@ export function runCardGate({ projectDir, card, run = runCommand, platform = pro
   if (result.status === null) {
     return failed(`The card gate command (${argv[0]}) ended by a signal before it exited. Run it by hand to see why.`);
   }
-  return { result, findings: [] };
+  return { result, findings: [], startedAt };
 }
 
 /**
@@ -49,14 +51,16 @@ export const notFailingFinding = (argv) =>
 
 /**
  * Runs the card's own gate command (its planned tests and linters) without a shell. With expect pass the command must
- * exit 0; with expect fail it must exit non-zero, which proves test-first tests exist and fail before building.
+ * exit 0; with expect fail it must exit non-zero, which proves test-first tests exist and fail before building. A run that
+ * finished leaves its summary in the card's work folder (gate-run.json) for the review packet.
  * @param {{ projectDir: string, card: Card, expect: 'pass' | 'fail', run?: CommandRunner, platform?: string }} input
  * @returns {Finding[]}
  */
 export function checkCardGate({ projectDir, card, expect, run = runCommand, platform = process.platform }) {
-  const { result, findings } = runCardGate({ projectDir, card, run, platform });
+  const { result, findings, startedAt } = runCardGate({ projectDir, card, run, platform });
   if (result === null) return findings;
   const argv = /** @type {string[]} */ (card.gate);
+  recordGateRun({ projectDir, card, argv, status: /** @type {number} */ (result.status), stdout: result.stdout, startedAt: startedAt ?? Date.now() });
   if (expect === 'fail') return result.status === 0 ? [notFailingFinding(argv)] : [];
   if (result.status === 0) return [];
   const output = `${result.stdout}\n${result.stderr}`.split(/\r?\n/).filter((l) => l.trim() !== '');

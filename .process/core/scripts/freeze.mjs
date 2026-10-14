@@ -4,7 +4,8 @@ import { fileURLToPath } from 'node:url';
 import { BoardError, cardPath, isCardId, readCard, writeCard } from '../lib/board.mjs';
 import { CARD_FILES, cardFile } from '../lib/card-files.mjs';
 import { designContextPaths, designContextProblem } from '../lib/checks/reviewer-brief.mjs';
-import { changedFreezeFields, freezeHashes, validateFreeze } from '../lib/freeze.mjs';
+import { FreezeError, changedFreezeFields, freezeHashes, validateFreeze } from '../lib/freeze.mjs';
+import { amendCriteria, amendManifest } from '../lib/freeze-amend.mjs';
 import { localDocsHashes, localLivingHashes } from '../lib/local-docs-attestation.mjs';
 import { localCharterHashes } from '../lib/local-charters.mjs';
 import { humanColumn } from '../lib/moves.mjs';
@@ -12,14 +13,7 @@ import { scriptCommand } from '../lib/script-command.mjs';
 
 /** @typedef {import('../lib/card.mjs').Card} Card */
 
-export class FreezeError extends Error {
-  /** @param {string} rule @param {string} message */
-  constructor(rule, message) {
-    super(message);
-    this.name = 'FreezeError';
-    this.rule = rule;
-  }
-}
+export { FreezeError, amendCriteria, amendManifest };
 
 /**
  * Records the hashes of the reviewer brief, manifest, criteria and scope (files_scope, docs_impact, docs_deferred, gate) in
@@ -125,27 +119,67 @@ const isMain = (() => {
 })();
 
 if (isMain) {
-  const USAGE = 'Usage: node freeze.mjs <projectDir> <cardId> [--brief-only --reason <text>]';
+  const USAGE =
+    'Usage: node freeze.mjs <projectDir> <cardId> [--brief-only --reason <text>] | [--amend-manifest --reason <text> [--add <path>] [--edit <path>] [--remove <path>] [--drop <path>] [--scope <folder>] [--unscope <folder>] [--blast-radius <module>] [--by <name>]] | [--amend-criteria --reason <text> --criterion <text> --verify <type> [--level <level>] [--by <name>]] (each path option may be repeated)';
   const usage = (message) => {
     console.error(`${message} ${USAGE}`);
     process.exit(2);
   };
+  const FLAGS = new Set(['--brief-only', '--amend-manifest', '--amend-criteria']);
+  const LIST_OPTIONS = { '--add': 'add', '--edit': 'edit', '--remove': 'remove', '--drop': 'drop', '--scope': 'scope', '--unscope': 'unscope', '--blast-radius': 'blast_radius' };
+  const SINGLE_OPTIONS = ['--reason', '--by', '--criterion', '--verify', '--level'];
   const args = process.argv.slice(2);
-  const briefOnly = args.includes('--brief-only');
-  const reasonAt = args.indexOf('--reason');
-  const reason = reasonAt === -1 ? undefined : args[reasonAt + 1];
-  const positional = args.filter((arg, i) => arg !== '--brief-only' && arg !== '--reason' && !(reasonAt !== -1 && i === reasonAt + 1));
+  const flags = new Set();
+  const singles = {};
+  const changes = {};
+  const positional = [];
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (FLAGS.has(arg)) {
+      flags.add(arg);
+    } else if (arg in LIST_OPTIONS || SINGLE_OPTIONS.includes(arg)) {
+      const value = args[i + 1];
+      if (value === undefined || value.startsWith('--')) usage(`${arg} requires a value.`);
+      if (arg in LIST_OPTIONS) {
+        (changes[LIST_OPTIONS[arg]] ??= []).push(value);
+      } else {
+        if (singles[arg] !== undefined) usage(`${arg} given more than once.`);
+        singles[arg] = value;
+      }
+      i++;
+    } else if (arg.startsWith('--')) {
+      usage(`Unknown option ${arg}.`);
+    } else {
+      positional.push(arg);
+    }
+  }
   if (positional.length !== 2) usage('Expected a project directory and a card id.');
-  if (!briefOnly && reasonAt !== -1) usage('--reason belongs with --brief-only.');
-  if (briefOnly && reason === undefined) usage('--brief-only needs --reason <text>.');
+  if (flags.size > 1) usage('Give only one of --brief-only, --amend-manifest and --amend-criteria.');
+  const mode = [...flags][0];
+  const reason = singles['--reason'];
+  if (mode === undefined && (reason !== undefined || Object.keys(changes).length > 0 || Object.keys(singles).length > 0)) {
+    usage('--reason and the amendment options belong with --brief-only, --amend-manifest or --amend-criteria.');
+  }
+  if (mode !== undefined && reason === undefined) usage(`${mode} needs --reason <text>.`);
+  if (mode === '--amend-criteria' && (singles['--criterion'] === undefined || singles['--verify'] === undefined)) usage('--amend-criteria needs --criterion <text> and --verify <type>.');
+  if (mode !== '--amend-criteria' && ['--criterion', '--verify', '--level'].some((name) => singles[name] !== undefined)) usage('--criterion, --verify and --level belong with --amend-criteria.');
+  if (mode !== '--amend-manifest' && Object.keys(changes).length > 0) usage('--add, --edit, --remove, --drop, --scope, --unscope and --blast-radius belong with --amend-manifest.');
+  if (mode !== '--amend-manifest' && mode !== '--amend-criteria' && singles['--by'] !== undefined) usage('--by belongs with an amendment.');
   const [projectDir, id] = positional;
   if (!isCardId(id)) usage(`"${id}" is not a card id (like 0001-some-title).`);
+  const root = resolve(projectDir);
   try {
-    if (briefOnly) {
-      const card = amendBrief(resolve(projectDir), id, /** @type {string} */ (reason));
+    if (mode === '--brief-only') {
+      const card = amendBrief(root, id, /** @type {string} */ (reason));
       console.log(`re-froze the brief of ${id} at ${card.freeze.brief_amendments.at(-1).at}`);
+    } else if (mode === '--amend-manifest') {
+      const card = amendManifest(root, id, /** @type {string} */ (reason), changes, { by: singles['--by'] });
+      console.log(`amended the manifest of ${id} at ${card.manifest_amendments.at(-1).at}; the review packet shows it as a deviation from the frozen plan. card.md's scope table was rewritten from card.json.`);
+    } else if (mode === '--amend-criteria') {
+      const card = amendCriteria(root, id, /** @type {string} */ (reason), [{ text: singles['--criterion'], verify: singles['--verify'], ...(singles['--level'] === undefined ? {} : { level: singles['--level'] }) }], { by: singles['--by'] });
+      console.log(`added a criterion to ${id} at ${card.criteria_amendments.at(-1).at}; add the same line to Must-haves in card.md and to the spec, and give it a test row if its verify type is test.`);
     } else {
-      const card = freezeCard(resolve(projectDir), id);
+      const card = freezeCard(root, id);
       console.log(`frozen ${id} at ${card.freeze.at}`);
     }
   } catch (err) {

@@ -6,12 +6,14 @@ import { CARD_FILES, WORK_ROOT, cardFile, deltaDeliverables, workFile } from './
 import { validateFreeze, freezeHashes } from './freeze.mjs';
 import { gateFindings } from './gate.mjs';
 import { fileAtCommit, headCommit, reviewPatch, runGit } from './git.mjs';
+import { reviewOwnPaths, scopeAmendmentLines } from './review-scope.mjs';
 import { CONTRACT_FILES, parseScopeExceptions, readContractFile, sectionBody } from './contract.mjs';
 import { TIERS } from './layout.mjs';
 import { humanColumn } from './moves.mjs';
 import { parseObjective } from './checks/reviewer-brief.mjs';
 import { PACKET_MAX_BYTES, contractAtBase, contractBlocks, fenced, lf, readBriefText, readDesignContexts, secretFindings, frozenTestsSection } from './packet-parts.mjs';
 import { effectiveConcerns, effectiveTier } from './tier.mjs';
+import { gateRunSection } from './gate-run-section.mjs';
 import { RoundsError, readRounds, renderEarlierFindings } from './rounds.mjs';
 import { FINDING_CLASSES, GOAL_TARGETS, RESPONSE_VERDICTS, isEvidenceEntry } from './review-schema.mjs';
 import { localDocsHashes, localLivingHashes } from './local-docs-attestation.mjs';
@@ -32,6 +34,7 @@ import { scriptCommand } from './script-command.mjs';
  * }} PacketResult
  */
 
+export { gateRunSection };
 export { FROZEN_TESTS_MAX_BYTES, PACKET_MAX_BYTES, designContextPaths, frozenTestPaths, readBriefText } from './packet-parts.mjs';
 
 const REVIEW_INVALID = 'review-output-invalid';
@@ -287,7 +290,7 @@ export function buildPacket(projectDir, id, options = {}) {
   const hashes = frozen ? { ...freezeHashes(card, briefText), ...record } : freezeHashes(card, briefText);
 
   const deltaPaths = deltaDeliverables(projectDir, card);
-  const { base: baseSha, patch: gitPatch, omitted, included, sha256: diffHash } = reviewPatch(projectDir, /** @type {string} */ (gateOptions.base ?? /** @type {any} */ (card).base_commit), run, { include: deltaPaths });
+  const { base: baseSha, patch: gitPatch, omitted, included, sha256: diffHash } = reviewPatch(projectDir, /** @type {string} */ (gateOptions.base ?? /** @type {any} */ (card).base_commit), run, { include: deltaPaths, own: reviewOwnPaths(card) });
   // In local-docs mode the delta files are outside the checkout, so Git cannot show them: they are read from the store and
   // appended as new files. Their bytes are pinned by the local manifest below, not by the diff hash.
   const localDeltas = roots.mode === 'local' ? localDeltaTexts(roots, deltaPaths) : [];
@@ -296,6 +299,7 @@ export function buildPacket(projectDir, id, options = {}) {
   const shortBase = baseSha.slice(0, 7);
   const frozenTests = frozenTestsSection(projectDir, card, baseSha, run);
 
+  const gateRun = gateRunSection(projectDir, id);
   const specPath = `${WORK_ROOT}/${id}/${CARD_FILES.spec}`;
   const specText = roots.mode === 'local' ? (existsSync(workFile(projectDir, id, CARD_FILES.spec)) ? readFileSync(workFile(projectDir, id, CARD_FILES.spec), 'utf8') : null) : fileAtCommit(projectDir, baseSha, specPath, run);
   if (roots.mode !== 'local' && specText === null && existsSync(workFile(projectDir, id, CARD_FILES.spec))) {
@@ -381,7 +385,7 @@ export function buildPacket(projectDir, id, options = {}) {
     {
       key: 'header',
       number: null,
-      text: [frontmatter, `# Review packet: ${id}`, ...(frozen ? [] : [card.type === 'bug' ? 'Reviewer brief not frozen (bug fast path).' : 'Reviewer brief not frozen.']), ...amendmentLines(frozen ? record.brief_amendments : undefined), READING_ORDER].join('\n\n'),
+      text: [frontmatter, `# Review packet: ${id}`, ...(frozen ? [] : [card.type === 'bug' ? 'Reviewer brief not frozen (bug fast path).' : 'Reviewer brief not frozen.']), ...amendmentLines(frozen ? record.brief_amendments : undefined), ...scopeAmendmentLines(card), READING_ORDER].join('\n\n'),
     },
     {
       key: 'objective-and-contract',
@@ -416,6 +420,7 @@ export function buildPacket(projectDir, id, options = {}) {
         fenced(patch, 'diff'),
       ].join('\n\n'),
     },
+    ...(gateRun === null ? [] : [{ key: 'gate-run', number: null, text: gateRun }]),
     ...(rounds.rounds.length ? [{ key: 'earlier-findings', number: 5, text: `## 5. Earlier findings and replies
 
 ${renderEarlierFindings(rounds)}` }] : []),

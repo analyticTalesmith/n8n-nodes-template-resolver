@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BoardError, isCardId } from '../lib/board.mjs';
 import { RULINGS } from '../lib/review-schema.mjs';
-import { RoundsError, fileDrift, readRounds, recordRound, replyToFinding, roundsReport, ruleOnFinding, syncReviewLog } from '../lib/rounds.mjs';
+import { REPLY_TEXT_MAX, RoundsError, fileDrift, readRounds, recordRound, replyToFinding, roundsReport, ruleOnFinding, syncReviewLog } from '../lib/rounds.mjs';
 
 /** @typedef {import('../lib/rounds.mjs').RoundsReport} RoundsReport */
 
@@ -72,6 +72,9 @@ if (isMain) {
   const need = (...flags) => {
     for (const flag of flags) if (given[flag] === undefined) usage(`${flag} is required.`);
   };
+  for (const flag of ['--restate', '--verify', '--note']) {
+    if (given[flag] !== undefined && given[flag].length > REPLY_TEXT_MAX) usage(`${flag} is ${given[flag].length} characters; the limit is ${REPLY_TEXT_MAX}. Shorten it.`);
+  }
   if (command === 'reply') {
     need('--finding', '--action', '--restate', '--verify');
     oneOf('--action', ['fixed', 'rebut']);
@@ -94,8 +97,8 @@ if (isMain) {
     } else if (command === 'rule') {
       console.log(reportLines(ruleOnFinding(dir, id, { finding: given['--finding'], ruling: given['--ruling'], note: given['--note'] })).join('\n'));
     } else if (command === 'file') {
-      const { report, ticket } = fileDrift(dir, id, { finding: given['--finding'], ...(given['--type'] === undefined ? {} : { type: given['--type'] }) });
-      console.log(`filed ${given['--finding']} as ${ticket.id}`);
+      const { report, ticket, root } = fileDrift(dir, id, { finding: given['--finding'], ...(given['--type'] === undefined ? {} : { type: given['--type'] }) });
+      console.log(`filed ${given['--finding']} as ${ticket.id}${root === dir ? '' : ` in the backlog of ${root}`}`);
       console.log(reportLines(report).join('\n'));
     } else {
       const regenerated = syncReviewLog(dir, id);

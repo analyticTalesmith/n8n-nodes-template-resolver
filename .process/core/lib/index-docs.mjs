@@ -37,6 +37,9 @@ export function indexFileFor(dirRel, names) {
 const byName = (a, b) => a.name.localeCompare(b.name, 'en') || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
 const toLf = (text) => text.replace(/\r\n/g, '\n');
 
+/** Why a document has no usable summary: what the frontmatter check says about its summary or its frontmatter block. */
+const summaryReason = (text) => checkDocFrontmatter(text).find(({ field }) => SUMMARY_FIELDS.has(field))?.message ?? 'its summary cannot be read';
+
 /** The summary of a document, or null when its frontmatter fails the summary rule. */
 const summaryOf = (text) => {
   if (checkDocFrontmatter(text).some(({ field }) => SUMMARY_FIELDS.has(field))) return null;
@@ -89,10 +92,10 @@ export function inspectIndexes(projectDir, options = {}) {
   /** @type {Finding[]} */
   const problems = [];
   const markdown = [];
-  const summaryProblem = (path) =>
+  const summaryProblem = (path, text) =>
     problems.push({
       rule: 'index-summary-missing',
-      message: `${path} has no usable summary in its frontmatter. Add a one-line summary: to it, then run ${SCRIPT_COMMAND}.`,
+      message: `${path} has no usable summary in its frontmatter: ${summaryReason(text)}. Give it a one-line summary:, then run ${SCRIPT_COMMAND}.`,
       path,
     });
 
@@ -116,7 +119,7 @@ export function inspectIndexes(projectDir, options = {}) {
       markdown.push({ path, bytes: Buffer.byteLength(text) });
       if (name === indexName || (indexName === CYCLE_FILE && name === INDEX_FILE)) continue;
       const summary = summaryOf(text);
-      if (summary === null) summaryProblem(path);
+      if (summary === null) summaryProblem(path, text);
       else items.push({ name, label: name, link: name, summary });
     }
     // a cycle that holds its brief always has an index, even before it has any other document
@@ -130,7 +133,7 @@ export function inspectIndexes(projectDir, options = {}) {
     let summary = `Index of ${dirRel}.`;
     if (current !== null) {
       summary = summaryOf(current);
-      if (summary === null) summaryProblem(path);
+      if (summary === null) summaryProblem(path, current);
     }
     return { summary, indexName };
   };

@@ -62,6 +62,42 @@ export function readDesignApproval(projectDir, cycle) {
   return parsed === null ? null : decode(parsed);
 }
 
+const CYCLE_BRIEF_PATH = /^docs\/ephemeral\/cycles\/[^/]+\/cycle\.md$/;
+const STAGES_HEADING = /^## Stages\s*$/;
+const INDEX_START = '<!-- generated index';
+const INDEX_END = '<!-- end generated index -->';
+
+/**
+ * A cycle brief as it was approved: without the records the cycle writes into it while it runs, which are the body of the
+ * Stages section (stage records) and the body of the generated index. Their headings and markers stay, so a renamed or moved
+ * section still changes the text. Every other line, the frontmatter policy and all prose included, is kept as it is, and the
+ * line ends of the input are kept; a brief with neither part comes back unchanged.
+ * @param {string} text
+ * @returns {string}
+ */
+export function approvedCycleText(text) {
+  const kept = [];
+  let skipping = null;
+  for (const line of text.split(/(?<=\n)/)) {
+    const bare = line.trimEnd();
+    if (skipping === 'stages' && !/^#{1,6} /.test(bare) && !bare.startsWith(INDEX_START)) continue;
+    if (skipping === 'index' && !bare.includes(INDEX_END)) continue;
+    skipping = null;
+    kept.push(line);
+    if (STAGES_HEADING.test(bare)) skipping = 'stages';
+    else if (bare.startsWith(INDEX_START)) skipping = 'index';
+  }
+  return kept.join('');
+}
+
+/** The hash a signed approval holds for a path: the bytes of the file, except that a cycle brief is hashed as approvedCycleText. */
+function approvedHash(projectDir, path) {
+  const raw = fileHash(projectDir, path);
+  if (raw === 'missing' || !CYCLE_BRIEF_PATH.test(portablePath(path))) return raw;
+  const text = readFileSync(resolveProjectPath(resolveProjectRoots(projectDir), path), 'utf8');
+  return createHash('sha256').update(approvedCycleText(text)).digest('hex');
+}
+
 function decisionHash(data, body, cycle) {
   const decision = Object.fromEntries(DECISIONS.map((key) => [key, data[key] ?? null]));
   return createHash('sha256').update(JSON.stringify({ decision, body, cycle: {
@@ -121,7 +157,7 @@ export function designApprovalState(projectDir, cycle) {
   const cycleData = readCycle(projectDir, cycle);
   if (decisionHash(parsed.data, parsed.body, cycleData) !== approval.approval_hash) {
     // Distinguish cycle policy drift from edits to the approval where possible.
-    const currentPolicy = fileHash(projectDir, cyclePaths(cycle).brief);
+    const currentPolicy = approvedHash(projectDir, cyclePaths(cycle).brief);
     const brief = approval.approves.find((item) => item.path === cyclePaths(cycle).brief);
     stale.push(brief && brief.hash !== currentPolicy ? 'CYCLE.md' : DESIGN_APPROVAL_FILE);
   }
@@ -130,7 +166,7 @@ export function designApprovalState(projectDir, cycle) {
       stale.push(`${item.path || 'approved path'} (invalid)`);
       continue;
     }
-    const current = fileHash(projectDir, item.path);
+    const current = approvedHash(projectDir, item.path);
     if (current !== item.hash) stale.push(`${item.path} (${current === 'missing' ? 'missing' : 'changed'})`);
   }
   stale.push(...localReviewProblems(projectDir, cycleData, approval.approves));
@@ -187,7 +223,7 @@ export function approveDesign(projectDir, cycle, { by, now = () => new Date() })
     if (!validPath(path) || seen.has(portable)) throw new DesignApprovalError(`Approved path ${String(path)} must be a unique logical docs/... file.`);
     seen.add(portable);
     let hash;
-    try { hash = fileHash(projectDir, path); }
+    try { hash = approvedHash(projectDir, path); }
     catch (cause) { throw new DesignApprovalError(`Cannot approve ${path}: ${cause.message}`, cause); }
     if (hash === 'missing') throw new DesignApprovalError(`Approved document ${path} is missing. Restore it before approval.`);
     return { hash, path };

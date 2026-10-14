@@ -1,5 +1,6 @@
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { CARD_FILES, WORK_ROOT } from '../card-files.mjs';
 import { fileAtCommit, runGit } from '../git.mjs';
 import { isFilingNoise, isOwnCycleBrief } from './manifest.mjs';
 
@@ -106,6 +107,10 @@ export function removedCharterTeams(changes) {
  * exception row lists the path. Pure.
  * A path in `generatedIndexes` is an index change the caller proved is only generator output, so it is not checked;
  * `generatedIndexNotes` says why a non-exempt index path was not accepted.
+ * The gate's own run summary (the card's `gate-run.json` in its work folder, added or modified) is machine output and is never checked.
+ * One more path is accepted without a row: the card's own spec.md in its work folder, changed (added or edited) by the build team
+ * when the card's manifest or file scope lists that exact path. The planning team owns the work folder otherwise, so no other
+ * file of it, no other card's spec, no deletion or rename of the spec and no other acting team gets this.
  * @param {{ card: Card, charters: Charter[], changes: Change[], exceptions?: ScopeException[], generatedIndexes?: Set<string>, generatedIndexNotes?: Map<string, string> }} input
  * @returns {Finding[]}
  */
@@ -157,7 +162,9 @@ export function checkOwnership({ card, charters, changes, exceptions = [], gener
     return best;
   };
 
-  const generated = (c) => ((c.status === 'A' || c.status === 'M') && generatedIndexes.has(slashes(c.path))) || isFilingNoise(c) || ((c.status === 'A' || c.status === 'M') && isOwnCycleBrief(card, c.path));
+  const ownGateRun = rowKey(`${WORK_ROOT}/${card.id}/${CARD_FILES.gateRun}`);
+  // The gate writes the summary of its own run there; it is machine output, never a write to the planning team's surface.
+  const generated = (c) => ((c.status === 'A' || c.status === 'M') && rowKey(c.path) === ownGateRun) || ((c.status === 'A' || c.status === 'M') && generatedIndexes.has(slashes(c.path))) || isFilingNoise(c) || ((c.status === 'A' || c.status === 'M') && isOwnCycleBrief(card, c.path));
   const paths = new Set(changes.filter((c) => !generated(c)).flatMap((c) => [slashes(c.path), ...(c.from === undefined ? [] : [slashes(c.from)])]));
   const sorted = [...paths].sort();
 
@@ -171,6 +178,12 @@ export function checkOwnership({ card, charters, changes, exceptions = [], gener
     ];
   }
 
+  const ownSpec = rowKey(`${WORK_ROOT}/${card.id}/${CARD_FILES.spec}`);
+  const listed = [...(card.manifest?.add ?? []), ...(card.manifest?.edit ?? []), ...(card.files_scope ?? [])];
+  const specAllowed =
+    acting === 'build' &&
+    listed.some((entry) => typeof entry === 'string' && rowKey(entry) === ownSpec) &&
+    changes.every((c) => (c.status === 'A' || c.status === 'M' ? true : ![c.path, c.from].some((p) => p !== undefined && rowKey(p) === ownSpec)));
   const logged = (path) => exceptions.find((e) => rowKey(e.path) === rowKey(path));
 
   /** @type {Finding[]} */
@@ -178,6 +191,7 @@ export function checkOwnership({ card, charters, changes, exceptions = [], gener
   for (const path of sorted) {
     const item = ownerOf(path);
     if (item === null || item.team === acting) continue;
+    if (specAllowed && rowKey(path) === ownSpec) continue;
     const row = logged(path);
     if (row === undefined) {
       findings.push({

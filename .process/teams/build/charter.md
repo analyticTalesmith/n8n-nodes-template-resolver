@@ -12,7 +12,7 @@ The accountable lead is `lead`, the feature lead for each card. It directs the o
 
 ## Interaction
 
-- Planning: consuming a service. Build takes Planning's spec, plan and frozen reviewer brief as given.
+- Planning: consuming a service. Build takes Planning's spec, plan and frozen reviewer brief as given. The one exception is the card's own `docs/ephemeral/work/<card>/spec.md` when the card lists it in its manifest or file scope: Build may then edit it to match what was built, and no other file of Planning's work folder.
 - Architecture: collaborating when a contract is unclear. Build asks a question through the project lead and never edits Architecture's documents.
 - Review: consuming a service through the project lead. Build receives findings from the project lead and answers them in rounds.
 - Project lead: the only caller. It claims and moves the card; Build reports and says which move comes next.

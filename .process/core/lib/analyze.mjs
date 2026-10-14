@@ -109,7 +109,8 @@ export function analyzeCycle(projectDir, name) {
 
   const modules = 'docs/living/architecture/modules';
   if (existsSync(resolveProjectPath(roots, modules))) for (const { card } of cards) for (const module of blastRadiusOf(card)) {
-    if (MODULE_NAME.test(module) && !existsSync(resolveProjectPath(roots, `${modules}/${module}.md`))) {
+    // `none` says the card reaches no module, so there is no module page to look for.
+    if (module !== 'none' && MODULE_NAME.test(module) && !existsSync(resolveProjectPath(roots, `${modules}/${module}.md`))) {
       findings.push(finding('analyze-module-unknown', `Card ${card.id} names module ${module}, but ${modules}/${module}.md is missing.`, card.id));
     }
   }
