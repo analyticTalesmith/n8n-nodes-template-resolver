@@ -107,7 +107,7 @@ describe("dg-syntax: syntax, missing-variable and unknown-filter errors are code
       entries: [["xs", ["a"]]],
       code: "missing-variable",
       line: 3,
-      column: 8,
+      column: 10,
     },
     {
       name: "missing variable inside an IF body is located at the variable",

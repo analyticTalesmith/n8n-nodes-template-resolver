@@ -103,5 +103,12 @@
       "gate": "e99d9963a6d7211b40b9f95bd1982c0bbd7318f0e393f6a12127d45790815ae4"
     }
   },
-  "base_commit": "fa7fa47cac614faaf0b7c88b5eac665a6a4338e8"
+  "base_commit": "fa7fa47cac614faaf0b7c88b5eac665a6a4338e8",
+  "test_amendments": [
+    {
+      "path": "tests/headless/diagnostics.test.ts",
+      "reason": "the expected column of the second variable on line 3 was miscounted (the dollar sign is at column 10, not 8)",
+      "approved_by": "project lead"
+    }
+  ]
 }
