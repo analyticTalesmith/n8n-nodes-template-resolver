@@ -1,5 +1,5 @@
 {
   "name": "build",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "Implements a frozen card under a feature lead and drives the review rounds."
 }

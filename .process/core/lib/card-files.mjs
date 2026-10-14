@@ -17,6 +17,7 @@ export const CARD_FILES = Object.freeze({
   reviewOutput: 'review-output.json',
   rounds: 'review-rounds.json',
   redEvidence: 'red-evidence.md',
+  gateRun: 'gate-run.json',
   rootCause: 'root-cause.md',
 });
 
@@ -85,6 +86,22 @@ export function isCardProcessPath(path, id) {
   // <cycle>/kanban/<column>/<id>/<file...>
   const [cycle, kanban, column, folder, ...inside] = p.slice(CYCLES_DIR.length + 1).split('/');
   return isCycleName(cycle) && kanban === 'kanban' && COLUMNS.includes(column) && folder === id && inside.length > 0;
+}
+
+/**
+ * True when a project-relative path is a file inside ANOTHER card's folder in a cycle's kanban (any column of any cycle).
+ * Moving, readying or filing a sibling card is board bookkeeping, so it never counts as part of this card's change;
+ * that is what lets a lead ready several cards and commit once without each card's diff carrying its siblings' moves.
+ * A path with a `..` segment, a folder that is not a card id, a file directly in a column and this card's own folder are false.
+ * @param {string} path
+ * @param {string} id the card the change is judged for
+ * @returns {boolean}
+ */
+export function isOtherCardKanbanPath(path, id) {
+  const p = String(path).replaceAll('\\', '/');
+  if (p.split('/').includes('..') || !p.startsWith(`${CYCLES_DIR}/`)) return false;
+  const [cycle, kanban, column, folder, ...inside] = p.slice(CYCLES_DIR.length + 1).split('/');
+  return isCycleName(cycle) && kanban === 'kanban' && COLUMNS.includes(column) && isCardId(folder) && folder !== id && inside.length > 0 && !inside.includes('');
 }
 
 /** The folders of a cycle whose whole content belongs to the cycle rather than to any one card. */

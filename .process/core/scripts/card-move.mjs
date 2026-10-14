@@ -55,10 +55,13 @@ function settableFields(set) {
  * @param {string} id
  * @param {string} to column folder name
  * A move into shaping or done clears the card's claim; moves between in progress, review and gate keep it.
- * @param {{ reason?: string, now?: Date, set?: Record<string, string>, io?: { rename?: typeof renameSync, writeFile?: typeof writeFileSync } }} [options]
+ * A move out of work into shaping remembers the claim it clears (resume_claim); resume: true takes the card from shaping back into
+ * in progress, gives that claim back with a fresh heartbeat, keeps the base commit, and skips the red-first run because the red
+ * evidence log for the same gate command already exists.
+ * @param {{ reason?: string, now?: Date, resume?: boolean, set?: Record<string, string>, io?: { rename?: typeof renameSync, writeFile?: typeof writeFileSync } }} [options]
  *   set merges extra card fields (SETTABLE_FIELDS only) into the same write as started, ended and claim, before the
  *   rename, and they are restored with the rest when the rename fails; io replaces the file operations, for tests
- * @returns {{ from: string, to: string }}
+ * @returns {{ from: string, to: string, resumed?: { claim: string | null } }} resumed is present for a resume and names the owner whose claim came back
  */
 export function moveCard(projectDir, id, to, options = {}) {
   if (!isCardId(id)) {
@@ -94,7 +97,7 @@ export function moveCard(projectDir, id, to, options = {}) {
     if (cause instanceof ConfigError || cause instanceof BoardError) throw cause;
     throw new BoardError(cause.message, { cause });
   }
-  const findings = checkMove({ projectDir, card, from, to, tier, concerns, reason: options.reason });
+  const findings = checkMove({ projectDir, card, from, to, tier, concerns, reason: options.reason, resume: options.resume === true });
   if (findings.length) throw new MoveError(findings);
 
   const file = `${dir}/card.json`;
@@ -116,10 +119,16 @@ export function moveCard(projectDir, id, to, options = {}) {
   if (to === '03_in_progress' && updated.started === null) updated.started = stamp;
   if (to === '06_done') updated.ended = stamp;
   if (to === '01_shaping' || to === '06_done') updated.claim = null;
+  if (to === '01_shaping' && card.claim) updated.resume_claim = { owner: card.claim.owner };
+  const resuming = options.resume === true;
+  const resumedOwner = resuming ? (card.resume_claim?.owner ?? null) : null;
+  if (resuming && resumedOwner !== null) updated.claim = { owner: resumedOwner, heartbeat: stamp };
+  if (resuming || to === '03_in_progress' || to === '06_done') delete updated.resume_claim;
   const changed =
     updated.started !== card.started ||
     updated.ended !== card.ended ||
     updated.claim !== card.claim ||
+    updated.resume_claim !== card.resume_claim ||
     Object.keys(extra).some((key) => updated[key] !== card[key]) ||
     updated.local_baseline !== card.local_baseline;
   if (changed) writeCard(projectDir, id, updated);
@@ -141,7 +150,7 @@ export function moveCard(projectDir, id, to, options = {}) {
     }
     throw new MoveError([{ rule: 'move-failed', message }]);
   }
-  return { from, to };
+  return resuming ? { from, to, resumed: { claim: resumedOwner } } : { from, to };
 }
 
 /**
@@ -164,7 +173,7 @@ const isMain = (() => {
 
 if (isMain) {
   const USAGE =
-    'Usage: node card-move.mjs <projectDir> <id> <column> [--reason <text>] [--base <ref>] (the --reason=text and --base=ref forms are not supported; each option may be given once)';
+    'Usage: node card-move.mjs <projectDir> <id> <column> [--reason <text>] [--base <ref>] [--resume [--rebase-base]] (the --reason=text and --base=ref forms are not supported; each option may be given once; --resume takes a card from shaping back into in progress after a manifest or criteria correction and re-frozen, and --rebase-base also moves its base commit to HEAD)';
   const usage = (message) => {
     console.error(`${message} ${USAGE}`);
     process.exit(2);
@@ -172,9 +181,14 @@ if (isMain) {
   const positional = [];
   const options = {};
   let base;
+  let resume = false;
+  let rebaseBase = false;
   const args = process.argv.slice(2);
   for (let i = 0; i < args.length; i++) {
-    if (args[i].startsWith('--')) {
+    if (args[i] === '--resume' || args[i] === '--rebase-base') {
+      if (args[i] === '--resume') resume = true;
+      else rebaseBase = true;
+    } else if (args[i].startsWith('--')) {
       const name = args[i];
       if (name !== '--reason' && name !== '--base') usage(`Unknown option ${name}.`);
       const value = args[i + 1];
@@ -194,6 +208,7 @@ if (isMain) {
   const [projectDir, id, column] = positional;
   if (positional.length !== 3) usage('Expected a project directory, a card id and a column.');
   if (!isCardId(id)) usage(`"${id}" is not a card id (like 0001-some-title).`);
+  if (rebaseBase && !resume) usage('--rebase-base goes with --resume only.');
   const to = parseColumn(column);
   if (!to) usage(`Unknown column "${column}". Use one of: ${COLUMNS.map(humanColumn).join(', ')}.`);
   const root = resolve(projectDir);
@@ -210,7 +225,7 @@ if (isMain) {
       !(typeof current.base_commit === 'string' && current.base_commit !== '');
     let head = null;
     let notRecorded = null;
-    if (starting) {
+    if (starting || (resume && rebaseBase)) {
       try {
         head = headCommit(root, { short: false });
       } catch (err) {
@@ -218,8 +233,17 @@ if (isMain) {
         notRecorded = err.message.replace(/\s+/g, ' ');
       }
     }
-    const { from, to: moved } = moveCard(root, id, to, head === null ? options : { ...options, set: { base_commit: head } });
+    const { from, to: moved, resumed } = moveCard(root, id, to, { ...options, resume, ...(head === null ? {} : { set: { base_commit: head } }) });
     console.log(`${id}: ${humanColumn(from)} -> ${humanColumn(moved)}`);
+    if (resumed !== undefined) {
+      console.log(
+        resumed.claim === null
+          ? `resumed: the card had no claim to restore; claim it before work goes on. Red evidence reused (red-evidence-recorded-earlier); ${head === null ? 'base commit unchanged' : `base commit moved to ${head.slice(0, 12)}`}.`
+          : `resumed: claim restored for ${resumed.claim}. Red evidence reused (red-evidence-recorded-earlier); ${head === null ? 'base commit unchanged (add --rebase-base to move it to HEAD)' : `base commit moved to ${head.slice(0, 12)}`}.`,
+      );
+    } else if (starting && head !== null) {
+      console.log(`base commit ${head.slice(0, 12)}: other cards' kanban folders are not counted in this card's diff, so several cards can be readied and committed together.`);
+    }
     if (notRecorded !== null) console.error(`warning: base commit not recorded (${notRecorded}); pass --base <ref> at review`);
   } catch (err) {
     if (err instanceof MoveError) {

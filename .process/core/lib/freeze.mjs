@@ -11,6 +11,16 @@ import { scriptCommand } from './script-command.mjs';
 /** @typedef {{ at: string, reason: string, from_sha256: string, to_sha256: string }} BriefAmendment */
 /** @typedef {Partial<FreezeHashes> & { at: string, brief_amendments?: BriefAmendment[] }} FreezeRecord */
 
+/** A refusal of a freeze or an amendment of one; rule names it. */
+export class FreezeError extends Error {
+  /** @param {string} rule @param {string} message */
+  constructor(rule, message) {
+    super(message);
+    this.name = 'FreezeError';
+    this.rule = rule;
+  }
+}
+
 const SHA256_HEX = /^[0-9a-f]{64}$/;
 const ISO_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
 const HASH_FIELDS = Object.freeze({ brief: 'brief_sha256', manifest: 'manifest_sha256', criteria: 'criteria_sha256', scope: 'scope_sha256' });

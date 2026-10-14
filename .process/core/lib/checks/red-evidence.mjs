@@ -6,6 +6,10 @@ import { runCommand } from './boundary.mjs';
 import { notFailingFinding, runCardGate } from './card-gate.mjs';
 import { frozenTestPaths } from '../packet-parts.mjs';
 import { scriptCommand } from '../script-command.mjs';
+import { parseGateOutput, parseTap } from './gate-output.mjs';
+import { runnerOf } from './runner-json.mjs';
+
+export { parseGateOutput, parseTap };
 
 /** @typedef {import('../../scripts/validate.mjs').Finding} Finding */
 /** @typedef {import('./boundary.mjs').CommandRunner} CommandRunner */
@@ -38,94 +42,6 @@ export function testFilesHash(projectDir, card) {
     hash.update(`${path}\0${existsSync(file) ? readFileSync(file) : 'missing'}\0`);
   }
   return hash.digest('hex').slice(0, 12);
-}
-
-// ---------- TAP ----------
-
-const unescapeTap = (text) => text.replace(/\\([\\#])/g, '$1');
-const decodeScalar = (raw) => {
-  if (raw.length >= 2 && raw.startsWith("'") && raw.endsWith("'")) return raw.slice(1, -1).replaceAll("''", "'");
-  if (raw.length >= 2 && raw.startsWith('"') && raw.endsWith('"')) {
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return raw.slice(1, -1);
-    }
-  }
-  return raw;
-};
-
-/**
- * The key: value lines of the YAML block under a `not ok` line; a `|` block scalar is read as its indented lines.
- * @param {string[]} lines
- * @param {number} from index of the line after `not ok`
- * @param {number} indent indent of the `not ok` line
- * @returns {Record<string, string>}
- */
-function readBlock(lines, from, indent) {
-  /** @type {Record<string, string>} */
-  const fields = {};
-  const pad = ' '.repeat(indent + 2);
-  if (lines[from] !== `${pad}---`) return fields;
-  for (let i = from + 1; i < lines.length && lines[i] !== `${pad}...`; i += 1) {
-    const match = /^(\w+): ?(.*)$/.exec(lines[i].startsWith(pad) ? lines[i].slice(pad.length) : '');
-    if (match === null) continue;
-    const [, key, raw] = match;
-    if (/^[|>][-+]?$/.test(raw)) {
-      const body = [];
-      while (i + 1 < lines.length && lines[i + 1].startsWith(`${pad}  `)) body.push(lines[++i].slice(pad.length + 2));
-      fields[key] = body.join('\n');
-    } else {
-      fields[key] = decodeScalar(raw);
-    }
-  }
-  return fields;
-}
-
-/** @param {Record<string, string>} fields @returns {TapFailure['kind']} */
-const kindOf = (fields) => {
-  if (fields.failureType === 'testTimeoutFailure') return 'timeout';
-  if (fields.failureType === 'cancelledByParent' || fields.failureType === 'cancelledByRunner') return 'cancelled';
-  if (fields.exitCode !== undefined) return 'file-load';
-  if (fields.code === 'ERR_ASSERTION') return 'assertion';
-  return 'error';
-};
-
-/**
- * The first line of the error a test file printed when it failed to load: the comment lines just above its `# Subtest:` line.
- * @param {string[]} lines
- * @param {number} index index of the `not ok` line
- * @returns {string}
- */
-function loadErrorLine(lines, index) {
-  const above = [];
-  for (let i = index - 2; i >= 0 && lines[i].startsWith('# '); i -= 1) above.unshift(lines[i].slice(2).trim());
-  return above.find((line) => /^\w*Error\b/.test(line)) ?? '';
-}
-
-/**
- * Reads the failing leaf tests (never the suites, nor a test that failed only because its subtests did) from node:test TAP output. A file that failed to load is a
- * failing test named after the file, with its separators written as slashes.
- * @param {string} output
- * @returns {{ isTap: boolean, failures: TapFailure[] }}
- */
-export function parseTap(output) {
-  const text = String(output ?? '');
-  if (!/^TAP version \d+/m.test(text)) return { isTap: false, failures: [] };
-  const lines = text.split(/\r?\n/);
-  /** @type {TapFailure[]} */
-  const failures = [];
-  lines.forEach((line, index) => {
-    const match = /^( *)not ok \d+ - (.*)$/.exec(line);
-    if (match === null || /(?<!\\)\s#\s*(?:SKIP|TODO)\b/i.test(match[2])) return;
-    const fields = readBlock(lines, index + 1, match[1].length);
-    if (fields.type === 'suite' || fields.failureType === 'subtestsFailed') return;
-    const kind = kindOf(fields);
-    const name = unescapeTap(match[2].trim());
-    const message = kind === 'file-load' ? loadErrorLine(lines, index) || (fields.error ?? '') : (fields.error ?? '');
-    failures.push({ name: kind === 'file-load' ? name.replaceAll('\\', '/') : name, kind, message });
-  });
-  return { isTap: true, failures };
 }
 
 // ---------- the log ----------
@@ -296,6 +212,11 @@ export const reasonProblem = (reason) => {
 const runsNodeTest = (argv) => argv.includes('--test');
 /** Whether the argv selects the TAP reporter, as one argument or as two. */
 const asksForTap = (argv) => argv.includes('--test-reporter=tap') || argv.some((part, index) => part === '--test-reporter' && argv[index + 1] === 'tap');
+/** What to add to a jest or vitest gate so its failures can be read. */
+export const reportAdvice = (runner) =>
+  runner === 'jest'
+    ? 'Add --json to the gate array in card.json (jest then prints its report to stdout; do not give it --outputFile).'
+    : 'Add --reporter=json and --outputFile=<file> to the gate array in card.json (vitest writes its json report to that file, and every run rewrites it).';
 const quoted = (names) => names.map((name) => `"${name}"`).join(', ');
 
 export const RED_RECORDED_EARLIER = 'red-evidence-recorded-earlier';
@@ -325,17 +246,18 @@ function recordedBeforeBuild({ projectDir, card, argv }) {
 /**
  * Runs the card's gate command once and compares it with the card's red-evidence log: the log must be well formed, name the
  * same command and exit status, list the failing tests the run shows, cover every test criterion, and every failure must be
- * an assertion failure. The failing set always comes from the run. Output that is not TAP is not read for failures; the
- * log's shape, command and exit status are still checked, and a node --test gate without the TAP reporter gets the blocking finding red-evidence-tap-required, any other runner the warning red-evidence-unparsed-output.
+ * an assertion failure. The failing set always comes from the run. Output that is neither TAP nor a jest or vitest json report is not read for failures; the
+ * log's shape, command and exit status are still checked, a node --test gate without the TAP reporter gets the blocking finding red-evidence-tap-required, a jest or vitest gate the blocking finding red-evidence-report-required, any other runner the warning red-evidence-unparsed-output.
  * @param {{ projectDir: string, card: Card, run?: CommandRunner, platform?: string }} input
  * @returns {Finding[]}
  */
 export function checkRedEvidence({ projectDir, card, run = runCommand, platform = process.platform }) {
+  const startedAt = Date.now();
   const { result, findings: gateFindings } = runCardGate({ projectDir, card, run, platform });
   if (result === null) return gateFindings;
   const argv = /** @type {string[]} */ (card.gate);
   if (result.status === 0) return recordedBeforeBuild({ projectDir, card, argv }) ? [recordedEarlierFinding(card.id)] : [notFailingFinding(argv)];
-  const tap = parseTap(result.stdout);
+  const tap = parseGateOutput({ argv, stdout: result.stdout, projectDir, startedAt });
   /** @type {Finding[]} */
   const findings = [];
   const flagged = new Set();
@@ -369,7 +291,7 @@ export function checkRedEvidence({ projectDir, card, run = runCommand, platform 
         } else if (criterionIn(row.test, [row.criterion]) === null) {
           findings.push(finding('red-evidence-unknown-criterion', `Row "${row.test}" names criterion "${row.criterion}", which is not in the test name. Name the test after its criterion id.`));
         }
-        const problem = tap.isTap ? reasonProblem(row.reason) : null;
+        const problem = tap.parsed ? reasonProblem(row.reason) : null;
         if (problem !== null) wrongReason(row.test, `its Reason holds "${problem.what}"`, problem.phraseInMessage ? `The phrase comes from the assertion's own message, so reword that message (the test itself is fine), then run ${scriptCommand(projectDir, 'red-evidence.mjs')}.` : undefined);
       }
       const covered = new Set(evidence.rows.map((row) => row.criterion));
@@ -381,7 +303,7 @@ export function checkRedEvidence({ projectDir, card, run = runCommand, platform 
       }
       if (!sameList(evidence.command, argv)) findings.push(finding('red-evidence-stale', `The command in ${logName} is not the card's gate command. ${fix}`));
       if (evidence.exit_status !== result.status) findings.push(finding('red-evidence-stale', `${logName} says the run exited ${evidence.exit_status}, but it exited ${result.status}. ${fix}`));
-      if (tap.isTap) {
+      if (tap.parsed) {
         const logged = new Set(evidence.rows.map((row) => row.test));
         const ran = new Set(tap.failures.map((f) => f.name));
         const notLogged = [...ran].filter((name) => !logged.has(name));
@@ -393,11 +315,13 @@ export function checkRedEvidence({ projectDir, card, run = runCommand, platform 
       }
     }
   }
-  if (!tap.isTap) {
+  if (!tap.parsed) {
     if (runsNodeTest(argv) && !asksForTap(argv)) {
       findings.push(finding('red-evidence-tap-required', `The gate command ${JSON.stringify(argv)} runs node --test without the TAP reporter, so failing tests cannot be read and a crash could pass as red. Add --test-reporter=tap to the gate array in card.json, then run ${scriptCommand(projectDir, 'red-evidence.mjs')} <projectDir> ${card.id}.`));
+    } else if (runnerOf(argv) === 'jest' || runnerOf(argv) === 'vitest') {
+      findings.push(finding('red-evidence-report-required', `The gate command ${JSON.stringify(argv)} printed no report the check can read, so failing tests cannot be read and a crash could pass as red. ${reportAdvice(runnerOf(argv))} Then run ${scriptCommand(projectDir, 'red-evidence.mjs')} <projectDir> ${card.id}.`));
     } else {
-      findings.push(finding('red-evidence-unparsed-output', `The gate command's output is not node:test TAP, so failing tests were not read; only the log's shape, command and exit status were checked. Add --test-reporter=tap to the gate command for the full check.`));
+      findings.push(finding('red-evidence-unparsed-output', `The gate command's output is not node:test TAP or a jest or vitest json report, so failing tests were not read; only the log's shape, command and exit status were checked. Add --test-reporter=tap (node --test), --json (jest) or --reporter=json --outputFile=<file> (vitest) to the gate command for the full check.`));
     }
   }
   return findings;

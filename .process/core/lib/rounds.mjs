@@ -1,8 +1,11 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { BoardError, cardPath, readCard, slugify, writeCard } from './board.mjs';
 import { CARD_FILES, cardFile, deltaDeliverables } from './card-files.mjs';
-import { reviewPatch, runGit } from './git.mjs';
+import { projectRootOf, reviewPatch, runGit } from './git.mjs';
+import { resolveProjectRoots } from './project-roots.mjs';
+import { reviewOwnPaths } from './review-scope.mjs';
 import { EVIDENCE_KINDS, RULINGS, isEvidenceEntry } from './review-schema.mjs';
 import { createCard } from '../scripts/card-new.mjs';
 import { scriptCommand } from './script-command.mjs';
@@ -58,7 +61,7 @@ const oneLine = (text) => String(text).replace(/\s+/g, ' ').trim();
  */
 export function currentDiffSha256(projectDir, card, run = runGit) {
   const base = /** @type {{ base_commit?: unknown }} */ (card).base_commit;
-  return typeof base === 'string' && base !== '' ? reviewPatch(projectDir, base, run, { include: deltaDeliverables(projectDir, card) }).sha256 : null;
+  return typeof base === 'string' && base !== '' ? reviewPatch(projectDir, base, run, { include: deltaDeliverables(projectDir, card), own: reviewOwnPaths(card) }).sha256 : null;
 }
 
 const short = (hash) => String(hash).slice(0, 12);
@@ -344,11 +347,30 @@ ${context}
 }
 
 /**
- * Files an undecided drift finding as a card in the global backlog whose origin is the cycle of the reviewed card.
+/**
+ * The folder whose backlog takes a follow-up ticket: the main checkout when the reviewed card is checked out in a linked
+ * worktree of a project that keeps its documents in the repository, so the ticket is not a stray file in the card's own
+ * change and a ticket number is never taken twice by parallel worktrees; the given folder otherwise.
+ * @param {string} projectDir
+ * @returns {string}
+ */
+export function backlogRoot(projectDir) {
+  const root = projectRootOf(projectDir);
+  if (root === projectDir || !existsSync(join(root, '.process', 'aperture.json'))) return projectDir;
+  try {
+    return resolveProjectRoots(projectDir).mode === 'shared' ? root : projectDir;
+  } catch {
+    return projectDir;
+  }
+}
+
+/**
+ * Files an undecided drift finding as a card in the global backlog whose origin is the cycle of the reviewed card. The
+ * ticket goes into the backlog of the project root (see backlogRoot) and takes its number from there.
  * @param {string} projectDir
  * @param {string} id
  * @param {{ finding: string, type?: 'improvement' | 'bug' }} input
- * @returns {{ report: RoundsReport, ticket: Card }}
+ * @returns {{ report: RoundsReport, ticket: Card, root: string }}
  */
 export function fileDrift(projectDir, id, input) {
   const state = readRounds(projectDir, id);
@@ -366,8 +388,9 @@ export function fileDrift(projectDir, id, input) {
     title = `Follow-up from ${id}`;
   }
   const origin = cardPath(projectDir, id).cycle;
-  const ticket = createCard(projectDir, { title, type, origin });
-  const mdFile = cardFile(projectDir, ticket.id, 'card.md');
+  const root = backlogRoot(projectDir);
+  const ticket = createCard(root, { title, type, origin });
+  const mdFile = cardFile(root, ticket.id, 'card.md');
   const context = [
     `Source card: ${id}`,
     `Finding: ${finding.label} (${finding.class})`,
@@ -380,7 +403,7 @@ export function fileDrift(projectDir, id, input) {
   finding.status = 'filed';
   finding.ticket = ticket.id;
   save(projectDir, id, state);
-  return { report: roundsReport(state, projectDir), ticket };
+  return { report: roundsReport(state, projectDir), ticket, root };
 }
 
 /**
