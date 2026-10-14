@@ -226,6 +226,34 @@ const STANDALONE: Standalone[] = [
     on: "x\n| N | A |\n|:-----|:-----|\n| p | 1 |\n| q | 2 |\ny",
     off: "x\n\n| N | A |\n|:-----|:-----|\n| p | 1 |\n| q | 2 |\n\ny",
   },
+  {
+    name: "whitespace-only RAW content inline is kept",
+    template: "x{{RAW}} \t {{END_RAW}}y",
+    data: {},
+    on: "x \t y",
+    off: "x \t y",
+  },
+  {
+    name: "whitespace-only RAW content alone on a line is kept",
+    template: "a\n{{RAW}}   {{END_RAW}}\nb",
+    data: {},
+    on: "a\n   \nb",
+    off: "a\n   \nb",
+  },
+  {
+    name: "whitespace-only multi-line RAW content is kept, RAW tag lines vanish",
+    template: "a\n{{RAW}}\n  \n\t\n{{END_RAW}}\nb",
+    data: {},
+    on: "a\n  \n\t\nb",
+    off: "a\n\n  \n\t\n\nb",
+  },
+  {
+    name: "RAW tag lines vanish around literal content lines",
+    template: "x\n{{RAW}}\n{{ y }}\n{{END_RAW}}\nz",
+    data: {},
+    on: "x\n{{ y }}\nz",
+    off: "x\n\n{{ y }}\n\nz",
+  },
 ];
 
 describe("ws-standalone: standalone block-tag lines vanish with their line break", () => {
