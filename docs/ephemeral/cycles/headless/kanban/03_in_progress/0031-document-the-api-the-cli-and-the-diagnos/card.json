@@ -12,14 +12,19 @@
   "files_scope": [
     "README.md",
     "changelog.md",
-    "docs/living/"
+    "docs/living/",
+    "docs/living/architecture"
   ],
   "manifest": {
     "add": [],
     "remove": [],
     "edit": [
       "README.md",
-      "changelog.md"
+      "changelog.md",
+      "docs/living/architecture/headless-contract.md",
+      "docs/living/architecture/modules/api.md",
+      "docs/living/architecture/modules/cli.md",
+      "docs/living/architecture/modules/template-resolver.md"
     ],
     "frozen": true
   },
@@ -52,7 +57,7 @@
   },
   "blocked_on": null,
   "docs_impact": "none",
-  "started": null,
+  "started": "2026-10-14T01:49:36.994Z",
   "ended": null,
   "review_rounds": 0,
   "schema_version": 1,
@@ -64,14 +69,63 @@
     "at": "2026-10-14T00:38:48.624Z",
     "brief_sha256": "d9b3a24cd8d834259c490f636a4846f11c783b5ad3ba3ef9f3220cf5ae18b053",
     "brief_core_sha256": "167793303c81c6bd2794f5f5d2206ee8bbb3e961033bcd22b35200a8e74c297a",
-    "manifest_sha256": "e1ceb29f6dd08f8dd379ece78e8d9b9382776f3cbdf77722f04fed1600ed8300",
+    "manifest_sha256": "939865f0c742819635e2e17076cf952d627c5989784b7d61cf92c998f3c2ba73",
     "criteria_sha256": "b236ed166b77c70801b9fce875a63b1e7dd35ec3547f392d5395d4be4558a3a9",
-    "scope_sha256": "204c3f8c4fe52011c1eda4063e9261b595c373284b71ce56aed35095cdce308f",
+    "scope_sha256": "c72790c9cc3057ccb1cc861f54c2e501ccec5dc352fff63c5dba3d12f2e03da4",
     "scope_parts": {
-      "files_scope": "2515bec4cf708459aa9dcdbb7004288e0955874ad62864df89345398d44bf2e1",
+      "files_scope": "dd66ab78c7844c8a96a251cb10fa8ca8be958ed9c37d795e9a89dcaf6349ae4c",
       "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
       "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
       "gate": "078e82cccd1bf234675b8f7581392f353fd84f8611f9df752625b3c35ffd2044"
     }
-  }
+  },
+  "base_commit": "b5b5ad449160d2d73ff73309fe773dcdc0c3f58a",
+  "manifest_amendments": [
+    {
+      "at": "2026-10-14T01:49:37.098Z",
+      "by": "lead",
+      "reason": "the cycle's planned living documents are written by this card",
+      "from": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "README.md",
+            "changelog.md"
+          ]
+        },
+        "files_scope": [
+          "README.md",
+          "changelog.md",
+          "docs/living/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "README.md",
+            "changelog.md",
+            "docs/living/architecture/headless-contract.md",
+            "docs/living/architecture/modules/api.md",
+            "docs/living/architecture/modules/cli.md",
+            "docs/living/architecture/modules/template-resolver.md"
+          ]
+        },
+        "files_scope": [
+          "README.md",
+          "changelog.md",
+          "docs/living/",
+          "docs/living/architecture"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    }
+  ]
 }

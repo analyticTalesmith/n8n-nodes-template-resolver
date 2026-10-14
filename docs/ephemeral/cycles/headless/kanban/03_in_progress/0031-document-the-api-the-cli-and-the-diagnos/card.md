@@ -55,6 +55,10 @@ none: documentation only.
 | --- | --- | --- |
 | `README.md` | edit | none |
 | `changelog.md` | edit | none |
+| `docs/living/architecture/headless-contract.md` | edit | none |
+| `docs/living/architecture/modules/api.md` | edit | none |
+| `docs/living/architecture/modules/cli.md` | edit | none |
+| `docs/living/architecture/modules/template-resolver.md` | edit | none |
 
-Files scope: `README.md`, `changelog.md`, `docs/living/`
+Files scope: `README.md`, `changelog.md`, `docs/living/`, `docs/living/architecture`
 <!-- end generated scope -->
