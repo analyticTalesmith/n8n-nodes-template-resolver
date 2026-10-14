@@ -1,0 +1,26 @@
+{
+  "id": "0045-follow-up-an-unclosed-section-is-reporte",
+  "title": "Follow-up: An unclosed SECTION is reported at the latest SECTION tag, even when that section is a closed sibling",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [],
+  "origin": "prompt-aware-1",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [],
+    "frozen": false
+  },
+  "criteria": [],
+  "gate": null,
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1
+}

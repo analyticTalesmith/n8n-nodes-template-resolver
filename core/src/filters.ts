@@ -108,8 +108,21 @@ export const FILTERS: { name: string; params: string; description: string }[] =
     },
     {
       name: "escape_md",
-      params: "",
-      description: "Markdown special characters escaped with a backslash",
+      params: "escape_md[=inline|block]",
+      description:
+        "Markdown special characters escaped with a backslash (inline, the default); block also escapes line starts that would read as structure: headings, quotes, list markers, tables, rules and fences",
+    },
+    {
+      name: "fence",
+      params: "fence[=lang]",
+      description:
+        "The value in a code fence of at least three backticks, longer than any backtick run inside it, with the optional language; one leading and one trailing line break of the value are removed",
+    },
+    {
+      name: "heading_offset",
+      params: "heading_offset=N",
+      description:
+        "Markdown ATX headings shifted by N levels (negative N shifts up), clamped to 1-6; headings inside fenced code are untouched",
     },
   ];
 
@@ -125,9 +138,18 @@ export function applyFilter(text: string, filter: FilterCall): string {
     case "trim":
       return text.trim();
     case "escape_md":
-      return applyEscapeMdFilter(text);
+      return applyEscapeMdFilter(text, filter.params);
+    case "fence":
+      return fenced(text, filter.params.value ?? "");
+    case "heading_offset":
+      return applyHeadingOffsetFilter(text, filter.params);
     default:
-      throw new UnknownFilterError(filter.name, 1, 1);
+      throw new UnknownFilterError(
+        filter.name,
+        1,
+        1,
+        FILTERS.map((f) => f.name)
+      );
   }
 }
 
@@ -183,9 +205,107 @@ function applyTailFilter(text: string, params: Record<string, string>): string {
 }
 
 /**
- * Apply escape_md filter: escape markdown special characters
+ * Apply escape_md filter: inline escaping by default, block mode adds
+ * line-start escaping
  */
-function applyEscapeMdFilter(text: string): string {
+function applyEscapeMdFilter(
+  text: string,
+  params: Record<string, string>
+): string {
+  const mode = params.value ?? "inline";
+  if (mode === "inline") return escapeInline(text);
+  if (mode === "block") {
+    return escapeInline(text).split("\n").map(escapeLineStart).join("\n");
+  }
+  throw new Error(
+    `Invalid escape_md mode: ${mode} (must be inline or block)`
+  );
+}
+
+/**
+ * Backslash before a line start that inline escaping leaves able to read as
+ * structure: a list marker, an ordered list number or a setext underline.
+ * Digits cannot be escaped, so an ordered list escapes the dot after them.
+ */
+function escapeLineStart(line: string): string {
+  return line
+    .replace(/^([ \t]*)([-+]|={3,}[ \t]*\r?$)/, "$1\\$2")
+    .replace(/^([ \t]*\d+)\./, "$1\\.");
+}
+
+/**
+ * Wrap text in a code fence of at least three backticks, longer than any
+ * backtick run in it, after removing one leading and one trailing line break
+ */
+export function fenced(text: string, lang: string): string {
+  checkFenceLang(lang);
+  const body = text.replace(/^\r?\n/, "").replace(/\r?\n$/, "");
+  let longestRun = 0;
+  for (const run of body.matchAll(/`+/g)) {
+    longestRun = Math.max(longestRun, run[0].length);
+  }
+  const fence = "`".repeat(Math.max(3, longestRun + 1));
+  return `${fence}${lang}\n${body}\n${fence}\n`;
+}
+
+/**
+ * Reject a fence language that would break the opening fence line: a line
+ * break ends it and a backtick makes it no longer a fence
+ */
+export function checkFenceLang(lang: string): void {
+  if (/[\r\n`]/.test(lang)) {
+    throw new Error(
+      `Fence lang must not contain a line break or a backtick, got ${JSON.stringify(lang)}`
+    );
+  }
+}
+
+/**
+ * Apply heading_offset filter: shift ATX headings outside fenced code by N
+ * levels, clamped to 1-6
+ */
+function applyHeadingOffsetFilter(
+  text: string,
+  params: Record<string, string>
+): string {
+  const value = params.value;
+  if (value === undefined || !/^[+-]?\d+$/.test(value)) {
+    throw new Error(
+      `heading_offset requires an integer parameter (e.g., heading_offset=1), got ${value ?? "none"}`
+    );
+  }
+  const offset = Number(value);
+  let openFence: string | null = null;
+
+  return text
+    .split("\n")
+    .map((line) => {
+      const [, fence, info] = /^ {0,3}(`{3,}|~{3,})([^\n]*)/.exec(line) ?? [];
+      if (openFence !== null) {
+        const closes =
+          fence !== undefined &&
+          fence[0] === openFence[0] &&
+          fence.length >= openFence.length &&
+          info.trim() === "";
+        if (closes) openFence = null;
+        return line;
+      }
+      if (fence !== undefined && !(fence[0] === "`" && info.includes("`"))) {
+        openFence = fence;
+        return line;
+      }
+      return line.replace(/^(#{1,6}) /, (_, hashes: string) => {
+        const level = Math.min(6, Math.max(1, hashes.length + offset));
+        return `${"#".repeat(level)} `;
+      });
+    })
+    .join("\n");
+}
+
+/**
+ * Inline markdown escaping: a backslash before each markdown special character
+ */
+function escapeInline(text: string): string {
   const specialChars = [
     "\\",
     "*",

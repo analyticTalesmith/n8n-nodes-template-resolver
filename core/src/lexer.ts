@@ -1,5 +1,20 @@
-import { Token, TokenType } from "./types";
+import { Token, TokenType, WhitespaceOptions } from "./types";
 import { SyntaxError } from "./errors";
+import { applyWhitespace } from "./whitespace";
+
+const RAW_CLOSER = /\{\{-?[ \t]*END_RAW[ \t]*-?\}\}/y;
+
+/** Block closers checked for balance, each with the opener it closes */
+const CLOSERS: Partial<Record<TokenType, TokenType>> = {
+  [TokenType.END_IF]: TokenType.IF,
+  [TokenType.END_FOR]: TokenType.FOR,
+  [TokenType.END_CASE]: TokenType.CASE,
+  [TokenType.END_TABLE]: TokenType.TABLE,
+  [TokenType.END_LIST]: TokenType.LIST,
+  [TokenType.END_SECTION]: TokenType.SECTION,
+  [TokenType.END_FENCE]: TokenType.FENCE,
+};
+const OPENERS = new Set(Object.values(CLOSERS));
 
 /**
  * Lexer: Converts template string into array of tokens with position tracking
@@ -11,8 +26,12 @@ import { SyntaxError } from "./errors";
  * - Loops: {{FOR items AS item}}, {{END_FOR}}
  * - Tables: {{TABLE}}, {{HEADER}}, {{ROW}}, {{END_TABLE}}
  * - Lists: {{LIST}}, {{LIST_ITEM}}, {{END_LIST}}
+ * - Sections: {{SECTION "Title" level=2}}, {{END_SECTION}}
+ * - Code fences: {{FENCE lang="md"}}, {{END_FENCE}}
  * - Ternary: {{condition ? "true" : "false"}}
  * - Comments: {{# comment #}}
+ * - Literal blocks: {{RAW}}...{{END_RAW}}; \{{ is a literal brace pair
+ * - Trim markers: {{- TAG}} and {{TAG -}}
  */
 export class Lexer {
   private pos = 0;
@@ -20,120 +39,58 @@ export class Lexer {
   private column = 1;
   private tokens: Token[] = [];
 
-  constructor(private template: string) {}
+  constructor(
+    private template: string,
+    private options: WhitespaceOptions = {}
+  ) {}
 
   /**
-   * Validate that all blocks are properly closed
+   * Validate that all blocks are properly closed. An open SECTION that meets
+   * another block's closer, or the end of the template, is reported at the
+   * latest SECTION tag opened inside it.
    */
   private validateBlocks(): void {
-    const stack: Array<{ type: string; line: number; column: number }> = [];
+    const stack: Token[] = [];
+    let latestSection: Token | null = null;
 
     for (const token of this.tokens) {
-      // Opening blocks
-      if (
-        [
-          TokenType.IF,
-          TokenType.FOR,
-          TokenType.CASE,
-          TokenType.TABLE,
-          TokenType.LIST,
-        ].includes(token.type)
-      ) {
-        stack.push({
-          type: token.type,
-          line: token.line,
-          column: token.column,
-        });
+      if (OPENERS.has(token.type)) {
+        stack.push(token);
+        if (token.type === TokenType.SECTION) latestSection = token;
+        continue;
       }
 
-      // Closing blocks
-      if (token.type === TokenType.END_IF) {
-        if (
-          stack.length === 0 ||
-          stack[stack.length - 1].type !== TokenType.IF
-        ) {
-          throw new SyntaxError(
-            `Unexpected {{END_IF}} without matching {{IF}}`,
-            token.line,
-            token.column,
-            "Check template structure"
-          );
-        }
+      const opener = CLOSERS[token.type];
+      if (opener === undefined) continue;
+      const top = stack[stack.length - 1];
+      if (top?.type === opener) {
         stack.pop();
+        continue;
       }
-
-      if (token.type === TokenType.END_FOR) {
-        if (
-          stack.length === 0 ||
-          stack[stack.length - 1].type !== TokenType.FOR
-        ) {
-          throw new SyntaxError(
-            `Unexpected {{END_FOR}} without matching {{FOR}}`,
-            token.line,
-            token.column,
-            "Check template structure"
-          );
-        }
-        stack.pop();
-      }
-
-      if (token.type === TokenType.END_CASE) {
-        if (
-          stack.length === 0 ||
-          stack[stack.length - 1].type !== TokenType.CASE
-        ) {
-          throw new SyntaxError(
-            `Unexpected {{END_CASE}} without matching {{CASE}}`,
-            token.line,
-            token.column,
-            "Check template structure"
-          );
-        }
-        stack.pop();
-      }
-
-      if (token.type === TokenType.END_TABLE) {
-        if (
-          stack.length === 0 ||
-          stack[stack.length - 1].type !== TokenType.TABLE
-        ) {
-          throw new SyntaxError(
-            `Unexpected {{END_TABLE}} without matching {{TABLE}}`,
-            token.line,
-            token.column,
-            "Check template structure"
-          );
-        }
-        stack.pop();
-      }
-
-      if (token.type === TokenType.END_LIST) {
-        if (
-          stack.length === 0 ||
-          stack[stack.length - 1].type !== TokenType.LIST
-        ) {
-          throw new SyntaxError(
-            `Unexpected {{END_LIST}} without matching {{LIST}}`,
-            token.line,
-            token.column,
-            "Check template structure"
-          );
-        }
-        stack.pop();
-      }
-    }
-
-    // Check for unclosed blocks
-    if (stack.length > 0) {
-      const unclosed = stack[stack.length - 1];
-      const typeName = unclosed.type.replace("_", " ");
+      if (top?.type === TokenType.SECTION) this.unclosed(latestSection ?? top);
       throw new SyntaxError(
-        `Unclosed {{${typeName}}} block starting at line ${unclosed.line}`,
-        unclosed.line,
-        unclosed.column,
-        `Add {{END_${typeName}}}`
+        `Unexpected {{${token.type}}} without matching {{${opener}}}`,
+        token.line,
+        token.column,
+        "Check template structure"
       );
     }
+
+    const unclosed = stack[stack.length - 1];
+    if (unclosed === undefined) return;
+    this.unclosed(
+      unclosed.type === TokenType.SECTION ? latestSection ?? unclosed : unclosed
+    );
+  }
+
+  private unclosed(opener: Token): never {
+    const typeName = opener.type.replace("_", " ");
+    throw new SyntaxError(
+      `Unclosed {{${typeName}}} block starting at line ${opener.line}`,
+      opener.line,
+      opener.column,
+      `Add {{END_${typeName}}}`
+    );
   }
 
   /**
@@ -170,7 +127,9 @@ export class Lexer {
     // Validate blocks are properly closed
     this.validateBlocks();
 
-    return this.tokens;
+    return applyWhitespace(this.tokens, this.options).filter(
+      (t) => t.type !== TokenType.RAW && t.type !== TokenType.END_RAW
+    );
   }
   /**
    * Scan variable substitution: ${{name}}, ${{user.name | filter}}
@@ -218,16 +177,21 @@ export class Lexer {
     // Consume {{
     this.advance(2);
 
+    const trimBefore = this.peek() === "-";
+    if (trimBefore) this.advance();
+
     // Skip whitespace
     this.skipWhitespace();
 
     // Check for comment: {{# ... #}}
     if (this.peek() === "#") {
-      this.scanComment(startLine, startColumn);
+      this.scanComment(startLine, startColumn, trimBefore);
       return;
     }
 
-    const content = this.scanUntilClosing();
+    let content = this.scanUntilClosing();
+    const trimAfter = content.endsWith("-");
+    if (trimAfter) content = content.slice(0, -1);
     const trimmed = content.trim();
 
     // Parse keyword
@@ -245,7 +209,7 @@ export class Lexer {
 
     if (
       trimmed !== keyword &&
-      (keyword === "ELSE" || keyword.startsWith("END_"))
+      (keyword === "ELSE" || keyword === "RAW" || keyword.startsWith("END_"))
     ) {
       const isElseIf =
         keyword === "ELSE" && /^IF(\s|$)/i.test(trimmed.slice(4).trim());
@@ -261,31 +225,109 @@ export class Lexer {
       );
     }
 
+    if (tokenType === TokenType.END_RAW) {
+      throw new SyntaxError(
+        "Unexpected {{END_RAW}} without matching {{RAW}}",
+        startLine,
+        startColumn,
+        "Check template structure"
+      );
+    }
+
     this.tokens.push({
       type: tokenType,
       value: trimmed,
       line: startLine,
       column: startColumn,
+      trimBefore,
+      trimAfter,
+    });
+
+    if (tokenType === TokenType.RAW) this.scanRaw(startLine, startColumn);
+  }
+
+  /**
+   * Scan the literal content of a RAW block and its {{END_RAW}} closer
+   */
+  private scanRaw(startLine: number, startColumn: number): void {
+    const contentLine = this.line;
+    const contentColumn = this.column;
+    let content = "";
+
+    while (this.pos < this.template.length) {
+      RAW_CLOSER.lastIndex = this.pos;
+      if (RAW_CLOSER.test(this.template)) {
+        if (content.length > 0) {
+          this.tokens.push({
+            type: TokenType.TEXT,
+            value: content.replace(/\r\n/g, "\n"),
+            line: contentLine,
+            column: contentColumn,
+          });
+        }
+        this.scanRawCloser();
+        return;
+      }
+      content += this.current();
+      this.advance();
+    }
+
+    throw new SyntaxError(
+      `Unclosed RAW block starting at line ${startLine}`,
+      startLine,
+      startColumn,
+      "Add {{END_RAW}}"
+    );
+  }
+
+  /**
+   * Scan {{END_RAW}}, with its optional trim markers
+   */
+  private scanRawCloser(): void {
+    const line = this.line;
+    const column = this.column;
+    this.advance(2);
+    const trimBefore = this.peek() === "-";
+    const content = this.scanUntilClosing();
+    this.tokens.push({
+      type: TokenType.END_RAW,
+      value: "END_RAW",
+      line,
+      column,
+      trimBefore,
+      trimAfter: content.endsWith("-"),
     });
   }
 
   /**
    * Scan comment: {{# comment text #}}
    */
-  private scanComment(startLine: number, startColumn: number): void {
+  private scanComment(
+    startLine: number,
+    startColumn: number,
+    trimBefore: boolean
+  ): void {
     // Consume #
     this.advance();
 
     let content = "";
     while (this.pos < this.template.length) {
-      if (this.peek() === "#" && this.peek(1) === "}" && this.peek(2) === "}") {
-        // Found closing #}}
-        this.advance(3);
+      const trimAfter = this.peek(1) === "-";
+      const closer = trimAfter ? 1 : 0;
+      if (
+        this.peek() === "#" &&
+        this.peek(1 + closer) === "}" &&
+        this.peek(2 + closer) === "}"
+      ) {
+        // Found closing #}} or #-}}
+        this.advance(3 + closer);
         this.tokens.push({
           type: TokenType.COMMENT,
           value: content,
           line: startLine,
           column: startColumn,
+          trimBefore,
+          trimAfter,
         });
         return;
       }
@@ -315,6 +357,23 @@ export class Lexer {
         break;
       }
       if (this.peek() === "{" && this.peek(1) === "{") {
+        break;
+      }
+      if (this.peek() === "\\" && this.peek(1) === "{" && this.peek(2) === "{") {
+        // \{{ is a literal {{
+        content += "{{";
+        this.advance(3);
+        continue;
+      }
+      if (
+        this.peek() === "\\" &&
+        this.peek(1) === "\\" &&
+        this.peek(2) === "{" &&
+        this.peek(3) === "{"
+      ) {
+        // \\{{ is a literal backslash followed by an active tag
+        content += "\\";
+        this.advance(2);
         break;
       }
       content += this.current();
@@ -406,6 +465,12 @@ export class Lexer {
       ROW: TokenType.ROW,
       END_ROW: TokenType.END_ROW,
       END_TABLE: TokenType.END_TABLE,
+      RAW: TokenType.RAW,
+      END_RAW: TokenType.END_RAW,
+      SECTION: TokenType.SECTION,
+      END_SECTION: TokenType.END_SECTION,
+      FENCE: TokenType.FENCE,
+      END_FENCE: TokenType.END_FENCE,
     };
 
     return mapping[keyword] || null;

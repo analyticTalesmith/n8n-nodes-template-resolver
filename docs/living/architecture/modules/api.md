@@ -27,7 +27,7 @@ Limits left out take core's defaults (`maxIterations` 10000, `maxOutputChars` 10
 
 | Route | Request body | Response (200) |
 |---|---|---|
-| POST /v1/render | `{template, data?, options?: {strictMode?, limits?}}` | core `render` result |
+| POST /v1/render | `{template, data?, options?: {strictMode?, standaloneLines?, limits?}}` | core `render` result |
 | POST /v1/validate | `{template}` | core `validate` result, `{ok, diagnostics}` |
 | POST /v1/analyze | `{template}` | core `analyze` result |
 | GET /v1/spec | | core `spec()` |
@@ -38,13 +38,18 @@ Limits left out take core's defaults (`maxIterations` 10000, `maxOutputChars` 10
 - `validate` and `analyze` run with the server's `maxDepth`. An `analyze` of a template that does not parse answers 200 with empty `variables`, `filters` and `blocks` and the parse error (`syntax-error` or `limit-depth`) in `diagnostics`. Analysis diagnostics have the shape `{code, message, line, column}`, without the `severity` and `suggestion` of render and validate diagnostics; besides parse errors their codes are `unknown-filter` and `unrecognized-condition`.
 - The query string is ignored when matching a route. The OpenAPI document is served in the committed file's exact serialization.
 
+### Standalone lines and the prompt-aware constructs
+
+- `options.standaloneLines` (boolean) is passed to core `render`; omitted, it takes core's default (true: lines holding only block tags are removed). A non-boolean value is 400 `invalid-request`.
+- The OpenAPI document describes `options.standaloneLines`, the `options` and the trim and escape `syntax` entries of `spec()`, and types the analysis `blocks` as a map of block name to count, so `SECTION` and `FENCE` counts validate. The new blocks and filters need no other change in the api: they reach it through core.
+
 ## Failure handling
 
 Template problems are results, never HTTP errors: 200 with `ok: false` and diagnostics. Request problems answer `{error: {code, message}}`:
 
 | Status | Code | When |
 |---|---|---|
-| 400 | `invalid-request` | body not JSON or not an object; `template` not a string; `data`, `options` or `options.limits` not an object; `options.strictMode` not a boolean; a limit not a non-negative integer |
+| 400 | `invalid-request` | body not JSON or not an object; `template` not a string; `data`, `options` or `options.limits` not an object; `options.strictMode` or `options.standaloneLines` not a boolean; a limit not a non-negative integer |
 | 404 | `not-found` | no route has the path |
 | 405 | `method-not-allowed` | the path exists for another method; the `Allow` header lists the methods |
 | 413 | `payload-too-large` | the declared or streamed body exceeds `maxBodyBytes` |

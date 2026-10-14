@@ -14,8 +14,10 @@ const USAGE = `Usage: template-resolver <command> [options]
 
 Commands:
   render <template-file|-> [--data <file|->] [--strict | --no-strict]
+         [--standalone-lines | --no-standalone-lines]
          [--max-iterations n] [--max-output-chars n] [--max-depth n] [--json]
-      Render a template and print the output.
+      Render a template and print the output. A line holding only block tags
+      is removed by default; --no-standalone-lines keeps it.
   validate <template-file|->   Check a template; prints {ok, diagnostics} as JSON.
   analyze <template-file|->    Print the variables, filters and blocks a template uses.
   spec                         Print the template language spec as JSON.
@@ -39,6 +41,8 @@ const COMMAND_OPTIONS: Record<string, Options> = {
     data: { type: "string" },
     strict: { type: "boolean" },
     "no-strict": { type: "boolean" },
+    "standalone-lines": { type: "boolean" },
+    "no-standalone-lines": { type: "boolean" },
     "max-iterations": { type: "string" },
     "max-output-chars": { type: "string" },
     "max-depth": { type: "string" },
@@ -116,11 +120,18 @@ async function runRender(values: Values, templatePath: string, io: CliIo): Promi
   if (values.strict && values["no-strict"]) {
     throw new UsageError("--strict and --no-strict cannot be combined");
   }
+  if (values["standalone-lines"] && values["no-standalone-lines"]) {
+    throw new UsageError("--standalone-lines and --no-standalone-lines cannot be combined");
+  }
   const limits = parseLimits(values);
   const template = await readInput(templatePath, io);
   const data = dataPath === undefined ? {} : parseData(await readInput(dataPath, io), dataPath);
 
-  const result = render(template, data, { strictMode: !values["no-strict"], limits });
+  const result = render(template, data, {
+    strictMode: !values["no-strict"],
+    standaloneLines: !values["no-standalone-lines"],
+    limits,
+  });
   if (values.json) {
     printJson(io, result);
   } else {

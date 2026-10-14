@@ -1,7 +1,7 @@
 import { spec } from "../../core/src";
 
 // Fixture list read from the applyFilter switch in core/src/filters.ts.
-const ENGINE_FILTERS = ["head", "tail", "trim", "escape_md"];
+const ENGINE_FILTERS = ["head", "tail", "trim", "escape_md", "fence", "heading_offset"];
 const BLOCKS = ["IF", "FOR", "CASE", "LIST", "TABLE"];
 const OPERATORS = [
   "==",

@@ -1,0 +1,26 @@
+{
+  "id": "0044-follow-up-an-omitted-section-leaves-the",
+  "title": "Follow-up: An omitted section leaves the template's blank lines from both sides, so its neighbours end up separated by t",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [],
+  "origin": "prompt-aware-1",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [],
+    "frozen": false
+  },
+  "criteria": [],
+  "gate": null,
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1
+}

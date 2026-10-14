@@ -130,6 +130,14 @@ By \${{author}}
           "Whether to throw an error if template variables are missing. If disabled, missing variables become empty strings.",
       },
       {
+        displayName: "Remove Standalone Tag Lines",
+        name: "standaloneLines",
+        type: "boolean",
+        default: true,
+        description:
+          "Whether to remove a line that holds only block tags such as {{IF}} or {{END_FOR}}, with its line break. If disabled, such lines leave blank lines in the output.",
+      },
+      {
         displayName: "Show Detected Variables",
         name: "showDetectedVariables",
         type: "boolean",
@@ -165,6 +173,11 @@ By \${{author}}
         const strictMode = this.getNodeParameter(
           "strictMode",
           itemIndex
+        ) as boolean;
+        const standaloneLines = this.getNodeParameter(
+          "standaloneLines",
+          itemIndex,
+          true
         ) as boolean;
         const showDetectedVariables = this.getNodeParameter(
           "showDetectedVariables",
@@ -240,6 +253,7 @@ By \${{author}}
 
         const result = render(template, Object.fromEntries(variables), {
           strictMode,
+          standaloneLines,
         });
         if (!result.ok) {
           throw new NodeOperationError(

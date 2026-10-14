@@ -13,6 +13,12 @@
 - Command line `template-resolver` with `render`, `validate`, `analyze`, `spec` and `serve`; exit codes 0, 1 and 2
 - HTTP API: `POST /v1/render`, `POST /v1/validate`, `POST /v1/analyze`, `GET /v1/spec`, `GET /v1/openapi.json`, on loopback by default, with a committed OpenAPI 3.1 document; request limits can only lower the server's
 - README documents the result, the diagnostics, the limits, the command line and the HTTP API; missing variables are now described as an error in strict mode
+- Whitespace: a line holding only block tags (IF, CASE, FOR, SECTION, FENCE, RAW, their parts and comments) is removed with its line break; the `standaloneLines` render option turns this off (`options.standaloneLines` in the HTTP API, `--no-standalone-lines` and `--standalone-lines` on the command line, "Remove Standalone Tag Lines" in the n8n node); trim markers `{{-` and `-}}` remove whitespace before or after a tag
+- `{{RAW}}...{{END_RAW}}` outputs its content literally and `\{{` outputs a literal `{{`
+- `{{SECTION "Title" level=2}}` outputs a markdown heading and its body, and is omitted (counted in `stats.sectionsOmitted`) when the body renders empty unless `skip_empty=false`
+- `{{FENCE lang="..."}}` and the `fence` filter wrap content in a code fence longer than any backtick run inside it
+- `heading_offset=N` shifts markdown headings; `escape_md=block` also escapes line starts that would read as structure, `escape_md=inline` is the existing behavior
+- The OpenAPI document describes `options.standaloneLines`, the render options and trim and escape syntax in the spec, and accepts every block kind in the analysis `blocks` counts
 
 ### 1.0.0
 

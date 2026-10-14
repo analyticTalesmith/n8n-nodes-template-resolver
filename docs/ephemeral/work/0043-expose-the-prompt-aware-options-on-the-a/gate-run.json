@@ -1,0 +1,19 @@
+{
+  "command": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/promptaware/surfaces.test.ts",
+    "tests/promptaware/golden-render.test.ts",
+    "tests/promptaware/docs.test.ts",
+    "--json"
+  ],
+  "exit_status": 0,
+  "ran_at": "2026-10-14T03:11:04.960Z",
+  "tests": {
+    "passed": 54,
+    "failed": 0
+  },
+  "failing": [],
+  "failing_total": 0
+}

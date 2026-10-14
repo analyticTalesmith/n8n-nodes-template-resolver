@@ -52,6 +52,12 @@ export enum TokenType {
   ROW = "ROW",
   END_ROW = "END_ROW",
   END_TABLE = "END_TABLE",
+  RAW = "RAW",
+  END_RAW = "END_RAW",
+  SECTION = "SECTION",
+  END_SECTION = "END_SECTION",
+  FENCE = "FENCE",
+  END_FENCE = "END_FENCE",
   COMMENT = "COMMENT",
   EOF = "EOF",
 }
@@ -64,6 +70,18 @@ export interface Token {
   value: string;
   line: number;
   column: number;
+  /** A minus marker after the opening braces: trim all whitespace before the tag */
+  trimBefore?: boolean;
+  /** A minus marker before the closing braces: trim all whitespace after the tag */
+  trimAfter?: boolean;
+}
+
+/**
+ * Whitespace handling. With standaloneLines on, a line holding only block
+ * tags and whitespace is removed together with its line break.
+ */
+export interface WhitespaceOptions {
+  standaloneLines?: boolean;
 }
 
 /**
@@ -155,6 +173,42 @@ export interface ForNode extends ASTNode {
   type: "For";
   iterable: string[];
   itemName: string;
+  body: ASTNode[];
+}
+
+/**
+ * SECTION title: a quoted string or a variable path
+ */
+export type SectionTitle =
+  | { kind: "literal"; text: string }
+  | { kind: "path"; path: string[] };
+
+/**
+ * SECTION block: a markdown heading over its body, dropped when the body
+ * renders empty
+ */
+export interface SectionNode extends ASTNode {
+  type: "Section";
+  title: SectionTitle;
+  level: number;
+  skipEmpty: boolean;
+  body: ASTNode[];
+}
+
+/**
+ * FENCE language: a quoted string or a variable path
+ */
+export type FenceLang =
+  | { kind: "literal"; text: string }
+  | { kind: "path"; path: string[] };
+
+/**
+ * FENCE block: its rendered body in a code fence longer than any backtick
+ * run inside it
+ */
+export interface FenceNode extends ASTNode {
+  type: "Fence";
+  lang: FenceLang | null;
   body: ASTNode[];
 }
 

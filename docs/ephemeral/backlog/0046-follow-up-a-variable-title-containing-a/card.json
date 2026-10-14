@@ -1,0 +1,26 @@
+{
+  "id": "0046-follow-up-a-variable-title-containing-a",
+  "title": "Follow-up: A variable title containing a line break injects extra markdown structure into the heading",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [],
+  "origin": "prompt-aware-1",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [],
+    "frozen": false
+  },
+  "criteria": [],
+  "gate": null,
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1
+}

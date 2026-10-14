@@ -120,12 +120,17 @@ export class MissingVariableError extends TemplateError {
  * Filter name that does not exist
  */
 export class UnknownFilterError extends TemplateError {
-  constructor(filterName: string, line: number, column: number) {
+  constructor(
+    filterName: string,
+    line: number,
+    column: number,
+    availableFilters: string[]
+  ) {
     super(
       `Unknown filter: ${filterName}`,
       line,
       column,
-      "Available filters: head, tail, trim, escape_md",
+      `Available filters: ${availableFilters.join(", ")}`,
       "unknown-filter"
     );
     this.name = "UnknownFilterError";
