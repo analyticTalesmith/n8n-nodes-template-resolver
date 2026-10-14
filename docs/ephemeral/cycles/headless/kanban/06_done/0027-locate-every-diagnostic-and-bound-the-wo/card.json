@@ -78,14 +78,11 @@
     "tests/headless/limits.test.ts",
     "--json"
   ],
-  "claim": {
-    "owner": "build:implementer",
-    "heartbeat": "2026-10-14T00:38:39.101Z"
-  },
+  "claim": null,
   "blocked_on": null,
   "docs_impact": "none",
   "started": "2026-10-14T00:38:39.291Z",
-  "ended": null,
+  "ended": "2026-10-14T00:56:14.403Z",
   "review_rounds": 1,
   "schema_version": 1,
   "blast_radius": [
