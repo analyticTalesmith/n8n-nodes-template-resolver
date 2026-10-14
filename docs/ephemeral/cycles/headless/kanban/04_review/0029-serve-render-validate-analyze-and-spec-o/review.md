@@ -60,7 +60,7 @@ Restatement: Expose the headless template core over a dependency-free node http 
 ### f4: After a 413 or 415 the server reads and discards the whole remaining body before replying, with no cap
 
 - Class: drift
-- Status: open
+- Status: filed (0038-follow-up-after-a-413-or-415-the-server)
 - Serves: card-goal: A client that declares or streams a body far over maxBodyBytes (or an endless chunked body, or a huge text/plain body) keeps the connection and the server's read loop busy until it stops sending or node's requestTimeout fires; the process does not crash and memory is not retained, so the goal-critical question is still answered adequately, but request limits do not bound the work spent on a rejected request.
 - Raised in round 2; sustained 0, failed fixes 0
 - Reproduction: Start createServer({maxBodyBytes: 64}); send POST /v1/render with content-type application/json, Transfer-Encoding chunked, and keep writing chunks; no 413 arrives until the client ends the body (sendError waits for req 'end' after req.resume()).

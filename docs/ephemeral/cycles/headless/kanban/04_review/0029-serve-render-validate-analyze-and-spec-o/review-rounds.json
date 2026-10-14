@@ -187,7 +187,7 @@
       "location": "api/server.ts:1647",
       "label": "f4",
       "raised_in": 2,
-      "status": "open",
+      "status": "filed",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [],
@@ -197,7 +197,8 @@
           "ruling": "drift",
           "note": "same as the ticketed drain behavior; loopback-only server"
         }
-      ]
+      ],
+      "ticket": "0038-follow-up-after-a-413-or-415-the-server"
     }
   ]
 }
