@@ -88,7 +88,7 @@ export function render(
     stats: {
       chars: output.length,
       estTokens: estimate(output),
-      sectionsOmitted: 0,
+      sectionsOmitted: interpreter.sectionsOmitted,
       iterations: interpreter.iterationCount,
     },
     diagnostics: [],

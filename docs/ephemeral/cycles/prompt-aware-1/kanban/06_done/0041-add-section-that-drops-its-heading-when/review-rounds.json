@@ -1,0 +1,125 @@
+{
+  "card": "0041-add-section-that-drops-its-heading-when",
+  "rounds": [
+    {
+      "number": 1,
+      "at": "2026-10-14T02:40:51.301Z",
+      "reviewer": {
+        "kind": "fallback",
+        "label": "opus fallback (same model family as the builder; has repository access)"
+      },
+      "output_sha256": "d686b81c4daef864207f11091e1ad2f145c1484e21531cc6d117140931826049",
+      "diff_sha256": "3bebd7356cb53d1e86879265bea66f5bac90a082dfdd9516c8dd19ba3c4fb77d",
+      "restatement": "Add a SECTION block ({{SECTION title level=N skip_empty=B}}...{{END_SECTION}}) to the headless core: lexer, parser, interpreter, analyze, render stats and spec. It writes a markdown heading (level clamped 1-6, default 2), a blank line and its body with leading and trailing blank lines trimmed, followed by one line break. When the body renders as whitespace only, the whole section disappears (heading and spacing included) and is counted in stats.sectionsOmitted, unless skip_empty=false keeps the heading. Bad titles and levels are type-errors at the tag, an unclosed SECTION is a syntax-error at its tag, and SECTION counts toward maxDepth. Templates without SECTION must render exactly as before, no existing test expectation may change, and no runtime dependency may be added.",
+      "brief_mismatch": "c1 says consecutive sections are separated by one blank line, but the design contract says they are separated by exactly the blank lines the template holds, with nothing added. The frozen test 'adjacent sections get no blank line added' expects '## A\n\na\n## B\n\nb\n', with no blank line between the sections. The implementation follows the contract and the test, so c1's wording is wrong as written.",
+      "evidence": [
+        "code:core/src/interpreter.ts:340",
+        "code:core/src/interpreter.ts:958",
+        "code:core/src/lexer.ts:1127",
+        "diff:core/src/lexer.ts",
+        "doc:docs/living/architecture/prompt-aware-contract.md",
+        "patch:3bebd7356cb53d1e86879265bea66f5bac90a082dfdd9516c8dd19ba3c4fb77d",
+        "test:sc-empty: own-line tags around an empty body, standaloneLines true",
+        "test:sc-errors: unclosed inner SECTION is located at the inner tag"
+      ],
+      "stalled": false,
+      "raised": [
+        "f1",
+        "f2",
+        "f3"
+      ],
+      "responses": []
+    }
+  ],
+  "findings": [
+    {
+      "title": "An omitted section leaves the template's blank lines from both sides, so its neighbours end up separated by two blank lines",
+      "class": "drift",
+      "serves": {
+        "target": "card-goal",
+        "scenario": "The goal-critical question asks whether an empty section leaves no stray blank lines. Take the usual prompt layout of sections separated by one blank line: when the middle section is empty, its own tag lines vanish but the blank line before it and the blank line after it both remain. The surviving sections are then separated by two blank lines, not one, so the omission leaves visible spacing behind. The same happens between paragraphs and in a FOR loop whose iterations are separated by a blank line."
+      },
+      "rubric": "Reviewer brief goal-critical question: does an empty section leave no stray blank lines, with standaloneLines on and off? Also c3: 'produces no output at all, heading and spacing included'.",
+      "reproduction": "render('{{SECTION \"A\"}}\na\n{{END_SECTION}}\n\n{{SECTION \"B\"}}\n{{END_SECTION}}\n\n{{SECTION \"C\"}}\nc\n{{END_SECTION}}\n', {}, {standaloneLines:true}).output is '## A\n\na\n\n\n## C\n\nc\n' (two blank lines between A and C). The same template with standaloneLines:false gives '## A\n\na\n\n\n\n\n## C\n\nc\n\n'. render('p1\n\n{{SECTION \"B\"}}\n${{x}}\n{{END_SECTION}}\n\np2\n', {x:''}, {standaloneLines:true}).output is 'p1\n\n\np2\n'. The frozen tests only cover omitted sections with no surrounding blank lines, so they do not catch this. Smallest fix: when skip_empty drops a section, also drop one blank line that the template holds right after it, by collapsing the line break that follows the omitted section's standalone END_SECTION line, so that two neighbours never get more blank lines between them than the template held between any one pair. Alternatively, have the lead record in the contract that the doubled blank line is accepted.",
+      "evidence": [
+        "code:core/src/interpreter.ts:340",
+        "doc:docs/living/architecture/prompt-aware-contract.md",
+        "test:sc-empty: own-line tags around an empty body, standaloneLines true"
+      ],
+      "location": "core/src/interpreter.ts:340",
+      "label": "f1",
+      "raised_in": 1,
+      "status": "filed",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [
+        {
+          "after_round": 1,
+          "ruling": "drift",
+          "note": "the contract adds no spacing around sections by design; collapsing blank lines around an omitted section needs a spacing model decision; authors use trim markers meanwhile; ticketed"
+        }
+      ],
+      "ticket": "0044-follow-up-an-omitted-section-leaves-the"
+    },
+    {
+      "title": "An unclosed SECTION is reported at the latest SECTION tag, even when that section is a closed sibling",
+      "class": "drift",
+      "serves": {
+        "target": "c5",
+        "scenario": "In '{{SECTION \"O\"}}\n{{SECTION \"I\"}}x{{END_SECTION}}\nmore\n{{SECTION \"J\"}}y{{END_SECTION}}' only O is unclosed, yet the syntax-error points at line 4 (J), a section that is properly closed. The latestSection heuristic in validateBlocks is what the frozen test 'unclosed inner SECTION is located at the inner tag' needs, and the token structure alone cannot tell that case apart from this one. A fix would therefore conflict with the frozen test; this is for the lead to settle."
+      },
+      "rubric": "c5: an unclosed SECTION is a syntax-error at its tag",
+      "reproduction": "render('{{SECTION \"O\"}}\n{{SECTION \"I\"}}x{{END_SECTION}}\nmore\n{{SECTION \"J\"}}y{{END_SECTION}}') returns the diagnostic [syntax-error, line 4, column 1, 'Unclosed {{SECTION}} block starting at line 4'].",
+      "evidence": [
+        "code:core/src/lexer.ts:1127",
+        "diff:core/src/lexer.ts",
+        "test:sc-errors: unclosed inner SECTION is located at the inner tag"
+      ],
+      "location": "core/src/lexer.ts",
+      "label": "f2",
+      "raised_in": 1,
+      "status": "filed",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [
+        {
+          "after_round": 1,
+          "ruling": "drift",
+          "note": "error location for an unclosed section beside closed siblings; ticketed"
+        }
+      ],
+      "ticket": "0045-follow-up-an-unclosed-section-is-reporte"
+    },
+    {
+      "title": "A variable title containing a line break injects extra markdown structure into the heading",
+      "class": "drift",
+      "serves": {
+        "target": "project-goal",
+        "scenario": "With a title taken from data, a value such as 'T\n# Injected' produces a second top-level heading inside the prompt. The contract rejects only empty or non-string titles, so this is outside the card's criteria; it is noted as a hardening point for prompt assembly."
+      },
+      "rubric": "no change outside the card scope (noted, not a fix request)",
+      "reproduction": "render('{{SECTION t}}x{{END_SECTION}}', {t:'T\n# Injected'}).output is '## T\n# Injected\n\nx\n', with ok true.",
+      "evidence": [
+        "code:core/src/interpreter.ts:958",
+        "doc:docs/living/architecture/prompt-aware-contract.md"
+      ],
+      "location": "core/src/interpreter.ts:958",
+      "label": "f3",
+      "raised_in": 1,
+      "status": "filed",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [
+        {
+          "after_round": 1,
+          "ruling": "drift",
+          "note": "titles from data with line breaks; ticketed"
+        }
+      ],
+      "ticket": "0046-follow-up-a-variable-title-containing-a"
+    }
+  ]
+}
