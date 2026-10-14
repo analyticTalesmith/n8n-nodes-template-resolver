@@ -1,0 +1,9 @@
+{
+  "role": "reviewer",
+  "context": "",
+  "format": "JSON",
+  "rules": [
+    "be brief",
+    "cite lines"
+  ]
+}

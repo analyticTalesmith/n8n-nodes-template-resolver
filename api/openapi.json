@@ -146,7 +146,7 @@
         "summary": "Describe the template language",
         "responses": {
           "200": {
-            "description": "Blocks, filters, condition operators, default limits and syntax",
+            "description": "Blocks, filters, condition operators, default limits, render options and syntax",
             "content": {
               "application/json": {
                 "schema": {
@@ -247,6 +247,11 @@
             "properties": {
               "strictMode": {
                 "type": "boolean"
+              },
+              "standaloneLines": {
+                "type": "boolean",
+                "default": true,
+                "description": "Removes a line holding only block tags (IF, CASE, FOR, SECTION, FENCE, RAW and their parts), comments and whitespace, with its line break; LIST, TABLE and their parts keep their own spacing. Trim markers {{- and -}} apply either way"
               },
               "limits": {
                 "$ref": "#/components/schemas/RequestLimits"
@@ -491,30 +496,11 @@
           },
           "blocks": {
             "type": "object",
-            "description": "Count per block kind present in the template",
-            "properties": {
-              "IF": {
-                "type": "integer",
-                "minimum": 1
-              },
-              "CASE": {
-                "type": "integer",
-                "minimum": 1
-              },
-              "FOR": {
-                "type": "integer",
-                "minimum": 1
-              },
-              "LIST": {
-                "type": "integer",
-                "minimum": 1
-              },
-              "TABLE": {
-                "type": "integer",
-                "minimum": 1
-              }
-            },
-            "additionalProperties": false
+            "description": "Count per block kind present in the template, keyed by block name (IF, CASE, FOR, LIST, TABLE, SECTION, FENCE)",
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": 1
+            }
           },
           "diagnostics": {
             "type": "array",
@@ -532,6 +518,7 @@
           "filters",
           "operators",
           "limits",
+          "options",
           "syntax"
         ],
         "properties": {
@@ -594,11 +581,36 @@
           "limits": {
             "$ref": "#/components/schemas/Limits"
           },
+          "options": {
+            "type": "array",
+            "description": "Render options, such as standaloneLines, with their defaults",
+            "items": {
+              "type": "object",
+              "required": [
+                "name",
+                "default",
+                "description"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "default": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                }
+              }
+            }
+          },
           "syntax": {
             "type": "object",
             "required": [
               "variable",
-              "comment"
+              "comment",
+              "trim",
+              "escape"
             ],
             "properties": {
               "variable": {
@@ -606,6 +618,14 @@
               },
               "comment": {
                 "type": "string"
+              },
+              "trim": {
+                "type": "string",
+                "description": "The trim markers {{- and -}}"
+              },
+              "escape": {
+                "type": "string",
+                "description": "How to output a literal {{"
               }
             }
           }

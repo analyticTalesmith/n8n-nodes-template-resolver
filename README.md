@@ -95,18 +95,73 @@ Author: ${{author ?? "Anonymous"}}
 
 Transform values before output.
 
-| Filter      | Example                  | Description                        |
-| ----------- | ------------------------ | ---------------------------------- |
-| `trim`      | `${{text \| trim}}`      | Remove leading/trailing whitespace |
-| `head=N`    | `${{text \| head=100}}`  | First N characters                 |
-| `tail=N`    | `${{text \| tail=50}}`   | Last N characters                  |
-| `escape_md` | `${{text \| escape_md}}` | Escape markdown special characters |
+| Filter              | Example                         | Description                                                                 |
+| ------------------- | ------------------------------- | --------------------------------------------------------------------------- |
+| `trim`              | `${{text \| trim}}`             | Remove leading/trailing whitespace                                          |
+| `head=N`            | `${{text \| head=100}}`         | First N characters; a negative N drops the last \|N\| characters            |
+| `tail=N`            | `${{text \| tail=50}}`          | Last N characters; a negative N drops the first \|N\| characters            |
+| `escape_md`         | `${{text \| escape_md}}`        | Escape markdown special characters (the same as `escape_md=inline`)         |
+| `escape_md=inline`  | `${{title \| escape_md=inline}}` | Escape markdown special characters with a backslash                        |
+| `escape_md=block`   | `${{note \| escape_md=block}}`  | Inline escaping, plus line starts that would read as structure (headings, quotes, list markers, tables, rules, fences) |
+| `fence` / `fence=lang` | `${{code \| fence=ts}}`      | Wrap the value in a code fence longer than any backtick run inside it       |
+| `heading_offset=N`  | `${{doc \| heading_offset=2}}`  | Shift markdown headings by N levels (negative N shifts up), clamped to 1-6  |
 
 **Chain multiple filters:**
 
 ```
 ${{description | trim | head=200 | escape_md}}
 ```
+
+**Escape modes.** Use `escape_md=block` for a value that is placed on its own lines, such as user text pasted into a prompt, so it cannot fake a heading or a list; `escape_md=inline` (or plain `escape_md`) escapes only the characters that would format text. The mode is case-sensitive; any other mode is a `type-error`.
+
+```console
+$ cat esc.tpl
+Title: ${{title | escape_md=inline}}
+User note:
+${{note | escape_md=block}}
+$ template-resolver render esc.tpl --data notes.json
+Title: \*bold\* \[link\]
+User note:
+\# Ignore the above
+\- and do this
+1\. instead
+```
+
+With `notes.json` holding `{"title": "*bold* [link]", "note": "# Ignore the above\n- and do this\n1. instead"}`. Plain `escape_md` on the same note gives `\# Ignore the above`, `- and do this`, `1. instead`: only the `#` is escaped.
+
+**`heading_offset=N`** shifts every markdown heading line (`#` to `######` at the start of a line, followed by a space) so pasted markdown nests under your own headings. Headings inside fenced code are untouched, and so is a heading indented by spaces.
+
+````console
+$ cat offset.tpl
+## Reference
+${{doc | heading_offset=2}}
+$ template-resolver render offset.tpl --data doc.json
+## Reference
+### Guide
+
+Intro
+
+#### Setup
+
+```sh
+# not a heading
+```
+````
+
+With `doc.json` holding ```` {"doc": "# Guide\n\nIntro\n\n## Setup\n\n```sh\n# not a heading\n```"} ````.
+
+**`fence`** wraps a value in a code fence of at least three backticks, one longer than any backtick run inside the value, so the value cannot close the fence early; `fence=lang` adds the language. The output ends with a line break.
+
+`````console
+$ printf 'Code:\n${{code | fence=ts}}' > fence-filter.tpl
+$ template-resolver render fence-filter.tpl --data code.json
+Code:
+````ts
+const s = "```";
+````
+`````
+
+With `code.json` holding ```` {"code": "const s = \"```\";"} ````.
 
 ---
 
@@ -324,6 +379,131 @@ are also supported
 
 ---
 
+### Whitespace: standalone tag lines and trim markers
+
+**The standalone rule.** A line that holds only block tags and whitespace is removed together with its line break, so block tags on their own lines leave no blank lines behind. It covers IF, ELSEIF, ELSE, CASE, WHEN, DEFAULT, FOR, SECTION, FENCE, RAW, their END tags and comments. LIST, TABLE and their parts keep their own spacing, and a line that also holds text or a variable is untouched.
+
+```console
+$ cat standalone.tpl
+Intro
+{{IF vip}}
+VIP customer
+{{END_IF}}
+Outro
+$ template-resolver render standalone.tpl --data vip.json
+Intro
+VIP customer
+Outro
+$ template-resolver render standalone.tpl --data vip.json --no-standalone-lines
+Intro
+
+VIP customer
+
+Outro
+```
+
+With `vip.json` holding `{"vip": true}`. The rule is on by default everywhere; turn it off with the `standaloneLines: false` render option, `options.standaloneLines` in the HTTP API, `--no-standalone-lines` on the command line, or by disabling **Remove Standalone Tag Lines** in the n8n node.
+
+**Trim markers.** `{{- TAG}}` removes all whitespace (spaces, tabs, line breaks) before the tag, and `{{TAG -}}` all whitespace after it; comments take `{{-# ... #-}}`. Markers work whether the standalone rule is on or off. They apply first; a tag line whose line break before it was trimmed then shares its line with the preceding text, so it is no longer standalone and its own line break stays:
+
+```console
+$ cat trim.tpl
+Tags:
+{{- FOR tags AS t}} ${{t}}{{END_FOR}}
+$ template-resolver render trim.tpl --data tags.json
+Tags: api llm
+$ cat trim-both.tpl
+[
+  {{- FOR xs AS x -}}
+  ${{x}},
+  {{- END_FOR -}}
+]
+$ template-resolver render trim-both.tpl --data xs.json
+[1,2,3,]
+```
+
+With `tags.json` holding `{"tags": ["api", "llm"]}` and `xs.json` holding `{"xs": [1, 2, 3]}`.
+
+---
+
+### Literal text: `{{RAW}}` and `\{{`
+
+`{{RAW}}...{{END_RAW}}` outputs its content literally: tags, variables and comments inside are not interpreted. A backslash right before `{{` escapes it: `\{{` outputs a literal `{{` and the backslash is consumed. `\\{{` outputs one literal backslash followed by an active tag. A backslash anywhere else is ordinary text.
+
+```console
+$ cat raw.tpl
+Write a template like this:
+{{RAW}}
+Hello ${{name}}! {{IF vip}}VIP{{END_IF}}
+{{END_RAW}}
+Inline: \{{IF x}} is not a tag, ${{name}} is a variable.
+$ template-resolver render raw.tpl --data name.json
+Write a template like this:
+Hello ${{name}}! {{IF vip}}VIP{{END_IF}}
+Inline: {{IF x}} is not a tag, Alice is a variable.
+$ cat path.tpl
+Path: C:\\{{IF x}}yes{{END_IF}}
+$ template-resolver render path.tpl --data x.json
+Path: C:\yes
+```
+
+With `name.json` holding `{"name": "Alice"}` and `x.json` holding `{"x": true}`.
+
+---
+
+### Sections: `{{SECTION}}`
+
+`{{SECTION "Title" level=2}}...{{END_SECTION}}` outputs a markdown heading (`level` 1 to 6, default 2), a blank line and the body with its leading and trailing blank lines trimmed. The title is a quoted string or a variable path. When the body renders empty, the whole section is omitted and `stats.sectionsOmitted` counts it; `skip_empty=false` keeps the heading of an empty section instead. An omitted section removes only its own output: the blank lines the template holds around it stay.
+
+```console
+$ cat section.tpl
+{{SECTION "Context"}}
+${{context}}
+{{END_SECTION}}
+
+{{SECTION "Examples" level=3}}
+{{FOR examples AS e}}
+- ${{e}}
+{{END_FOR}}
+{{END_SECTION}}
+
+{{SECTION "Notes" skip_empty=false}}
+${{notes ?? ""}}
+{{END_SECTION}}
+$ template-resolver render section.tpl --data section.json
+## Context
+
+The user asks about billing.
+
+
+## Notes
+```
+
+With `section.json` holding `{"context": "The user asks about billing.", "examples": []}`: the empty Examples section is omitted (its surrounding blank lines remain) and `--json` reports `"sectionsOmitted": 1`.
+
+---
+
+### Code fences: `{{FENCE}}`
+
+`{{FENCE lang="ts"}}...{{END_FENCE}}` wraps its rendered body in a code fence of at least three backticks, one longer than any backtick run inside the body, so pasted code cannot close the fence early. `lang` is optional and takes a quoted string or a variable path. One leading and one trailing line break of the body are removed.
+
+`````console
+$ cat fence.tpl
+Review this file:
+{{FENCE lang="ts"}}
+${{code}}
+{{END_FENCE}}
+$ template-resolver render fence.tpl --data code.json
+Review this file:
+````ts
+const s = "```";
+````
+`````
+
+With `code.json` as in the `fence` filter example above.
+
+---
+
 ### Math: `${{a + b}}`
 
 Basic arithmetic in variable expressions:
@@ -413,6 +593,7 @@ What counts as **false**:
 | **Template**                | Your template text with syntax markers      |
 | **Variable Mappings**       | Connect template variables to workflow data |
 | **Strict Mode**             | Error on missing variables (default: on)    |
+| **Remove Standalone Tag Lines** | Remove lines that hold only block tags (default: on); see [Whitespace](#whitespace-standalone-tag-lines-and-trim-markers) |
 | **Show Detected Variables** | Include metadata in output                  |
 | **Output Field Name**       | Name for the resolved text field            |
 
@@ -519,7 +700,7 @@ ${{current_message}}
 
 ## Structured render result
 
-Every render, whether through the command line (`--json`), the HTTP API (`POST /v1/render`) or core's `render(template, data, options)`, returns the same object. Template and data problems never throw; they come back in the result.
+Every render, whether through the command line (`--json`), the HTTP API (`POST /v1/render`) or core's `render(template, data, options)`, returns the same object. Template and data problems never throw; they come back in the result. Core's render options include `strictMode` (default `true`), `standaloneLines` (default `true`, see [Whitespace](#whitespace-standalone-tag-lines-and-trim-markers)) and `limits`.
 
 ```json
 {
@@ -543,7 +724,7 @@ Every render, whether through the command line (`--json`), the HTTP API (`POST /
 | `messages`              | Always `[]` for now (reserved for message blocks)                                        |
 | `stats.chars`           | Length of `output`                                                                       |
 | `stats.estTokens`       | Token estimate, `ceil(chars / 4)`: roughly +/-30 percent for English prose               |
-| `stats.sectionsOmitted` | Always `0` for now (reserved for section blocks)                                         |
+| `stats.sectionsOmitted` | Number of `SECTION` blocks omitted because their body rendered empty                     |
 | `stats.iterations`      | FOR iterations run in total, also reported when the render failed                        |
 | `diagnostics`           | On failure, one diagnostic: the error that stopped rendering                             |
 
@@ -558,7 +739,7 @@ Render and validate results (`render`, `validate`, `POST /v1/render`, `POST /v1/
 | `syntax-error`     | error    | The template does not parse: unknown tag, unclosed block, bad `FOR` syntax, stray `END_*`             |
 | `type-error`       | error    | An operation fails on its values: non-numeric comparison or math, bad filter parameters, non-array `FOR` in strict mode |
 | `missing-variable` | error    | Strict mode and a placeholder reads a variable that is not in the data and has no `??` default         |
-| `unknown-filter`   | error    | A filter other than `head`, `tail`, `trim`, `escape_md`                                                 |
+| `unknown-filter`   | error    | A filter other than `head`, `tail`, `trim`, `escape_md`, `fence`, `heading_offset`                      |
 | `limit-iterations` | error    | FOR loops ran more than `maxIterations` iterations in total                                            |
 | `limit-output`     | error    | The output grew past `maxOutputChars`                                                                  |
 | `limit-depth`      | error    | Blocks nest deeper than `maxDepth`                                                                     |
@@ -571,7 +752,7 @@ Render and validate results (`render`, `validate`, `POST /v1/render`, `POST /v1/
 
 | Code                     | When                                                                                         |
 | ------------------------ | -------------------------------------------------------------------------------------------- |
-| `unknown-filter`         | A filter other than `head`, `tail`, `trim`, `escape_md`                                      |
+| `unknown-filter`         | A filter other than `head`, `tail`, `trim`, `escape_md`, `fence`, `heading_offset`           |
 | `unrecognized-condition` | A condition the engine cannot read, such as `{{IF status is active}}` (`validate` reports it as `analysis-warning`) |
 | `syntax-error`, `limit-depth` | `POST /v1/analyze` only: the template does not parse; the result has empty `variables`, `filters` and `blocks` and this one diagnostic |
 
@@ -609,7 +790,7 @@ template-resolver <command> [options]
 | `template-resolver render <file\|->`       | Renders a template and prints the output to stdout                       |
 | `template-resolver validate <file\|->`     | Checks a template without data; prints `{ok, diagnostics}` as JSON       |
 | `template-resolver analyze <file\|->`      | Prints the variables, filters and blocks a template uses, as JSON        |
-| `template-resolver spec`                   | Prints the template language spec as JSON (blocks, filters, operators, default limits, syntax) |
+| `template-resolver spec`                   | Prints the template language spec as JSON (blocks, filters, operators, default limits, render options, syntax) |
 | `template-resolver serve`                  | Starts the HTTP API                                                      |
 
 Exit codes for every command:
@@ -628,6 +809,7 @@ Exit codes for every command:
 | -------------------------------------- | ------------------------------------------------------------------------ |
 | `--data <file\|->`                     | JSON object with the variables (default `{}`)                            |
 | `--strict` / `--no-strict`             | Strict mode is on by default; `--no-strict` renders missing variables as `""`; the two cannot be combined |
+| `--standalone-lines` / `--no-standalone-lines` | The [standalone rule](#whitespace-standalone-tag-lines-and-trim-markers) is on by default; `--no-standalone-lines` keeps lines that hold only block tags; the two cannot be combined (exit 2) |
 | `--max-iterations n`                   | Lower or raise `maxIterations`                                           |
 | `--max-output-chars n`                 | Lower or raise `maxOutputChars`                                          |
 | `--max-depth n`                        | Lower or raise `maxDepth`                                                |
@@ -773,20 +955,41 @@ $ template-resolver analyze greeting.tpl
 }
 ```
 
-`spec` (the end of it, with the default limits):
+`spec` (the end of it, with the default limits, the render options and the syntax):
 
 ```console
-$ template-resolver spec | tail -n 10
+$ template-resolver spec | tail -n 19
   "limits": {
     "maxIterations": 10000,
     "maxOutputChars": 1000000,
     "maxDepth": 32
   },
+  "options": [
+    {
+      "name": "standaloneLines",
+      "default": "true for render, false for resolveTemplate",
+      "description": "Removes a line holding only block tags and whitespace, with its line break; LIST, TABLE and their parts keep their own spacing"
+    }
+  ],
   "syntax": {
     "variable": "${{path.to.value ?? \"default\" | filter=arg}}",
-    "comment": "{{# comment #}}"
+    "comment": "{{# comment #}}",
+    "trim": "{{- TAG}} trims whitespace before a tag and {{TAG -}} after it; comments take {{-# comment #-}}",
+    "escape": "\\{{ outputs {{ literally"
   }
 }
+```
+
+Both standalone flags together are a usage error:
+
+```console
+$ template-resolver render standalone.tpl --data vip.json --standalone-lines --no-standalone-lines
+template-resolver: --standalone-lines and --no-standalone-lines cannot be combined
+
+Usage: template-resolver <command> [options]
+...
+$ echo $?
+2
 ```
 
 Usage errors exit 2:
@@ -799,8 +1002,10 @@ Usage: template-resolver <command> [options]
 
 Commands:
   render <template-file|-> [--data <file|->] [--strict | --no-strict]
+         [--standalone-lines | --no-standalone-lines]
          [--max-iterations n] [--max-output-chars n] [--max-depth n] [--json]
-      Render a template and print the output.
+      Render a template and print the output. A line holding only block tags
+      is removed by default; --no-standalone-lines keeps it.
   validate <template-file|->   Check a template; prints {ok, diagnostics} as JSON.
   analyze <template-file|->    Print the variables, filters and blocks a template uses.
   spec                         Print the template language spec as JSON.
@@ -827,7 +1032,7 @@ The API is stateless JSON over HTTP. It listens on loopback (`127.0.0.1`) by def
 
 | Route                   | Request body                                         | 200 response                              |
 | ----------------------- | ---------------------------------------------------- | ----------------------------------------- |
-| `POST /v1/render`       | `{template, data?, options?: {strictMode?, limits?}}` | The [structured render result](#structured-render-result) |
+| `POST /v1/render`       | `{template, data?, options?: {strictMode?, standaloneLines?, limits?}}` | The [structured render result](#structured-render-result) |
 | `POST /v1/validate`     | `{template}`                                         | `{ok, diagnostics}`                       |
 | `POST /v1/analyze`      | `{template}`                                         | The analysis (variables, filters, blocks, diagnostics) |
 | `GET /v1/spec`          |                                                      | The template language spec                |
@@ -835,7 +1040,7 @@ The API is stateless JSON over HTTP. It listens on loopback (`127.0.0.1`) by def
 
 - POST bodies must be JSON with `Content-Type: application/json`, at most 1 MiB.
 - Template problems are results, not HTTP errors: `200` with `ok: false` and diagnostics. An `analyze` of a template that does not parse returns `200` with empty variables and the error in `diagnostics`.
-- `options.strictMode` defaults to `true`. `options.limits` takes `maxIterations`, `maxOutputChars` and `maxDepth`; a request can only lower the server's limits, so a value above the server's is capped at the server's. `validate` and `analyze` use the server's `maxDepth`.
+- `options.strictMode` defaults to `true`. `options.standaloneLines` (boolean) defaults to `true`; `false` keeps lines that hold only block tags (see [Whitespace](#whitespace-standalone-tag-lines-and-trim-markers)). `options.limits` takes `maxIterations`, `maxOutputChars` and `maxDepth`; a request can only lower the server's limits, so a value above the server's is capped at the server's. `validate` and `analyze` use the server's `maxDepth`.
 
 Request errors are `{"error": {"code", "message"}}`:
 
@@ -861,6 +1066,16 @@ $ curl -s -X POST http://127.0.0.1:3000/v1/render -H 'Content-Type: application/
 {"ok":false,"output":"","messages":[],"stats":{"chars":0,"estTokens":0,"sectionsOmitted":0,"iterations":0},"diagnostics":[{"severity":"error","code":"missing-variable","message":"Variable 'name' not found","line":1,"column":7,"suggestion":"No variables defined. Check variable mappings."}]}
 ```
 
+A request that turns the standalone rule off, and one whose `standaloneLines` is not a boolean:
+
+```console
+$ curl -s -X POST http://127.0.0.1:3000/v1/render -H 'Content-Type: application/json' -d '{"template": "Intro\n{{IF vip}}\nVIP customer\n{{END_IF}}\nOutro\n", "data": {"vip": true}, "options": {"standaloneLines": false}}'
+{"ok":true,"output":"Intro\n\nVIP customer\n\nOutro\n","messages":[],"stats":{"chars":27,"estTokens":7,"sectionsOmitted":0,"iterations":0},"diagnostics":[]}
+$ curl -s -w '\n%{http_code}\n' -X POST http://127.0.0.1:3000/v1/render -H 'Content-Type: application/json' -d '{"template": "x", "options": {"standaloneLines": "no"}}'
+{"error":{"code":"invalid-request","message":"options.standaloneLines must be a boolean"}}
+400
+```
+
 A request that lowers a limit:
 
 ```console
@@ -876,6 +1091,8 @@ $ curl -s -X POST http://127.0.0.1:3000/v1/validate -H 'Content-Type: applicatio
 ```console
 $ curl -s -X POST http://127.0.0.1:3000/v1/analyze -H 'Content-Type: application/json' -d '{"template": "${{user.name ?? \"guest\"}} ${{note | trim}}"}'
 {"variables":[{"name":"user","paths":["user.name"],"usedIn":["output"],"optional":true,"required":false},{"name":"note","paths":["note"],"usedIn":["output"],"optional":false,"required":true}],"filters":[{"name":"trim","count":1}],"blocks":{},"diagnostics":[]}
+$ curl -s -X POST http://127.0.0.1:3000/v1/analyze -H 'Content-Type: application/json' -d '{"template": "{{SECTION \"Code\"}}\n{{FENCE lang=\"ts\"}}\n${{code}}\n{{END_FENCE}}\n{{END_SECTION}}\n"}'
+{"variables":[{"name":"code","paths":["code"],"usedIn":["output"],"optional":false,"required":true}],"filters":[],"blocks":{"SECTION":1,"FENCE":1},"diagnostics":[]}
 ```
 
 ```console

@@ -1,0 +1,193 @@
+{
+  "id": "0043-expose-the-prompt-aware-options-on-the-a",
+  "title": "Expose the prompt-aware options on the api, cli, node and in the docs",
+  "type": "task",
+  "parent": null,
+  "depends_on": [
+    "0042-add-the-auto-sized-fence-heading-offset"
+  ],
+  "origin": "prompt-aware-1",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "README.md",
+    "api/",
+    "changelog.md",
+    "cli/",
+    "docs/living/",
+    "n8n/",
+    "tests/golden/",
+    "tests/promptaware"
+  ],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [
+      "README.md",
+      "api/openapi.json",
+      "api/routes.ts",
+      "changelog.md",
+      "cli/main.ts",
+      "docs/living/architecture/modules/api.md",
+      "docs/living/architecture/modules/cli.md",
+      "docs/living/architecture/modules/template-resolver.md",
+      "docs/living/architecture/prompt-aware-contract.md",
+      "n8n/TemplateResolver.node.ts",
+      "tests/promptaware/surfaces.test.ts"
+    ],
+    "frozen": true
+  },
+  "criteria": [
+    {
+      "text": "sf-api: POST /v1/render accepts options.standaloneLines (boolean, a non-boolean is 400 invalid-request), the OpenAPI document describes it, and the served document still equals the committed file",
+      "verify": "test",
+      "traces": [
+        "tests/promptaware/surfaces.test.ts#sf-api"
+      ]
+    },
+    {
+      "text": "sf-cli: render accepts --no-standalone-lines and --standalone-lines, giving both together is a usage error exit 2, and the usage text lists them",
+      "verify": "test",
+      "traces": [
+        "tests/promptaware/surfaces.test.ts#sf-cli"
+      ]
+    },
+    {
+      "text": "sf-node: the node has a boolean option for standalone lines that defaults to true and reaches render",
+      "verify": "test",
+      "traces": [
+        "tests/promptaware/surfaces.test.ts#sf-node"
+      ]
+    },
+    {
+      "text": "sf-golden: golden cases rendered through render cover a prompt template using sections, fences, offset headings, escaped values, RAW and trim markers, with standalone lines on and off",
+      "verify": "test",
+      "traces": [
+        "tests/promptaware/golden-render.test.ts#sf-golden"
+      ]
+    },
+    {
+      "text": "sf-docs: the README documents the whitespace rule and trim markers, RAW and brace escaping, SECTION, FENCE, heading_offset and the escape modes with examples, and names the standalone option on every surface",
+      "verify": "test",
+      "traces": [
+        "tests/promptaware/docs.test.ts#sf-docs"
+      ]
+    },
+    {
+      "text": "sf-living: the cycle deltas turn the prompt-aware contract and the module documents into built documents after the merge",
+      "verify": "review"
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/promptaware/surfaces.test.ts",
+    "tests/promptaware/golden-render.test.ts",
+    "tests/promptaware/docs.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": "2026-10-14T03:00:24.589Z",
+  "ended": "2026-10-14T03:14:48.533Z",
+  "review_rounds": 1,
+  "schema_version": 1,
+  "blast_radius": [
+    "none"
+  ],
+  "user_visible": true,
+  "freeze": {
+    "at": "2026-10-14T02:19:35.464Z",
+    "brief_sha256": "6a0d501dc01b5827595e0c0437c2325f0cbcb21b285465fbae54bcc0bb6525e2",
+    "brief_core_sha256": "2825038f8623a1f15dbbd9cc274c25f42b7254aa29879784481392f480f70ebc",
+    "manifest_sha256": "2a7b7dc220b087d14b2cfba419996f68d997fd74421ea8fb9c0ef112177ac49a",
+    "criteria_sha256": "19f447000ef82110e35cb6d55d9924b0d7acf4d1adce92bba3be9d8cb8f74b4f",
+    "scope_sha256": "71e16176a4fe7290b2023a163ae667507e3f346b220c46a151b699ce0ec971ef",
+    "scope_parts": {
+      "files_scope": "9405597d75cb9c0c41bc5987f95988629a2ae25934e8e734e39dbd7424441403",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "07d8bc8be3d81071c30bd3b9de183cedf4a46b7ccd5820f5fd0541605c424e02"
+    }
+  },
+  "base_commit": "b3333a679644c90397d31af0bcce2591420884b8",
+  "test_amendments": [
+    {
+      "path": "tests/promptaware/surfaces.test.ts",
+      "reason": "one expected string had an extra line break with no source in the template",
+      "approved_by": "project lead"
+    }
+  ],
+  "manifest_amendments": [
+    {
+      "at": "2026-10-14T03:10:25.505Z",
+      "by": "lead",
+      "reason": "one frozen expectation corrected; living module documents updated with the surfaces",
+      "from": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "README.md",
+            "api/openapi.json",
+            "api/routes.ts",
+            "changelog.md",
+            "cli/main.ts",
+            "docs/living/architecture/modules/api.md",
+            "docs/living/architecture/modules/cli.md",
+            "docs/living/architecture/modules/template-resolver.md",
+            "docs/living/architecture/prompt-aware-contract.md",
+            "n8n/TemplateResolver.node.ts"
+          ]
+        },
+        "files_scope": [
+          "README.md",
+          "api/",
+          "changelog.md",
+          "cli/",
+          "docs/living/",
+          "n8n/",
+          "tests/golden/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "README.md",
+            "api/openapi.json",
+            "api/routes.ts",
+            "changelog.md",
+            "cli/main.ts",
+            "docs/living/architecture/modules/api.md",
+            "docs/living/architecture/modules/cli.md",
+            "docs/living/architecture/modules/template-resolver.md",
+            "docs/living/architecture/prompt-aware-contract.md",
+            "n8n/TemplateResolver.node.ts",
+            "tests/promptaware/surfaces.test.ts"
+          ]
+        },
+        "files_scope": [
+          "README.md",
+          "api/",
+          "changelog.md",
+          "cli/",
+          "docs/living/",
+          "n8n/",
+          "tests/golden/",
+          "tests/promptaware"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    }
+  ],
+  "user_docs_waiver": "README.md and changelog.md are the user documentation and carry no user_facing frontmatter"
+}
