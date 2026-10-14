@@ -2,16 +2,16 @@
 type: review-packet
 card: 0042-add-the-auto-sized-fence-heading-offset
 tier: product
-built_at: 2026-10-14T02:53:01.576Z
+built_at: 2026-10-14T02:57:49.232Z
 base: b12a2ace597c163c1a55596d0592a3df63566b37
-head: ff6d7ff18435a4f49a5140b5481a79794b32e92e
+head: 14d4432ef4c2cbe785a110c117ab138f1b4d1080
 frozen: true
 brief_sha256: c0514066958eb9ccaa2533d891e5356b4ed22c6e701f9cd7a50c1fdbc52cbcf3
-manifest_sha256: 09e3c6c848d64cfde269f526318f19c6d4670ec28bbce4660cf24b78cd068cf6
+manifest_sha256: 3f2d211c7a93e544ff62c519e983f075b7ba1e321623f0ab71427cddfcb6ee8f
 criteria_sha256: 27823a9a6eca29b5e945629126122c2081f5160e011639132cff8f8c6ac0a5d6
 scope_sha256: d97d7f6843e00da2c842e72e84c9750efef456ac37a5a665ad4a35269156be7f
-diff_sha256: 898547edb49e911fde3ac00e8072d64aab707402a54c685e9e925c1cb964feef
-omitted_paths: 6
+diff_sha256: 3f87fa09074a93ab4e3ebbd8b92a50e368083d47e9288fd0daa9dc01e9043830
+omitted_paths: 10
 criteria_count: 6
 must_not_count: 3
 ---
@@ -23,6 +23,8 @@ Manifest amended after the freeze at 2026-10-14T02:41:31.670Z by lead: heading o
 Manifest amended after the freeze at 2026-10-14T02:51:52.789Z by lead: fix one miswritten expectation; the unknown-filter suggestion lists the shared filter list (edit +core/src/errors.ts, edit +tests/promptaware/fence.test.ts, scope +tests/promptaware)
 
 Manifest amended after the freeze at 2026-10-14T02:52:56.434Z by lead: the spec fixture change was committed with the tests before the card started (edit -tests/headless/spec.test.ts)
+
+Manifest amended after the freeze at 2026-10-14T02:56:07.384Z by lead: review fixes add table rows to the heading offset and fence tests (edit +tests/promptaware/heading-offset.test.ts)
 
 Read the sections in order. Write `restatement` before you read section 3. At product tier and up, write `verification_plan` from section 1 alone before you read section 3.
 
@@ -174,7 +176,7 @@ No scope exceptions are logged.
 
 - add: none
 - remove: none
-- edit: `core/src/analyze.ts`, `core/src/errors.ts`, `core/src/filters.ts`, `core/src/interpreter.ts`, `core/src/lexer.ts`, `core/src/parser.ts`, `core/src/spec.ts`, `core/src/types.ts`, `core/src/whitespace.ts`, `tests/promptaware/fence.test.ts`
+- edit: `core/src/analyze.ts`, `core/src/errors.ts`, `core/src/filters.ts`, `core/src/interpreter.ts`, `core/src/lexer.ts`, `core/src/parser.ts`, `core/src/spec.ts`, `core/src/types.ts`, `core/src/whitespace.ts`, `tests/promptaware/fence.test.ts`, `tests/promptaware/heading-offset.test.ts`
 - files_scope: `core/src/`, `tests/headless`, `tests/promptaware`
 
 ## 2. Your verification plan
@@ -966,9 +968,9 @@ describe("em-modes: any other mode is a type-error located at the variable", () 
 
 ## 4. Diff
 
-6 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
+10 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
 
-````diff
+``````diff
 diff --git a/core/src/analyze.ts b/core/src/analyze.ts
 index 5537847..4e1af2d 100644
 --- a/core/src/analyze.ts
@@ -1046,7 +1048,7 @@ index 0a97ad8..6b1bebf 100644
      );
      this.name = "UnknownFilterError";
 diff --git a/core/src/filters.ts b/core/src/filters.ts
-index 506cc8b..2b4c0d5 100644
+index 506cc8b..8f55330 100644
 --- a/core/src/filters.ts
 +++ b/core/src/filters.ts
 @@ -108,8 +108,21 @@ export const FILTERS: { name: string; params: string; description: string }[] =
@@ -1094,7 +1096,7 @@ index 506cc8b..2b4c0d5 100644
    }
  }
  
-@@ -183,9 +205,94 @@ function applyTailFilter(text: string, params: Record<string, string>): string {
+@@ -183,9 +205,107 @@ function applyTailFilter(text: string, params: Record<string, string>): string {
  }
  
  /**
@@ -1132,13 +1134,26 @@ index 506cc8b..2b4c0d5 100644
 + * backtick run in it, after removing one leading and one trailing line break
 + */
 +export function fenced(text: string, lang: string): string {
++  checkFenceLang(lang);
 +  const body = text.replace(/^\r?\n/, "").replace(/\r?\n$/, "");
-+  const longestRun = Math.max(
-+    0,
-+    ...(body.match(/`+/g) ?? []).map((run) => run.length)
-+  );
++  let longestRun = 0;
++  for (const run of body.matchAll(/`+/g)) {
++    longestRun = Math.max(longestRun, run[0].length);
++  }
 +  const fence = "`".repeat(Math.max(3, longestRun + 1));
 +  return `${fence}${lang}\n${body}\n${fence}\n`;
++}
++
++/**
++ * Reject a fence language that would break the opening fence line: a line
++ * break ends it and a backtick makes it no longer a fence
++ */
++export function checkFenceLang(lang: string): void {
++  if (/[\r\n`]/.test(lang)) {
++    throw new Error(
++      `Fence lang must not contain a line break or a backtick, got ${JSON.stringify(lang)}`
++    );
++  }
 +}
 +
 +/**
@@ -1161,17 +1176,17 @@ index 506cc8b..2b4c0d5 100644
 +  return text
 +    .split("\n")
 +    .map((line) => {
-+      const fence = /^ {0,3}(`{3,}|~{3,})/.exec(line)?.[1];
++      const [, fence, info] = /^ {0,3}(`{3,}|~{3,})([^\n]*)/.exec(line) ?? [];
 +      if (openFence !== null) {
 +        const closes =
 +          fence !== undefined &&
 +          fence[0] === openFence[0] &&
 +          fence.length >= openFence.length &&
-+          line.trim() === fence;
++          info.trim() === "";
 +        if (closes) openFence = null;
 +        return line;
 +      }
-+      if (fence !== undefined) {
++      if (fence !== undefined && !(fence[0] === "`" && info.includes("`"))) {
 +        openFence = fence;
 +        return line;
 +      }
@@ -1192,7 +1207,7 @@ index 506cc8b..2b4c0d5 100644
      "\\",
      "*",
 diff --git a/core/src/interpreter.ts b/core/src/interpreter.ts
-index 1e52406..5371db2 100644
+index 1e52406..45c145a 100644
 --- a/core/src/interpreter.ts
 +++ b/core/src/interpreter.ts
 @@ -12,6 +12,7 @@ import {
@@ -1203,16 +1218,21 @@ index 1e52406..5371db2 100644
    VariableMap,
    TemplateValue,
    Limits,
-@@ -34,7 +35,7 @@ import {
+@@ -34,7 +35,12 @@ import {
    evaluateMathExpression,
    isTruthy,
  } from "./expressions";
 -import { parseFilter, applyFilters } from "./filters";
-+import { parseFilter, applyFilters, fenced } from "./filters";
++import {
++  parseFilter,
++  applyFilters,
++  fenced,
++  checkFenceLang,
++} from "./filters";
  
  /**
   * Interpreter: Walks AST and produces output string
-@@ -47,7 +48,8 @@ import { parseFilter, applyFilters } from "./filters";
+@@ -47,7 +53,8 @@ import { parseFilter, applyFilters } from "./filters";
   * - FOR loops with special variables (@index0, @first, @last, etc.)
   * - Lists (numbered, nested)
   * - Tables (with/without headers, alignment)
@@ -1222,7 +1242,7 @@ index 1e52406..5371db2 100644
   * - Default operator (??)
   * - Ternary with variable references
   */
-@@ -161,6 +163,8 @@ export class Interpreter {
+@@ -161,6 +168,8 @@ export class Interpreter {
          return this.visitTable(node as TableNode);
        case "Section":
          return this.visitSection(node as SectionNode);
@@ -1231,7 +1251,7 @@ index 1e52406..5371db2 100644
        case "Ternary":
          return this.at(node, () => this.visitTernary(node as TernaryNode));
        case "Comment":
-@@ -364,6 +368,34 @@ export class Interpreter {
+@@ -364,6 +373,38 @@ export class Interpreter {
      return value;
    }
  
@@ -1239,7 +1259,11 @@ index 1e52406..5371db2 100644
 +   * Visit FENCE: the rendered body in a code fence sized to it
 +   */
 +  private visitFence(node: FenceNode): string {
-+    const lang = this.at(node, () => this.fenceLang(node));
++    const lang = this.at(node, () => {
++      const value = this.fenceLang(node);
++      checkFenceLang(value);
++      return value;
++    });
 +    const body = node.body.map((child) => this.visit(child)).join("");
 +    return fenced(body, lang);
 +  }
@@ -1475,10 +1499,29 @@ index 6033472..1cedbd9 100644
    TokenType.END_RAW,
    TokenType.COMMENT,
 diff --git a/tests/promptaware/fence.test.ts b/tests/promptaware/fence.test.ts
-index b279c72..e0ce5fa 100644
+index b279c72..b9e77f6 100644
 --- a/tests/promptaware/fence.test.ts
 +++ b/tests/promptaware/fence.test.ts
-@@ -190,7 +190,7 @@ describe("fe-autosize: standalone rule applies to FENCE tag lines", () => {
+@@ -162,6 +162,18 @@ describe("fe-autosize: FENCE sizes its fence from the longest backtick run in it
+       //   so L1 = "`````\n````\n```\nx\n```\n````\n`````\n".
+       expected: "`````\n````\n```\nx\n```\n````\n`````\n",
+     },
++    {
++      name: "a large body with 300000 backtick runs is sized without failing",
++      template: FB,
++      data: { b: "`a".repeat(300000) + run(10) },
++      expected: `${run(11)}\n${"`a".repeat(300000)}${run(10)}\n${run(11)}\n`,
++    },
++    {
++      name: "the fence filter sizes a large value with 300000 backtick runs",
++      template: "${{ b | fence=md }}",
++      data: { b: run(5) + "x``".repeat(300000) },
++      expected: `${run(6)}md\n${run(5)}${"x``".repeat(300000)}\n${run(6)}\n`,
++    },
+   ]);
+ });
+ 
+@@ -190,7 +202,7 @@ describe("fe-autosize: standalone rule applies to FENCE tag lines", () => {
        name: "standalone on: a FENCE tag sharing its line with text is not removed",
        template: "a {{FENCE}}x{{END_FENCE}} b\n",
        options: ON,
@@ -1487,14 +1530,107 @@ index b279c72..e0ce5fa 100644
      },
    ]);
  });
-````
+@@ -345,6 +357,45 @@ describe("fe-errors: unclosed FENCE, depth and standalone", () => {
+       line: 1,
+       column: 10,
+     },
++    {
++      name: "a lang variable holding a line break is a type-error at the FENCE tag",
++      template: "x\n  {{FENCE lang=l}}y{{END_FENCE}}",
++      data: { l: "md\n# injected" },
++      code: "type-error",
++      line: 2,
++      column: 3,
++    },
++    {
++      name: "a lang variable holding a backtick is a type-error at the FENCE tag",
++      template: "{{FENCE lang=l}}y{{END_FENCE}}",
++      data: { l: "md`" },
++      code: "type-error",
++      line: 1,
++      column: 1,
++    },
++    {
++      name: "a quoted lang holding a backtick is a type-error at the FENCE tag",
++      template: 'a\n{{FENCE lang="a`b"}}y{{END_FENCE}}',
++      code: "type-error",
++      line: 2,
++      column: 1,
++    },
++    {
++      name: "a fence filter lang holding a backtick is a type-error at the variable",
++      template: "a\n  ${{ b | fence=a`b }}",
++      data: { b: "x" },
++      code: "type-error",
++      line: 2,
++      column: 3,
++    },
++    {
++      name: "a fence filter lang holding a line break is a type-error at the variable",
++      template: '${{ b | fence="a\nb" }}',
++      data: { b: "x" },
++      code: "type-error",
++      line: 1,
++      column: 1,
++    },
+   ];
+   it.each(cases)("fe-errors: $name", (c) => {
+     // the closed form of a FENCE is valid (so the error below is about FENCE, not an unknown tag)
+diff --git a/tests/promptaware/heading-offset.test.ts b/tests/promptaware/heading-offset.test.ts
+index fd69c8c..936a51d 100644
+--- a/tests/promptaware/heading-offset.test.ts
++++ b/tests/promptaware/heading-offset.test.ts
+@@ -54,7 +54,10 @@ const cases: Case[] = [
+   { name: "an unclosed tilde fence protects everything after it", draft: "# before\n~~~\n# in", offset: 1, expected: "## before\n~~~\n# in" },
+   { name: "headings between two fenced blocks shift, headings inside do not", draft: `${F3}\n# a\n${F3}\n# mid\n${F3}\n# b\n${F3}`, offset: 1, expected: `${F3}\n# a\n${F3}\n## mid\n${F3}\n# b\n${F3}` },
+   { name: "negative offset also spares fenced headings", draft: `### out\n${F3}\n### in\n${F3}`, offset: -1, expected: `## out\n${F3}\n### in\n${F3}` },
+-  { name: "CRLF fenced block is spared", draft: `# a\r\n${F3}\r\n# in\r\n${F3}\r\n# b`, offset: 1, expected: `## a\r\n${F3}\r\n# in\r\n${F3}\r\n## b` },
++  { name: "a backtick line whose info text holds a backtick is not a fence opener", draft: `${F3}x${F3}\n# a`, offset: 1, expected: `${F3}x${F3}\n## a` },
++  { name: "a backtick line with a code span in its info text is not a fence opener", draft: `# a\n${F3}js \`y\`\n## b`, offset: 1, expected: `## a\n${F3}js \`y\`\n### b` },
++  { name: "a tilde fence's info text may hold a backtick", draft: "~~~x`y\n# in\n~~~\n# out", offset: 1, expected: "~~~x`y\n# in\n~~~\n## out" },
++  { name: "CRLF fenced block is spared",draft: `# a\r\n${F3}\r\n# in\r\n${F3}\r\n# b`, offset: 1, expected: `## a\r\n${F3}\r\n# in\r\n${F3}\r\n## b` },
+ ];
+ 
+ describe("ho-offset: heading_offset shifts ATX headings, clamped to 1 through 6, sparing fenced code", () => {
+``````
 
 ## Gate run
 The card's gate command as it last ran, before this packet was built. Output only: run the command yourself to check it.
 - Command: `node node_modules/jest/bin/jest.js --runTestsByPath tests/promptaware/fence.test.ts tests/promptaware/heading-offset.test.ts tests/promptaware/escape-modes.test.ts --json`
 - Exit status: 0
-- Tests: 136 passed, 0 failed
+- Tests: 146 passed, 0 failed
 - Failing tests: none
+
+## 5. Earlier findings and replies
+
+Answer each fix-class (defect or goal-risk) finding below in `responses` with sustain or withdraw and evidence. Raise new findings only about what the revision changed or an in-scope problem newly evidenced.
+
+### f1: A large value makes render throw a RangeError, because fence sizing spreads every backtick run into Math.max
+
+- Class: defect
+- Serves: c1: A FENCE body with about 130k backtick runs (a 260 KB value, well under maxOutputChars of 1,000,000) overflows the call stack in Math.max(...runs). The FENCE block lets a raw RangeError escape render(), which promises that template and data problems never throw. The fence filter returns a misleading type-error, 'Maximum call stack size exceeded', instead of the fenced value. Either way, valid input within the limits gets no c1 output.
+- Reproduction: render('{{FENCE}}${{b}}{{END_FENCE}}', {b: '`a'.repeat(130000)}, {standaloneLines:false}) throws RangeError: Maximum call stack size exceeded. render('${{ b | fence }}', same data) returns ok:false with type-error 'Maximum call stack size exceeded'. With 100000 repeats both still succeed. Smallest fix: find the longest run with a loop or reduce over body.match(/`+/g) instead of spreading into Math.max.
+- Status: fixed
+- Reply (fixed): restate: defect in the fence or heading offset for odd values; verify: new table rows fail before and pass after; 146 gate tests, 1230 suite; evidence: test:tests/promptaware/fence.test.ts
+- Review lead ruling: sustain: real defect in a new surface; fix with a test row
+
+### f2: A lang value from data can contain a line break or a backtick and break the fence or close it early
+
+- Class: goal-risk
+- Serves: card-goal: Goal-critical question 'can any body make the fence close early?': the body cannot, but lang is written raw onto the opening fence line. With {{FENCE lang=l}} and l = "md\n```\n# injected", the output is "```md\n```\n# injected\nx\n```\n". The fence closes on line 2, '# injected' renders as a real heading, and the body escapes the code block. A lang containing a backtick ("a`b") makes the opening line an invalid backtick fence in CommonMark, so the body is not fenced at all. Data controls whether the fence holds, which defeats the purpose of an auto-sized fence.
+- Reproduction: render('{{FENCE lang=l}}x{{END_FENCE}}', {l: 'md\n```\n# injected'}, {standaloneLines:false}) returns ok:true with output "```md\n```\n# injected\nx\n```\n". render('{{FENCE lang=l}}# x{{END_FENCE}}', {l: 'a`b'}) returns "```a`b\n# x\n```\n", which is not a valid fence. Smallest fix: in fenceLang, and in the fence filter, make a lang that contains a line break or a backtick a type-error at the FENCE tag or the variable.
+- Status: fixed
+- Reply (fixed): restate: defect in the fence or heading offset for odd values; verify: new table rows fail before and pass after; 146 gate tests, 1230 suite; evidence: test:tests/promptaware/fence.test.ts
+- Review lead ruling: sustain: real defect in a new surface; fix with a test row
+
+### f3: heading_offset takes a line that starts with a three-backtick code span for an opening fence and stops shifting the headings after it
+
+- Class: defect
+- Serves: c4: The value line '```js``` text' is inline code: a backtick fence's info string may not contain backticks. heading_offset treats it as an unclosed fence opener, so every later heading in the value is left unshifted. That violates 'shifts every ATX heading line'.
+- Reproduction: render('${{ v | heading_offset=1 }}', {v: '```js``` text\n# h'}, {standaloneLines:false}).output is '```js``` text\n# h'; the expected output is '```js``` text\n## h'. Smallest fix: count a backtick fence opener only when the rest of its line contains no backtick.
+- Status: fixed
+- Reply (fixed): restate: defect in the fence or heading offset for odd values; verify: new table rows fail before and pass after; 146 gate tests, 1230 suite; evidence: test:tests/promptaware/fence.test.ts
+- Review lead ruling: sustain: real defect in a new surface; fix with a test row
 
 ## Output
 

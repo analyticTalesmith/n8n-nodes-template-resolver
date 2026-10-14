@@ -35,6 +35,71 @@
         "f6"
       ],
       "responses": []
+    },
+    {
+      "number": 2,
+      "at": "2026-10-14T03:00:10.919Z",
+      "reviewer": {
+        "kind": "fallback",
+        "label": "opus fallback (same model family as the builder; has repository access)"
+      },
+      "output_sha256": "cf831ba034f2457e36b188e6aa8448b9ab111c8c114e329d47602d331960c3ba",
+      "diff_sha256": "3f87fa09074a93ab4e3ebbd8b92a50e368083d47e9288fd0daa9dc01e9043830",
+      "restatement": "Add prompt-shaped markdown tools to the headless template core: a FENCE...END_FENCE block and a fence filter that wrap content in a backtick code fence always longer than any backtick run inside it (with an optional lang from a quoted string or variable path, one leading and one trailing line break trimmed, closing fence plus line break), a heading_offset=N filter that shifts ATX headings outside fenced code with clamping to 1-6, and escape_md inline/block modes where block also neutralises line-start structure. FENCE must behave like any block (unclosed is a located syntax-error, counts toward maxDepth, standalone-line rule), spec and analyze must know the new block and filters, and none of this may change existing test expectations, plain escape_md output, or add runtime dependencies.",
+      "brief_mismatch": null,
+      "evidence": [
+        "code:core/src/filters.ts:22",
+        "code:core/src/filters.ts:241",
+        "code:core/src/filters.ts:244",
+        "code:core/src/filters.ts:283",
+        "code:core/src/filters.ts:293",
+        "code:core/src/filters.ts:297",
+        "code:core/src/interpreter.ts:380",
+        "diff:tests/promptaware/fence.test.ts",
+        "doc:docs/living/architecture/prompt-aware-contract.md",
+        "patch:3f87fa09074a93ab4e3ebbd8b92a50e368083d47e9288fd0daa9dc01e9043830",
+        "test:fe-autosize: a large body with 300000 backtick runs is sized without failing",
+        "test:fe-autosize: the fence filter sizes a large value with 300000 backtick runs",
+        "test:fe-errors: a fence filter lang holding a backtick is a type-error at the variable",
+        "test:fe-errors: a lang variable holding a line break is a type-error at the FENCE tag",
+        "test:ho-offset: a backtick line whose info text holds a backtick is not a fence opener",
+        "test:tests/promptaware/fence.test.ts"
+      ],
+      "stalled": false,
+      "raised": [
+        "f7",
+        "f8",
+        "f9"
+      ],
+      "responses": [
+        {
+          "finding": "f1",
+          "verdict": "withdraw",
+          "evidence": [
+            "code:core/src/filters.ts:244",
+            "test:fe-autosize: a large body with 300000 backtick runs is sized without failing",
+            "test:fe-autosize: the fence filter sizes a large value with 300000 backtick runs"
+          ]
+        },
+        {
+          "finding": "f2",
+          "verdict": "withdraw",
+          "evidence": [
+            "code:core/src/filters.ts:241",
+            "code:core/src/interpreter.ts:380",
+            "test:fe-errors: a lang variable holding a line break is a type-error at the FENCE tag",
+            "test:fe-errors: a fence filter lang holding a backtick is a type-error at the variable"
+          ]
+        },
+        {
+          "finding": "f3",
+          "verdict": "withdraw",
+          "evidence": [
+            "code:core/src/filters.ts:293",
+            "test:ho-offset: a backtick line whose info text holds a backtick is not a fence opener"
+          ]
+        }
+      ]
     }
   ],
   "findings": [
@@ -55,7 +120,7 @@
       "location": "core/src/filters.ts:242",
       "label": "f1",
       "raised_in": 1,
-      "status": "fixed",
+      "status": "withdrawn",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [
@@ -94,7 +159,7 @@
       "location": "core/src/interpreter.ts:383",
       "label": "f2",
       "raised_in": 1,
-      "status": "fixed",
+      "status": "withdrawn",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [
@@ -132,7 +197,7 @@
       "location": "core/src/filters.ts:270",
       "label": "f3",
       "raised_in": 1,
-      "status": "fixed",
+      "status": "withdrawn",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [
@@ -237,6 +302,92 @@
         }
       ],
       "ticket": "0049-follow-up-indented-atx-headings-one-to-t"
+    },
+    {
+      "title": "heading_offset skips ATX headings indented by one to three spaces, though its own fence detection honours that indent",
+      "class": "drift",
+      "serves": {
+        "target": "c4",
+        "scenario": "c4 says heading_offset shifts every ATX heading line. In CommonMark an ATX heading may be indented by up to three spaces, and the filter's own fence detection accepts that indent (/^ {0,3}(`{3,}|~{3,})/). The heading rewrite only matches /^(#{1,6}) /, so a drafted value with ' # Notes' or '   ## Detail' keeps its level while the headings around it shift. The resulting document hierarchy is wrong (a sub-heading can end up above its parent). A tab after the hashes ('#\tTitle') is skipped the same way."
+      },
+      "rubric": "each criterion is met by the diff and its test (c4: shifts every ATX heading line)",
+      "reproduction": "render('${{ v | heading_offset=1 }}', { v: ' # indented\n   ## three\n# top' }, { standaloneLines: false }).output is ' # indented\n   ## three\n## top'. The expected output is ' ## indented\n   ### three\n## top'. Smallest fix: match /^( {0,3})(#{1,6})(?=[ \t])/ in the rewrite and keep the captured indent.",
+      "evidence": [
+        "code:core/src/filters.ts:283",
+        "code:core/src/filters.ts:297",
+        "doc:docs/living/architecture/prompt-aware-contract.md"
+      ],
+      "location": "core/src/filters.ts:297",
+      "label": "f7",
+      "raised_in": 2,
+      "status": "filed",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [
+        {
+          "after_round": 2,
+          "ruling": "drift",
+          "note": "same as the ticketed indented-heading limitation (f6): only headings starting at column one are shifted and the README says so; ruled by the project lead for time, ticketed"
+        }
+      ],
+      "ticket": "0050-follow-up-heading-offset-skips-atx-headi"
+    },
+    {
+      "title": "A frozen test expectation was changed (FENCE sharing its line with text)",
+      "class": "drift",
+      "serves": {
+        "target": "m1",
+        "scenario": "tests/promptaware/fence.test.ts was frozen at base. The case 'standalone on: a FENCE tag sharing its line with text is not removed' changed its expected output from 'a ```\nx\n``` b\n' to 'a ```\nx\n```\n b\n'. The new value matches the contract (the closing fence always carries a trailing line break), so the old expectation contradicted c1, and the lead amended the manifest for it. It is still a deviation from the frozen plan, so it is reported for the lead and needs no fix."
+      },
+      "rubric": "no change outside the card scope",
+      "reproduction": "git diff b12a2ace 14d4432 -- tests/promptaware/fence.test.ts shows the edited expectation at the 'sharing its line with text' row.",
+      "evidence": [
+        "diff:tests/promptaware/fence.test.ts",
+        "doc:docs/living/architecture/prompt-aware-contract.md"
+      ],
+      "location": "tests/promptaware/fence.test.ts:205",
+      "label": "f8",
+      "raised_in": 2,
+      "status": "withdrawn",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [
+        {
+          "after_round": 2,
+          "ruling": "withdraw",
+          "note": "duplicate of the logged test amendment"
+        }
+      ]
+    },
+    {
+      "title": "A fence filter lang that contains '=' or ':' is truncated or misparsed by the existing parseFilter",
+      "class": "drift",
+      "serves": {
+        "target": "c2",
+        "scenario": "parseFilter splits the shorthand on every '=', so '${{ v | fence=\"a=b\" }}' silently writes a fence with lang 'a'. A lang that contains ':' switches to named-params parsing. This comes from the pre-existing filter parser, not from the new code, and realistic language tags such as c++ and 'my lang' work. Noted for the lead only."
+      },
+      "rubric": "each criterion is met by the diff and its test",
+      "reproduction": "render('${{ v | fence=\"a=b\" }}', { v: 'x' }, { standaloneLines: false }).output is '```a\nx\n```\n'.",
+      "evidence": [
+        "code:core/src/filters.ts:22"
+      ],
+      "location": "core/src/filters.ts:22",
+      "label": "f9",
+      "raised_in": 2,
+      "status": "filed",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [
+        {
+          "after_round": 2,
+          "ruling": "drift",
+          "note": "parseFilter limitation predates the card; ticketed"
+        }
+      ],
+      "ticket": "0051-follow-up-a-fence-filter-lang-that-conta"
     }
   ]
 }
