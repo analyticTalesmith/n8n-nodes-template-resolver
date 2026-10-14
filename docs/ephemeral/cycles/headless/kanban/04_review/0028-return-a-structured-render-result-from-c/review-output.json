@@ -1,79 +1,81 @@
 {
-  "restatement": "Core should expose a single structured render contract that the API, the CLI and the n8n node all consume. render(template, data, options) returns {ok, output, messages, stats{chars, estTokens, sectionsOmitted, iterations}, diagnostics} and never throws for template or data problems: on failure it returns ok false, an empty output and the located error first. Alongside it come validate (no data needed), spec (blocks, filters, operators, limits, version, covering every filter the engine accepts), a dependency-free ceil(chars/4) estimator that a tokenEstimator option can replace, and analyze, which now reports required and per-block-kind counts. resolveTemplate keeps returning strings and throwing. The n8n node renders through the structured result, writes output to its configured field and turns failures into NodeOperationErrors that carry line and column. No runtime dependency is added, core gets no n8n imports or I/O, and the build and bin are prepared for api/ and cli/.",
+  "restatement": "Core must expose one structured render contract that the API, CLI and n8n node all consume. render returns {ok, output, messages, stats{chars, estTokens, sectionsOmitted, iterations}, diagnostics} and never throws for template or data problems: a failure gives ok false, empty output and the located error first. validate checks a template without data. analyze adds required and per-kind block counts. spec describes the language and lists every engine filter. A chars/4 estimator can be replaced by an option. resolveTemplate keeps its throwing string behavior. The node renders through the result, keeps writing to its configured field, and turns failures into located NodeOperationErrors. All of this ships with no runtime dependency and no n8n import or I/O in core. The revision adds rr-robust: render and validate never throw for non-object data or cyclic values, and each such case returns ok false with a diagnostic.",
   "brief_mismatch": null,
   "verification_plan": [
-    "c1: read render and confirm the result shape on success and that every exit path for template and data problems returns ok false, output '' and a located diagnostic first, with no throw. Probe adversarial data (null data, cyclic objects, BigInt, non-array FOR targets, bad filter parameters, math on objects) and adversarial templates.",
-    "c1: confirm stats.iterations counts FOR iterations across nested loops and that chars and estTokens are computed on the final output.",
-    "c2: confirm validate uses no data, reports syntax errors and unknown filters as located errors, and does not report missing variables.",
-    "c3: confirm analyze adds required === !optional on every variable and a blocks count keyed by block kind, including nested blocks and an empty object when there are none.",
-    "c4: confirm spec returns version, blocks, filters, operators, limits equal to the defaults and syntax, and that its filter list matches the engine's applyFilter set rather than a list that can drift from it.",
-    "c5: confirm the default estimator is Math.ceil(len/4), that tokenEstimator replaces it and receives the output, and that neither adds a dependency.",
-    "c6/m1: confirm resolveTemplate is unchanged for passing templates (no diff in resolve.ts or the engine's output path), that it still throws named errors, and that limits options reach the lexer/parser/interpreter with limit-* codes.",
-    "c7: confirm the node calls render, writes result.output to outputField (default resolved_prompt kept), and throws NodeOperationError with the first diagnostic's message and '(line L, column C)'. Run the pre-existing node tests to confirm nothing regressed.",
-    "c8/m2: confirm package.json has no dependencies, bin maps template-resolver to dist/cli/index.js, and tsconfig include adds api/**/* and cli/**/*.",
-    "m3: grep the core diff for n8n imports and fs/http/process I/O.",
-    "Scope: confirm every changed file is inside files_scope and the manifest, and that no frozen test was edited.",
-    "Run the gate command and the full jest suite."
+    "Run the frozen gate tests (render, spec, node, nodeps) plus the full suite, and confirm they pass with no frozen test edited.",
+    "rr-result: check that every failure path inside render, including parse, interpret and limit failures, returns ok false, an empty output and the located error first, and that nothing outside the try can throw.",
+    "Probe render with hostile inputs: null, array, string or number data; cyclic values used as an output variable, a FOR target, in comparisons, math, filters and CASE; BigInt; throwing getters; a non-string template. Record which inputs throw and which return ok true silently.",
+    "rr-robust: confirm that each named input (non-object data, a cyclic data value, a cyclic value looped over in strict mode) returns ok false with a diagnostic, and that the new test asserts it.",
+    "rr-validate: confirm syntax errors and unknown filters give ok false with located errors, and a missing variable gives ok true.",
+    "rr-analyze: confirm required equals !optional and blocks counts each kind.",
+    "rr-spec: confirm spec's filter list comes from the same source the engine uses, so the two cannot drift, and that limits equal DEFAULT_LIMITS.",
+    "rr-estimator: confirm the default is ceil(chars/4) and that tokenEstimator replaces it and receives the output.",
+    "m1: diff the interpreter changes and confirm no resolveTemplate output changes for a passing template.",
+    "m2 and m3: confirm package.json adds no dependencies and core imports neither n8n nor fs, http or other I/O.",
+    "Node: confirm it keeps the outputField default resolved_prompt, its old tests still pass, and failures carry the line and column."
   ],
   "findings": [
     {
-      "title": "render throws a raw TypeError for cyclic data in a strict FOR over a non-array value",
+      "title": "A cyclic data value used as output renders ok true with empty text instead of ok false with a diagnostic, and the rr-robust test accepts it",
       "class": "defect",
       "serves": {
-        "target": "c1",
-        "scenario": "A data problem (a FOR target that is a cyclic object) escapes render as an uncaught native TypeError instead of ok false with a located type-error diagnostic, which breaks the 'never throws for template or data problems' contract. API, CLI and node callers would get a crash or 500 instead of a result."
+        "target": "c9",
+        "scenario": "c9 requires that render returns ok false with a diagnostic for cyclic data values. For render('${{a}}', {a: cyclic}, {strictMode: true}), render instead returns ok true, output '' and no diagnostics: a data problem passes silently as an empty substitution. The new rr-robust test only asserts typeof r.ok === 'boolean' and checks diagnostics only when ok is false, so it passes either way and does not verify the criterion."
       },
-      "rubric": "each criterion is met by the diff and its test (c1: on a template or data error it does not throw)",
-      "reproduction": "const o = {}; o.self = o; render('{{FOR o AS x}}a{{END_FOR}}', { o }) throws 'TypeError: Converting circular structure to JSON'. Verified by compiling core/src with tsc and calling render from node. The throw comes from JSON.stringify(iterable) while the interpreter builds its own TemplateError message (core/src/interpreter.ts:280). render then rethrows it because it is not a TemplateError (core/src/render.ts, 'if (!(error instanceof TemplateError)) throw error'). Smallest fix: build that message with the existing safe coercion (tryCoerceToString, which already catches stringify failures) instead of a bare JSON.stringify.",
+      "rubric": "each criterion is met by the diff and its test (c9 rr-robust)",
+      "reproduction": "Compile core/src with tsc and run: const a={x:'v'}; a.self=a; render('a\\n${{a}}', {a}, {strictMode:true}). The result is {ok:true, output:'a\\n', diagnostics:[]}. render('${{a.self.self.x}}', {a}) behaves the same way. The cause is Interpreter.valueToString (core/src/interpreter.ts ~608): it calls tryCoerceToString, which swallows the JSON.stringify failure and returns null, and valueToString then turns null into ''. Smallest fix: make render report this case. One way is an interpreter option set only by render that throws a located type-error when an object value cannot be stringified. Then tighten the rr-robust cases to expect ok false. Keeping the change behind a render-only option leaves resolveTemplate's output unchanged (m1).",
       "evidence": [
-        "code:core/src/interpreter.ts:280",
-        "code:core/src/coercion.ts:316",
-        "diff:core/src/render.ts",
-        "doc:docs/living/architecture/headless-contract.md"
+        "code:core/src/interpreter.ts:608",
+        "code:core/src/coercion.ts:305",
+        "diff:tests/headless/render-robust.test.ts",
+        "test:rr-robust: strict the cyclic value itself does not throw"
       ],
-      "location": "core/src/interpreter.ts:280"
+      "location": "core/src/interpreter.ts:608"
     },
     {
-      "title": "render throws when data is null or not an object, because data conversion sits outside the try",
+      "title": "render and validate still throw for a non-string template such as null",
       "class": "goal-risk",
       "serves": {
         "target": "card-goal",
-        "scenario": "One contract for API, CLI and node: render(template, null) throws 'Cannot convert undefined or null to object' from Object.entries(data) before the try block, so a JS or CLI caller that passes JSON 'null' as data gets an exception. The contract reserves an invalid-input diagnostic code for exactly this case."
+        "scenario": "Goal-critical question: can render throw for any template or data input? Yes. render(null, {}) and validate(null) throw a native TypeError ('Cannot read properties of null (reading length')') from the lexer, which sits outside any guard. The revision added a runtime guard for non-object data, but nothing guards the template. A JS library caller, or any consumer that does not pre-validate, gets an exception instead of the shared ok false or invalid-input result."
       },
-      "rubric": "each criterion is met by the diff and its test (c1: data error does not throw)",
-      "reproduction": "render('${{x}}', null as any) throws TypeError 'Cannot convert undefined or null to object' (verified with compiled core). Smallest fix: move the Map construction into the try, or check that data is a non-null object and return ok false with an 'invalid-input' diagnostic at 1:1.",
+      "rubric": "each criterion is met by the diff and its test (rr-result: never throws for template or data problems)",
+      "reproduction": "Compile core/src with tsc and call render(null, {}). It throws TypeError: Cannot read properties of null (reading 'length'). validate(null) throws the same error. render(42, {}) returns ok true with output ''. Smallest fix: at the top of render and validate, return an invalid-input diagnostic at 1:1 when typeof template !== 'string', mirroring the existing data guard.",
       "evidence": [
-        "diff:core/src/render.ts",
+        "code:core/src/render.ts:96",
+        "code:core/src/render.ts:144",
         "doc:docs/living/architecture/headless-contract.md"
       ],
-      "location": "core/src/render.ts:61"
-    },
-    {
-      "title": "spec's filter list is a hand-maintained copy beside applyFilter's switch, not derived from it",
-      "class": "drift",
-      "serves": {
-        "target": "c4",
-        "scenario": "A filter added to applyFilter but not to FILTERS would be missing from spec. It would also be rejected by analyze/validate as unknown-filter, because KNOWN_FILTERS now derives from FILTERS, while render accepts it. The frozen test pins a fixed fixture list, so it would not catch the divergence."
-      },
-      "rubric": "each criterion is met by the diff and its test",
-      "reproduction": "Add a 'case \"upper\"' to applyFilter only. spec().filters lacks it, validate('${{a | upper}}') reports unknown-filter, and render succeeds. Note for the lead: dispatching applyFilter from FILTERS, or asserting the two match in a test, would close it.",
-      "evidence": [
-        "diff:core/src/filters.ts",
-        "diff:core/src/analyze.ts",
-        "test:rr-spec: lists exactly the engine's filters"
-      ],
-      "location": "core/src/filters.ts:955"
+      "location": "core/src/render.ts:96"
     }
   ],
-  "responses": [],
+  "responses": [
+    {
+      "finding": "f1",
+      "verdict": "withdraw",
+      "evidence": [
+        "code:core/src/interpreter.ts:280",
+        "code:core/src/interpreter.ts:630",
+        "test:rr-robust: a strict FOR over a cyclic non-array value does not throw and is located"
+      ]
+    },
+    {
+      "finding": "f2",
+      "verdict": "withdraw",
+      "evidence": [
+        "code:core/src/render.ts:96",
+        "test:rr-robust: data that is null gives ok false with invalid-input at 1:1"
+      ]
+    }
+  ],
   "reviewer": {
     "kind": "fallback",
     "label": "opus fallback (same model family as the builder; has repository access)"
   },
-  "at": "2026-10-14T01:08:54.938Z",
+  "at": "2026-10-14T01:12:39.157Z",
   "card": "0028-return-a-structured-render-result-from-c",
   "tier": "product",
-  "packet_sha256": "698b5fd0772e13ccd051908722c1c23b3088bd171bc7e5f8242f1333bd219c7a",
-  "diff_sha256": "180874d225494c77118bc3341d2e92db214522abfbf12bc4ac1dd0f1cdb9a5af",
+  "packet_sha256": "90845828d81966c0fba3996b5a19807965aaae5b647b5f3eb0b0bf5b530a2b93",
+  "diff_sha256": "849c2f163dc22ab7fdc4669c0b9d5e77ca02be37cf162600417eacf33ed79239",
   "dropped": []
 }

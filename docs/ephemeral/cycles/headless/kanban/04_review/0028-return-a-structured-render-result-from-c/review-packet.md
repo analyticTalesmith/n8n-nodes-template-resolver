@@ -2,17 +2,17 @@
 type: review-packet
 card: 0028-return-a-structured-render-result-from-c
 tier: product
-built_at: 2026-10-14T01:07:23.005Z
+built_at: 2026-10-14T01:11:06.892Z
 base: 02dd2d32a9f7f781f327ee35005413fbb04eccd9
-head: 87cf84a215f57565e10ad0865c91d9f8fef5ee4a
+head: 8d3926f28bfc0a620244a8e129c971714decfac6
 frozen: true
 brief_sha256: cdb7e38fcd2a306d8703ec1343835b9a32914650638d4105f29e6f16254d8117
-manifest_sha256: f23362f4c7f1b95929ba9d1174d0ce1f5d53ba121c624428f480c84bf1ad6a3b
-criteria_sha256: 8c6b3d937679f6f5df7dceac474e7b9f18e11c05b293d5c7ddfd95bcc6ad4343
-scope_sha256: fba9b75c29ad033871fcc0f67bd500f3bbde0447a7955d561d239f03f4d76613
-diff_sha256: 180874d225494c77118bc3341d2e92db214522abfbf12bc4ac1dd0f1cdb9a5af
-omitted_paths: 5
-criteria_count: 8
+manifest_sha256: 2826426587c69e5e375c928a5cdc13b0bce0d06002d70cffa555d86a916f72da
+criteria_sha256: 816ed2ccbf0616e4214963f5d742e48f5697cbc47bf4c7834e82e579e24b0d4f
+scope_sha256: ef1e3f14186e4ae78a2115497e78455e596da1418ae8252a67afe90075f3ce96
+diff_sha256: 849c2f163dc22ab7fdc4669c0b9d5e77ca02be37cf162600417eacf33ed79239
+omitted_paths: 12
+criteria_count: 9
 must_not_count: 3
 ---
 
@@ -21,6 +21,14 @@ must_not_count: 3
 Manifest amended after the freeze at 2026-10-14T01:07:05.433Z by lead: the test writer's stubs already existed so the new modules are edits; the shared filter list and an iteration count needed filters and interpreter; resolve and a stray entry were not changed (add -core/src/estimate.ts, add -core/src/render.ts, add -core/src/spec.ts, edit +core/src/filters.ts, edit +core/src/interpreter.ts, edit -core/src/resolve.ts, edit -x)
 
 Manifest amended after the freeze at 2026-10-14T01:07:12.739Z by lead: stubs from the test writer already existed so these modules are edits (edit +core/src/estimate.ts, edit +core/src/render.ts, edit +core/src/spec.ts)
+
+Manifest amended after the freeze at 2026-10-14T01:09:05.175Z by lead: new robustness test is a card test (edit +tests/headless/render-robust.test.ts, scope +tests/headless)
+
+Manifest amended after the freeze at 2026-10-14T01:11:06.397Z by lead: drop the wrong-kind entry (edit -tests/headless/render-robust.test.ts)
+
+Manifest amended after the freeze at 2026-10-14T01:11:06.517Z by lead: the robustness test is new; the criterion line is added to the spec and the test plan (add +tests/headless/render-robust.test.ts, edit +docs/ephemeral/cycles/headless/test-plan.md, edit +docs/ephemeral/work/0028-return-a-structured-render-result-from-c/spec.md, scope +docs/ephemeral/cycles/headless/test-plan.md, scope +docs/ephemeral/work/0028-return-a-structured-render-result-from-c)
+
+Criterion added after the freeze at 2026-10-14T01:09:05.054Z by lead: rr-robust: render and validate never throw for non-object data (null, array, string), cyclic data values or a cyclic value looped over in strict mode; each returns ok false with a diagnostic (verify test); reason: review found render can still throw for cyclic data and for non-object data
 
 Read the sections in order. Write `restatement` before you read section 3. At product tier and up, write `verification_plan` from section 1 alone before you read section 3.
 
@@ -42,6 +50,7 @@ Card goal: one structured contract in core that API, CLI and node all consume.
 - c6 (verify: test): rr-compat: resolveTemplate still returns a string and throws, and limits in render options bound the render with their diagnostics
 - c7 (verify: test): nd-output: the n8n node writes the render output to the configured field, and a failed render throws a node error whose message carries the first diagnostic with line and column
 - c8 (verify: test): nd-nodeps: package.json declares no runtime dependencies, tsconfig builds api and cli folders, and package.json exposes the template-resolver bin
+- c9 (verify: test): rr-robust: render and validate never throw for non-object data (null, array, string), cyclic data values or a cyclic value looped over in strict mode; each returns ok false with a diagnostic
 
 ### Must not
 
@@ -182,10 +191,10 @@ No scope exceptions are logged.
 
 ### Manifest and scope
 
-- add: none
+- add: `tests/headless/render-robust.test.ts`
 - remove: none
-- edit: `core/src/analyze.ts`, `core/src/estimate.ts`, `core/src/filters.ts`, `core/src/index.ts`, `core/src/interpreter.ts`, `core/src/render.ts`, `core/src/spec.ts`, `n8n/TemplateResolver.node.ts`, `package.json`, `tsconfig.json`
-- files_scope: `core/src/`, `n8n/`, `package.json`, `tsconfig.json`
+- edit: `core/src/analyze.ts`, `core/src/estimate.ts`, `core/src/filters.ts`, `core/src/index.ts`, `core/src/interpreter.ts`, `core/src/render.ts`, `core/src/spec.ts`, `docs/ephemeral/cycles/headless/test-plan.md`, `docs/ephemeral/work/0028-return-a-structured-render-result-from-c/spec.md`, `n8n/TemplateResolver.node.ts`, `package.json`, `tsconfig.json`
+- files_scope: `core/src/`, `docs/ephemeral/cycles/headless/test-plan.md`, `docs/ephemeral/work/0028-return-a-structured-render-result-from-c`, `n8n/`, `package.json`, `tests/headless`, `tsconfig.json`
 
 ## 2. Your verification plan
 
@@ -797,9 +806,11 @@ describe("nd-nodeps: no runtime dependencies, api and cli built, bin exposed", (
 });
 ```
 
+Named by the card but not at the base commit (the implementer's own tests, never frozen): `tests/headless/render-robust.test.ts`.
+
 ## 4. Diff
 
-5 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
+12 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
 
 ```diff
 diff --git a/core/src/analyze.ts b/core/src/analyze.ts
@@ -983,7 +994,7 @@ index 8f9f40a..2b8af2d 100644
  export { spec } from "./spec";
 +export type { Spec } from "./spec";
 diff --git a/core/src/interpreter.ts b/core/src/interpreter.ts
-index 6b061fd..3e7ede1 100644
+index 6b061fd..f40a7dc 100644
 --- a/core/src/interpreter.ts
 +++ b/core/src/interpreter.ts
 @@ -64,6 +64,13 @@ export class Interpreter {
@@ -1000,8 +1011,33 @@ index 6b061fd..3e7ede1 100644
    /**
     * Main interpretation entry point
     */
+@@ -270,7 +277,7 @@ export class Interpreter {
+     if (array === null) {
+       if (this.strictMode) {
+         throw new TypeError(
+-          `Cannot iterate over non-array value: ${JSON.stringify(iterable)}`,
++          `Cannot iterate over non-array value: ${describeValue(iterable)}`,
+           node.line,
+           node.column,
+           "Ensure the value is an array or can be coerced to one"
+@@ -616,3 +623,15 @@ export class Interpreter {
+     return combined;
+   }
+ }
++
++/**
++ * The value as JSON, or its plain string form when JSON cannot hold it
++ * (a cycle, a BigInt)
++ */
++function describeValue(value: unknown): string {
++  try {
++    return JSON.stringify(value);
++  } catch {
++    return String(value);
++  }
++}
 diff --git a/core/src/render.ts b/core/src/render.ts
-index 3c04232..639901a 100644
+index 3c04232..210b5c1 100644
 --- a/core/src/render.ts
 +++ b/core/src/render.ts
 @@ -1,16 +1,20 @@
@@ -1031,7 +1067,7 @@ index 3c04232..639901a 100644
    message: string;
    line: number;
    column: number;
-@@ -30,25 +34,92 @@ export interface RenderResult {
+@@ -30,25 +34,104 @@ export interface RenderResult {
    diagnostics: Diagnostic[];
  }
  
@@ -1049,6 +1085,19 @@ index 3c04232..639901a 100644
 +  data: Record<string, unknown>,
 +  options?: RenderOptions
  ): RenderResult {
++  if (data === null || typeof data !== "object" || Array.isArray(data)) {
++    return failure(
++      {
++        severity: "error",
++        code: "invalid-input",
++        message: "Data must be an object mapping variable names to values",
++        line: 1,
++        column: 1,
++      },
++      0
++    );
++  }
++
 +  const limits = withDefaultLimits(options?.limits);
 +  const interpreter = new Interpreter(
 +    new Map(Object.entries(data)) as Map<string, TemplateValue>,
@@ -1062,44 +1111,24 @@ index 3c04232..639901a 100644
 +    output = interpreter.interpret(ast);
 +  } catch (error) {
 +    if (!(error instanceof TemplateError)) throw error;
-+    return {
-+      ok: false,
-+      output: "",
-+      messages: [],
-+      stats: {
-+        chars: 0,
-+        estTokens: 0,
-+        sectionsOmitted: 0,
-+        iterations: interpreter.iterationCount,
-+      },
-+      diagnostics: [toDiagnostic(error)],
-+    };
++    return failure(toDiagnostic(error), interpreter.iterationCount);
 +  }
 +
 +  const estimate = options?.tokenEstimator ?? estimateTokens;
-   return {
--    ok: false,
--    output: "",
++  return {
 +    ok: true,
 +    output,
-     messages: [],
--    stats: { chars: 0, estTokens: 0, sectionsOmitted: 0, iterations: 0 },
++    messages: [],
 +    stats: {
 +      chars: output.length,
 +      estTokens: estimate(output),
 +      sectionsOmitted: 0,
 +      iterations: interpreter.iterationCount,
 +    },
-     diagnostics: [],
-   };
- }
- 
--/** Signature-only stub: check a template without data. */
--export function validate(_template: string): {
--  ok: boolean;
--  diagnostics: Diagnostic[];
--} {
--  return { ok: false, diagnostics: [] };
++    diagnostics: [],
++  };
++}
++
 +/**
 + * Check a template without data: syntax errors and unknown filters are
 + * errors; conditions that only some data could satisfy are warnings.
@@ -1126,6 +1155,24 @@ index 3c04232..639901a 100644
 +  };
 +}
 +
++function failure(diagnostic: Diagnostic, iterations: number): RenderResult {
+   return {
+     ok: false,
+     output: "",
+     messages: [],
+-    stats: { chars: 0, estTokens: 0, sectionsOmitted: 0, iterations: 0 },
+-    diagnostics: [],
++    stats: { chars: 0, estTokens: 0, sectionsOmitted: 0, iterations },
++    diagnostics: [diagnostic],
+   };
+ }
+ 
+-/** Signature-only stub: check a template without data. */
+-export function validate(_template: string): {
+-  ok: boolean;
+-  diagnostics: Diagnostic[];
+-} {
+-  return { ok: false, diagnostics: [] };
 +function toDiagnostic(error: TemplateError): Diagnostic {
 +  const diagnostic: Diagnostic = {
 +    severity: "error",
@@ -1391,6 +1438,78 @@ index 10e1b2d..7e75055 100644
    "files": [
      "dist"
    ],
+diff --git a/tests/headless/render-robust.test.ts b/tests/headless/render-robust.test.ts
+new file mode 100644
+index 0000000..8dd5b60
+--- /dev/null
++++ b/tests/headless/render-robust.test.ts
+@@ -0,0 +1,66 @@
++/* eslint-disable @typescript-eslint/no-explicit-any */
++import { render } from "../../core/src";
++
++function cyclic(): any {
++  const a: any = { x: "v" };
++  a.self = a;
++  return a;
++}
++
++function run(template: string, data: any, options?: any): any {
++  let r: any;
++  expect(() => {
++    r = render(template, data, options);
++  }).not.toThrow();
++  return r;
++}
++
++describe("rr-robust: render never throws on bad input", () => {
++  it.each([
++    ["null", null],
++    ["an array", [1, 2]],
++    ["a string", "text"],
++    ["a number", 42],
++  ] as [string, any][])(
++    "rr-robust: data that is %s gives ok false with invalid-input at 1:1",
++    (_n, data) => {
++      const r = run("hello ${{a}}", data);
++      expect(r).toBeDefined();
++      expect(r.ok).toBe(false);
++      expect(r.output).toBe("");
++      expect(r.diagnostics.length).toBe(1);
++      expect(r.diagnostics[0].code).toBe("invalid-input");
++      expect(r.diagnostics[0].line).toBe(1);
++      expect(r.diagnostics[0].column).toBe(1);
++    }
++  );
++
++  it.each([
++    ["the cyclic value itself", "${{a}}"],
++    ["a deep path through the cycle", "${{a.self.self.x}}"],
++  ] as [string, string][])(
++    "rr-robust: strict %s does not throw",
++    (_n, template) => {
++      const r = run(template, { a: cyclic() }, { strictMode: true });
++      expect(r).toBeDefined();
++      expect(typeof r.ok).toBe("boolean");
++      if (!r.ok) {
++        expect(r.diagnostics.length).toBeGreaterThan(0);
++        expect(typeof r.diagnostics[0].line).toBe("number");
++        expect(typeof r.diagnostics[0].column).toBe("number");
++      }
++    }
++  );
++
++  it("rr-robust: a strict FOR over a cyclic non-array value does not throw and is located", () => {
++    const r = run("{{FOR a AS x}}${{x}}{{END_FOR}}", { a: cyclic() });
++    expect(r).toBeDefined();
++    expect(typeof r.ok).toBe("boolean");
++    if (!r.ok) {
++      expect(r.diagnostics.length).toBeGreaterThan(0);
++      expect(r.diagnostics[0].code).toBe("type-error");
++      expect(typeof r.diagnostics[0].line).toBe("number");
++      expect(typeof r.diagnostics[0].column).toBe("number");
++    }
++  });
++});
 diff --git a/tsconfig.json b/tsconfig.json
 index 4166bb0..ba69a48 100644
 --- a/tsconfig.json
@@ -1412,6 +1531,26 @@ The card's gate command as it last ran, before this packet was built. Output onl
 - Exit status: 0
 - Tests: 62 passed, 0 failed
 - Failing tests: none
+
+## 5. Earlier findings and replies
+
+Answer each fix-class (defect or goal-risk) finding below in `responses` with sustain or withdraw and evidence. Raise new findings only about what the revision changed or an in-scope problem newly evidenced.
+
+### f1: render throws a raw TypeError for cyclic data in a strict FOR over a non-array value
+
+- Class: defect
+- Serves: c1: A data problem (a FOR target that is a cyclic object) escapes render as an uncaught native TypeError instead of ok false with a located type-error diagnostic, which breaks the 'never throws for template or data problems' contract. API, CLI and node callers would get a crash or 500 instead of a result.
+- Reproduction: const o = {}; o.self = o; render('{{FOR o AS x}}a{{END_FOR}}', { o }) throws 'TypeError: Converting circular structure to JSON'. Verified by compiling core/src with tsc and calling render from node. The throw comes from JSON.stringify(iterable) while the interpreter builds its own TemplateError message (core/src/interpreter.ts:280). render then rethrows it because it is not a TemplateError (core/src/render.ts, 'if (!(error instanceof TemplateError)) throw error'). Smallest fix: build that message with the existing safe coercion (tryCoerceToString, which already catches stringify failures) instead of a bare JSON.stringify.
+- Status: fixed
+- Reply (fixed): restate: render could throw for this input; verify: rr-robust tests pass 7 of 7, full suite 678 pass; evidence: test:tests/headless/render-robust.test.ts
+
+### f2: render throws when data is null or not an object, because data conversion sits outside the try
+
+- Class: goal-risk
+- Serves: card-goal: One contract for API, CLI and node: render(template, null) throws 'Cannot convert undefined or null to object' from Object.entries(data) before the try block, so a JS or CLI caller that passes JSON 'null' as data gets an exception. The contract reserves an invalid-input diagnostic code for exactly this case.
+- Reproduction: render('${{x}}', null as any) throws TypeError 'Cannot convert undefined or null to object' (verified with compiled core). Smallest fix: move the Map construction into the try, or check that data is a non-null object and return ok false with an 'invalid-input' diagnostic at 1:1.
+- Status: fixed
+- Reply (fixed): restate: render could throw for this input; verify: rr-robust tests pass 7 of 7, full suite 678 pass; evidence: test:tests/headless/render-robust.test.ts
 
 ## Output
 
