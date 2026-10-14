@@ -58,6 +58,7 @@ the template-resolver command and its exit codes (design.md); main(argv, io) exp
 | --- | --- | --- |
 | `cli/index.ts` | add | none |
 | `cli/main.ts` | add | none |
+| `x` | edit | none |
 
 Files scope: `cli/`
 <!-- end generated scope -->

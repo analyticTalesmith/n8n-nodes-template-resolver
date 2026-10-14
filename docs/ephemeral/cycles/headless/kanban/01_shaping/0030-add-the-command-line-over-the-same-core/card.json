@@ -18,8 +18,10 @@
       "cli/index.ts"
     ],
     "remove": [],
-    "edit": [],
-    "frozen": false
+    "edit": [
+      "x"
+    ],
+    "frozen": true
   },
   "criteria": [
     {
@@ -59,8 +61,8 @@
     }
   ],
   "gate": [
-    "npx",
-    "jest",
+    "node",
+    "node_modules/jest/bin/jest.js",
     "--runTestsByPath",
     "tests/headless/cli.test.ts",
     "--json"
@@ -74,5 +76,19 @@
   "schema_version": 1,
   "blast_radius": [
     "none"
-  ]
+  ],
+  "freeze": {
+    "at": "2026-10-14T00:38:03.860Z",
+    "brief_sha256": "e17f866e9b462a977410d3c0625e61d37005d11a35d4b1233791473ef4d2d0e5",
+    "brief_core_sha256": "4ec9abe89198c5d0f28de851ff65899c1460bcc6e0acd41ca163cab2dc649698",
+    "manifest_sha256": "2ce1bb731c0d065a578f5873b21ee15cea767384c9077cf9029b93ab4cce4286",
+    "criteria_sha256": "c26a79011b211e39bea70225f01d7cd3b240735fde7213bbeffd9cef44d63616",
+    "scope_sha256": "d6506ef1fd33beffb71eca80e037463758f5619ddc40399787b36f0936e0784e",
+    "scope_parts": {
+      "files_scope": "a8f18aaa4245f9a7803bcfb37bae3f2940e928b077e744656a73b3b37cb16232",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "4da00cb1e04649cbf22687e4a9731abdc53f061658b68770307dcf96326cd1de"
+    }
+  }
 }
