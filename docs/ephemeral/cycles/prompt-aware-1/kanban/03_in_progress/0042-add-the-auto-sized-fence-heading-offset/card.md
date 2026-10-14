@@ -58,6 +58,7 @@ FENCE block; filters fence, heading_offset and escape_md modes (see the prompt-a
 | Path | Permission (add, edit, remove) | Blast radius |
 | --- | --- | --- |
 | `core/src/analyze.ts` | edit | none |
+| `core/src/errors.ts` | edit | none |
 | `core/src/filters.ts` | edit | none |
 | `core/src/interpreter.ts` | edit | none |
 | `core/src/lexer.ts` | edit | none |
@@ -66,6 +67,7 @@ FENCE block; filters fence, heading_offset and escape_md modes (see the prompt-a
 | `core/src/types.ts` | edit | none |
 | `core/src/whitespace.ts` | edit | none |
 | `tests/headless/spec.test.ts` | edit | none |
+| `tests/promptaware/fence.test.ts` | edit | none |
 
-Files scope: `core/src/`, `tests/headless`
+Files scope: `core/src/`, `tests/headless`, `tests/promptaware`
 <!-- end generated scope -->
