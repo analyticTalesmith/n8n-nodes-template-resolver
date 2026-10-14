@@ -44,6 +44,19 @@ export function render(
   data: Record<string, unknown>,
   options?: RenderOptions
 ): RenderResult {
+  if (data === null || typeof data !== "object" || Array.isArray(data)) {
+    return failure(
+      {
+        severity: "error",
+        code: "invalid-input",
+        message: "Data must be an object mapping variable names to values",
+        line: 1,
+        column: 1,
+      },
+      0
+    );
+  }
+
   const limits = withDefaultLimits(options?.limits);
   const interpreter = new Interpreter(
     new Map(Object.entries(data)) as Map<string, TemplateValue>,
@@ -57,18 +70,7 @@ export function render(
     output = interpreter.interpret(ast);
   } catch (error) {
     if (!(error instanceof TemplateError)) throw error;
-    return {
-      ok: false,
-      output: "",
-      messages: [],
-      stats: {
-        chars: 0,
-        estTokens: 0,
-        sectionsOmitted: 0,
-        iterations: interpreter.iterationCount,
-      },
-      diagnostics: [toDiagnostic(error)],
-    };
+    return failure(toDiagnostic(error), interpreter.iterationCount);
   }
 
   const estimate = options?.tokenEstimator ?? estimateTokens;
@@ -109,6 +111,16 @@ export function validate(
   return {
     ok: diagnostics.every((d) => d.severity !== "error"),
     diagnostics,
+  };
+}
+
+function failure(diagnostic: Diagnostic, iterations: number): RenderResult {
+  return {
+    ok: false,
+    output: "",
+    messages: [],
+    stats: { chars: 0, estTokens: 0, sectionsOmitted: 0, iterations },
+    diagnostics: [diagnostic],
   };
 }
 

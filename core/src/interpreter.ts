@@ -277,7 +277,7 @@ export class Interpreter {
     if (array === null) {
       if (this.strictMode) {
         throw new TypeError(
-          `Cannot iterate over non-array value: ${JSON.stringify(iterable)}`,
+          `Cannot iterate over non-array value: ${describeValue(iterable)}`,
           node.line,
           node.column,
           "Ensure the value is an array or can be coerced to one"
@@ -621,5 +621,17 @@ export class Interpreter {
       combined.set(key, value);
     }
     return combined;
+  }
+}
+
+/**
+ * The value as JSON, or its plain string form when JSON cannot hold it
+ * (a cycle, a BigInt)
+ */
+function describeValue(value: unknown): string {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
   }
 }
