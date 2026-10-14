@@ -5,6 +5,14 @@
 - The engine moved to `core/src` (pure library) with the n8n node in `n8n/`; `analyze()` derives usage from the parsed template
 - Golden-file test harness; design decisions recorded under `docs/living/decisions/adr/`
 - Removed a stray console log from the math fallback, a garbled prefix from error messages, and the ELSE IF hint now works for any letter case
+- Structured render result: core `render` returns `{ok, output, messages, stats, diagnostics}` and never throws for template or data problems; `validate` checks a template without data; `spec` describes the template language (version `1.0`)
+- Diagnostics carry a code (`syntax-error`, `type-error`, `missing-variable`, `unknown-filter`, `limit-iterations`, `limit-output`, `limit-depth`, `invalid-input`, `analysis-warning`) and the line and column of the failing tag or placeholder, runtime errors included
+- Render limits with defaults: `maxIterations` 10000, `maxOutputChars` 1000000, `maxDepth` 32
+- `analyze` reports `required` per variable and a count per block kind
+- The n8n node renders through `render` and reports the first diagnostic with its location
+- Command line `template-resolver` with `render`, `validate`, `analyze`, `spec` and `serve`; exit codes 0, 1 and 2
+- HTTP API: `POST /v1/render`, `POST /v1/validate`, `POST /v1/analyze`, `GET /v1/spec`, `GET /v1/openapi.json`, on loopback by default, with a committed OpenAPI 3.1 document; request limits can only lower the server's
+- README documents the result, the diagnostics, the limits, the command line and the HTTP API; missing variables are now described as an error in strict mode
 
 ### 1.0.0
 

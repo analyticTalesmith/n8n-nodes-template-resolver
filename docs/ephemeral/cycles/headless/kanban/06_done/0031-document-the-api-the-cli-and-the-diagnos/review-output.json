@@ -1,0 +1,51 @@
+{
+  "restatement": "Document the headless cycle's surfaces (the template-resolver CLI, the HTTP API, the structured render result, diagnostics and limits) in the README and changelog, and update the living module documents for the api, the cli and the core, so a reader can use the CLI and API from the docs alone. Every documented route, subcommand and code must exist, every example must reproduce against the built code, nothing undocumented-by-code may be claimed, and no source code may change.",
+  "brief_mismatch": "c3 says the living module documents are added by the cycle's deltas 'applied by delta apply after the merge', but the manifest amendment has this card edit docs/living/architecture/* directly. The diff follows the amendment; the criterion text was not updated to match.",
+  "verification_plan": [
+    "Run the frozen gate tools/tests/headless-docs.test.mjs and confirm all six dc-coverage tests pass (routes, subcommands, diagnostic and HTTP error codes, limits with defaults on one line, exit codes 0/1/2, every api/openapi.json path).",
+    "Confirm dist is built from the head sources, then run every CLI example block in the README (render with data file, stdin data, missing-variable error with exit 1, --no-strict, lowered --max-iterations, --json, validate error and warning with exit codes, analyze, spec | tail, render - --data - usage error with exit 2) and diff the output byte for byte against the README.",
+    "Start the API with template-resolver serve, run every curl example (render ok, render missing-variable, lowered limit, validate, analyze, spec, openapi.json, 400, 404, 405 with Allow, 415, 413) and compare against the README, then stop the server.",
+    "Check prose claims beyond the examples against code: --help exit 0, no args exit 2, --strict with --no-strict is a usage error, CLI limit flags can raise limits, a request cannot raise server limits, analyze of an unparseable template (CLI stderr + exit 1, API 200 with empty results), analysis diagnostic shape, the n8n node's strict default, sorted detected_variables and continue-on-fail {error, error_type}.",
+    "Confirm the diff touches only README.md, changelog.md and docs/living/architecture files (m2: no source change) and that api.md and cli.md gain module content and template-resolver.md is modified (c3).",
+    "Re-check earlier finding f1 against the revised README."
+  ],
+  "findings": [
+    {
+      "title": "Living module documents keep frontmatter state: planned although they now describe built behavior",
+      "class": "drift",
+      "serves": {
+        "target": "c3",
+        "scenario": "docs/living/architecture/modules/api.md, cli.md and headless-contract.md still say state: planned while their bodies describe implemented, verified behavior; a reader or tool filtering on state may treat them as unbuilt."
+      },
+      "rubric": "dc-living",
+      "reproduction": "head -4 docs/living/architecture/modules/api.md shows 'state: planned' while the body documents routes that answer as described.",
+      "evidence": [
+        "doc:docs/living/architecture/modules/api.md",
+        "doc:docs/living/architecture/modules/cli.md",
+        "doc:docs/living/architecture/headless-contract.md"
+      ],
+      "location": "docs/living/architecture/modules/api.md:3"
+    }
+  ],
+  "responses": [
+    {
+      "finding": "f1",
+      "verdict": "withdraw",
+      "evidence": [
+        "doc:README.md (Diagnostics now scopes the full shape to render/validate and adds an 'Analysis diagnostics' subsection with shape {code, message, line, column} and codes unknown-filter, unrecognized-condition, syntax-error/limit-depth)",
+        "test:node dist/cli/index.js analyze check.tpl returned {code: unrecognized-condition, message, line 1, column 1} with no severity, matching the README",
+        "test:POST /v1/analyze {template: '{{IF a}}'} returned 200 with empty variables/filters/blocks and one {code: syntax-error,...} diagnostic, matching the README"
+      ]
+    }
+  ],
+  "reviewer": {
+    "kind": "fallback",
+    "label": "opus fallback (same model family as the builder; has repository access)"
+  },
+  "at": "2026-10-14T01:59:43.409Z",
+  "card": "0031-document-the-api-the-cli-and-the-diagnos",
+  "tier": "product",
+  "packet_sha256": "0a5e9b38f39f3acb8f63f60770fa999af1941c20eb7918749f7f5e9e743b55b9",
+  "diff_sha256": "f9526278da193b90e763bde69d68ee6fbc2b8e5d29cc864bb04e9a592e1d0d9e",
+  "dropped": []
+}
