@@ -2,7 +2,7 @@
 summary: Plan the cli module document
 op: add
 target: docs/living/architecture/modules/cli.md
-status: open
+status: applied
 ---
 
 # Proposed change

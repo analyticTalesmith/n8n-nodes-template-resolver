@@ -5,7 +5,7 @@ goal: "A headless core with a structured render result, an HTTP API with an Open
 tier: product
 stage: concept
 approvals: front
-status: open
+status: closed
 verification_levels: []
 review_sweeps: []
 kind: feature
@@ -111,4 +111,5 @@ A person judges the cycle done when `npm ci && npm test && npm run build` is gre
 - [deltas/](deltas/INDEX.md) — Index of docs/ephemeral/cycles/headless/deltas.
 - [design-approval.md](design-approval.md) — Headless cycle design: structured result, located diagnostics, limits, HTTP API, OpenAPI document, CLI.
 - [test-plan.md](test-plan.md) — The tests this cycle plans at each level, and which requirement lines each one proves.
+- [verification/](verification/INDEX.md) — Index of docs/ephemeral/cycles/headless/verification.
 <!-- end generated index -->

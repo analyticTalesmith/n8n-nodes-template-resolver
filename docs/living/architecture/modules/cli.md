@@ -1,6 +1,6 @@
 ---
 summary: The command line over core: subcommands, options, exit codes and stdin rules.
-state: planned
+state: built
 ---
 
 # cli module

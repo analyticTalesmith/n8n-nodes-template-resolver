@@ -1,6 +1,6 @@
 ---
 summary: The HTTP API over core: routes, status codes, limits, server options and the OpenAPI document.
-state: planned
+state: built
 ---
 
 # api module

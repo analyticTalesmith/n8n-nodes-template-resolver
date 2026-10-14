@@ -2,7 +2,7 @@
 summary: Plan the api module document
 op: add
 target: docs/living/architecture/modules/api.md
-status: open
+status: applied
 ---
 
 # Proposed change

@@ -2,7 +2,7 @@
 summary: Plan the headless contract document
 op: add
 target: docs/living/architecture/headless-contract.md
-status: open
+status: applied
 ---
 
 # Proposed change
