@@ -47,7 +47,7 @@ none: no user-visible surface until the structured result card.
 
 <!-- State the public surface this change adds or changes (signatures, shapes or boundaries, whichever apply), or write `none: <reason>`. -->
 
-TemplateError.code; resolveTemplate options.limits; DEFAULT_LIMITS (see docs/ephemeral/cycles/headless/design.md, engine surface).
+TemplateError.code; resolveTemplate options.limits; DEFAULT_LIMITS (see docs/living/architecture/headless-contract.md, engine surface).
 
 
 ## Scope
