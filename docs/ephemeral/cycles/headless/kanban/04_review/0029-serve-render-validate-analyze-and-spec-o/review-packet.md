@@ -2,16 +2,16 @@
 type: review-packet
 card: 0029-serve-render-validate-analyze-and-spec-o
 tier: product
-built_at: 2026-10-14T01:36:57.915Z
+built_at: 2026-10-14T01:38:19.852Z
 base: fa65aa2f0b504ab9f9827c090d1cf01cbb550e0d
-head: 7e298a1a418ac21a9902a4f3eb30ad0898639eac
+head: dc3e9b8b95ea5747ae2a66250cd424efaac87e08
 frozen: true
 brief_sha256: 1f310d0c269ddc91f944ef1702a31b5fdf9d9e4247f7f679375b3141cfcaecdf
 manifest_sha256: 920b6a380abe6441cbf858af90181eb275d386141640d5c9414500769c4e1b78
 criteria_sha256: 00e14b675d25fbb91ffe114f55c22b35c7e508e749d4a2c8ded36988c7bb9888
 scope_sha256: 7f469748c8517efad4a538b4f2434f60dd06feeb9dc5927097ead67d2434b788
-diff_sha256: 38972a85938e81a09abbbd4b6a89d6c6f8ae25126a534322c29c5ea7a22e40b9
-omitted_paths: 5
+diff_sha256: 57debf17aabdb09fccb801a175575bb996cbd6449af9bade0fce022e2ac3d995
+omitted_paths: 6
 criteria_count: 5
 must_not_count: 3
 ---
@@ -634,7 +634,7 @@ describe("e2-server: every route over real HTTP", () => {
 
 ## 4. Diff
 
-5 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
+6 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
 
 ```diff
 diff --git a/api/index.ts b/api/index.ts
@@ -1507,10 +1507,10 @@ index 806ed70..7c6f32f 100644
 +}
 diff --git a/api/server.ts b/api/server.ts
 new file mode 100644
-index 0000000..beb14d7
+index 0000000..80c56d6
 --- /dev/null
 +++ b/api/server.ts
-@@ -0,0 +1,124 @@
+@@ -0,0 +1,127 @@
 +import * as http from "http";
 +import { Limits, withDefaultLimits } from "../core/src";
 +import { isObject, RequestError, Route, RouteContext, routes } from "./routes";
@@ -1620,12 +1620,15 @@ index 0000000..beb14d7
 +    return;
 +  }
 +  if (error instanceof MethodNotAllowed) res.setHeader("Allow", error.allow.join(", "));
-+  if (!req.complete) {
-+    // The unread body is discarded and the connection closed once the reply is out.
-+    res.setHeader("Connection", "close");
-+    req.resume();
++  const reply = () => send(res, error.status, { error: { code: error.code, message: error.message } });
++  if (req.complete) {
++    reply();
++    return;
 +  }
-+  send(res, error.status, { error: { code: error.code, message: error.message } });
++  // Replying before the client has sent its whole body resets the connection
++  // and the client never reads the status, so the rest is read and discarded first.
++  req.once("end", reply);
++  req.resume();
 +}
 +
 +function send(res: http.ServerResponse, status: number, body: unknown): void {
