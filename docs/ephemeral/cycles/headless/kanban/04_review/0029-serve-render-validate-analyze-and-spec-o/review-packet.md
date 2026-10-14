@@ -2,9 +2,9 @@
 type: review-packet
 card: 0029-serve-render-validate-analyze-and-spec-o
 tier: product
-built_at: 2026-10-14T01:38:19.852Z
+built_at: 2026-10-14T01:39:05.195Z
 base: fa65aa2f0b504ab9f9827c090d1cf01cbb550e0d
-head: dc3e9b8b95ea5747ae2a66250cd424efaac87e08
+head: 7f32cbc07299106734e96d6d06813e06c13d911f
 frozen: true
 brief_sha256: 1f310d0c269ddc91f944ef1702a31b5fdf9d9e4247f7f679375b3141cfcaecdf
 manifest_sha256: 920b6a380abe6441cbf858af90181eb275d386141640d5c9414500769c4e1b78

@@ -56,10 +56,12 @@ createServer(options) and listen helper from api/index.ts; the HTTP surface in d
 <!-- generated scope: from card.json -->
 | Path | Permission (add, edit, remove) | Blast radius |
 | --- | --- | --- |
+| `api/.gitattributes` | add | none |
 | `api/server.ts` | add | none |
 | `api/index.ts` | edit | none |
 | `api/openapi.json` | edit | none |
 | `api/routes.ts` | edit | none |
+| `tests/headless/api.test.ts` | edit | none |
 
 Files scope: `api/`
 <!-- end generated scope -->
