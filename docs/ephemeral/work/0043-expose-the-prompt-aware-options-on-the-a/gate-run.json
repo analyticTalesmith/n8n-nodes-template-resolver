@@ -8,14 +8,12 @@
     "tests/promptaware/docs.test.ts",
     "--json"
   ],
-  "exit_status": 1,
-  "ran_at": "2026-10-14T03:10:26.533Z",
+  "exit_status": 0,
+  "ran_at": "2026-10-14T03:11:01.813Z",
   "tests": {
-    "passed": 32,
-    "failed": 1
+    "passed": 54,
+    "failed": 0
   },
-  "failing": [
-    "tests/promptaware/surfaces.test.ts"
-  ],
-  "failing_total": 1
+  "failing": [],
+  "failing_total": 0
 }
