@@ -60,6 +60,7 @@ createServer(options) and listen helper from api/index.ts; the HTTP surface in d
 | `api/openapi.json` | add | none |
 | `api/routes.ts` | add | none |
 | `api/server.ts` | add | none |
+| `x` | edit | none |
 
 Files scope: `api/`
 <!-- end generated scope -->

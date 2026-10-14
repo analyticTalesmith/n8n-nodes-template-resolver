@@ -20,8 +20,10 @@
       "api/openapi.json"
     ],
     "remove": [],
-    "edit": [],
-    "frozen": false
+    "edit": [
+      "x"
+    ],
+    "frozen": true
   },
   "criteria": [
     {
@@ -61,8 +63,8 @@
     }
   ],
   "gate": [
-    "npx",
-    "jest",
+    "node",
+    "node_modules/jest/bin/jest.js",
     "--runTestsByPath",
     "tests/headless/api.test.ts",
     "tests/headless/e2e-api.test.ts",
@@ -77,5 +79,19 @@
   "schema_version": 1,
   "blast_radius": [
     "none"
-  ]
+  ],
+  "freeze": {
+    "at": "2026-10-14T00:38:01.667Z",
+    "brief_sha256": "2d64e44b3e914011bc081e1d638672cb0f8943dc886531e59a0c6f6536cffbb6",
+    "brief_core_sha256": "481f75ae6fcb777d17a2ae8eb8a7b5ecd8e095d93f1dd158cd00bdbc211f726a",
+    "manifest_sha256": "820e4f9818a2ecc863119668273e3db7d9c7c24d882f49c4e867ea17c9e61c53",
+    "criteria_sha256": "00e14b675d25fbb91ffe114f55c22b35c7e508e749d4a2c8ded36988c7bb9888",
+    "scope_sha256": "7f469748c8517efad4a538b4f2434f60dd06feeb9dc5927097ead67d2434b788",
+    "scope_parts": {
+      "files_scope": "c18034657b82c101a1c2735fab0a0cb81f164f9fc9d401618c7c1a2e2b4288a5",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "482c76add4886d694a73d8d616eda856c63a76889c6728de446ce55c2e1bbe66"
+    }
+  }
 }
