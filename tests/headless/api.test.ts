@@ -160,6 +160,8 @@ describe("ap-errors: malformed requests", () => {
     ["string data", "/v1/render", { template: "x", data: "text" }],
     ["strictMode as a string", "/v1/render", { template: "x", options: { strictMode: "yes" } }],
     ["limits as a string", "/v1/render", { template: "x", options: { limits: "many" } }],
+    ["null data", "/v1/render", { template: "x", data: null }],
+    ["null options", "/v1/render", { template: "x", options: null }],
     ["validate without template", "/v1/validate", {}],
     ["validate with non-string template", "/v1/validate", { template: ["x"] }],
     ["analyze without template", "/v1/analyze", { data: {} }],

@@ -45,9 +45,9 @@ export const routes: ReadonlyArray<Route> = [
 
 function renderRoute(body: Record<string, unknown>, context: RouteContext): unknown {
   const template = requireTemplate(body);
-  const data = body.data ?? {};
+  const data = body.data === undefined ? {} : body.data;
   if (!isObject(data)) invalid("data must be an object");
-  const options = body.options ?? {};
+  const options = body.options === undefined ? {} : body.options;
   if (!isObject(options)) invalid("options must be an object");
   if (options.strictMode !== undefined && typeof options.strictMode !== "boolean") {
     invalid("options.strictMode must be a boolean");
