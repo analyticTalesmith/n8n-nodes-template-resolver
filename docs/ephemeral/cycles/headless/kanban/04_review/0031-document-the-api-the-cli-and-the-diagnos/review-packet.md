@@ -2,16 +2,16 @@
 type: review-packet
 card: 0031-document-the-api-the-cli-and-the-diagnos
 tier: product
-built_at: 2026-10-14T01:55:17.370Z
+built_at: 2026-10-14T01:58:12.325Z
 base: b5b5ad449160d2d73ff73309fe773dcdc0c3f58a
-head: 78735251211ae9562697c2f41141e914447b9596
+head: be45142e4a172fc7323665dc2344364852e3cc9b
 frozen: true
 brief_sha256: d9b3a24cd8d834259c490f636a4846f11c783b5ad3ba3ef9f3220cf5ae18b053
 manifest_sha256: 939865f0c742819635e2e17076cf952d627c5989784b7d61cf92c998f3c2ba73
 criteria_sha256: b236ed166b77c70801b9fce875a63b1e7dd35ec3547f392d5395d4be4558a3a9
 scope_sha256: c72790c9cc3057ccb1cc861f54c2e501ccec5dc352fff63c5dba3d12f2e03da4
-diff_sha256: bfd5126014858cf4dfe2d3d55b4839d9fda23a3498b36e75fba17a35a408cd86
-omitted_paths: 5
+diff_sha256: f9526278da193b90e763bde69d68ee6fbc2b8e5d29cc864bb04e9a592e1d0d9e
+omitted_paths: 9
 criteria_count: 3
 must_not_count: 2
 ---
@@ -317,11 +317,11 @@ test('dc-coverage: the README mentions every path in api/openapi.json', () => {
 
 ## 4. Diff
 
-5 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
+9 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
 
 ````diff
 diff --git a/README.md b/README.md
-index 9f4573c..ae81816 100644
+index 9f4573c..16d8f2d 100644
 --- a/README.md
 +++ b/README.md
 @@ -2,6 +2,8 @@
@@ -362,7 +362,7 @@ index 9f4573c..ae81816 100644
  
  ---
  
-@@ -513,6 +517,388 @@ ${{current_message}}
+@@ -513,6 +517,400 @@ ${{current_message}}
  
  ---
  
@@ -400,7 +400,7 @@ index 9f4573c..ae81816 100644
 +
 +### Diagnostics
 +
-+A diagnostic is `{ severity, code, message, line, column, suggestion? }`. `severity` is `"error"` or `"warning"`; `line` and `column` are 1-based and point at the template tag or placeholder that failed, including runtime errors such as a missing variable or a bad filter parameter. `suggestion` is present when the engine has a hint.
++Render and validate results (`render`, `validate`, `POST /v1/render`, `POST /v1/validate`) carry diagnostics of the shape `{ severity, code, message, line, column, suggestion? }`; `analyze` results use a smaller shape, described [below](#analysis-diagnostics). `severity` is `"error"` or `"warning"`; `line` and `column` are 1-based and point at the template tag or placeholder that failed, including runtime errors such as a missing variable or a bad filter parameter. `suggestion` is present when the engine has a hint.
 +
 +| Code               | Severity | When                                                                                                   |
 +| ------------------ | -------- | ------------------------------------------------------------------------------------------------------ |
@@ -413,6 +413,18 @@ index 9f4573c..ae81816 100644
 +| `limit-depth`      | error    | Blocks nest deeper than `maxDepth`                                                                     |
 +| `invalid-input`    | error    | Core `render` was given data that is not an object (the CLI and the API reject such data before rendering) |
 +| `analysis-warning` | warning  | `validate` only: a condition the engine cannot read, such as `{{IF status is active}}`                 |
++
++#### Analysis diagnostics
++
++`analyze` (`template-resolver analyze` and `POST /v1/analyze`) reports diagnostics as `{ code, message, line, column }`, with no `severity` and no `suggestion`. Its codes:
++
++| Code                     | When                                                                                         |
++| ------------------------ | -------------------------------------------------------------------------------------------- |
++| `unknown-filter`         | A filter other than `head`, `tail`, `trim`, `escape_md`                                      |
++| `unrecognized-condition` | A condition the engine cannot read, such as `{{IF status is active}}` (`validate` reports it as `analysis-warning`) |
++| `syntax-error`, `limit-depth` | `POST /v1/analyze` only: the template does not parse; the result has empty `variables`, `filters` and `blocks` and this one diagnostic |
++
++For a template that does not parse, `template-resolver analyze` prints no JSON: it prints the error to stderr in the format below and exits 1.
 +
 +The command line prints diagnostics to stderr as `file:line:column: severity code: message`:
 +
@@ -751,7 +763,7 @@ index 9f4573c..ae81816 100644
  ## Development
  
  ```bash
-@@ -525,10 +911,13 @@ npm pack             # Create installable package
+@@ -525,10 +923,13 @@ npm pack             # Create installable package
  node --test tools/tests/*.test.mjs   # Tooling tests (CI, jest reporter, restructure checks)
  ```
  
@@ -787,10 +799,10 @@ index 1daf668..327114d 100644
  ### 1.0.0
  
 diff --git a/docs/living/architecture/headless-contract.md b/docs/living/architecture/headless-contract.md
-index a332a9a..bcc659b 100644
+index a332a9a..285eeb6 100644
 --- a/docs/living/architecture/headless-contract.md
 +++ b/docs/living/architecture/headless-contract.md
-@@ -5,32 +5,35 @@ state: planned
+@@ -5,32 +5,36 @@ state: planned
  
  # Headless contract
  
@@ -824,6 +836,7 @@ index a332a9a..bcc659b 100644
 +- On failure `ok` is false, `output` is `""`, and the only diagnostic is the error that stopped rendering.
 +- `validate` maps `analyze`'s diagnostics: `unknown-filter` stays an error; every other analysis finding (an unrecognized condition) becomes a warning with code `analysis-warning`. A template that does not parse gives its error. `ok` is false only when an error is present.
 +- `analyze` still throws a `TemplateError` for a template that does not parse; its callers (validate, the API, the CLI, the node) turn that into a diagnostic or an error.
++- `analyze`'s own diagnostics have the analysis shape `{ code, message, line, column }` (no `severity`, no `suggestion`), with codes `unknown-filter` and `unrecognized-condition`. `POST /v1/analyze` puts a parse failure (`syntax-error` or `limit-depth`) in that same shape; `template-resolver analyze` prints it to stderr instead.
 +- `spec().version` is the template language version, `"1.0"`, not the package version.
  - Estimator default: `Math.ceil(chars / 4)`, documented as an estimate with roughly +/-30 percent error for English prose.
 -- `resolveTemplate` (throwing string API) keeps its behavior and is implemented over the same engine.
@@ -838,7 +851,7 @@ index a332a9a..bcc659b 100644
  
  | Route | Request body | Response (200) |
  |---|---|---|
-@@ -40,22 +43,22 @@ spec(): { version: string; blocks: {name, closes?, args, description}[]; filters
+@@ -40,22 +44,22 @@ spec(): { version: string; blocks: {name, closes?, args, description}[]; filters
  | GET /v1/spec | | spec() |
  | GET /v1/openapi.json | | the committed `api/openapi.json` |
  
@@ -872,7 +885,7 @@ index a332a9a..bcc659b 100644
 -- `DEFAULT_LIMITS` is exported from core.
 +- `DEFAULT_LIMITS` and `withDefaultLimits` are exported from core.
 diff --git a/docs/living/architecture/modules/api.md b/docs/living/architecture/modules/api.md
-index d97adb4..780a7b0 100644
+index d97adb4..3b4b698 100644
 --- a/docs/living/architecture/modules/api.md
 +++ b/docs/living/architecture/modules/api.md
 @@ -7,4 +7,54 @@ state: planned
@@ -908,7 +921,7 @@ index d97adb4..780a7b0 100644
 +
 +- `data` defaults to `{}`, `options.strictMode` to core's default (strict).
 +- `options.limits` may only lower the server's limits: each given value must be a non-negative integer and the effective limit is `min(requested, server)`.
-+- `validate` and `analyze` run with the server's `maxDepth`. An `analyze` of a template that does not parse answers 200 with empty `variables`, `filters` and `blocks` and the parse error in `diagnostics`.
++- `validate` and `analyze` run with the server's `maxDepth`. An `analyze` of a template that does not parse answers 200 with empty `variables`, `filters` and `blocks` and the parse error (`syntax-error` or `limit-depth`) in `diagnostics`. Analysis diagnostics have the shape `{code, message, line, column}`, without the `severity` and `suggestion` of render and validate diagnostics; besides parse errors their codes are `unknown-filter` and `unrecognized-condition`.
 +- The query string is ignored when matching a route. The OpenAPI document is served in the committed file's exact serialization.
 +
 +## Failure handling
@@ -932,7 +945,7 @@ index d97adb4..780a7b0 100644
 +- node's `http` only; no runtime dependency.
 +- Consumed by the cli module's `serve`.
 diff --git a/docs/living/architecture/modules/cli.md b/docs/living/architecture/modules/cli.md
-index f570a8a..4ac1ce1 100644
+index f570a8a..a52a19c 100644
 --- a/docs/living/architecture/modules/cli.md
 +++ b/docs/living/architecture/modules/cli.md
 @@ -7,4 +7,48 @@ state: planned
@@ -960,7 +973,7 @@ index f570a8a..4ac1ce1 100644
 +|---|---|
 +| `render <template-file\|-> [--data <file\|->] [--strict \| --no-strict] [--max-iterations n] [--max-output-chars n] [--max-depth n] [--json]` | renders; output to stdout, diagnostics to stderr as `file:line:column: severity code: message`; `--json` prints the whole render result to stdout instead |
 +| `validate <template-file\|->` | prints core `validate`'s `{ok, diagnostics}` as JSON |
-+| `analyze <template-file\|->` | prints core `analyze` as JSON; a template that does not parse prints its diagnostic to stderr |
++| `analyze <template-file\|->` | prints core `analyze` as JSON, whose diagnostics are `{code, message, line, column}` (`unknown-filter`, `unrecognized-condition`); a template that does not parse prints its diagnostic to stderr |
 +| `spec` | prints core `spec()` as JSON |
 +| `serve [--port n] [--host h]` | starts the api module's server (default `127.0.0.1:3000`, default limits and body size), prints `listening on http://host:port`, and runs until the abort signal |
 +
@@ -1017,6 +1030,19 @@ The card's gate command as it last ran, before this packet was built. Output onl
 - Exit status: 0
 - Tests: 6 passed, 0 failed
 - Failing tests: none
+
+## 5. Earlier findings and replies
+
+Answer each fix-class (defect or goal-risk) finding below in `responses` with sustain or withdraw and evidence. Raise new findings only about what the revision changed or an in-scope problem newly evidenced.
+
+### f1: README diagnostics section says every diagnostic has a severity and one of nine codes, but analyze returns diagnostics with no severity and the undocumented code unrecognized-condition
+
+- Class: defect
+- Serves: m1: A reader calls `template-resolver analyze` or `POST /v1/analyze` on a template with a condition the engine cannot read and, trusting the README's 'A diagnostic is { severity, code, message, line, column, suggestion? }' and its code table, branches on `severity` or on a listed code; the response instead carries `{"code":"unrecognized-condition",...}` with no `severity`, a code that appears nowhere in the README, so the README documents a shape and code set the code does not produce for analyze.
+- Reproduction: 1. printf '{{IF status is active}}Active{{END_IF}}\n' > check.tpl. 2. node dist/cli/index.js analyze check.tpl. 3. Observe diagnostics[0] = {"code":"unrecognized-condition","message":"Unrecognized condition: status is active","line":1,"column":1}: no severity, code not in the README table. Same for an unparseable template via POST /v1/analyze {"template":"{{IF a}}"}: diagnostics[0] has code syntax-error but no severity. Smallest fix: one README sentence (in Diagnostics or beside the analyze command/route) saying analyze's diagnostics are raw analysis findings without `severity`, with code `unrecognized-condition` for an unreadable condition (validate maps them to `analysis-warning`).
+- Status: fixed
+- Reply (fixed): restate: README overclaimed one diagnostic shape; verify: README now separates analysis diagnostics and lists unrecognized-condition; evidence: doc:README.md
+- Review lead ruling: sustain: analyze diagnostics differ in shape from render diagnostics; the README must say so
 
 ## Output
 
