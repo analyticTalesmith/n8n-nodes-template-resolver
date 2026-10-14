@@ -1,0 +1,81 @@
+{
+  "id": "0029-serve-render-validate-analyze-and-spec-o",
+  "title": "Serve render, validate, analyze and spec over HTTP",
+  "type": "task",
+  "parent": null,
+  "depends_on": [
+    "0028-return-a-structured-render-result-from-c"
+  ],
+  "origin": "headless",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "api/"
+  ],
+  "manifest": {
+    "add": [
+      "api/server.ts",
+      "api/routes.ts",
+      "api/index.ts",
+      "api/openapi.json"
+    ],
+    "remove": [],
+    "edit": [],
+    "frozen": false
+  },
+  "criteria": [
+    {
+      "text": "ap-routes: POST /v1/render, /v1/validate, /v1/analyze and GET /v1/spec return the documented 200 bodies, and a template error is a 200 with ok false and located diagnostics",
+      "verify": "test",
+      "traces": [
+        "tests/headless/api.test.ts#ap-routes"
+      ]
+    },
+    {
+      "text": "ap-errors: bad JSON, a missing or non-string template, a non-object data and bad option types return 400 invalid-request; unknown paths 404 not-found; wrong methods 405 method-not-allowed with Allow; bodies over maxBodyBytes 413 payload-too-large; a non-JSON POST content type 415 unsupported-media-type; every response is JSON",
+      "verify": "test",
+      "traces": [
+        "tests/headless/api.test.ts#ap-errors"
+      ]
+    },
+    {
+      "text": "ap-limits: request limits can only lower the server limits and a request cannot raise them",
+      "verify": "test",
+      "traces": [
+        "tests/headless/api.test.ts#ap-limits"
+      ]
+    },
+    {
+      "text": "oa-doc: GET /v1/openapi.json serves api/openapi.json byte for byte, it is OpenAPI 3.1, and its paths and methods equal the router table",
+      "verify": "test",
+      "traces": [
+        "tests/headless/api.test.ts#oa-doc"
+      ]
+    },
+    {
+      "text": "e2-server: the end-to-end test listens on port 0 on 127.0.0.1, exercises every route over real HTTP with node's http client, and closes the server",
+      "verify": "test",
+      "traces": [
+        "tests/headless/e2e-api.test.ts#e2-server"
+      ]
+    }
+  ],
+  "gate": [
+    "npx",
+    "jest",
+    "--runTestsByPath",
+    "tests/headless/api.test.ts",
+    "tests/headless/e2e-api.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1,
+  "blast_radius": [
+    "none"
+  ]
+}
