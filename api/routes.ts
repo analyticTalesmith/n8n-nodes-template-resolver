@@ -52,8 +52,12 @@ function renderRoute(body: Record<string, unknown>, context: RouteContext): unkn
   if (options.strictMode !== undefined && typeof options.strictMode !== "boolean") {
     invalid("options.strictMode must be a boolean");
   }
+  if (options.standaloneLines !== undefined && typeof options.standaloneLines !== "boolean") {
+    invalid("options.standaloneLines must be a boolean");
+  }
   return render(template, data, {
     strictMode: options.strictMode,
+    standaloneLines: options.standaloneLines,
     limits: lowerLimits(context.limits, options.limits),
     tokenEstimator: context.tokenEstimator,
   });

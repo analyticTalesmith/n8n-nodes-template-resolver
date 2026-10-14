@@ -12,7 +12,13 @@ const IF_ON = "a\nb\nc\n";
 const IF_OFF = "a\n\nb\n\nc\n";
 const FOR_TEMPLATE = "{{FOR xs AS x}}\n- ${{x}}\n{{END_FOR}}\nend\n";
 const FOR_ON = "- 1\n- 2\nend\n";
-const FOR_OFF = "\n- 1\n\n- 2\n\n\nend\n";
+const FOR_OFF = "
+- 1
+
+- 2
+
+end
+";
 
 let running: Running | undefined;
 afterEach(async () => {
