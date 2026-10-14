@@ -10,7 +10,7 @@ Settled decisions apply: ADR 0001 (every block is `{{KEYWORD ...}}...{{END_KEYWO
 ## Whitespace
 
 - **Standalone rule.** A line that holds only whitespace and one or more block tags is removed together with its line break. Block tags for this rule: IF, ELSEIF, ELSE, END_IF, CASE, WHEN, END_WHEN, DEFAULT, END_DEFAULT, END_CASE, FOR, END_FOR, SECTION, END_SECTION, FENCE, END_FENCE, RAW, END_RAW and comments `{{# ... #}}`. LIST, LIST_ITEM, TABLE, HEADER, ROW and their END tags are not subject to the rule (they have their own spacing). Lines that also hold text or a variable are untouched.
-- **Trim markers.** `{{- TAG ...}}` removes all whitespace (spaces, tabs, line breaks) before the tag; `{{TAG ... -}}` removes all whitespace after it. Both may be combined. They work on every block tag and comment, are independent of the standalone option, and are never part of an expression.
+- **Trim markers.** `{{- TAG ...}}` removes all whitespace (spaces, tabs, line breaks) before the tag; `{{TAG ... -}}` removes all whitespace after it. Both may be combined. Trim markers apply first and standalone removal then applies to what remains, so a standalone tag line with a leading trim marker removes the line break before it as well as its own. They work on every block tag and comment, are independent of the standalone option, and are never part of an expression.
 - **Option.** `standaloneLines` (boolean) in render options; default `true` for `render` (and so for the API, CLI and the n8n node), default `false` for the legacy `resolveTemplate` string function so its existing tests keep their oracle. The n8n node gets a boolean option "Remove standalone tag lines" (default on).
 
 ## RAW and escaping
@@ -30,7 +30,7 @@ Settled decisions apply: ADR 0001 (every block is `{{KEYWORD ...}}...{{END_KEYWO
 ## Filters
 
 - `heading_offset=N` (integer, may be negative): shifts every markdown ATX heading line (`#` to `######` followed by a space) by N levels, clamped to 1 to 6; headings inside fenced code blocks and non-heading `#` text are untouched. Missing or non-integer parameter is a `type-error`.
-- `escape_md=inline` (default, the existing behavior; plain `escape_md` is inline) and `escape_md=block`: inline escaping plus line-start escaping so a value cannot fake structure (a backslash before a leading `#`, `>`, `-`, `+`, `*`, `|`, a digit run followed by `.` or `)`, a line of three or more `-`, `=`, `` ` `` or `~`). Any other mode is a `type-error`.
+- `escape_md=inline` (default, the existing behavior; plain `escape_md` is inline) and `escape_md=block`: inline escaping plus line-start escaping so a value cannot fake structure (block mode adds nothing for characters inline mode already escapes; otherwise a backslash before a leading `#`, `>`, `-`, `+`, `*`, `|`, the `.` or `)` that follows a leading digit run (written `1.`, since digits cannot be escaped), a line of three or more `-`, `=`, `` ` `` or `~`). Any other mode is a `type-error`.
 - `fence` (optional `lang`): wraps the value in an auto-sized fence, same rules as FENCE below.
 
 ## FENCE
