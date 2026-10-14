@@ -1,6 +1,6 @@
 ---
 summary: First half of the prompt-aware language: whitespace rules, RAW and escaping, SECTION, FENCE, heading offset and escape modes.
-state: planned
+state: built
 ---
 
 # Prompt-aware language contract (first half)

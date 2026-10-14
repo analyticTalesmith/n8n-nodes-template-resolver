@@ -5,7 +5,7 @@ approved_on: 2026-10-14
 approves:
 - f621bfc1f3012f0a9f44d74307890fceb73b7c1e1b10923976ece8d0468aff17 docs/ephemeral/cycles/prompt-aware-1/CYCLE.md
 - 8a189468d8abfb1e762eb627b121f88103d3efd1092f7b257b3466810c3445f8 docs/ephemeral/cycles/prompt-aware-1/test-plan.md
-- f46b03963acea9a9bbb40d51ef6e28dcd446859a1be47dcb406f1ba8c064aa32 docs/living/architecture/prompt-aware-contract.md
+- b571b2f847e34a9430b5f8967f7a29fda02e013666a56bb4e363f5d7bdbae426 docs/living/architecture/prompt-aware-contract.md
 - 080b64c4283789f9b5a156d0ca5c8a51e5a494ec8a73ecfa61e710bdab6a9b09 docs/ephemeral/work/0040-remove-standalone-tag-lines-add-trim-mar/spec.md
 - 05aa55af10d15aaeedf75ee1365d3627895d200e65de9b90083757df4b7d4996 docs/ephemeral/work/0041-add-section-that-drops-its-heading-when/spec.md
 - 493ba1813d739314afa8b84aa4db63c397d9c1a9376a4589f71608a6e1e7ab60 docs/ephemeral/work/0042-add-the-auto-sized-fence-heading-offset/spec.md
@@ -24,7 +24,7 @@ max_spawns: 80
 max_cost:
 cost_unit:
 sweep_rounds: 3
-approval_hash: 8984c0609498a1e5fb86231dfde9008104911b17e5931b36576c4069eed8dbc5
+approval_hash: d1aa7650c9768928c1b138edf9b4e97708cc8bb5083100c70759a660a4efe724
 ---
 
 # Design approval

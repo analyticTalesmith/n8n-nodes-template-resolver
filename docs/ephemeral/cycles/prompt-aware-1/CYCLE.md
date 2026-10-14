@@ -5,7 +5,7 @@ goal: "Prompt-shaped output: standalone-line whitespace with trim markers, RAW a
 tier: product
 stage: concept
 approvals: front
-status: open
+status: closed
 verification_levels: []
 review_sweeps: []
 kind: feature
@@ -36,6 +36,10 @@ Shape: kind feature; intent add; purpose ship; compatibility additive; uncertain
 - stg-goals-oracle done: goal: prompt-shaped output features; oracle: new tests per card plus every existing test
 - stg-ready-check done: cards carry criteria, gate, manifest and red evidence before ready
 - stg-plan-approval done: front approval recorded in design-approval.md
+- stg-build-slices done: 4 cards, each built in its own worktree and merged into the cycle branch
+- stg-unit-regression done: 1284 jest tests pass on the merged branch; the 759 earlier and 229 headless tests unchanged apart from logged amendments
+- stg-record done: cards done, deltas recorded
+- stg-go-no-go done: go: all cards done with clear reviews, suite green
 
 ## Who and why
 
@@ -103,4 +107,5 @@ A person judges the cycle done when a prompt template with sections, fences and 
 - [deltas/](deltas/INDEX.md) — Index of docs/ephemeral/cycles/prompt-aware-1/deltas.
 - [design-approval.md](design-approval.md) — Prompt-aware cycle: whitespace, RAW, SECTION, FENCE, heading offset, escape modes and their surfaces.
 - [test-plan.md](test-plan.md) — The tests this cycle plans at each level, and which requirement lines each one proves.
+- [verification/](verification/INDEX.md) — Index of docs/ephemeral/cycles/prompt-aware-1/verification.
 <!-- end generated index -->

@@ -2,7 +2,7 @@
 summary: Plan the prompt-aware contract document
 op: add
 target: docs/living/architecture/prompt-aware-contract.md
-status: open
+status: applied
 ---
 
 # Proposed change

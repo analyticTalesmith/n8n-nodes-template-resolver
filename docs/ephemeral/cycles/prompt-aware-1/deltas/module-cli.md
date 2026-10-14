@@ -2,7 +2,7 @@
 summary: Describe the prompt-aware additions
 op: modify
 target: docs/living/architecture/modules/cli.md
-status: open
+status: applied
 ---
 
 # Proposed change

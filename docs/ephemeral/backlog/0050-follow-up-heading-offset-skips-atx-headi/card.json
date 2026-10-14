@@ -1,0 +1,26 @@
+{
+  "id": "0050-follow-up-heading-offset-skips-atx-headi",
+  "title": "Follow-up: heading_offset skips ATX headings indented by one to three spaces, though its own fence detection honours tha",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [],
+  "origin": "prompt-aware-1",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [],
+    "frozen": false
+  },
+  "criteria": [],
+  "gate": null,
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1
+}

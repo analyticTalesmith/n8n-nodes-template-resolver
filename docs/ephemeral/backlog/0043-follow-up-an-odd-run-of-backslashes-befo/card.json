@@ -1,0 +1,26 @@
+{
+  "id": "0043-follow-up-an-odd-run-of-backslashes-befo",
+  "title": "Follow-up: An odd run of backslashes before the brace pair does not escape it",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [],
+  "origin": "prompt-aware-1",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [],
+    "frozen": false
+  },
+  "criteria": [],
+  "gate": null,
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1
+}
