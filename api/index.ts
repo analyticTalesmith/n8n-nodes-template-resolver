@@ -1,18 +1,8 @@
 import * as http from "http";
 
-export interface ServerOptions {
-  limits?: Partial<{ maxIterations: number; maxOutputChars: number; maxDepth: number }>;
-  tokenEstimator?: (text: string) => number;
-  maxBodyBytes?: number;
-}
-
-/** Signature-only stub: answers every request 501 with an empty body. */
-export function createServer(_options?: ServerOptions): http.Server {
-  return http.createServer((_req, res) => {
-    res.statusCode = 501;
-    res.end();
-  });
-}
+export { createServer } from "./server";
+export type { ServerOptions } from "./server";
+export { routes } from "./routes";
 
 export function listen(
   server: http.Server,

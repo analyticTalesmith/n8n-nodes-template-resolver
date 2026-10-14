@@ -1,1 +1,371 @@
-{}
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Template Resolver API",
+    "version": "1.0.0",
+    "description": "A stateless JSON API over the template engine. Template problems are results (200 with ok false and diagnostics), not HTTP errors. Server limits are a ceiling: a request may only lower a limit."
+  },
+  "servers": [{ "url": "http://127.0.0.1:3000" }],
+  "paths": {
+    "/v1/render": {
+      "post": {
+        "operationId": "render",
+        "summary": "Render a template against data",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/RenderRequest" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The render result; ok is false when the template or data has a problem",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/RenderResult" } }
+            }
+          },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "405": { "$ref": "#/components/responses/MethodNotAllowed" },
+          "413": { "$ref": "#/components/responses/PayloadTooLarge" },
+          "415": { "$ref": "#/components/responses/UnsupportedMediaType" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/v1/validate": {
+      "post": {
+        "operationId": "validate",
+        "summary": "Check a template without data",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/TemplateRequest" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Whether the template is valid, with its diagnostics",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ValidateResult" } }
+            }
+          },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "405": { "$ref": "#/components/responses/MethodNotAllowed" },
+          "413": { "$ref": "#/components/responses/PayloadTooLarge" },
+          "415": { "$ref": "#/components/responses/UnsupportedMediaType" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/v1/analyze": {
+      "post": {
+        "operationId": "analyze",
+        "summary": "List the variables, filters and blocks a template uses",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/TemplateRequest" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The analysis; a template that does not parse has empty lists and its error in diagnostics",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Analysis" } }
+            }
+          },
+          "400": { "$ref": "#/components/responses/InvalidRequest" },
+          "405": { "$ref": "#/components/responses/MethodNotAllowed" },
+          "413": { "$ref": "#/components/responses/PayloadTooLarge" },
+          "415": { "$ref": "#/components/responses/UnsupportedMediaType" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/v1/spec": {
+      "get": {
+        "operationId": "spec",
+        "summary": "Describe the template language",
+        "responses": {
+          "200": {
+            "description": "Blocks, filters, condition operators, default limits and syntax",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Spec" } }
+            }
+          },
+          "405": { "$ref": "#/components/responses/MethodNotAllowed" }
+        }
+      }
+    },
+    "/v1/openapi.json": {
+      "get": {
+        "operationId": "openapi",
+        "summary": "This document",
+        "responses": {
+          "200": {
+            "description": "The OpenAPI document",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          },
+          "405": { "$ref": "#/components/responses/MethodNotAllowed" }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Limits": {
+        "type": "object",
+        "required": ["maxIterations", "maxOutputChars", "maxDepth"],
+        "properties": {
+          "maxIterations": { "type": "integer", "minimum": 0, "description": "Total FOR iterations across one render" },
+          "maxOutputChars": { "type": "integer", "minimum": 0, "description": "Length of the output" },
+          "maxDepth": { "type": "integer", "minimum": 0, "description": "Nesting of blocks" }
+        }
+      },
+      "RequestLimits": {
+        "type": "object",
+        "description": "Each given limit lowers the server's limit; a value above it is capped at it",
+        "properties": {
+          "maxIterations": { "type": "integer", "minimum": 0 },
+          "maxOutputChars": { "type": "integer", "minimum": 0 },
+          "maxDepth": { "type": "integer", "minimum": 0 }
+        }
+      },
+      "RenderRequest": {
+        "type": "object",
+        "required": ["template"],
+        "properties": {
+          "template": { "type": "string" },
+          "data": { "type": "object", "additionalProperties": true, "default": {} },
+          "options": {
+            "type": "object",
+            "properties": {
+              "strictMode": { "type": "boolean" },
+              "limits": { "$ref": "#/components/schemas/RequestLimits" }
+            }
+          }
+        }
+      },
+      "TemplateRequest": {
+        "type": "object",
+        "required": ["template"],
+        "properties": {
+          "template": { "type": "string" }
+        }
+      },
+      "Diagnostic": {
+        "type": "object",
+        "required": ["severity", "code", "message", "line", "column"],
+        "properties": {
+          "severity": { "type": "string", "enum": ["error", "warning"] },
+          "code": {
+            "type": "string",
+            "enum": [
+              "syntax-error",
+              "type-error",
+              "missing-variable",
+              "unknown-filter",
+              "limit-iterations",
+              "limit-output",
+              "limit-depth",
+              "invalid-input",
+              "analysis-warning"
+            ]
+          },
+          "message": { "type": "string" },
+          "line": { "type": "integer", "minimum": 1 },
+          "column": { "type": "integer", "minimum": 1 },
+          "suggestion": { "type": "string" }
+        }
+      },
+      "RenderResult": {
+        "type": "object",
+        "required": ["ok", "output", "messages", "stats", "diagnostics"],
+        "properties": {
+          "ok": { "type": "boolean" },
+          "output": { "type": "string", "description": "Empty when ok is false" },
+          "messages": { "type": "array", "items": {} },
+          "stats": {
+            "type": "object",
+            "required": ["chars", "estTokens", "sectionsOmitted", "iterations"],
+            "properties": {
+              "chars": { "type": "integer", "minimum": 0 },
+              "estTokens": { "type": "integer", "minimum": 0 },
+              "sectionsOmitted": { "type": "integer", "minimum": 0 },
+              "iterations": { "type": "integer", "minimum": 0 }
+            }
+          },
+          "diagnostics": {
+            "type": "array",
+            "description": "When ok is false, the error that stopped the render comes first",
+            "items": { "$ref": "#/components/schemas/Diagnostic" }
+          }
+        }
+      },
+      "ValidateResult": {
+        "type": "object",
+        "required": ["ok", "diagnostics"],
+        "properties": {
+          "ok": { "type": "boolean" },
+          "diagnostics": { "type": "array", "items": { "$ref": "#/components/schemas/Diagnostic" } }
+        }
+      },
+      "AnalysisDiagnostic": {
+        "type": "object",
+        "required": ["code", "message", "line", "column"],
+        "properties": {
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "line": { "type": "integer", "minimum": 1 },
+          "column": { "type": "integer", "minimum": 1 }
+        }
+      },
+      "Analysis": {
+        "type": "object",
+        "required": ["variables", "filters", "blocks", "diagnostics"],
+        "properties": {
+          "variables": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "paths", "usedIn", "optional", "required"],
+              "properties": {
+                "name": { "type": "string", "description": "Root name, the part before the first dot" },
+                "paths": { "type": "array", "items": { "type": "string" } },
+                "usedIn": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": ["output", "if", "elseif", "case", "for", "list_item", "table"]
+                  }
+                },
+                "optional": { "type": "boolean", "description": "Every read supplies a ?? default" },
+                "required": { "type": "boolean", "description": "Some read has no ?? default" }
+              }
+            }
+          },
+          "filters": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "count"],
+              "properties": {
+                "name": { "type": "string" },
+                "count": { "type": "integer", "minimum": 1 }
+              }
+            }
+          },
+          "blocks": {
+            "type": "object",
+            "description": "Count per block kind present in the template",
+            "properties": {
+              "IF": { "type": "integer", "minimum": 1 },
+              "CASE": { "type": "integer", "minimum": 1 },
+              "FOR": { "type": "integer", "minimum": 1 },
+              "LIST": { "type": "integer", "minimum": 1 },
+              "TABLE": { "type": "integer", "minimum": 1 }
+            },
+            "additionalProperties": false
+          },
+          "diagnostics": { "type": "array", "items": { "$ref": "#/components/schemas/AnalysisDiagnostic" } }
+        }
+      },
+      "Spec": {
+        "type": "object",
+        "required": ["version", "blocks", "filters", "operators", "limits", "syntax"],
+        "properties": {
+          "version": { "type": "string" },
+          "blocks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "args", "description"],
+              "properties": {
+                "name": { "type": "string" },
+                "closes": { "type": "string" },
+                "args": { "type": "string" },
+                "description": { "type": "string" }
+              }
+            }
+          },
+          "filters": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "params", "description"],
+              "properties": {
+                "name": { "type": "string" },
+                "params": { "type": "string" },
+                "description": { "type": "string" }
+              }
+            }
+          },
+          "operators": { "type": "array", "items": { "type": "string" } },
+          "limits": { "$ref": "#/components/schemas/Limits" },
+          "syntax": {
+            "type": "object",
+            "required": ["variable", "comment"],
+            "properties": {
+              "variable": { "type": "string" },
+              "comment": { "type": "string" }
+            }
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": ["error"],
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": ["code", "message"],
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "invalid-request",
+                  "not-found",
+                  "method-not-allowed",
+                  "payload-too-large",
+                  "unsupported-media-type",
+                  "internal-error"
+                ]
+              },
+              "message": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "InvalidRequest": {
+        "description": "Bad JSON, a body that is not an object, a missing or non-string template, a non-object data, or an option of the wrong type (invalid-request)",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      },
+      "NotFound": {
+        "description": "No route has this path (not-found)",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      },
+      "MethodNotAllowed": {
+        "description": "The path exists but not for this method (method-not-allowed)",
+        "headers": {
+          "Allow": { "description": "The methods the path accepts", "schema": { "type": "string" } }
+        },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      },
+      "PayloadTooLarge": {
+        "description": "The body exceeds the server's maxBodyBytes (payload-too-large)",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      },
+      "UnsupportedMediaType": {
+        "description": "The Content-Type is not application/json (unsupported-media-type)",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      },
+      "InternalError": {
+        "description": "An unexpected failure inside the engine (internal-error)",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      }
+    }
+  }
+}
