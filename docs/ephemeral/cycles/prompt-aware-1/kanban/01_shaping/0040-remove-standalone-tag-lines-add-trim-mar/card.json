@@ -22,7 +22,7 @@
       "core/src/resolve.ts",
       "core/src/spec.ts"
     ],
-    "frozen": false
+    "frozen": true
   },
   "criteria": [
     {
@@ -85,5 +85,19 @@
   "schema_version": 1,
   "blast_radius": [
     "none"
-  ]
+  ],
+  "freeze": {
+    "at": "2026-10-14T02:19:17.269Z",
+    "brief_sha256": "39a6c5080770d89a8907ca5706d87e5d26841bcc52a58cbf2f6150c56b170b68",
+    "brief_core_sha256": "915f9e44e0bb29a4f1dba3f9b5aa4e660f98527e72da1ad8374be7766255f812",
+    "manifest_sha256": "562b5b410a628d505752d5062b66a747e1ca8433764af2ccea520bf981650e0a",
+    "criteria_sha256": "d89bcee88cbb17763b7d242a10a39611361678a02f8f05ba3ca764234560ac59",
+    "scope_sha256": "948dceecc1f8923c15de377dec959f9f684da9a27565046cfd2c8d621d285633",
+    "scope_parts": {
+      "files_scope": "6a6be1dcc3b03a31d1e0d3050332ccc88585a4ca5c643dde65fa2502418a275f",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "40362e57e6360dc19f6d608a2a3e03e77ea04657d1ef41669f2400fbead5b298"
+    }
+  }
 }
