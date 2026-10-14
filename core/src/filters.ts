@@ -1,4 +1,5 @@
 import { FilterCall } from "./types";
+import { UnknownFilterError } from "./errors";
 
 /**
  * Parse filter string into FilterCall object
@@ -97,7 +98,7 @@ export function applyFilter(text: string, filter: FilterCall): string {
     case "escape_md":
       return applyEscapeMdFilter(text);
     default:
-      throw new Error(`Unknown filter: ${filter.name}`);
+      throw new UnknownFilterError(filter.name, 1, 1);
   }
 }
 

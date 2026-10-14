@@ -64,6 +64,7 @@ TemplateError.code; resolveTemplate options.limits; DEFAULT_LIMITS (see docs/liv
 | `core/src/parser.ts` | edit | none |
 | `core/src/resolve.ts` | edit | none |
 | `core/src/types.ts` | edit | none |
+| `tests/headless/diagnostics.test.ts` | edit | none |
 
-Files scope: `core/src/`
+Files scope: `core/src/`, `tests/headless`
 <!-- end generated scope -->
