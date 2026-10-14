@@ -24,7 +24,7 @@
       "core/src/render.ts",
       "core/src/spec.ts"
     ],
-    "frozen": false
+    "frozen": true
   },
   "criteria": [
     {
@@ -86,5 +86,19 @@
   "schema_version": 1,
   "blast_radius": [
     "none"
-  ]
+  ],
+  "freeze": {
+    "at": "2026-10-14T02:19:19.281Z",
+    "brief_sha256": "73641d0bbcb2947f00ff9a0b4c4a036b77a10a0076d790a65fdb0fc13ad15367",
+    "brief_core_sha256": "eecd1d80b734f5ecb15c66698e0c56e8cc6352cebb57c850bb81a6cdea6065ec",
+    "manifest_sha256": "513e17f5a2f1444e94586a8637ea9622106aec1915d68ab66e1dc689ed4a828e",
+    "criteria_sha256": "7e9aebf019a9ee641fc33bdbbe37b0da2478402b71a9ad1b27638c0f644b0543",
+    "scope_sha256": "66f328103c947e8273beb4ae03b199776e4f4775534c0c1d9a969b53be05eee9",
+    "scope_parts": {
+      "files_scope": "6a6be1dcc3b03a31d1e0d3050332ccc88585a4ca5c643dde65fa2502418a275f",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "dd4d2f9d8c3577063af85d987e59632d8c37a5082d5bc27a929c48771d69bf45"
+    }
+  }
 }
