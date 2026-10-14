@@ -42,7 +42,7 @@
   "docs_impact": "none",
   "started": "2026-10-14T02:12:23.558Z",
   "ended": null,
-  "review_rounds": 0,
+  "review_rounds": 1,
   "schema_version": 1,
   "blast_radius": [
     "none"
