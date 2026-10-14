@@ -47,10 +47,20 @@
       "location": "README.md (Diagnostics section, 'A diagnostic is { severity, code, ... }' and the code table)",
       "label": "f1",
       "raised_in": 1,
-      "status": "sustained",
+      "status": "fixed",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "README overclaimed one diagnostic shape",
+          "verify": "README now separates analysis diagnostics and lists unrecognized-condition",
+          "action": "fixed",
+          "evidence": [
+            "doc:README.md"
+          ]
+        }
+      ],
       "rulings": [
         {
           "after_round": 1,

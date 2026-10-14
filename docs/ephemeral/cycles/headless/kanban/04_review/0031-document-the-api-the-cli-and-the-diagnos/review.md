@@ -17,9 +17,10 @@ Restatement: Document the headless cycle's surfaces (the template-resolver CLI, 
 ### f1: README diagnostics section says every diagnostic has a severity and one of nine codes, but analyze returns diagnostics with no severity and the undocumented code unrecognized-condition
 
 - Class: defect
-- Status: sustained
+- Status: fixed
 - Serves: m1: A reader calls `template-resolver analyze` or `POST /v1/analyze` on a template with a condition the engine cannot read and, trusting the README's 'A diagnostic is { severity, code, message, line, column, suggestion? }' and its code table, branches on `severity` or on a listed code; the response instead carries `{"code":"unrecognized-condition",...}` with no `severity`, a code that appears nowhere in the README, so the README documents a shape and code set the code does not produce for analyze.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: 1. printf '{{IF status is active}}Active{{END_IF}}\n' > check.tpl. 2. node dist/cli/index.js analyze check.tpl. 3. Observe diagnostics[0] = {"code":"unrecognized-condition","message":"Unrecognized condition: status is active","line":1,"column":1}: no severity, code not in the README table. Same for an unparseable template via POST /v1/analyze {"template":"{{IF a}}"}: diagnostics[0] has code syntax-error but no severity. Smallest fix: one README sentence (in Diagnostics or beside the analyze command/route) saying analyze's diagnostics are raw analysis findings without `severity`, with code `unrecognized-condition` for an unreadable condition (validate maps them to `analysis-warning`).
 - Evidence: diff:README.md, code:core/src/analyze.ts:66, code:core/src/analyze.ts:167, code:core/src/analyze.ts:221, doc:README.md#diagnostics
+- Reply after round 1 (fixed): restate: README overclaimed one diagnostic shape; verify: README now separates analysis diagnostics and lists unrecognized-condition; evidence: doc:README.md
 - Review lead ruling after round 1: sustain: analyze diagnostics differ in shape from render diagnostics; the README must say so
