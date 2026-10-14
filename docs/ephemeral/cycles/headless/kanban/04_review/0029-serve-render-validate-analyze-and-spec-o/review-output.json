@@ -1,75 +1,64 @@
 {
-  "restatement": "Add a stateless HTTP API over the headless core using only node's http module: POST /v1/render, /v1/validate, /v1/analyze, GET /v1/spec and GET /v1/openapi.json. Template problems come back as 200 with ok false and located diagnostics; malformed requests get JSON errors (400 invalid-request, 404, 405 with Allow, 413, 415). Server limits are a ceiling a request can only lower. A committed OpenAPI 3.1 document is served byte for byte and matches the router table, and an end-to-end test drives every route over real HTTP on 127.0.0.1 port 0 and closes the server. No runtime dependency, no non-loopback default host, no leaked servers or sockets.",
+  "restatement": "Expose the headless template core over a dependency-free node http server: POST /v1/render, /v1/validate, /v1/analyze and GET /v1/spec return the documented result bodies (template problems are 200 with ok false and located diagnostics), GET /v1/openapi.json serves the committed OpenAPI 3.1 document byte for byte and that document matches the router table, malformed or hostile requests get JSON 400/404/405/413/415 errors without crashing, request limits can only lower the server's limits, and an end-to-end test drives every route on an ephemeral 127.0.0.1 port and closes it.",
   "brief_mismatch": null,
   "verification_plan": [
-    "c1: each of the four routes returns the documented 200 body shape (RenderResult, {ok, diagnostics}, analysis with required and blocks, spec); a template error is 200, ok false, output empty, first diagnostic located at the failing node",
-    "c2: every listed malformed input (bad JSON, missing/non-string template, non-object data including null and arrays, wrong option types) yields 400 invalid-request; unknown path 404; wrong method 405 with an Allow header; oversized body 413 (both declared Content-Length and streamed); non-JSON content type 415; every response, including 500, has a JSON body and JSON content type",
-    "c3: request limits are combined with server limits by taking the minimum per key; invalid limit values are rejected; omitted keys keep the server value",
-    "c4: the served bytes equal the committed file regardless of build output or checkout line endings; document is 3.1; paths and methods equal the router table; schemas match what core actually returns (analysis, spec, diagnostics, errors)",
-    "c5: the e2e test binds 127.0.0.1 port 0, hits all five routes with node's http client, closes the server and proves the port refuses afterwards",
-    "goal question 1: hostile bodies (huge, wrong type, wrong content type, client abort) produce JSON errors and no unhandled rejection or crash",
-    "m1: no new entry in dependencies; m2: listen and createServer default to 127.0.0.1; m3: tests close servers in afterEach and use agent:false",
-    "rubric: no change outside api/ apart from process files"
+    "Check each route handler returns the documented body: RenderResult for render, {ok, diagnostics} for validate, analysis with required and blocks for analyze, spec() for spec; a template error yields 200, ok false, empty output and located diagnostics first.",
+    "Check request validation: bad JSON, non-object body, missing or non-string template, non-object data (including null and arrays), non-object options, non-boolean strictMode, non-object or bad-typed limits all give 400 invalid-request with {error:{code,message}} only.",
+    "Check 404 for unknown paths, 405 with an Allow header for known paths with the wrong method, 413 via Content-Length and streamed size, 415 for non-JSON POST content types while accepting a charset parameter; every response has a JSON content type.",
+    "Check hostile bodies (oversized, wrong type, wrong content type, engine exceptions) produce a JSON reply and never an unhandled rejection or thrown error in the request handler.",
+    "Check limit merging takes min(request, server) per key and that omitted keys keep the server value.",
+    "Check GET /v1/openapi.json bytes equal api/openapi.json on disk on every platform, the document is 3.1, its paths and methods equal the routes table, and its schemas match what core actually returns.",
+    "Check the e2e test binds 127.0.0.1 port 0, uses node's http client for all five routes, and closes the server; check afterEach stops servers in the unit tests.",
+    "Check no runtime dependency is added and the default listen host is 127.0.0.1.",
+    "Check earlier findings f1 (CRLF byte equality) and f2 (null data/options) are fixed, and the frozen test change is only added table rows.",
+    "Run the gate command."
   ],
   "findings": [
     {
-      "title": "Served OpenAPI bytes are a re-serialization, so byte equality breaks on a CRLF checkout",
-      "class": "goal-risk",
-      "serves": {
-        "target": "c4",
-        "scenario": "routes.ts serves JSON.stringify(import, null, 2) + \"\\n\" (always LF, canonical key order) rather than the file's bytes. The repo has no .gitattributes; on a Windows clone with core.autocrlf=true (git-for-windows default) api/openapi.json is checked out with CRLF, so GET /v1/openapi.json no longer equals the committed file byte for byte and both oa-doc and e2-server tests fail. The same happens if anyone hand-edits the file with different indentation or key order."
-      },
-      "rubric": "c4: GET /v1/openapi.json serves api/openapi.json byte for byte",
-      "reproduction": "git clone with core.autocrlf=true (or convert api/openapi.json to CRLF); run node node_modules/jest/bin/jest.js --runTestsByPath tests/headless/api.test.ts; 'oa-doc: GET /v1/openapi.json serves api/openapi.json byte for byte' fails because the response has LF line endings and the file has CRLF.",
-      "evidence": [
-        "diff:api/routes.ts",
-        "code:api/routes.ts:36",
-        "test:oa-doc: GET /v1/openapi.json serves api/openapi.json byte for byte",
-        "test:e2-server: one flow on an ephemeral 127.0.0.1 port exercises all five routes, then the port is closed"
-      ],
-      "location": "api/routes.ts:36"
-    },
-    {
-      "title": "data: null and options: null are accepted as empty objects instead of 400 invalid-request",
-      "class": "defect",
-      "serves": {
-        "target": "c2",
-        "scenario": "renderRoute uses body.data ?? {} and body.options ?? {}, so an explicit null (a non-object data) renders as if data were omitted and returns 200, while options.limits: null is correctly rejected with 400. c2 and the design say a non-object data is a 400."
-      },
-      "rubric": "c2: a non-object data ... return 400 invalid-request",
-      "reproduction": "Start createServer(); POST /v1/render with content-type application/json and body {\"template\":\"x\",\"data\":null}; observe 200 ok true instead of 400 invalid-request. Same for {\"template\":\"x\",\"options\":null}. Smallest fix: treat only undefined as absent (body.data === undefined ? {} : body.data, likewise for options).",
-      "evidence": [
-        "code:api/routes.ts:53",
-        "code:api/routes.ts:55",
-        "doc:docs/living/architecture/headless-contract.md"
-      ],
-      "location": "api/routes.ts:53"
-    },
-    {
-      "title": "An oversized body is still read to the end before the 413 is sent",
+      "title": "After a 413 or 415 the server reads and discards the whole remaining body before replying, with no cap",
       "class": "drift",
       "serves": {
         "target": "card-goal",
-        "scenario": "On 413 (and 415/405 for POST) sendError resumes the request and waits for 'end' before replying, so a client that declares or streams a multi-gigabyte body keeps the socket and the server's bandwidth busy until it finishes (memory stays bounded, no crash). Bounded only by node's default requestTimeout. Noted for the lead; replying with Connection: close after a bounded drain would cap it."
+        "scenario": "A client that declares or streams a body far over maxBodyBytes (or an endless chunked body, or a huge text/plain body) keeps the connection and the server's read loop busy until it stops sending or node's requestTimeout fires; the process does not crash and memory is not retained, so the goal-critical question is still answered adequately, but request limits do not bound the work spent on a rejected request."
       },
-      "rubric": "goal-critical question: hostile body gets a JSON error and never crashes the process",
-      "reproduction": "Start the server with maxBodyBytes 64; send Content-Length 10000000000 and stream slowly; the 413 is not sent until the full body arrives or the request times out.",
+      "rubric": "each criterion is met by the diff and its test",
+      "reproduction": "Start createServer({maxBodyBytes: 64}); send POST /v1/render with content-type application/json, Transfer-Encoding chunked, and keep writing chunks; no 413 arrives until the client ends the body (sendError waits for req 'end' after req.resume()).",
       "evidence": [
-        "code:api/server.ts:122",
-        "code:api/server.ts:123"
+        "code:api/server.ts:1643",
+        "diff:api/server.ts"
       ],
-      "location": "api/server.ts:122"
+      "location": "api/server.ts:1647"
     }
   ],
-  "responses": [],
+  "responses": [
+    {
+      "finding": "f1",
+      "verdict": "withdraw",
+      "evidence": [
+        "diff:api/.gitattributes",
+        "code:api/.gitattributes:1",
+        "test:oa-doc: GET /v1/openapi.json serves api/openapi.json byte for byte"
+      ]
+    },
+    {
+      "finding": "f2",
+      "verdict": "withdraw",
+      "evidence": [
+        "code:api/routes.ts:1464",
+        "code:api/routes.ts:1466",
+        "test:ap-errors: 400 invalid-request for null data",
+        "test:ap-errors: 400 invalid-request for null options"
+      ]
+    }
+  ],
   "reviewer": {
     "kind": "fallback",
     "label": "opus fallback (same model family as the builder; has repository access)"
   },
-  "at": "2026-10-14T01:40:29.533Z",
+  "at": "2026-10-14T01:42:39.263Z",
   "card": "0029-serve-render-validate-analyze-and-spec-o",
   "tier": "product",
-  "packet_sha256": "281bf222641b7216162a2ee0bd635bba673a8b9a549ca5f8cd33090571cd4fe3",
-  "diff_sha256": "57debf17aabdb09fccb801a175575bb996cbd6449af9bade0fce022e2ac3d995",
+  "packet_sha256": "d20bc4b00870b90ba2b35ae6dd84cf52bc7aeaec41b779740f2937e36f8baf70",
+  "diff_sha256": "dafe7668bc7829e3c498a61ef7192521a41116e55922cf22db17dc88efc5d403",
   "dropped": []
 }

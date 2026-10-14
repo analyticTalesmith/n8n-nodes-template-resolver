@@ -31,6 +31,55 @@
         "f3"
       ],
       "responses": []
+    },
+    {
+      "number": 2,
+      "at": "2026-10-14T01:42:39.528Z",
+      "reviewer": {
+        "kind": "fallback",
+        "label": "opus fallback (same model family as the builder; has repository access)"
+      },
+      "output_sha256": "5828b81770c35080cd9d593ca75cffb12edd4827ad22c4bd6ae332f97ddcde62",
+      "diff_sha256": "dafe7668bc7829e3c498a61ef7192521a41116e55922cf22db17dc88efc5d403",
+      "restatement": "Expose the headless template core over a dependency-free node http server: POST /v1/render, /v1/validate, /v1/analyze and GET /v1/spec return the documented result bodies (template problems are 200 with ok false and located diagnostics), GET /v1/openapi.json serves the committed OpenAPI 3.1 document byte for byte and that document matches the router table, malformed or hostile requests get JSON 400/404/405/413/415 errors without crashing, request limits can only lower the server's limits, and an end-to-end test drives every route on an ephemeral 127.0.0.1 port and closes it.",
+      "brief_mismatch": null,
+      "evidence": [
+        "code:api/.gitattributes:1",
+        "code:api/routes.ts:1464",
+        "code:api/routes.ts:1466",
+        "code:api/server.ts:1643",
+        "diff:api/.gitattributes",
+        "diff:api/server.ts",
+        "patch:dafe7668bc7829e3c498a61ef7192521a41116e55922cf22db17dc88efc5d403",
+        "test:ap-errors: 400 invalid-request for null data",
+        "test:ap-errors: 400 invalid-request for null options",
+        "test:oa-doc: GET /v1/openapi.json serves api/openapi.json byte for byte"
+      ],
+      "stalled": false,
+      "raised": [
+        "f4"
+      ],
+      "responses": [
+        {
+          "finding": "f1",
+          "verdict": "withdraw",
+          "evidence": [
+            "diff:api/.gitattributes",
+            "code:api/.gitattributes:1",
+            "test:oa-doc: GET /v1/openapi.json serves api/openapi.json byte for byte"
+          ]
+        },
+        {
+          "finding": "f2",
+          "verdict": "withdraw",
+          "evidence": [
+            "code:api/routes.ts:1464",
+            "code:api/routes.ts:1466",
+            "test:ap-errors: 400 invalid-request for null data",
+            "test:ap-errors: 400 invalid-request for null options"
+          ]
+        }
+      ]
     }
   ],
   "findings": [
@@ -52,7 +101,7 @@
       "location": "api/routes.ts:36",
       "label": "f1",
       "raised_in": 1,
-      "status": "sustained",
+      "status": "withdrawn",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [],
@@ -81,7 +130,7 @@
       "location": "api/routes.ts:53",
       "label": "f2",
       "raised_in": 1,
-      "status": "sustained",
+      "status": "withdrawn",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [],
@@ -121,6 +170,34 @@
         }
       ],
       "ticket": "0037-follow-up-an-oversized-body-is-still-rea"
+    },
+    {
+      "title": "After a 413 or 415 the server reads and discards the whole remaining body before replying, with no cap",
+      "class": "drift",
+      "serves": {
+        "target": "card-goal",
+        "scenario": "A client that declares or streams a body far over maxBodyBytes (or an endless chunked body, or a huge text/plain body) keeps the connection and the server's read loop busy until it stops sending or node's requestTimeout fires; the process does not crash and memory is not retained, so the goal-critical question is still answered adequately, but request limits do not bound the work spent on a rejected request."
+      },
+      "rubric": "each criterion is met by the diff and its test",
+      "reproduction": "Start createServer({maxBodyBytes: 64}); send POST /v1/render with content-type application/json, Transfer-Encoding chunked, and keep writing chunks; no 413 arrives until the client ends the body (sendError waits for req 'end' after req.resume()).",
+      "evidence": [
+        "code:api/server.ts:1643",
+        "diff:api/server.ts"
+      ],
+      "location": "api/server.ts:1647",
+      "label": "f4",
+      "raised_in": 2,
+      "status": "open",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [
+        {
+          "after_round": 2,
+          "ruling": "drift",
+          "note": "same as the ticketed drain behavior; loopback-only server"
+        }
+      ]
     }
   ]
 }

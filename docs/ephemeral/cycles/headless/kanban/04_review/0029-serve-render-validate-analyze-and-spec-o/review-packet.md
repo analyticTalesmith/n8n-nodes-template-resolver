@@ -2,16 +2,16 @@
 type: review-packet
 card: 0029-serve-render-validate-analyze-and-spec-o
 tier: product
-built_at: 2026-10-14T01:39:05.195Z
+built_at: 2026-10-14T01:41:31.700Z
 base: fa65aa2f0b504ab9f9827c090d1cf01cbb550e0d
-head: 7f32cbc07299106734e96d6d06813e06c13d911f
+head: 783398d244f5c3e5028b57a4929038eaf283331e
 frozen: true
 brief_sha256: 1f310d0c269ddc91f944ef1702a31b5fdf9d9e4247f7f679375b3141cfcaecdf
-manifest_sha256: 920b6a380abe6441cbf858af90181eb275d386141640d5c9414500769c4e1b78
+manifest_sha256: aa27a09c8b56f2d9c6c7d5ba78ab51116c28e2742c66ac7ed84bcd3fe8b4c58b
 criteria_sha256: 00e14b675d25fbb91ffe114f55c22b35c7e508e749d4a2c8ded36988c7bb9888
-scope_sha256: 7f469748c8517efad4a538b4f2434f60dd06feeb9dc5927097ead67d2434b788
-diff_sha256: 57debf17aabdb09fccb801a175575bb996cbd6449af9bade0fce022e2ac3d995
-omitted_paths: 6
+scope_sha256: 6adfe2398f2d500cb3449e8ffb5afdec6125624fe7b5150468071dd4fc65a05b
+diff_sha256: dafe7668bc7829e3c498a61ef7192521a41116e55922cf22db17dc88efc5d403
+omitted_paths: 10
 criteria_count: 5
 must_not_count: 3
 ---
@@ -21,6 +21,10 @@ must_not_count: 3
 Manifest amended after the freeze at 2026-10-14T01:36:49.978Z by lead: stubs existed so these files are edits; stray entry removed (add -api/index.ts, add -api/openapi.json, add -api/routes.ts, edit -x)
 
 Manifest amended after the freeze at 2026-10-14T01:36:50.081Z by lead: stubs from the test writer already existed so these files are edits (edit +api/index.ts, edit +api/openapi.json, edit +api/routes.ts)
+
+Manifest amended after the freeze at 2026-10-14T01:40:39.598Z by lead: review fixes: line-ending pin and one more table case (add +api/.gitattributes, edit +tests/headless/api.test.ts)
+
+Manifest amended after the freeze at 2026-10-14T01:41:31.398Z by lead: a table row added to a frozen test is a card test change (scope +tests/headless)
 
 Read the sections in order. Write `restatement` before you read section 3. At product tier and up, write `verification_plan` from section 1 alone before you read section 3.
 
@@ -165,10 +169,10 @@ No scope exceptions are logged.
 
 ### Manifest and scope
 
-- add: `api/server.ts`
+- add: `api/.gitattributes`, `api/server.ts`
 - remove: none
-- edit: `api/index.ts`, `api/openapi.json`, `api/routes.ts`
-- files_scope: `api/`
+- edit: `api/index.ts`, `api/openapi.json`, `api/routes.ts`, `tests/headless/api.test.ts`
+- files_scope: `api/`, `tests/headless`
 
 ## 2. Your verification plan
 
@@ -634,9 +638,16 @@ describe("e2-server: every route over real HTTP", () => {
 
 ## 4. Diff
 
-6 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
+10 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
 
 ```diff
+diff --git a/api/.gitattributes b/api/.gitattributes
+new file mode 100644
+index 0000000..56c7f69
+--- /dev/null
++++ b/api/.gitattributes
+@@ -0,0 +1 @@
++openapi.json text eol=lf
 diff --git a/api/index.ts b/api/index.ts
 index d5e00e7..86d80a2 100644
 --- a/api/index.ts
@@ -1389,7 +1400,7 @@ index 0967ef4..6e5013f 100644
 +  }
 +}
 diff --git a/api/routes.ts b/api/routes.ts
-index 806ed70..7c6f32f 100644
+index 806ed70..6cb8975 100644
 --- a/api/routes.ts
 +++ b/api/routes.ts
 @@ -1,2 +1,110 @@
@@ -1442,9 +1453,9 @@ index 806ed70..7c6f32f 100644
 +
 +function renderRoute(body: Record<string, unknown>, context: RouteContext): unknown {
 +  const template = requireTemplate(body);
-+  const data = body.data ?? {};
++  const data = body.data === undefined ? {} : body.data;
 +  if (!isObject(data)) invalid("data must be an object");
-+  const options = body.options ?? {};
++  const options = body.options === undefined ? {} : body.options;
 +  if (!isObject(options)) invalid("options must be an object");
 +  if (options.strictMode !== undefined && typeof options.strictMode !== "boolean") {
 +    invalid("options.strictMode must be a boolean");
@@ -1638,14 +1649,47 @@ index 0000000..80c56d6
 +  res.setHeader("Content-Length", payload.length);
 +  res.end(payload);
 +}
+diff --git a/tests/headless/api.test.ts b/tests/headless/api.test.ts
+index f543a79..699b47d 100644
+--- a/tests/headless/api.test.ts
++++ b/tests/headless/api.test.ts
+@@ -160,6 +160,8 @@ describe("ap-errors: malformed requests", () => {
+     ["string data", "/v1/render", { template: "x", data: "text" }],
+     ["strictMode as a string", "/v1/render", { template: "x", options: { strictMode: "yes" } }],
+     ["limits as a string", "/v1/render", { template: "x", options: { limits: "many" } }],
++    ["null data", "/v1/render", { template: "x", data: null }],
++    ["null options", "/v1/render", { template: "x", options: null }],
+     ["validate without template", "/v1/validate", {}],
+     ["validate with non-string template", "/v1/validate", { template: ["x"] }],
+     ["analyze without template", "/v1/analyze", { data: {} }],
 ```
 
 ## Gate run
 The card's gate command as it last ran, before this packet was built. Output only: run the command yourself to check it.
 - Command: `node node_modules/jest/bin/jest.js --runTestsByPath tests/headless/api.test.ts tests/headless/e2e-api.test.ts --json`
 - Exit status: 0
-- Tests: 43 passed, 0 failed
+- Tests: 45 passed, 0 failed
 - Failing tests: none
+
+## 5. Earlier findings and replies
+
+Answer each fix-class (defect or goal-risk) finding below in `responses` with sustain or withdraw and evidence. Raise new findings only about what the revision changed or an in-scope problem newly evidenced.
+
+### f1: Served OpenAPI bytes are a re-serialization, so byte equality breaks on a CRLF checkout
+
+- Class: goal-risk
+- Serves: c4: routes.ts serves JSON.stringify(import, null, 2) + "\n" (always LF, canonical key order) rather than the file's bytes. The repo has no .gitattributes; on a Windows clone with core.autocrlf=true (git-for-windows default) api/openapi.json is checked out with CRLF, so GET /v1/openapi.json no longer equals the committed file byte for byte and both oa-doc and e2-server tests fail. The same happens if anyone hand-edits the file with different indentation or key order.
+- Reproduction: git clone with core.autocrlf=true (or convert api/openapi.json to CRLF); run node node_modules/jest/bin/jest.js --runTestsByPath tests/headless/api.test.ts; 'oa-doc: GET /v1/openapi.json serves api/openapi.json byte for byte' fails because the response has LF line endings and the file has CRLF.
+- Status: sustained
+- Review lead ruling: sustain: a CRLF checkout breaks the byte-equality promise; pin the file's line endings with an api-local gitattributes
+
+### f2: data: null and options: null are accepted as empty objects instead of 400 invalid-request
+
+- Class: defect
+- Serves: c2: renderRoute uses body.data ?? {} and body.options ?? {}, so an explicit null (a non-object data) renders as if data were omitted and returns 200, while options.limits: null is correctly rejected with 400. c2 and the design say a non-object data is a 400.
+- Reproduction: Start createServer(); POST /v1/render with content-type application/json and body {"template":"x","data":null}; observe 200 ok true instead of 400 invalid-request. Same for {"template":"x","options":null}. Smallest fix: treat only undefined as absent (body.data === undefined ? {} : body.data, likewise for options).
+- Status: sustained
+- Review lead ruling: sustain: null data or options is a non-object and must be 400
 
 ## Output
 
