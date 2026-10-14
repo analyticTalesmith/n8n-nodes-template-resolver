@@ -1,5 +1,5 @@
 import { VariableMap, TemplateValue } from "./types";
-import { TypeError } from "./errors";
+import { TypeError, MathSyntaxError } from "./errors";
 import {
   tryCoerceToNumber,
   tryCoerceToArray,
@@ -713,7 +713,7 @@ function evaluateMathTokens(tokens: (number | string)[]): number {
     const closeIdx = tokens.indexOf(")", openIdx);
 
     if (closeIdx === -1) {
-      throw new TypeError("Unmatched parentheses in math expression", 1, 1);
+      throw new MathSyntaxError("Unmatched parentheses in math expression", 1, 1);
     }
 
     const subTokens = tokens.slice(openIdx + 1, closeIdx);
@@ -764,7 +764,7 @@ function evaluateMathTokens(tokens: (number | string)[]): number {
   }
 
   if (tokens.length !== 1 || typeof tokens[0] !== "number") {
-    throw new TypeError("Invalid math expression", 1, 1);
+    throw new MathSyntaxError("Invalid math expression", 1, 1);
   }
 
   return tokens[0];

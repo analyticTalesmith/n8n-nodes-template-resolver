@@ -1,6 +1,6 @@
 import { Lexer } from "./lexer";
 import { Parser } from "./parser";
-import { parseFilter } from "./filters";
+import { FILTERS, parseFilter } from "./filters";
 import {
   conditionOperands,
   hasBareWhitespace,
@@ -13,6 +13,7 @@ import {
   CaseNode,
   ForNode,
   IfNode,
+  Limits,
   ListItemNode,
   ListNode,
   TableHeaderNode,
@@ -39,6 +40,8 @@ export interface VariableUsage {
   usedIn: UsageKind[];
   /** True when every read supplies a ?? default */
   optional: boolean;
+  /** True when some read has no ?? default; always !optional */
+  required: boolean;
 }
 
 export interface FilterUsage {
@@ -53,21 +56,30 @@ export interface AnalysisDiagnostic {
   column: number;
 }
 
+export type BlockKind = "IF" | "CASE" | "FOR" | "LIST" | "TABLE";
+
 export interface TemplateAnalysis {
   variables: VariableUsage[];
   filters: FilterUsage[];
+  /** Count per block kind present in the template */
+  blocks: Partial<Record<BlockKind, number>>;
   diagnostics: AnalysisDiagnostic[];
 }
 
-const KNOWN_FILTERS = new Set(["head", "tail", "trim", "escape_md"]);
+const KNOWN_FILTERS = new Set(FILTERS.map((f) => f.name));
 
 /**
  * Report the variables a template reads and the filters it applies, derived
  * from the parsed template. Loop item names (inside their loop) and
  * @-metadata are not inputs.
  */
-export function analyze(template: string): TemplateAnalysis {
-  const ast = new Parser(new Lexer(template).tokenize()).parse();
+export function analyze(
+  template: string,
+  options?: { limits?: Partial<Limits> }
+): TemplateAnalysis {
+  const ast = new Parser(new Lexer(template).tokenize(), {
+    maxDepth: options?.limits?.maxDepth,
+  }).parse();
   const walker = new Walker();
   walker.visitAll(ast.body);
   return walker.result();
@@ -82,6 +94,7 @@ interface Entry {
 class Walker {
   private entries = new Map<string, Entry>();
   private filterCounts = new Map<string, number>();
+  private blocks: Partial<Record<BlockKind, number>> = {};
   private diagnostics: AnalysisDiagnostic[] = [];
   private scopes: string[] = [];
   private tableDepth = 0;
@@ -93,11 +106,13 @@ class Walker {
         paths: Array.from(entry.paths),
         usedIn: Array.from(entry.usedIn),
         optional: entry.allOptional,
+        required: !entry.allOptional,
       })),
       filters: Array.from(this.filterCounts, ([name, count]) => ({
         name,
         count,
       })),
+      blocks: this.blocks,
       diagnostics: this.diagnostics,
     };
   }
@@ -111,19 +126,28 @@ class Walker {
       case "Variable":
         return this.visitVariable(node as VariableNode);
       case "If":
+        this.countBlock("IF");
         return this.visitIf(node as IfNode, "if");
       case "Case":
+        this.countBlock("CASE");
         return this.visitCase(node as CaseNode);
       case "For":
+        this.countBlock("FOR");
         return this.visitFor(node as ForNode);
       case "List":
+        this.countBlock("LIST");
         return (node as ListNode).items.forEach((i) => this.visitListItem(i));
       case "Table":
+        this.countBlock("TABLE");
         return this.visitTable(node as TableNode);
       case "Header":
       case "TableRow":
         return this.visitCells(node as TableHeaderNode | TableRowNode);
     }
+  }
+
+  private countBlock(kind: BlockKind): void {
+    this.blocks[kind] = (this.blocks[kind] ?? 0) + 1;
   }
 
   private visitVariable(node: VariableNode): void {

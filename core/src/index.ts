@@ -27,3 +27,10 @@ export * from "./analyze";
 
 // Template resolution
 export { resolveTemplate } from "./resolve";
+
+// Structured render result
+export { render, validate } from "./render";
+export type { RenderOptions, RenderResult, Diagnostic } from "./render";
+export { estimateTokens } from "./estimate";
+export { spec } from "./spec";
+export type { Spec } from "./spec";

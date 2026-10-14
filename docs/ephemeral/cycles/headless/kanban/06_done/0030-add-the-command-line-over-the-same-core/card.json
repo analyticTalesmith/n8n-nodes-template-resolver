@@ -1,0 +1,165 @@
+{
+  "id": "0030-add-the-command-line-over-the-same-core",
+  "title": "Add the command line over the same core",
+  "type": "task",
+  "parent": null,
+  "depends_on": [
+    "0029-serve-render-validate-analyze-and-spec-o"
+  ],
+  "origin": "headless",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "cli/"
+  ],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [
+      "cli/index.ts",
+      "cli/main.ts"
+    ],
+    "frozen": true
+  },
+  "criteria": [
+    {
+      "text": "cl-render: render reads a template file or stdin and a data file or stdin, prints the output on stdout, prints diagnostics as file:line:col severity code message on stderr, exits 0 on ok and 1 on template errors, and --json prints the full result",
+      "verify": "test",
+      "traces": [
+        "tests/headless/cli.test.ts#cl-render"
+      ]
+    },
+    {
+      "text": "cl-others: validate and analyze print JSON and validate exits 1 when not ok; spec prints the spec JSON",
+      "verify": "test",
+      "traces": [
+        "tests/headless/cli.test.ts#cl-others"
+      ]
+    },
+    {
+      "text": "cl-usage: no arguments, an unknown subcommand or option, a missing file, bad data JSON and both inputs on stdin exit 2 with a message on stderr; --help prints usage and exits 0",
+      "verify": "test",
+      "traces": [
+        "tests/headless/cli.test.ts#cl-usage"
+      ]
+    },
+    {
+      "text": "cl-limits: --strict, --no-strict, --max-iterations, --max-output-chars and --max-depth reach the render options",
+      "verify": "test",
+      "traces": [
+        "tests/headless/cli.test.ts#cl-limits"
+      ]
+    },
+    {
+      "text": "cl-serve: serve starts the API on the given host and port and answers a request",
+      "verify": "test",
+      "traces": [
+        "tests/headless/cli.test.ts#cl-serve"
+      ]
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/headless/cli.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": "2026-10-14T01:42:57.694Z",
+  "ended": "2026-10-14T01:49:29.581Z",
+  "review_rounds": 1,
+  "schema_version": 1,
+  "blast_radius": [
+    "none"
+  ],
+  "freeze": {
+    "at": "2026-10-14T00:38:43.718Z",
+    "brief_sha256": "ea06bf4d0d7d3566e21c7c3d88779c228fe7fb467f684bf0dfe6839a2f5d2dd5",
+    "brief_core_sha256": "4ec9abe89198c5d0f28de851ff65899c1460bcc6e0acd41ca163cab2dc649698",
+    "manifest_sha256": "196f829ae21092a9f4f4f854918f7237e244d53951c7540595246974e120b85c",
+    "criteria_sha256": "c26a79011b211e39bea70225f01d7cd3b240735fde7213bbeffd9cef44d63616",
+    "scope_sha256": "d6506ef1fd33beffb71eca80e037463758f5619ddc40399787b36f0936e0784e",
+    "scope_parts": {
+      "files_scope": "a8f18aaa4245f9a7803bcfb37bae3f2940e928b077e744656a73b3b37cb16232",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "4da00cb1e04649cbf22687e4a9731abdc53f061658b68770307dcf96326cd1de"
+    }
+  },
+  "base_commit": "1d8de70765118ad49822252052ff7edafe1476a7",
+  "manifest_amendments": [
+    {
+      "at": "2026-10-14T01:42:57.796Z",
+      "by": "lead",
+      "reason": "stubs from the test writer exist so these are edits; stray entry",
+      "from": {
+        "manifest": {
+          "add": [
+            "cli/index.ts",
+            "cli/main.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "x"
+          ]
+        },
+        "files_scope": [
+          "cli/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": []
+        },
+        "files_scope": [
+          "cli/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    },
+    {
+      "at": "2026-10-14T01:42:57.903Z",
+      "by": "lead",
+      "reason": "stubs exist so edits",
+      "from": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": []
+        },
+        "files_scope": [
+          "cli/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "cli/index.ts",
+            "cli/main.ts"
+          ]
+        },
+        "files_scope": [
+          "cli/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    }
+  ]
+}
