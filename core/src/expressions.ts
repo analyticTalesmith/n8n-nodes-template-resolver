@@ -685,19 +685,25 @@ function tokenizeMath(
       i++;
     }
 
-    if (varName) {
-      const value = resolveValue(varName, variables);
-      const num = tryCoerceToNumber(value);
-      if (num === null) {
-        throw new TypeError(
-          `Cannot use non-numeric value in math expression: ${varName} = ${JSON.stringify(value)}`,
-          1,
-          1,
-          "Ensure all variables in math expressions are numbers"
-        );
-      }
-      tokens.push(num);
+    if (!varName) {
+      throw new MathSyntaxError(
+        `Unexpected character ${JSON.stringify(char)} in math expression`,
+        1,
+        1
+      );
     }
+
+    const value = resolveValue(varName, variables);
+    const num = tryCoerceToNumber(value);
+    if (num === null) {
+      throw new TypeError(
+        `Cannot use non-numeric value in math expression: ${varName} = ${JSON.stringify(value)}`,
+        1,
+        1,
+        "Ensure all variables in math expressions are numbers"
+      );
+    }
+    tokens.push(num);
   }
 
   return tokens;

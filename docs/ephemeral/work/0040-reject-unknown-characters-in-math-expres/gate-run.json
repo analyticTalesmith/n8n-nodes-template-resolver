@@ -1,0 +1,17 @@
+{
+  "command": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/regressions/math-unknown-character.test.ts",
+    "--json"
+  ],
+  "exit_status": 0,
+  "ran_at": "2026-10-14T02:15:19.195Z",
+  "tests": {
+    "passed": 14,
+    "failed": 0
+  },
+  "failing": [],
+  "failing_total": 0
+}

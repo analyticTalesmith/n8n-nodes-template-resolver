@@ -1,0 +1,26 @@
+{
+  "id": "0042-follow-up-in-lenient-mode-the-unknown-ch",
+  "title": "Follow-up: In lenient mode the unknown-character error is still swallowed: render returns ok true, empty output and no d",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [],
+  "origin": "math-hang",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [],
+    "frozen": false
+  },
+  "criteria": [],
+  "gate": null,
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1
+}
