@@ -1,60 +1,54 @@
 {
-  "restatement": "Add prompt-friendly whitespace and literal-brace handling to the headless core: by default render drops lines that hold only block tags (IF/ELSEIF/ELSE/END_IF, CASE family, FOR/END_FOR, comments) together with their line break, while LIST/TABLE family tags and lines with text or variables keep their old spacing; '-' markers after the opening or before the closing braces trim adjacent whitespace on every block tag and comment regardless of the option; {{RAW}}...{{END_RAW}} outputs its content literally (spaces kept, CRLF to LF, unclosed RAW is a located syntax-error); a single backslash before {{ outputs a literal {{; render defaults standaloneLines to true, resolveTemplate to false so existing output and tests are unchanged; spec() documents RAW/END_RAW and the option. No existing test expectation may change, no runtime dependency may be added.",
-  "brief_mismatch": null,
+  "restatement": "Add prompt-shaped whitespace handling and literal braces to the core template language. With standaloneLines on, lines that hold only flow-control block tags (IF/ELSEIF/ELSE/END_IF, CASE family, FOR/END_FOR, comments, and RAW/END_RAW) vanish along with their line break. LIST/TABLE-family tags keep their old spacing. Minus markers trim adjacent whitespace on every block tag and comment, whether the option is on or off. RAW/END_RAW emit literal content and report an unclosed RAW as a located syntax error. A single backslash before the opening brace pair escapes it. spec() documents RAW and the option. render defaults the option to true and resolveTemplate defaults it to false, so the existing suite and resolveTemplate's default output stay unchanged. No new runtime dependency.",
+  "brief_mismatch": "The design context (prompt-aware-contract.md, Whitespace > Trim markers) says trim markers apply first and that a standalone tag line with a leading trim marker therefore loses the line break before it as well as its own. The frozen ws-trim row 'a comment marker before trims before only' (template 'a \\n{{-# c #}}\\nb') expects 'a\\nb' with standaloneLines on, so the comment's own line break is kept. The implementation follows the frozen test: render('a\\n{{- IF x}}\\nb\\n{{END_IF}}\\n', {x:true}) gives 'a\\nb\\n', where the contract sentence implies 'ab\\n'. The lead should decide which one is authoritative and update the other. This is not raised as a finding because the frozen test is the plan.",
   "verification_plan": [
-    "Run the two frozen test files and the full jest suite; confirm all pass and that no existing test file changed in the diff (m1).",
-    "Confirm resolveTemplate passes standaloneLines false when the option is absent or undefined, and render passes true, with an explicit value winning in both (c3, m2).",
-    "Probe standalone removal with adversarial templates: CRLF, tabs, indented tags, several tags on one line, first/last line, tag next to a variable, LIST/TABLE inside an IF (c1).",
-    "Probe trim markers on every block tag and comment, with the option on and off, and the interplay of a leading trim marker with a standalone line (c2).",
-    "Probe RAW: literal content, whitespace-only content, CRLF, nested in FOR and untaken IF, unclosed RAW location, stray END_RAW, RAW tag lines under the standalone option (c4).",
-    "Probe escapes: \\\\{{, \\\\\\\\{{, backslash at end, backslash before ${{ and single brace (c5).",
-    "Check analyze and validate on RAW content and trim markers (goal-critical brief question).",
-    "Check spec() output for RAW, END_RAW and standaloneLines (c6); check package.json for new dependencies (m3); check the diff stays in core/src (scope)."
+    "Run the gate (whitespace.test.ts and raw.test.ts) and the full jest suite: all pass, and no existing test file other than the two frozen ones changed (m1)",
+    "Diff the tests/ tree against base to confirm only rows were added to the two frozen tests and no expectation changed (m1)",
+    "Check package.json dependencies are unchanged (m3)",
+    "c1: render IF/ELSEIF/ELSE/CASE/FOR/comment tag lines with option on and off, including indentation, trailing spaces/tabs, CRLF, first/last line, adjacent tag lines, tags sharing a line with text or a variable, and LIST/TABLE inside a standalone IF",
+    "c2: trim markers on each block tag and on comments ({{-# #-}}), with option on and off, and the minus never read as part of an expression",
+    "c3: render with no options, other options only, or undefined standaloneLines defaults to on; resolveTemplate defaults to off; explicit values win in both (m2)",
+    "c4: RAW content stays literal (tags, variables, comments, backslashes), spaces and whitespace-only content are kept (earlier f1), CRLF becomes LF, RAW works inside FOR and an untaken IF, and an unclosed RAW is a syntax-error at the RAW tag in render, resolveTemplate and validate",
+    "c5: escape with one and two backslashes, inside blocks, at the end of the template, before a dollar sign and before a single brace; try adversarial counts (three backslashes) and an escape right after a tag",
+    "c6: spec() JSON contains RAW, END_RAW and standaloneLines",
+    "Brief questions: analyze and validate on templates with RAW and trim markers return no diagnostics and do not throw; resolveTemplate keeps the old blank lines by default"
   ],
   "findings": [
     {
-      "title": "Whitespace-only RAW content on a tag line is deleted under the standalone rule",
-      "class": "defect",
+      "title": "An odd run of backslashes before the brace pair does not escape it",
+      "class": "drift",
       "serves": {
-        "target": "c4",
-        "scenario": "With render's default standaloneLines=true, a RAW block whose literal content is only spaces or tabs and that sits on its own line loses that content: the RAW content TEXT token is treated as blank padding between two standalone tags, so the line (content included) is cut. RAW must keep spaces."
+        "target": "c5",
+        "scenario": "With three backslashes before {{x}}, the last backslash sits directly before the pair, yet the lexer reads the leading pair as 'one literal backslash and an active tag'. render then fails with 'Unknown template tag: {{x}}' instead of printing literal braces. With three backslashes before {{IF x}}y{{END_IF}}, the output is two backslashes followed by y. The contract only defines the one- and two-backslash cases, so this is noted for the lead, not a fix request."
       },
-      "rubric": "each criterion is met by the diff and its test (rw-raw: keep spaces)",
-      "reproduction": "render(\"x\\n{{RAW}}\\t{{END_RAW}}\\ny\", {}) returns \"x\\ny\" (expected \"x\\n\\t\\ny\"); render(\"x\\n  {{RAW}}  {{END_RAW}}  \\ny\", {}) returns \"x\\ny\". With standaloneLines false the content is kept (\"x\\n\\t\\ny\"). Smallest fix: in removeStandaloneLines, never treat the TEXT token emitted by scanRaw as blank (mark it, e.g. a raw flag on the token, and exclude it in isBlank / do not cut it).",
+      "rubric": "each criterion is met by the diff and its test",
+      "reproduction": "In JS: render(String.fromCharCode(92).repeat(3) + '{{x}}', {}) gives ok=false, 'Unknown template tag: {{x}}'; render(String.fromCharCode(92).repeat(3) + '{{IF x}}y{{END_IF}}', {x:true}) gives two backslashes and 'y'.",
       "evidence": [
-        "code:core/src/whitespace.ts:22",
-        "code:core/src/whitespace.ts:60",
-        "code:core/src/lexer.ts:288",
+        "code:core/src/lexer.ts:413",
         "doc:docs/living/architecture/prompt-aware-contract.md"
       ],
-      "location": "core/src/whitespace.ts:60"
-    },
-    {
-      "title": "A leading trim marker on a standalone tag line does not also remove the tag line's own line break, contrary to the contract",
-      "class": "goal-risk",
-      "serves": {
-        "target": "card-goal",
-        "scenario": "The card goal says the markers work 'all as the contract says', and the contract states that 'a standalone tag line with a leading trim marker removes the line break before it as well as its own'. The implementation trims the preceding whitespace and then finds the tag no longer at a line start, so the tag's own line break stays."
-      },
-      "rubric": "each criterion is met by the diff and its test (ws-trim with the standalone option on; contract interplay of trim and standalone)",
-      "reproduction": "render(\"a\\n{{- IF x}}\\nb\\n{{END_IF}}\\n\", {x:true}) returns \"a\\nb\\n\"; the contract's stated outcome is \"ab\\n\". Same for comments: render(\"a\\n\\n{{-# c #}}\\nb\", {}) returns \"a\\nb\" instead of \"ab\". Smallest fix: decide the standalone status of a line on the untrimmed text (before applyTrimMarkers) and then apply both cuts, or amend the contract sentence if the current behaviour is the intended one. No frozen test pins this case.",
-      "evidence": [
-        "doc:docs/living/architecture/prompt-aware-contract.md",
-        "code:core/src/whitespace.ts:30",
-        "code:core/src/whitespace.ts:91"
-      ],
-      "location": "core/src/whitespace.ts:30"
+      "location": "core/src/lexer.ts:413"
     }
   ],
-  "responses": [],
+  "responses": [
+    {
+      "finding": "f1",
+      "verdict": "withdraw",
+      "evidence": [
+        "code:core/src/whitespace.ts:70",
+        "test:ws-standalone: whitespace-only RAW content alone on a line is kept (render, option on)",
+        "test:rw-raw: whitespace-only content alone on a line is kept (render)"
+      ]
+    }
+  ],
   "reviewer": {
     "kind": "fallback",
     "label": "opus fallback (same model family as the builder; has repository access)"
   },
-  "at": "2026-10-14T02:29:00.739Z",
+  "at": "2026-10-14T02:34:22.154Z",
   "card": "0040-remove-standalone-tag-lines-add-trim-mar",
   "tier": "product",
-  "packet_sha256": "5bcce5248b9037e21849b5b849fd4a885d1cc0f912e6594305383db28a82b3c5",
-  "diff_sha256": "172c74021baa8013f8c8c34519071169deca9546b90fe5d266ffcfb2b868a483",
+  "packet_sha256": "156abecaaea83d000742a52f7ec4871429b849fb77b6d33259f434ae19e62691",
+  "diff_sha256": "a0ad0081cb8782cdeed27cae32b089f67c0163549188d47b86243a2d6625416e",
   "dropped": []
 }

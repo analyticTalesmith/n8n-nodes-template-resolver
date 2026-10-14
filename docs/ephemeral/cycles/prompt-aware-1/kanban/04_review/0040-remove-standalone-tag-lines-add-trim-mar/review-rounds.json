@@ -27,6 +27,42 @@
         "f2"
       ],
       "responses": []
+    },
+    {
+      "number": 2,
+      "at": "2026-10-14T02:34:22.457Z",
+      "reviewer": {
+        "kind": "fallback",
+        "label": "opus fallback (same model family as the builder; has repository access)"
+      },
+      "output_sha256": "eb9f114650e9738eb583949873395d852bea68291ea503da4bcc1d267090c631",
+      "diff_sha256": "a0ad0081cb8782cdeed27cae32b089f67c0163549188d47b86243a2d6625416e",
+      "restatement": "Add prompt-shaped whitespace handling and literal braces to the core template language. With standaloneLines on, lines that hold only flow-control block tags (IF/ELSEIF/ELSE/END_IF, CASE family, FOR/END_FOR, comments, and RAW/END_RAW) vanish along with their line break. LIST/TABLE-family tags keep their old spacing. Minus markers trim adjacent whitespace on every block tag and comment, whether the option is on or off. RAW/END_RAW emit literal content and report an unclosed RAW as a located syntax error. A single backslash before the opening brace pair escapes it. spec() documents RAW and the option. render defaults the option to true and resolveTemplate defaults it to false, so the existing suite and resolveTemplate's default output stay unchanged. No new runtime dependency.",
+      "brief_mismatch": "The design context (prompt-aware-contract.md, Whitespace > Trim markers) says trim markers apply first and that a standalone tag line with a leading trim marker therefore loses the line break before it as well as its own. The frozen ws-trim row 'a comment marker before trims before only' (template 'a \\n{{-# c #}}\\nb') expects 'a\\nb' with standaloneLines on, so the comment's own line break is kept. The implementation follows the frozen test: render('a\\n{{- IF x}}\\nb\\n{{END_IF}}\\n', {x:true}) gives 'a\\nb\\n', where the contract sentence implies 'ab\\n'. The lead should decide which one is authoritative and update the other. This is not raised as a finding because the frozen test is the plan.",
+      "evidence": [
+        "code:core/src/lexer.ts:413",
+        "code:core/src/whitespace.ts:70",
+        "doc:docs/living/architecture/prompt-aware-contract.md",
+        "patch:a0ad0081cb8782cdeed27cae32b089f67c0163549188d47b86243a2d6625416e",
+        "test:rw-raw: whitespace-only content alone on a line is kept (render)",
+        "test:tests/promptaware/whitespace.test.ts",
+        "test:ws-standalone: whitespace-only RAW content alone on a line is kept (render, option on)"
+      ],
+      "stalled": false,
+      "raised": [
+        "f3"
+      ],
+      "responses": [
+        {
+          "finding": "f1",
+          "verdict": "withdraw",
+          "evidence": [
+            "code:core/src/whitespace.ts:70",
+            "test:ws-standalone: whitespace-only RAW content alone on a line is kept (render, option on)",
+            "test:rw-raw: whitespace-only content alone on a line is kept (render)"
+          ]
+        }
+      ]
     }
   ],
   "findings": [
@@ -48,7 +84,7 @@
       "location": "core/src/whitespace.ts:60",
       "label": "f1",
       "raised_in": 1,
-      "status": "fixed",
+      "status": "withdrawn",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [
@@ -98,6 +134,35 @@
           "note": "the frozen tests are the oracle: the contract sentence was wrong and is reworded in the docs card"
         }
       ]
+    },
+    {
+      "title": "An odd run of backslashes before the brace pair does not escape it",
+      "class": "drift",
+      "serves": {
+        "target": "c5",
+        "scenario": "With three backslashes before {{x}}, the last backslash sits directly before the pair, yet the lexer reads the leading pair as 'one literal backslash and an active tag'. render then fails with 'Unknown template tag: {{x}}' instead of printing literal braces. With three backslashes before {{IF x}}y{{END_IF}}, the output is two backslashes followed by y. The contract only defines the one- and two-backslash cases, so this is noted for the lead, not a fix request."
+      },
+      "rubric": "each criterion is met by the diff and its test",
+      "reproduction": "In JS: render(String.fromCharCode(92).repeat(3) + '{{x}}', {}) gives ok=false, 'Unknown template tag: {{x}}'; render(String.fromCharCode(92).repeat(3) + '{{IF x}}y{{END_IF}}', {x:true}) gives two backslashes and 'y'.",
+      "evidence": [
+        "code:core/src/lexer.ts:413",
+        "doc:docs/living/architecture/prompt-aware-contract.md"
+      ],
+      "location": "core/src/lexer.ts:413",
+      "label": "f3",
+      "raised_in": 2,
+      "status": "filed",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [
+        {
+          "after_round": 2,
+          "ruling": "drift",
+          "note": "odd backslash runs are an edge outside the criteria; ticketed"
+        }
+      ],
+      "ticket": "0043-follow-up-an-odd-run-of-backslashes-befo"
     }
   ]
 }

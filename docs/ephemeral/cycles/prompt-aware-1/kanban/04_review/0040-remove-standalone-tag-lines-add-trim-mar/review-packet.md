@@ -2,16 +2,16 @@
 type: review-packet
 card: 0040-remove-standalone-tag-lines-add-trim-mar
 tier: product
-built_at: 2026-10-14T02:26:12.652Z
+built_at: 2026-10-14T02:31:21.169Z
 base: 0687324cf97f7455deadb7d36ba1f3d204b4dc32
-head: 999df73891e051308b45b39f093c12ddb2c950e2
+head: 1fee000a4b7b3e2004ebae90e5312f54d0c1a5d5
 frozen: true
 brief_sha256: 39a6c5080770d89a8907ca5706d87e5d26841bcc52a58cbf2f6150c56b170b68
-manifest_sha256: 15ec337cac4cfdb8c8fb53f339757ae23bb2075915c1cbc16f81707da721f8f2
+manifest_sha256: 2ce4fbac7c640b0ad333e1ce5399ff035dd922e7608aa9b8d10fbe2c9741f509
 criteria_sha256: d89bcee88cbb17763b7d242a10a39611361678a02f8f05ba3ca764234560ac59
-scope_sha256: 948dceecc1f8923c15de377dec959f9f684da9a27565046cfd2c8d621d285633
-diff_sha256: 172c74021baa8013f8c8c34519071169deca9546b90fe5d266ffcfb2b868a483
-omitted_paths: 5
+scope_sha256: e6b888c5222f7e41cd7d6da8ce0d6b588d48519ea0e9d4a9e6cbc33574663479
+diff_sha256: a0ad0081cb8782cdeed27cae32b089f67c0163549188d47b86243a2d6625416e
+omitted_paths: 10
 criteria_count: 6
 must_not_count: 3
 ---
@@ -21,6 +21,10 @@ must_not_count: 3
 Manifest amended after the freeze at 2026-10-14T02:26:07.588Z by lead: interpreter and parser needed no change (edit -core/src/interpreter.ts, edit -core/src/parser.ts)
 
 Manifest amended after the freeze at 2026-10-14T02:26:07.696Z by lead: whitespace handling lives in its own module (add +core/src/whitespace.ts)
+
+Manifest amended after the freeze at 2026-10-14T02:29:12.289Z by lead: table rows added to a frozen test after review (edit +tests/promptaware/raw.test.ts, scope +tests/promptaware)
+
+Manifest amended after the freeze at 2026-10-14T02:31:20.777Z by lead: table rows added to a frozen test after review (edit +tests/promptaware/whitespace.test.ts)
 
 Read the sections in order. Write `restatement` before you read section 3. At product tier and up, write `verification_plan` from section 1 alone before you read section 3.
 
@@ -173,8 +177,8 @@ No scope exceptions are logged.
 
 - add: `core/src/whitespace.ts`
 - remove: none
-- edit: `core/src/lexer.ts`, `core/src/render.ts`, `core/src/resolve.ts`, `core/src/spec.ts`, `core/src/types.ts`
-- files_scope: `core/src/`
+- edit: `core/src/lexer.ts`, `core/src/render.ts`, `core/src/resolve.ts`, `core/src/spec.ts`, `core/src/types.ts`, `tests/promptaware/raw.test.ts`, `tests/promptaware/whitespace.test.ts`
+- files_scope: `core/src/`, `tests/promptaware`
 
 ## 2. Your verification plan
 
@@ -1085,7 +1089,7 @@ describe("rw-spec: spec lists RAW and the standaloneLines option", () => {
 
 ## 4. Diff
 
-5 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
+10 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
 
 ```diff
 diff --git a/core/src/lexer.ts b/core/src/lexer.ts
@@ -1475,10 +1479,10 @@ index 2f4e8af..eedd651 100644
  /**
 diff --git a/core/src/whitespace.ts b/core/src/whitespace.ts
 new file mode 100644
-index 0000000..a354464
+index 0000000..b04a13c
 --- /dev/null
 +++ b/core/src/whitespace.ts
-@@ -0,0 +1,120 @@
+@@ -0,0 +1,128 @@
 +import { Token, TokenType, WhitespaceOptions } from "./types";
 +
 +/** Tags whose own line vanishes under the standalone rule */
@@ -1502,6 +1506,9 @@ index 0000000..a354464
 +
 +const isText = (token: Token | undefined) => token?.type === TokenType.TEXT;
 +const isBlank = (token: Token) => isText(token) && /^[ \t]*$/.test(token.value);
++/** The lexer emits RAW content as one text token right after the RAW tag */
++const isRawContent = (tokens: Token[], index: number) =>
++  isText(tokens[index]) && tokens[index - 1]?.type === TokenType.RAW;
 +
 +/**
 + * Apply trim markers, then (when standaloneLines is on) remove the lines that
@@ -1527,7 +1534,8 @@ index 0000000..a354464
 + * Find each run of standalone tags sharing one line (separated only by
 + * spaces and tabs), decide on the unchanged text whether that line holds
 + * nothing else, then cut the line's indentation, the whitespace between the
-+ * tags and the line break after them.
++ * tags and the line break after them. RAW content is literal: only a line
++ * break right after the RAW tag can go.
 + */
 +function removeStandaloneLines(tokens: Token[]): void {
 +  const cuts = new Map<Token, { start: number; end: number }>();
@@ -1551,7 +1559,7 @@ index 0000000..a354464
 +    let j = i + 1;
 +    while (j < tokens.length) {
 +      if (STANDALONE_TAGS.has(tokens[j].type)) last = j;
-+      else if (!isBlank(tokens[j])) break;
++      else if (!isBlank(tokens[j]) || isRawContent(tokens, j)) break;
 +      j++;
 +    }
 +
@@ -1580,6 +1588,9 @@ index 0000000..a354464
 +  if (index === 0) return 0;
 +  const before = tokens[index - 1];
 +  if (!isText(before)) return null;
++  if (isRawContent(tokens, index - 1)) {
++    return before.value.endsWith("\n") ? before.value.length : null;
++  }
 +  const match = /(^|\n)[ \t]*$/.exec(before.value);
 +  if (!match) return null;
 +  if (match[1] === "" && index - 1 > 0) return null;
@@ -1594,19 +1605,101 @@ index 0000000..a354464
 +  const after = tokens[index + 1];
 +  if (!after || after.type === TokenType.EOF) return 0;
 +  if (!isText(after)) return null;
++  if (isRawContent(tokens, index + 1)) return after.value.startsWith("\n") ? 1 : null;
 +  const match = /^[ \t]*(\n|$)/.exec(after.value);
 +  if (!match) return null;
 +  if (match[1] === "" && tokens[index + 2]?.type !== TokenType.EOF) return null;
 +  return match[0].length;
 +}
+diff --git a/tests/promptaware/raw.test.ts b/tests/promptaware/raw.test.ts
+index 2584695..0f2f5ec 100644
+--- a/tests/promptaware/raw.test.ts
++++ b/tests/promptaware/raw.test.ts
+@@ -105,6 +105,24 @@ const RAW: Raw[] = [
+     data: { n: "X" },
+     out: "a X b {{",
+   },
++  {
++    name: "whitespace-only content inline is kept",
++    template: "x{{RAW}} \t {{END_RAW}}y",
++    data: {},
++    out: "x \t y",
++  },
++  {
++    name: "whitespace-only content alone on a line is kept",
++    template: "a\n{{RAW}}   {{END_RAW}}\nb",
++    data: {},
++    out: "a\n   \nb",
++  },
++  {
++    name: "whitespace-only multi-line content is kept",
++    template: "a\n{{RAW}}\n  \n\t\n{{END_RAW}}\nb",
++    data: {},
++    out: "a\n\n  \n\t\n\nb",
++  },
+ ];
+ 
+ describe("rw-raw: RAW blocks output their content literally", () => {
+diff --git a/tests/promptaware/whitespace.test.ts b/tests/promptaware/whitespace.test.ts
+index 511ea64..af06d4f 100644
+--- a/tests/promptaware/whitespace.test.ts
++++ b/tests/promptaware/whitespace.test.ts
+@@ -226,6 +226,34 @@ const STANDALONE: Standalone[] = [
+     on: "x\n| N | A |\n|:-----|:-----|\n| p | 1 |\n| q | 2 |\ny",
+     off: "x\n\n| N | A |\n|:-----|:-----|\n| p | 1 |\n| q | 2 |\n\ny",
+   },
++  {
++    name: "whitespace-only RAW content inline is kept",
++    template: "x{{RAW}} \t {{END_RAW}}y",
++    data: {},
++    on: "x \t y",
++    off: "x \t y",
++  },
++  {
++    name: "whitespace-only RAW content alone on a line is kept",
++    template: "a\n{{RAW}}   {{END_RAW}}\nb",
++    data: {},
++    on: "a\n   \nb",
++    off: "a\n   \nb",
++  },
++  {
++    name: "whitespace-only multi-line RAW content is kept, RAW tag lines vanish",
++    template: "a\n{{RAW}}\n  \n\t\n{{END_RAW}}\nb",
++    data: {},
++    on: "a\n  \n\t\nb",
++    off: "a\n\n  \n\t\n\nb",
++  },
++  {
++    name: "RAW tag lines vanish around literal content lines",
++    template: "x\n{{RAW}}\n{{ y }}\n{{END_RAW}}\nz",
++    data: {},
++    on: "x\n{{ y }}\nz",
++    off: "x\n\n{{ y }}\n\nz",
++  },
+ ];
+ 
+ describe("ws-standalone: standalone block-tag lines vanish with their line break", () => {
 ```
 
 ## Gate run
 The card's gate command as it last ran, before this packet was built. Output only: run the command yourself to check it.
 - Command: `node node_modules/jest/bin/jest.js --runTestsByPath tests/promptaware/whitespace.test.ts tests/promptaware/raw.test.ts --json`
 - Exit status: 0
-- Tests: 211 passed, 0 failed
+- Tests: 229 passed, 0 failed
 - Failing tests: none
+
+## 5. Earlier findings and replies
+
+Answer each fix-class (defect or goal-risk) finding below in `responses` with sustain or withdraw and evidence. Raise new findings only about what the revision changed or an in-scope problem newly evidenced.
+
+### f1: Whitespace-only RAW content on a tag line is deleted under the standalone rule
+
+- Class: defect
+- Serves: c4: With render's default standaloneLines=true, a RAW block whose literal content is only spaces or tabs and that sits on its own line loses that content: the RAW content TEXT token is treated as blank padding between two standalone tags, so the line (content included) is cut. RAW must keep spaces.
+- Reproduction: render("x\n{{RAW}}\t{{END_RAW}}\ny", {}) returns "x\ny" (expected "x\n\t\ny"); render("x\n {{RAW}} {{END_RAW}} \ny", {}) returns "x\ny". With standaloneLines false the content is kept ("x\n\t\ny"). Smallest fix: in removeStandaloneLines, never treat the TEXT token emitted by scanRaw as blank (mark it, e.g. a raw flag on the token, and exclude it in isBlank / do not cut it).
+- Status: fixed
+- Reply (fixed): restate: whitespace-only RAW content was dropped by the standalone rule; verify: RAW content never joins a standalone run; rows added on and off; evidence: test:tests/promptaware/whitespace.test.ts
+- Review lead ruling: sustain: RAW content is literal; whitespace-only RAW content must survive the standalone rule
 
 ## Output
 
