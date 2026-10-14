@@ -5,7 +5,7 @@ goal: "A character the math tokenizer does not know ends the render with a locat
 tier: product
 stage: concept
 approvals: front
-status: open
+status: closed
 verification_levels: []
 review_sweeps: []
 kind: bug-fix
@@ -35,6 +35,9 @@ Shape: kind bug-fix; intent correct; purpose ship; compatibility preserved; unce
 <!-- A stage is a question the cycle asks; record an answer only when it is surprising. Stages with an artifact are done when it exists. Record only: "- <stage> done: <evidence>" for a stage with no artifact, "- <stage> skipped (override): <reason>" for a skip where its own rule says run, and "- <stage> added: <reason>" for a stage chosen on purpose. A spine stage cannot be skipped. -->
 - stg-goals-oracle done: goal: no hang on unknown math characters; oracle: one regression test
 - stg-ready-check done: n/a
+- stg-build-slices done: one card built in its own worktree and merged
+- stg-unit-regression done: 773 jest tests pass including the new regression test
+- stg-record done: card done
 
 ## Who and why
 
@@ -90,4 +93,5 @@ A person judges the cycle done when the template from the verification report re
 <!-- generated index: replace everything between this line and the end marker -->
 - [design-approval.md](design-approval.md) — Fix the math tokenizer hang on unknown characters.
 - [test-plan.md](test-plan.md) — The tests this cycle plans at each level, and which requirement lines each one proves.
+- [verification/](verification/INDEX.md) — Index of docs/ephemeral/cycles/math-hang/verification.
 <!-- end generated index -->
