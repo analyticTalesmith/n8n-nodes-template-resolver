@@ -1,0 +1,18 @@
+{
+  "command": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/headless/diagnostics.test.ts",
+    "tests/headless/limits.test.ts",
+    "--json"
+  ],
+  "exit_status": 0,
+  "ran_at": "2026-10-14T00:53:23.401Z",
+  "tests": {
+    "passed": 46,
+    "failed": 0
+  },
+  "failing": [],
+  "failing_total": 0
+}
