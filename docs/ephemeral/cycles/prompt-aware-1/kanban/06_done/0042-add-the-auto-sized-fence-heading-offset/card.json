@@ -85,14 +85,11 @@
     "tests/promptaware/escape-modes.test.ts",
     "--json"
   ],
-  "claim": {
-    "owner": "build:implementer",
-    "heartbeat": "2026-10-14T02:19:34.910Z"
-  },
+  "claim": null,
   "blocked_on": null,
   "docs_impact": "none",
   "started": "2026-10-14T02:41:31.570Z",
-  "ended": null,
+  "ended": "2026-10-14T03:00:23.866Z",
   "review_rounds": 2,
   "schema_version": 1,
   "blast_radius": [
