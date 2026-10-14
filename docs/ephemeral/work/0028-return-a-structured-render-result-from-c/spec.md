@@ -10,3 +10,4 @@
 - rr-compat: resolveTemplate still returns a string and throws, and limits in render options bound the render with their diagnostics
 - nd-output: the n8n node writes the render output to the configured field, and a failed render throws a node error whose message carries the first diagnostic with line and column
 - nd-nodeps: package.json declares no runtime dependencies, tsconfig builds api and cli folders, and package.json exposes the template-resolver bin
+- rr-robust: render and validate never throw for non-object data (null, array, string), cyclic data values or a cyclic value looped over in strict mode; each returns ok false with a diagnostic

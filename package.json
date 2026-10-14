@@ -27,6 +27,9 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
   },
+  "bin": {
+    "template-resolver": "dist/cli/index.js"
+  },
   "files": [
     "dist"
   ],

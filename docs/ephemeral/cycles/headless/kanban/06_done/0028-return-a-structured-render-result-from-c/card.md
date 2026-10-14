@@ -23,6 +23,7 @@ render() returns {ok, output, messages, stats, diagnostics} and never throws for
 - `contract` `rr-compat` resolveTemplate still returns a string and throws, and limits in render options bound the render with their diagnostics
 - `contract` `nd-output` the n8n node writes the render output to the configured field, and a failed render throws a node error whose message carries the first diagnostic with line and column
 - `contract` `nd-nodeps` package.json declares no runtime dependencies, tsconfig builds api and cli folders, and package.json exposes the template-resolver bin
+- `contract` `rr-robust` render and validate never throw for non-object data (null, array, string), cyclic data values or a cyclic value looped over in strict mode; each returns ok false with a diagnostic
 
 
 ## Must-nots
@@ -59,15 +60,19 @@ render, validate, spec, estimateTokens, RenderOptions, RenderResult, Diagnostic 
 <!-- generated scope: from card.json -->
 | Path | Permission (add, edit, remove) | Blast radius |
 | --- | --- | --- |
-| `core/src/estimate.ts` | add | none |
-| `core/src/render.ts` | add | none |
-| `core/src/spec.ts` | add | none |
+| `tests/headless/render-robust.test.ts` | add | none |
 | `core/src/analyze.ts` | edit | none |
+| `core/src/estimate.ts` | edit | none |
+| `core/src/filters.ts` | edit | none |
 | `core/src/index.ts` | edit | none |
-| `core/src/resolve.ts` | edit | none |
+| `core/src/interpreter.ts` | edit | none |
+| `core/src/render.ts` | edit | none |
+| `core/src/spec.ts` | edit | none |
+| `docs/ephemeral/cycles/headless/test-plan.md` | edit | none |
+| `docs/ephemeral/work/0028-return-a-structured-render-result-from-c/spec.md` | edit | none |
 | `n8n/TemplateResolver.node.ts` | edit | none |
 | `package.json` | edit | none |
 | `tsconfig.json` | edit | none |
 
-Files scope: `core/src/`, `n8n/`, `package.json`, `tsconfig.json`
+Files scope: `core/src/`, `docs/ephemeral/cycles/headless/test-plan.md`, `docs/ephemeral/work/0028-return-a-structured-render-result-from-c`, `n8n/`, `package.json`, `tests/headless`, `tsconfig.json`
 <!-- end generated scope -->
