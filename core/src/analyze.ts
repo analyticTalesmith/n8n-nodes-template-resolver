@@ -11,6 +11,7 @@ import {
 import {
   ASTNode,
   CaseNode,
+  FenceNode,
   ForNode,
   IfNode,
   Limits,
@@ -57,7 +58,14 @@ export interface AnalysisDiagnostic {
   column: number;
 }
 
-export type BlockKind = "IF" | "CASE" | "FOR" | "LIST" | "TABLE" | "SECTION";
+export type BlockKind =
+  | "IF"
+  | "CASE"
+  | "FOR"
+  | "LIST"
+  | "TABLE"
+  | "SECTION"
+  | "FENCE";
 
 export interface TemplateAnalysis {
   variables: VariableUsage[];
@@ -144,6 +152,9 @@ class Walker {
       case "Section":
         this.countBlock("SECTION");
         return this.visitSection(node as SectionNode);
+      case "Fence":
+        this.countBlock("FENCE");
+        return this.visitFence(node as FenceNode);
       case "Header":
       case "TableRow":
         return this.visitCells(node as TableHeaderNode | TableRowNode);
@@ -201,6 +212,13 @@ class Walker {
   private visitSection(node: SectionNode): void {
     if (node.title.kind === "path") {
       this.record(node.title.path.join("."), "output", false);
+    }
+    this.visitAll(node.body);
+  }
+
+  private visitFence(node: FenceNode): void {
+    if (node.lang?.kind === "path") {
+      this.record(node.lang.path.join("."), "output", true);
     }
     this.visitAll(node.body);
   }

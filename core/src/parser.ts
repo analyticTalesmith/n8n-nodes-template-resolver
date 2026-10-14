@@ -18,12 +18,14 @@ import {
   CommentNode,
   SectionNode,
   SectionTitle,
+  FenceNode,
+  FenceLang,
   FilterCall,
   DEFAULT_LIMITS,
 } from "./types";
 import { SyntaxError, TypeError, LimitError } from "./errors";
 
-const SECTION_ARGUMENT = /(\w+)=("[^"]*"|'[^']*'|\S*)|"[^"]*"|'[^']*'|\S+/g;
+const BLOCK_ARGUMENT = /(\w+)=("[^"]*"|'[^']*'|\S*)|"[^"]*"|'[^']*'|\S+/g;
 const VARIABLE_PATH = /^[A-Za-z_@][\w@]*(\.[\w@]+)*$/;
 
 /**
@@ -87,6 +89,8 @@ export class Parser {
         return this.nested(() => this.parseTable());
       case TokenType.SECTION:
         return this.nested(() => this.parseSection());
+      case TokenType.FENCE:
+        return this.nested(() => this.parseFence());
       case TokenType.HEADER:
         return this.parseTableHeader();
       case TokenType.ROW:
@@ -665,7 +669,7 @@ export class Parser {
     let skipEmpty = true;
     const args = token.value.slice("SECTION".length);
 
-    for (const [argument, key, value] of args.matchAll(SECTION_ARGUMENT)) {
+    for (const [argument, key, value] of args.matchAll(BLOCK_ARGUMENT)) {
       if (key === "level") {
         if (!/^[+-]?\d+$/.test(value)) {
           throw typeError(
@@ -702,6 +706,72 @@ export class Parser {
       );
     }
     return { title, level, skipEmpty };
+  }
+
+  /**
+   * Parse FENCE: {{FENCE lang="md"}}...{{END_FENCE}}
+   */
+  private parseFence(): FenceNode {
+    const token = this.consume(TokenType.FENCE);
+    const lang = this.parseFenceLang(token);
+
+    const body: ASTNode[] = [];
+    while (!this.check(TokenType.END_FENCE)) {
+      if (this.isAtEnd()) {
+        throw new SyntaxError(
+          "Unclosed {{FENCE}} block",
+          token.line,
+          token.column,
+          "Add {{END_FENCE}}"
+        );
+      }
+      const node = this.parseNode();
+      if (node) body.push(node);
+    }
+
+    this.consume(TokenType.END_FENCE);
+
+    return {
+      type: "Fence",
+      lang,
+      body,
+      line: token.line,
+      column: token.column,
+    };
+  }
+
+  /**
+   * Parse the optional FENCE lang option: a quoted string or a variable path
+   */
+  private parseFenceLang(token: Token): FenceLang | null {
+    const syntaxError = (message: string) =>
+      new SyntaxError(
+        message,
+        token.line,
+        token.column,
+        'Expected: {{FENCE lang="markdown"}} or {{FENCE lang=path.to.lang}}'
+      );
+
+    let lang: FenceLang | null = null;
+    const args = token.value.slice("FENCE".length);
+
+    for (const [argument, key, value] of args.matchAll(BLOCK_ARGUMENT)) {
+      if (key !== "lang") {
+        throw syntaxError(
+          key === undefined
+            ? `Unexpected FENCE argument: ${argument}`
+            : `Unknown FENCE option: ${key}`
+        );
+      }
+      if (/^(["']).*\1$/.test(value)) {
+        lang = { kind: "literal", text: value.slice(1, -1) };
+      } else if (VARIABLE_PATH.test(value)) {
+        lang = { kind: "path", path: value.split(".") };
+      } else {
+        throw syntaxError(`Invalid FENCE lang: ${value}`);
+      }
+    }
+    return lang;
   }
 
   /**
