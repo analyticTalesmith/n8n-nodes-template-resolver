@@ -28,9 +28,10 @@
       "core/src/resolve.ts",
       "n8n/TemplateResolver.node.ts",
       "package.json",
-      "tsconfig.json"
+      "tsconfig.json",
+      "x"
     ],
-    "frozen": false
+    "frozen": true
   },
   "criteria": [
     {
@@ -91,8 +92,8 @@
     }
   ],
   "gate": [
-    "npx",
-    "jest",
+    "node",
+    "node_modules/jest/bin/jest.js",
     "--runTestsByPath",
     "tests/headless/render.test.ts",
     "tests/headless/spec.test.ts",
@@ -109,5 +110,19 @@
   "schema_version": 1,
   "blast_radius": [
     "none"
-  ]
+  ],
+  "freeze": {
+    "at": "2026-10-14T00:37:59.584Z",
+    "brief_sha256": "42ac19ba2a05b3ad1f752ddf66f60802517a3b873c6ac89a9b669aa80cd72e19",
+    "brief_core_sha256": "071cb80bc3f31001b99d893a1f5296b367c8fb5b666cb0417d4ab56099b3c8c6",
+    "manifest_sha256": "1be44f1c318ff9ab0a8bae79580507888cb9b91e62113212a59b9b1941c4d110",
+    "criteria_sha256": "8c6b3d937679f6f5df7dceac474e7b9f18e11c05b293d5c7ddfd95bcc6ad4343",
+    "scope_sha256": "fba9b75c29ad033871fcc0f67bd500f3bbde0447a7955d561d239f03f4d76613",
+    "scope_parts": {
+      "files_scope": "da6d8288024f9dc507a93cf6b59e91454f0f9ceeabbad8ccb5163eddd81e8e9b",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "47522fcafb15c20f0da4e11e569bfff0837c31e0b35ec8ed72f9e5241595f939"
+    }
+  }
 }

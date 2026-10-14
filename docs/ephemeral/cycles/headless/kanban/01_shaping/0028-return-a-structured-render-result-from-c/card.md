@@ -68,6 +68,7 @@ render, validate, spec, estimateTokens, RenderOptions, RenderResult, Diagnostic 
 | `n8n/TemplateResolver.node.ts` | edit | none |
 | `package.json` | edit | none |
 | `tsconfig.json` | edit | none |
+| `x` | edit | none |
 
 Files scope: `core/src/`, `n8n/`, `package.json`, `tsconfig.json`
 <!-- end generated scope -->

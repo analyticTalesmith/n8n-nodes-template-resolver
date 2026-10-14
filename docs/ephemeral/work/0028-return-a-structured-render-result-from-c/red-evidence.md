@@ -1,6 +1,6 @@
 ---
 summary: Red evidence for 0028-return-a-structured-render-result-from-c: 57 failing tests across 8 criteria.
-command: ["npx","jest","--runTestsByPath","tests/headless/render.test.ts","tests/headless/spec.test.ts","tests/headless/node.test.ts","tests/headless/nodeps.test.ts","--json"]
+command: ["node","node_modules/jest/bin/jest.js","--runTestsByPath","tests/headless/render.test.ts","tests/headless/spec.test.ts","tests/headless/node.test.ts","tests/headless/nodeps.test.ts","--json"]
 exit_status: 1
 tests_sha256: 9b77d83a66ec
 ---
