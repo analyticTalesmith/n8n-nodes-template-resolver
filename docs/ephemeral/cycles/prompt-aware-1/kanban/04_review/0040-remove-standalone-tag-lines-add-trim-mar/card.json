@@ -8,7 +8,8 @@
   "tier": null,
   "claimed_in": null,
   "files_scope": [
-    "core/src/"
+    "core/src/",
+    "tests/promptaware"
   ],
   "manifest": {
     "add": [
@@ -20,7 +21,8 @@
       "core/src/render.ts",
       "core/src/resolve.ts",
       "core/src/spec.ts",
-      "core/src/types.ts"
+      "core/src/types.ts",
+      "tests/promptaware/raw.test.ts"
     ],
     "frozen": true
   },
@@ -84,7 +86,7 @@
   "docs_impact": "none",
   "started": "2026-10-14T02:19:30.959Z",
   "ended": null,
-  "review_rounds": 0,
+  "review_rounds": 1,
   "schema_version": 1,
   "blast_radius": [
     "none"
@@ -93,11 +95,11 @@
     "at": "2026-10-14T02:19:29.157Z",
     "brief_sha256": "39a6c5080770d89a8907ca5706d87e5d26841bcc52a58cbf2f6150c56b170b68",
     "brief_core_sha256": "915f9e44e0bb29a4f1dba3f9b5aa4e660f98527e72da1ad8374be7766255f812",
-    "manifest_sha256": "15ec337cac4cfdb8c8fb53f339757ae23bb2075915c1cbc16f81707da721f8f2",
+    "manifest_sha256": "083bc645730a06e61eb6925a8a5d76631c325e50e99ba37ba85810713af2f4fb",
     "criteria_sha256": "d89bcee88cbb17763b7d242a10a39611361678a02f8f05ba3ca764234560ac59",
-    "scope_sha256": "948dceecc1f8923c15de377dec959f9f684da9a27565046cfd2c8d621d285633",
+    "scope_sha256": "e6b888c5222f7e41cd7d6da8ce0d6b588d48519ea0e9d4a9e6cbc33574663479",
     "scope_parts": {
-      "files_scope": "6a6be1dcc3b03a31d1e0d3050332ccc88585a4ca5c643dde65fa2502418a275f",
+      "files_scope": "72ebb15baf4d270db12db8166b815b5ca8825c4d75594ab144bcc3809e5945a2",
       "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
       "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
       "gate": "40362e57e6360dc19f6d608a2a3e03e77ea04657d1ef41669f2400fbead5b298"
@@ -194,6 +196,62 @@
           "none"
         ]
       }
+    },
+    {
+      "at": "2026-10-14T02:29:12.289Z",
+      "by": "lead",
+      "reason": "table rows added to a frozen test after review",
+      "from": {
+        "manifest": {
+          "add": [
+            "core/src/whitespace.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "core/src/lexer.ts",
+            "core/src/render.ts",
+            "core/src/resolve.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [
+            "core/src/whitespace.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "core/src/lexer.ts",
+            "core/src/render.ts",
+            "core/src/resolve.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts",
+            "tests/promptaware/raw.test.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/",
+          "tests/promptaware"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    }
+  ],
+  "test_amendments": [
+    {
+      "path": "tests/promptaware/raw.test.ts",
+      "reason": "add whitespace-only RAW cases found in review (table rows only)",
+      "approved_by": "project lead"
     }
   ]
 }

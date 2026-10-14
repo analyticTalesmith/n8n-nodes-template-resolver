@@ -63,6 +63,7 @@ RenderOptions.standaloneLines; resolveTemplate options.standaloneLines; RAW bloc
 | `core/src/resolve.ts` | edit | none |
 | `core/src/spec.ts` | edit | none |
 | `core/src/types.ts` | edit | none |
+| `tests/promptaware/raw.test.ts` | edit | none |
 
-Files scope: `core/src/`
+Files scope: `core/src/`, `tests/promptaware`
 <!-- end generated scope -->

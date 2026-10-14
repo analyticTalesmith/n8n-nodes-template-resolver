@@ -1,0 +1,93 @@
+{
+  "card": "0040-remove-standalone-tag-lines-add-trim-mar",
+  "rounds": [
+    {
+      "number": 1,
+      "at": "2026-10-14T02:29:01.014Z",
+      "reviewer": {
+        "kind": "fallback",
+        "label": "opus fallback (same model family as the builder; has repository access)"
+      },
+      "output_sha256": "1232fce1cb778f7643b73afd0e8efe75f1e4634d918df5ac196f2d8cefefaac4",
+      "diff_sha256": "172c74021baa8013f8c8c34519071169deca9546b90fe5d266ffcfb2b868a483",
+      "restatement": "Add prompt-friendly whitespace and literal-brace handling to the headless core: by default render drops lines that hold only block tags (IF/ELSEIF/ELSE/END_IF, CASE family, FOR/END_FOR, comments) together with their line break, while LIST/TABLE family tags and lines with text or variables keep their old spacing; '-' markers after the opening or before the closing braces trim adjacent whitespace on every block tag and comment regardless of the option; {{RAW}}...{{END_RAW}} outputs its content literally (spaces kept, CRLF to LF, unclosed RAW is a located syntax-error); a single backslash before {{ outputs a literal {{; render defaults standaloneLines to true, resolveTemplate to false so existing output and tests are unchanged; spec() documents RAW/END_RAW and the option. No existing test expectation may change, no runtime dependency may be added.",
+      "brief_mismatch": null,
+      "evidence": [
+        "code:core/src/lexer.ts:288",
+        "code:core/src/whitespace.ts:22",
+        "code:core/src/whitespace.ts:30",
+        "code:core/src/whitespace.ts:60",
+        "code:core/src/whitespace.ts:91",
+        "doc:docs/living/architecture/prompt-aware-contract.md",
+        "patch:172c74021baa8013f8c8c34519071169deca9546b90fe5d266ffcfb2b868a483"
+      ],
+      "stalled": false,
+      "raised": [
+        "f1",
+        "f2"
+      ],
+      "responses": []
+    }
+  ],
+  "findings": [
+    {
+      "title": "Whitespace-only RAW content on a tag line is deleted under the standalone rule",
+      "class": "defect",
+      "serves": {
+        "target": "c4",
+        "scenario": "With render's default standaloneLines=true, a RAW block whose literal content is only spaces or tabs and that sits on its own line loses that content: the RAW content TEXT token is treated as blank padding between two standalone tags, so the line (content included) is cut. RAW must keep spaces."
+      },
+      "rubric": "each criterion is met by the diff and its test (rw-raw: keep spaces)",
+      "reproduction": "render(\"x\\n{{RAW}}\\t{{END_RAW}}\\ny\", {}) returns \"x\\ny\" (expected \"x\\n\\t\\ny\"); render(\"x\\n  {{RAW}}  {{END_RAW}}  \\ny\", {}) returns \"x\\ny\". With standaloneLines false the content is kept (\"x\\n\\t\\ny\"). Smallest fix: in removeStandaloneLines, never treat the TEXT token emitted by scanRaw as blank (mark it, e.g. a raw flag on the token, and exclude it in isBlank / do not cut it).",
+      "evidence": [
+        "code:core/src/whitespace.ts:22",
+        "code:core/src/whitespace.ts:60",
+        "code:core/src/lexer.ts:288",
+        "doc:docs/living/architecture/prompt-aware-contract.md"
+      ],
+      "location": "core/src/whitespace.ts:60",
+      "label": "f1",
+      "raised_in": 1,
+      "status": "sustained",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [
+        {
+          "after_round": 1,
+          "ruling": "sustain",
+          "note": "RAW content is literal; whitespace-only RAW content must survive the standalone rule"
+        }
+      ]
+    },
+    {
+      "title": "A leading trim marker on a standalone tag line does not also remove the tag line's own line break, contrary to the contract",
+      "class": "goal-risk",
+      "serves": {
+        "target": "card-goal",
+        "scenario": "The card goal says the markers work 'all as the contract says', and the contract states that 'a standalone tag line with a leading trim marker removes the line break before it as well as its own'. The implementation trims the preceding whitespace and then finds the tag no longer at a line start, so the tag's own line break stays."
+      },
+      "rubric": "each criterion is met by the diff and its test (ws-trim with the standalone option on; contract interplay of trim and standalone)",
+      "reproduction": "render(\"a\\n{{- IF x}}\\nb\\n{{END_IF}}\\n\", {x:true}) returns \"a\\nb\\n\"; the contract's stated outcome is \"ab\\n\". Same for comments: render(\"a\\n\\n{{-# c #}}\\nb\", {}) returns \"a\\nb\" instead of \"ab\". Smallest fix: decide the standalone status of a line on the untrimmed text (before applyTrimMarkers) and then apply both cuts, or amend the contract sentence if the current behaviour is the intended one. No frozen test pins this case.",
+      "evidence": [
+        "doc:docs/living/architecture/prompt-aware-contract.md",
+        "code:core/src/whitespace.ts:30",
+        "code:core/src/whitespace.ts:91"
+      ],
+      "location": "core/src/whitespace.ts:30",
+      "label": "f2",
+      "raised_in": 1,
+      "status": "withdrawn",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [
+        {
+          "after_round": 1,
+          "ruling": "withdraw",
+          "note": "the frozen tests are the oracle: the contract sentence was wrong and is reworded in the docs card"
+        }
+      ]
+    }
+  ]
+}
