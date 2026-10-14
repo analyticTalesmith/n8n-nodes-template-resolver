@@ -1,0 +1,44 @@
+{
+  "restatement": "Document the headless cycle's surfaces (the template-resolver CLI, the HTTP API, the structured render result, the diagnostics and the limits) in the README so a reader can use the CLI and API from the docs alone, with every documented route, subcommand and code really existing and every example reproducing against the built code; record the cycle in the changelog and bring the living module documents for api, cli and core up to date, without touching source code and without documenting behavior the code does not have.",
+  "brief_mismatch": null,
+  "verification_plan": [
+    "Run the frozen gate tools/tests/headless-docs.test.mjs and confirm all six dc-coverage tests pass (routes, subcommands, diagnostic and HTTP error codes, limits with defaults on one line, exit codes 0/1/2, every api/openapi.json path).",
+    "Confirm dist is built from the current source, then run every CLI example block in the README (render, stdin data, missing variable, --no-strict, lowered limit, --json, validate error and warning, analyze, spec | tail, render - --data -) and compare stdout, stderr and exit status byte for byte.",
+    "Start `template-resolver serve` on the default 127.0.0.1:3000, run every curl example (render ok, render template error, lowered limit, validate, analyze, spec, openapi.json, 400, 404, 405 with Allow, 415, 413) and compare the bodies and statuses; stop the server afterwards.",
+    "Spot-check prose claims not covered by examples against the code: request limits capped at the server's, negative limits rejected with 400, unparseable analyze returns 200 with empty fields, --strict with --no-strict is exit 2, --help exit 0 and no arguments exit 2, unreadable file and non-object data exit 2, unbindable port exit 2, analyze of an unparseable file exit 1, the filter list in the unknown-filter row.",
+    "Check that the diagnostics section's general claims (shape, severity, the code list) hold for every endpoint and command that returns diagnostics (m1).",
+    "Confirm the diff changes no source code (m2) and stays within the files scope (README.md, changelog.md, docs/living/).",
+    "For c3: confirm the cycle has deltas adding api.md and cli.md and modifying the core module document, and that the living documents carry the content those deltas describe."
+  ],
+  "findings": [
+    {
+      "title": "README diagnostics section says every diagnostic has a severity and one of nine codes, but analyze returns diagnostics with no severity and the undocumented code unrecognized-condition",
+      "class": "defect",
+      "serves": {
+        "target": "m1",
+        "scenario": "A reader calls `template-resolver analyze` or `POST /v1/analyze` on a template with a condition the engine cannot read and, trusting the README's 'A diagnostic is { severity, code, message, line, column, suggestion? }' and its code table, branches on `severity` or on a listed code; the response instead carries `{\"code\":\"unrecognized-condition\",...}` with no `severity`, a code that appears nowhere in the README, so the README documents a shape and code set the code does not produce for analyze."
+      },
+      "rubric": "each criterion is met by the diff and its test; must not: document anything the code does not do",
+      "reproduction": "1. printf '{{IF status is active}}Active{{END_IF}}\\n' > check.tpl. 2. node dist/cli/index.js analyze check.tpl. 3. Observe diagnostics[0] = {\"code\":\"unrecognized-condition\",\"message\":\"Unrecognized condition: status is active\",\"line\":1,\"column\":1}: no severity, code not in the README table. Same for an unparseable template via POST /v1/analyze {\"template\":\"{{IF a}}\"}: diagnostics[0] has code syntax-error but no severity. Smallest fix: one README sentence (in Diagnostics or beside the analyze command/route) saying analyze's diagnostics are raw analysis findings without `severity`, with code `unrecognized-condition` for an unreadable condition (validate maps them to `analysis-warning`).",
+      "evidence": [
+        "diff:README.md",
+        "code:core/src/analyze.ts:66",
+        "code:core/src/analyze.ts:167",
+        "code:core/src/analyze.ts:221",
+        "doc:README.md#diagnostics"
+      ],
+      "location": "README.md (Diagnostics section, 'A diagnostic is { severity, code, ... }' and the code table)"
+    }
+  ],
+  "responses": [],
+  "reviewer": {
+    "kind": "fallback",
+    "label": "opus fallback (same model family as the builder; has repository access)"
+  },
+  "at": "2026-10-14T01:57:04.686Z",
+  "card": "0031-document-the-api-the-cli-and-the-diagnos",
+  "tier": "product",
+  "packet_sha256": "0651f1f8359ae9eeb1344d1f8dca523688433958bf5f97ce46ac9945b8de7db0",
+  "diff_sha256": "bfd5126014858cf4dfe2d3d55b4839d9fda23a3498b36e75fba17a35a408cd86",
+  "dropped": []
+}

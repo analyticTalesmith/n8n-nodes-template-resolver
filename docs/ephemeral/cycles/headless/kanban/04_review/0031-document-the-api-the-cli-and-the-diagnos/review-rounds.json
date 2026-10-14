@@ -1,0 +1,63 @@
+{
+  "card": "0031-document-the-api-the-cli-and-the-diagnos",
+  "rounds": [
+    {
+      "number": 1,
+      "at": "2026-10-14T01:57:04.976Z",
+      "reviewer": {
+        "kind": "fallback",
+        "label": "opus fallback (same model family as the builder; has repository access)"
+      },
+      "output_sha256": "cedbed7578f038682958136fc67098aa1b9da3ebcd9cc90382d894bce1d7340c",
+      "diff_sha256": "bfd5126014858cf4dfe2d3d55b4839d9fda23a3498b36e75fba17a35a408cd86",
+      "restatement": "Document the headless cycle's surfaces (the template-resolver CLI, the HTTP API, the structured render result, the diagnostics and the limits) in the README so a reader can use the CLI and API from the docs alone, with every documented route, subcommand and code really existing and every example reproducing against the built code; record the cycle in the changelog and bring the living module documents for api, cli and core up to date, without touching source code and without documenting behavior the code does not have.",
+      "brief_mismatch": null,
+      "evidence": [
+        "code:core/src/analyze.ts:167",
+        "code:core/src/analyze.ts:221",
+        "code:core/src/analyze.ts:66",
+        "diff:README.md",
+        "doc:README.md#diagnostics",
+        "patch:bfd5126014858cf4dfe2d3d55b4839d9fda23a3498b36e75fba17a35a408cd86"
+      ],
+      "stalled": false,
+      "raised": [
+        "f1"
+      ],
+      "responses": []
+    }
+  ],
+  "findings": [
+    {
+      "title": "README diagnostics section says every diagnostic has a severity and one of nine codes, but analyze returns diagnostics with no severity and the undocumented code unrecognized-condition",
+      "class": "defect",
+      "serves": {
+        "target": "m1",
+        "scenario": "A reader calls `template-resolver analyze` or `POST /v1/analyze` on a template with a condition the engine cannot read and, trusting the README's 'A diagnostic is { severity, code, message, line, column, suggestion? }' and its code table, branches on `severity` or on a listed code; the response instead carries `{\"code\":\"unrecognized-condition\",...}` with no `severity`, a code that appears nowhere in the README, so the README documents a shape and code set the code does not produce for analyze."
+      },
+      "rubric": "each criterion is met by the diff and its test; must not: document anything the code does not do",
+      "reproduction": "1. printf '{{IF status is active}}Active{{END_IF}}\\n' > check.tpl. 2. node dist/cli/index.js analyze check.tpl. 3. Observe diagnostics[0] = {\"code\":\"unrecognized-condition\",\"message\":\"Unrecognized condition: status is active\",\"line\":1,\"column\":1}: no severity, code not in the README table. Same for an unparseable template via POST /v1/analyze {\"template\":\"{{IF a}}\"}: diagnostics[0] has code syntax-error but no severity. Smallest fix: one README sentence (in Diagnostics or beside the analyze command/route) saying analyze's diagnostics are raw analysis findings without `severity`, with code `unrecognized-condition` for an unreadable condition (validate maps them to `analysis-warning`).",
+      "evidence": [
+        "diff:README.md",
+        "code:core/src/analyze.ts:66",
+        "code:core/src/analyze.ts:167",
+        "code:core/src/analyze.ts:221",
+        "doc:README.md#diagnostics"
+      ],
+      "location": "README.md (Diagnostics section, 'A diagnostic is { severity, code, ... }' and the code table)",
+      "label": "f1",
+      "raised_in": 1,
+      "status": "sustained",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [
+        {
+          "after_round": 1,
+          "ruling": "sustain",
+          "note": "analyze diagnostics differ in shape from render diagnostics; the README must say so"
+        }
+      ]
+    }
+  ]
+}
