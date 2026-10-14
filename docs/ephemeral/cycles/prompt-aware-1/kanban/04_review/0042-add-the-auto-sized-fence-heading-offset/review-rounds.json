@@ -55,10 +55,20 @@
       "location": "core/src/filters.ts:242",
       "label": "f1",
       "raised_in": 1,
-      "status": "sustained",
+      "status": "fixed",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "defect in the fence or heading offset for odd values",
+          "verify": "new table rows fail before and pass after; 146 gate tests, 1230 suite",
+          "action": "fixed",
+          "evidence": [
+            "test:tests/promptaware/fence.test.ts"
+          ]
+        }
+      ],
       "rulings": [
         {
           "after_round": 1,
@@ -84,10 +94,20 @@
       "location": "core/src/interpreter.ts:383",
       "label": "f2",
       "raised_in": 1,
-      "status": "sustained",
+      "status": "fixed",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "defect in the fence or heading offset for odd values",
+          "verify": "new table rows fail before and pass after; 146 gate tests, 1230 suite",
+          "action": "fixed",
+          "evidence": [
+            "test:tests/promptaware/fence.test.ts"
+          ]
+        }
+      ],
       "rulings": [
         {
           "after_round": 1,
@@ -112,10 +132,20 @@
       "location": "core/src/filters.ts:270",
       "label": "f3",
       "raised_in": 1,
-      "status": "sustained",
+      "status": "fixed",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "defect in the fence or heading offset for odd values",
+          "verify": "new table rows fail before and pass after; 146 gate tests, 1230 suite",
+          "action": "fixed",
+          "evidence": [
+            "test:tests/promptaware/fence.test.ts"
+          ]
+        }
+      ],
       "rulings": [
         {
           "after_round": 1,

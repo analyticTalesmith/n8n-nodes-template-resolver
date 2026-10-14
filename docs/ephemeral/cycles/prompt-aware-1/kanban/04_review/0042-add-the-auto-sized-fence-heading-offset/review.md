@@ -17,31 +17,34 @@ Restatement: Add a FENCE block and a fence filter that wrap content in a backtic
 ### f1: A large value makes render throw a RangeError, because fence sizing spreads every backtick run into Math.max
 
 - Class: defect
-- Status: sustained
+- Status: fixed
 - Serves: c1: A FENCE body with about 130k backtick runs (a 260 KB value, well under maxOutputChars of 1,000,000) overflows the call stack in Math.max(...runs). The FENCE block lets a raw RangeError escape render(), which promises that template and data problems never throw. The fence filter returns a misleading type-error, 'Maximum call stack size exceeded', instead of the fenced value. Either way, valid input within the limits gets no c1 output.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: render('{{FENCE}}${{b}}{{END_FENCE}}', {b: '`a'.repeat(130000)}, {standaloneLines:false}) throws RangeError: Maximum call stack size exceeded. render('${{ b | fence }}', same data) returns ok:false with type-error 'Maximum call stack size exceeded'. With 100000 repeats both still succeed. Smallest fix: find the longest run with a loop or reduce over body.match(/`+/g) instead of spreading into Math.max.
 - Evidence: diff:core/src/filters.ts, code:core/src/filters.ts:242, code:core/src/render.ts:39
+- Reply after round 1 (fixed): restate: defect in the fence or heading offset for odd values; verify: new table rows fail before and pass after; 146 gate tests, 1230 suite; evidence: test:tests/promptaware/fence.test.ts
 - Review lead ruling after round 1: sustain: real defect in a new surface; fix with a test row
 
 ### f2: A lang value from data can contain a line break or a backtick and break the fence or close it early
 
 - Class: goal-risk
-- Status: sustained
+- Status: fixed
 - Serves: card-goal: Goal-critical question 'can any body make the fence close early?': the body cannot, but lang is written raw onto the opening fence line. With {{FENCE lang=l}} and l = "md\n```\n# injected", the output is "```md\n```\n# injected\nx\n```\n". The fence closes on line 2, '# injected' renders as a real heading, and the body escapes the code block. A lang containing a backtick ("a`b") makes the opening line an invalid backtick fence in CommonMark, so the body is not fenced at all. Data controls whether the fence holds, which defeats the purpose of an auto-sized fence.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: render('{{FENCE lang=l}}x{{END_FENCE}}', {l: 'md\n```\n# injected'}, {standaloneLines:false}) returns ok:true with output "```md\n```\n# injected\nx\n```\n". render('{{FENCE lang=l}}# x{{END_FENCE}}', {l: 'a`b'}) returns "```a`b\n# x\n```\n", which is not a valid fence. Smallest fix: in fenceLang, and in the fence filter, make a lang that contains a line break or a backtick a type-error at the FENCE tag or the variable.
 - Evidence: code:core/src/interpreter.ts:383, code:core/src/filters.ts:246, doc:docs/living/architecture/prompt-aware-contract.md
+- Reply after round 1 (fixed): restate: defect in the fence or heading offset for odd values; verify: new table rows fail before and pass after; 146 gate tests, 1230 suite; evidence: test:tests/promptaware/fence.test.ts
 - Review lead ruling after round 1: sustain: real defect in a new surface; fix with a test row
 
 ### f3: heading_offset takes a line that starts with a three-backtick code span for an opening fence and stops shifting the headings after it
 
 - Class: defect
-- Status: sustained
+- Status: fixed
 - Serves: c4: The value line '```js``` text' is inline code: a backtick fence's info string may not contain backticks. heading_offset treats it as an unclosed fence opener, so every later heading in the value is left unshifted. That violates 'shifts every ATX heading line'.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: render('${{ v | heading_offset=1 }}', {v: '```js``` text\n# h'}, {standaloneLines:false}).output is '```js``` text\n# h'; the expected output is '```js``` text\n## h'. Smallest fix: count a backtick fence opener only when the rest of its line contains no backtick.
 - Evidence: code:core/src/filters.ts:270, diff:core/src/filters.ts
+- Reply after round 1 (fixed): restate: defect in the fence or heading offset for odd values; verify: new table rows fail before and pass after; 146 gate tests, 1230 suite; evidence: test:tests/promptaware/fence.test.ts
 - Review lead ruling after round 1: sustain: real defect in a new surface; fix with a test row
 
 ### f4: A frozen fence test expectation was changed
