@@ -1,0 +1,89 @@
+{
+  "id": "0040-remove-standalone-tag-lines-add-trim-mar",
+  "title": "Remove standalone tag lines, add trim markers, RAW and brace escaping",
+  "type": "task",
+  "parent": null,
+  "depends_on": [],
+  "origin": "prompt-aware-1",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "core/src/"
+  ],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [
+      "core/src/lexer.ts",
+      "core/src/parser.ts",
+      "core/src/types.ts",
+      "core/src/interpreter.ts",
+      "core/src/render.ts",
+      "core/src/resolve.ts",
+      "core/src/spec.ts"
+    ],
+    "frozen": false
+  },
+  "criteria": [
+    {
+      "text": "ws-standalone: with standaloneLines on, a line holding only whitespace and block tags (IF, ELSEIF, ELSE, END_IF, CASE, WHEN, END_WHEN, DEFAULT, END_DEFAULT, END_CASE, FOR, END_FOR and comments) disappears with its line break, while a line that also holds text or a variable, and LIST, LIST_ITEM, TABLE, HEADER and ROW tags, keep their old spacing",
+      "verify": "test",
+      "traces": [
+        "tests/promptaware/whitespace.test.ts#ws-standalone"
+      ]
+    },
+    {
+      "text": "ws-trim: a minus marker after the opening braces trims all whitespace before the tag and a minus marker before the closing braces trims all whitespace after it, both on every block tag and comment, with the standalone option on or off",
+      "verify": "test",
+      "traces": [
+        "tests/promptaware/whitespace.test.ts#ws-trim"
+      ]
+    },
+    {
+      "text": "ws-option: render defaults standaloneLines to true, resolveTemplate defaults it to false so the whole existing suite is unchanged, and an explicit option wins in both",
+      "verify": "test",
+      "traces": [
+        "tests/promptaware/whitespace.test.ts#ws-option"
+      ]
+    },
+    {
+      "text": "rw-raw: RAW and END_RAW output their content literally (no tags, variables or comments), keep spaces, turn CRLF into LF, work inside FOR and untaken IF branches, and an unclosed RAW is a syntax-error located at the RAW tag",
+      "verify": "test",
+      "traces": [
+        "tests/promptaware/raw.test.ts#rw-raw"
+      ]
+    },
+    {
+      "text": "rw-escape: a backslash directly before the opening brace pair outputs the brace pair literally and consumes the backslash; a backslash elsewhere is text; two backslashes before the pair give a literal backslash and an active tag",
+      "verify": "test",
+      "traces": [
+        "tests/promptaware/raw.test.ts#rw-escape"
+      ]
+    },
+    {
+      "text": "rw-spec: spec lists RAW and its closer and the standaloneLines option",
+      "verify": "test",
+      "traces": [
+        "tests/promptaware/raw.test.ts#rw-spec"
+      ]
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/promptaware/whitespace.test.ts",
+    "tests/promptaware/raw.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1,
+  "blast_radius": [
+    "none"
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "id": "0041-add-section-that-drops-its-heading-when",
+  "title": "Add SECTION that drops its heading when empty",
+  "type": "task",
+  "parent": null,
+  "depends_on": [
+    "0040-remove-standalone-tag-lines-add-trim-mar"
+  ],
+  "origin": "prompt-aware-1",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "core/src/"
+  ],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [
+      "core/src/types.ts",
+      "core/src/lexer.ts",
+      "core/src/parser.ts",
+      "core/src/interpreter.ts",
+      "core/src/analyze.ts",
+      "core/src/render.ts",
+      "core/src/spec.ts"
+    ],
+    "frozen": false
+  },
+  "criteria": [
+    {
+      "text": "sc-heading: a SECTION with a quoted or variable title writes hashes, a space and the title, a blank line, the body with leading and trailing blank lines trimmed and one trailing line break, and consecutive sections are separated by one blank line",
+      "verify": "test",
+      "traces": [
+        "tests/promptaware/section.test.ts#sc-heading"
+      ]
+    },
+    {
+      "text": "sc-level: level defaults to 2, is clamped to 1 through 6, and a non-integer level is a type-error located at the SECTION tag",
+      "verify": "test",
+      "traces": [
+        "tests/promptaware/section.test.ts#sc-level"
+      ]
+    },
+    {
+      "text": "sc-empty: a SECTION whose rendered body is only whitespace produces no output at all, heading and spacing included, and render stats count it in sectionsOmitted, also inside FOR loops and nested sections",
+      "verify": "test",
+      "traces": [
+        "tests/promptaware/section.test.ts#sc-empty"
+      ]
+    },
+    {
+      "text": "sc-keep: skip_empty=false keeps the heading of an empty section and does not count an omission",
+      "verify": "test",
+      "traces": [
+        "tests/promptaware/section.test.ts#sc-keep"
+      ]
+    },
+    {
+      "text": "sc-errors: an empty or missing title is a type-error, an unclosed SECTION is a syntax-error at its tag, and SECTION counts toward maxDepth",
+      "verify": "test",
+      "traces": [
+        "tests/promptaware/section.test.ts#sc-errors"
+      ]
+    },
+    {
+      "text": "sc-analyze: analyze counts SECTION in blocks, reads variables in the title and the body, and spec lists SECTION and END_SECTION",
+      "verify": "test",
+      "traces": [
+        "tests/promptaware/section.test.ts#sc-analyze"
+      ]
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/promptaware/section.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1,
+  "blast_radius": [
+    "none"
+  ]
+}
