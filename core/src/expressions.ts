@@ -686,11 +686,10 @@ function tokenizeMath(
     }
 
     if (!varName) {
-      throw new TypeError(
+      throw new MathSyntaxError(
         `Unexpected character ${JSON.stringify(char)} in math expression`,
         1,
-        1,
-        "Math expressions may contain numbers, variable names, + - * / % and parentheses"
+        1
       );
     }
 
