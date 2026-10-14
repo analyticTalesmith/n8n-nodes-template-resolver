@@ -1,0 +1,354 @@
+{
+  "id": "0042-add-the-auto-sized-fence-heading-offset",
+  "title": "Add the auto-sized FENCE, heading offset and escape modes",
+  "type": "task",
+  "parent": null,
+  "depends_on": [
+    "0041-add-section-that-drops-its-heading-when"
+  ],
+  "origin": "prompt-aware-1",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "core/src/",
+    "tests/headless",
+    "tests/promptaware"
+  ],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [
+      "core/src/analyze.ts",
+      "core/src/errors.ts",
+      "core/src/filters.ts",
+      "core/src/interpreter.ts",
+      "core/src/lexer.ts",
+      "core/src/parser.ts",
+      "core/src/spec.ts",
+      "core/src/types.ts",
+      "core/src/whitespace.ts",
+      "tests/promptaware/fence.test.ts",
+      "tests/promptaware/heading-offset.test.ts"
+    ],
+    "frozen": true
+  },
+  "criteria": [
+    {
+      "text": "fe-autosize: FENCE outputs a fence of at least three backticks and longer than the longest backtick run in its body, then the optional lang, the body with one leading and one trailing line break removed, and the closing fence with a trailing line break",
+      "verify": "test",
+      "traces": [
+        "tests/promptaware/fence.test.ts#fe-autosize"
+      ]
+    },
+    {
+      "text": "fe-lang: lang may be a quoted string or a variable path; an empty or missing lang writes a bare fence; the fence filter does the same for a value, with an optional lang parameter",
+      "verify": "test",
+      "traces": [
+        "tests/promptaware/fence.test.ts#fe-lang"
+      ]
+    },
+    {
+      "text": "fe-errors: an unclosed FENCE is a syntax-error at its tag, FENCE counts toward maxDepth and its tags follow the standalone-line rule",
+      "verify": "test",
+      "traces": [
+        "tests/promptaware/fence.test.ts#fe-errors"
+      ]
+    },
+    {
+      "text": "ho-offset: heading_offset=N shifts every ATX heading line by N levels, clamped to 1 through 6, leaves headings inside fenced code blocks and non-heading hash text alone, accepts negative N, and a missing or non-integer parameter is a type-error",
+      "verify": "test",
+      "traces": [
+        "tests/promptaware/heading-offset.test.ts#ho-offset"
+      ]
+    },
+    {
+      "text": "em-modes: escape_md and escape_md=inline keep today's escaping, escape_md=block adds line-start escaping so a value cannot fake structure (leading hash, greater-than, dash, plus, star, pipe, digits followed by a dot or parenthesis, runs of three or more dashes, equals, backticks or tildes), and any other mode is a type-error",
+      "verify": "test",
+      "traces": [
+        "tests/promptaware/escape-modes.test.ts#em-modes"
+      ]
+    },
+    {
+      "text": "fe-spec: spec lists FENCE and END_FENCE and the fence, heading_offset and escape_md modes in filters, and analyze counts FENCE in blocks and accepts the new filters",
+      "verify": "test",
+      "traces": [
+        "tests/promptaware/fence.test.ts#fe-spec"
+      ]
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/promptaware/fence.test.ts",
+    "tests/promptaware/heading-offset.test.ts",
+    "tests/promptaware/escape-modes.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": "2026-10-14T02:41:31.570Z",
+  "ended": "2026-10-14T03:00:23.866Z",
+  "review_rounds": 2,
+  "schema_version": 1,
+  "blast_radius": [
+    "none"
+  ],
+  "freeze": {
+    "at": "2026-10-14T02:19:33.329Z",
+    "brief_sha256": "c0514066958eb9ccaa2533d891e5356b4ed22c6e701f9cd7a50c1fdbc52cbcf3",
+    "brief_core_sha256": "bf04b07a9f0aa6c48a32c7dc52afdd6686a78201eb05456093f7515cd6b85818",
+    "manifest_sha256": "3f2d211c7a93e544ff62c519e983f075b7ba1e321623f0ab71427cddfcb6ee8f",
+    "criteria_sha256": "27823a9a6eca29b5e945629126122c2081f5160e011639132cff8f8c6ac0a5d6",
+    "scope_sha256": "d97d7f6843e00da2c842e72e84c9750efef456ac37a5a665ad4a35269156be7f",
+    "scope_parts": {
+      "files_scope": "82cc45be52df3c028d0ae905ed1dfe8a1918a63d2a8a256f35593cdb9c093a78",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "8fcab29d4990c7b76a786cc6934bb6a9fdff9726974e0535779a1154e7eb6ba0"
+    }
+  },
+  "base_commit": "b12a2ace597c163c1a55596d0592a3df63566b37",
+  "manifest_amendments": [
+    {
+      "at": "2026-10-14T02:41:31.670Z",
+      "by": "lead",
+      "reason": "heading offset and fence reuse the section card's token flow; the spec fixture test lists engine filters",
+      "from": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/filters.ts",
+            "core/src/interpreter.ts",
+            "core/src/lexer.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/filters.ts",
+            "core/src/interpreter.ts",
+            "core/src/lexer.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts",
+            "core/src/whitespace.ts",
+            "tests/headless/spec.test.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/",
+          "tests/headless"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    },
+    {
+      "at": "2026-10-14T02:51:52.789Z",
+      "by": "lead",
+      "reason": "fix one miswritten expectation; the unknown-filter suggestion lists the shared filter list",
+      "from": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/filters.ts",
+            "core/src/interpreter.ts",
+            "core/src/lexer.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts",
+            "core/src/whitespace.ts",
+            "tests/headless/spec.test.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/",
+          "tests/headless"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/errors.ts",
+            "core/src/filters.ts",
+            "core/src/interpreter.ts",
+            "core/src/lexer.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts",
+            "core/src/whitespace.ts",
+            "tests/headless/spec.test.ts",
+            "tests/promptaware/fence.test.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/",
+          "tests/headless",
+          "tests/promptaware"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    },
+    {
+      "at": "2026-10-14T02:52:56.434Z",
+      "by": "lead",
+      "reason": "the spec fixture change was committed with the tests before the card started",
+      "from": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/errors.ts",
+            "core/src/filters.ts",
+            "core/src/interpreter.ts",
+            "core/src/lexer.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts",
+            "core/src/whitespace.ts",
+            "tests/headless/spec.test.ts",
+            "tests/promptaware/fence.test.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/",
+          "tests/headless",
+          "tests/promptaware"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/errors.ts",
+            "core/src/filters.ts",
+            "core/src/interpreter.ts",
+            "core/src/lexer.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts",
+            "core/src/whitespace.ts",
+            "tests/promptaware/fence.test.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/",
+          "tests/headless",
+          "tests/promptaware"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    },
+    {
+      "at": "2026-10-14T02:56:07.384Z",
+      "by": "lead",
+      "reason": "review fixes add table rows to the heading offset and fence tests",
+      "from": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/errors.ts",
+            "core/src/filters.ts",
+            "core/src/interpreter.ts",
+            "core/src/lexer.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts",
+            "core/src/whitespace.ts",
+            "tests/promptaware/fence.test.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/",
+          "tests/headless",
+          "tests/promptaware"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/errors.ts",
+            "core/src/filters.ts",
+            "core/src/interpreter.ts",
+            "core/src/lexer.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts",
+            "core/src/whitespace.ts",
+            "tests/promptaware/fence.test.ts",
+            "tests/promptaware/heading-offset.test.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/",
+          "tests/headless",
+          "tests/promptaware"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    }
+  ],
+  "test_amendments": [
+    {
+      "path": "tests/headless/spec.test.ts",
+      "reason": "the exact engine filter list gains fence and heading_offset",
+      "approved_by": "project lead"
+    },
+    {
+      "path": "tests/promptaware/fence.test.ts",
+      "reason": "one expected value omitted the trailing line break the contract gives every fence",
+      "approved_by": "project lead"
+    },
+    {
+      "path": "tests/promptaware/heading-offset.test.ts",
+      "reason": "add rows for a backtick span line and a huge value found in review",
+      "approved_by": "project lead"
+    }
+  ]
+}

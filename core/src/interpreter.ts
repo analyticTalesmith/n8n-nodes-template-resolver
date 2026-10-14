@@ -11,6 +11,8 @@ import {
   TableNode,
   TableRowNode,
   TernaryNode,
+  SectionNode,
+  FenceNode,
   VariableMap,
   TemplateValue,
   Limits,
@@ -33,7 +35,12 @@ import {
   evaluateMathExpression,
   isTruthy,
 } from "./expressions";
-import { parseFilter, applyFilters } from "./filters";
+import {
+  parseFilter,
+  applyFilters,
+  fenced,
+  checkFenceLang,
+} from "./filters";
 
 /**
  * Interpreter: Walks AST and produces output string
@@ -46,7 +53,8 @@ import { parseFilter, applyFilters } from "./filters";
  * - FOR loops with special variables (@index0, @first, @last, etc.)
  * - Lists (numbered, nested)
  * - Tables (with/without headers, alignment)
- * - Filters (head, tail, trim, escape_md)
+ * - Code fences sized to their content (FENCE)
+ * - Filters (head, tail, trim, escape_md, fence, heading_offset)
  * - Default operator (??)
  * - Ternary with variable references
  */
@@ -54,6 +62,7 @@ export class Interpreter {
   private strictMode: boolean;
   private limits: Limits;
   private iterations = 0;
+  private omittedSections = 0;
   private loopContext: Map<string, TemplateValue> = new Map();
 
   constructor(
@@ -72,10 +81,18 @@ export class Interpreter {
   }
 
   /**
+   * Sections dropped for an empty body by the latest interpret call
+   */
+  get sectionsOmitted(): number {
+    return this.omittedSections;
+  }
+
+  /**
    * Main interpretation entry point
    */
   interpret(ast: ProgramNode): string {
     this.iterations = 0;
+    this.omittedSections = 0;
     return this.visitProgram(ast);
   }
 
@@ -149,6 +166,10 @@ export class Interpreter {
         return this.visitList(node as ListNode);
       case "Table":
         return this.visitTable(node as TableNode);
+      case "Section":
+        return this.visitSection(node as SectionNode);
+      case "Fence":
+        return this.visitFence(node as FenceNode);
       case "Ternary":
         return this.at(node, () => this.visitTernary(node as TernaryNode));
       case "Comment":
@@ -312,6 +333,76 @@ export class Interpreter {
     this.restoreLoopContext(outerLoopContext);
 
     return results.join("");
+  }
+
+  /**
+   * Visit SECTION: the heading, a blank line and the body without its
+   * leading and trailing blank lines; nothing when the body is blank and
+   * skipEmpty is set
+   */
+  private visitSection(node: SectionNode): string {
+    const title = this.at(node, () => this.sectionTitle(node));
+    const heading = `${"#".repeat(node.level)} ${title}\n`;
+    const body = node.body
+      .map((child) => this.visit(child))
+      .join("")
+      .replace(/\r\n/g, "\n");
+
+    if (body.trim() === "") {
+      if (!node.skipEmpty) return heading;
+      this.omittedSections++;
+      return "";
+    }
+    const trimmed = body
+      .replace(/^([ \t]*\n)+/, "")
+      .replace(/(\n[ \t]*)+$/, "");
+    return `${heading}\n${trimmed}\n`;
+  }
+
+  private sectionTitle(node: SectionNode): string {
+    if (node.title.kind === "literal") return node.title.text;
+    const value = this.resolveNestedPath(node.title.path);
+    if (typeof value !== "string" || value === "") {
+      throw new TypeError(
+        `SECTION title must be a non-empty string, got ${describeValue(value)}`,
+        node.line,
+        node.column,
+        "Map the title variable to a non-empty string"
+      );
+    }
+    return value;
+  }
+
+  /**
+   * Visit FENCE: the rendered body in a code fence sized to it
+   */
+  private visitFence(node: FenceNode): string {
+    const lang = this.at(node, () => {
+      const value = this.fenceLang(node);
+      checkFenceLang(value);
+      return value;
+    });
+    const body = node.body.map((child) => this.visit(child)).join("");
+    return fenced(body, lang);
+  }
+
+  /**
+   * The FENCE language; a missing, null or empty value gives a bare fence
+   */
+  private fenceLang(node: FenceNode): string {
+    if (node.lang === null) return "";
+    if (node.lang.kind === "literal") return node.lang.text;
+    const value = this.resolveNestedPath(node.lang.path, true);
+    if (value == null) return "";
+    if (typeof value !== "string") {
+      throw new TypeError(
+        `FENCE lang must be a string, got ${describeValue(value)}`,
+        node.line,
+        node.column,
+        "Map the lang variable to a string"
+      );
+    }
+    return value;
   }
 
   private restoreLoopContext(saved: Map<string, TemplateValue>): void {

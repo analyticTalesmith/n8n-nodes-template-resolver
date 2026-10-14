@@ -54,6 +54,10 @@ export enum TokenType {
   END_TABLE = "END_TABLE",
   RAW = "RAW",
   END_RAW = "END_RAW",
+  SECTION = "SECTION",
+  END_SECTION = "END_SECTION",
+  FENCE = "FENCE",
+  END_FENCE = "END_FENCE",
   COMMENT = "COMMENT",
   EOF = "EOF",
 }
@@ -169,6 +173,42 @@ export interface ForNode extends ASTNode {
   type: "For";
   iterable: string[];
   itemName: string;
+  body: ASTNode[];
+}
+
+/**
+ * SECTION title: a quoted string or a variable path
+ */
+export type SectionTitle =
+  | { kind: "literal"; text: string }
+  | { kind: "path"; path: string[] };
+
+/**
+ * SECTION block: a markdown heading over its body, dropped when the body
+ * renders empty
+ */
+export interface SectionNode extends ASTNode {
+  type: "Section";
+  title: SectionTitle;
+  level: number;
+  skipEmpty: boolean;
+  body: ASTNode[];
+}
+
+/**
+ * FENCE language: a quoted string or a variable path
+ */
+export type FenceLang =
+  | { kind: "literal"; text: string }
+  | { kind: "path"; path: string[] };
+
+/**
+ * FENCE block: its rendered body in a code fence longer than any backtick
+ * run inside it
+ */
+export interface FenceNode extends ASTNode {
+  type: "Fence";
+  lang: FenceLang | null;
   body: ASTNode[];
 }
 

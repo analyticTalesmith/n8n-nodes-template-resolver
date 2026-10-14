@@ -16,15 +16,16 @@
     "add": [],
     "remove": [],
     "edit": [
-      "core/src/types.ts",
+      "core/src/analyze.ts",
+      "core/src/interpreter.ts",
       "core/src/lexer.ts",
       "core/src/parser.ts",
-      "core/src/interpreter.ts",
-      "core/src/analyze.ts",
       "core/src/render.ts",
-      "core/src/spec.ts"
+      "core/src/spec.ts",
+      "core/src/types.ts",
+      "core/src/whitespace.ts"
     ],
-    "frozen": false
+    "frozen": true
   },
   "criteria": [
     {
@@ -80,11 +81,76 @@
   "claim": null,
   "blocked_on": null,
   "docs_impact": "none",
-  "started": null,
-  "ended": null,
-  "review_rounds": 0,
+  "started": "2026-10-14T02:34:44.818Z",
+  "ended": "2026-10-14T02:41:30.850Z",
+  "review_rounds": 1,
   "schema_version": 1,
   "blast_radius": [
     "none"
+  ],
+  "freeze": {
+    "at": "2026-10-14T02:19:31.358Z",
+    "brief_sha256": "73641d0bbcb2947f00ff9a0b4c4a036b77a10a0076d790a65fdb0fc13ad15367",
+    "brief_core_sha256": "eecd1d80b734f5ecb15c66698e0c56e8cc6352cebb57c850bb81a6cdea6065ec",
+    "manifest_sha256": "d3ae1ef75c821d3ee1e116308265fe2600170914078364b53c4b5928a2414376",
+    "criteria_sha256": "7e9aebf019a9ee641fc33bdbbe37b0da2478402b71a9ad1b27638c0f644b0543",
+    "scope_sha256": "66f328103c947e8273beb4ae03b199776e4f4775534c0c1d9a969b53be05eee9",
+    "scope_parts": {
+      "files_scope": "6a6be1dcc3b03a31d1e0d3050332ccc88585a4ca5c643dde65fa2502418a275f",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "dd4d2f9d8c3577063af85d987e59632d8c37a5082d5bc27a929c48771d69bf45"
+    }
+  },
+  "base_commit": "f3d44d299f9503ff27604e42e9a6a2b56c2888da",
+  "manifest_amendments": [
+    {
+      "at": "2026-10-14T02:38:48.443Z",
+      "by": "lead",
+      "reason": "SECTION tags join the standalone rule in the whitespace module",
+      "from": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/interpreter.ts",
+            "core/src/lexer.ts",
+            "core/src/parser.ts",
+            "core/src/render.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/interpreter.ts",
+            "core/src/lexer.ts",
+            "core/src/parser.ts",
+            "core/src/render.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts",
+            "core/src/whitespace.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    }
   ]
 }

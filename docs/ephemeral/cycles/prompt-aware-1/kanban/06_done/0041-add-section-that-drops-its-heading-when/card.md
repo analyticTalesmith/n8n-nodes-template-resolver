@@ -64,6 +64,7 @@ the SECTION block; RenderResult.stats.sectionsOmitted (see the prompt-aware cont
 | `core/src/render.ts` | edit | none |
 | `core/src/spec.ts` | edit | none |
 | `core/src/types.ts` | edit | none |
+| `core/src/whitespace.ts` | edit | none |
 
 Files scope: `core/src/`
 <!-- end generated scope -->

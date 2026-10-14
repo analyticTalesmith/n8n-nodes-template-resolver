@@ -16,10 +16,17 @@ import {
   TableHeaderNode,
   TableRowNode,
   CommentNode,
+  SectionNode,
+  SectionTitle,
+  FenceNode,
+  FenceLang,
   FilterCall,
   DEFAULT_LIMITS,
 } from "./types";
-import { SyntaxError, LimitError } from "./errors";
+import { SyntaxError, TypeError, LimitError } from "./errors";
+
+const BLOCK_ARGUMENT = /(\w+)=("[^"]*"|'[^']*'|\S*)|"[^"]*"|'[^']*'|\S+/g;
+const VARIABLE_PATH = /^[A-Za-z_@][\w@]*(\.[\w@]+)*$/;
 
 /**
  * Parser: Builds Abstract Syntax Tree from tokens
@@ -80,6 +87,10 @@ export class Parser {
         return this.nested(() => this.parseList());
       case TokenType.TABLE:
         return this.nested(() => this.parseTable());
+      case TokenType.SECTION:
+        return this.nested(() => this.parseSection());
+      case TokenType.FENCE:
+        return this.nested(() => this.parseFence());
       case TokenType.HEADER:
         return this.parseTableHeader();
       case TokenType.ROW:
@@ -598,6 +609,169 @@ export class Parser {
     const itemName = match[2].trim();
 
     return { iterable: iterablePath, itemName };
+  }
+
+  /**
+   * Parse SECTION: {{SECTION "Title" level=2 skip_empty=false}}...{{END_SECTION}}
+   */
+  private parseSection(): SectionNode {
+    const token = this.consume(TokenType.SECTION);
+    const { title, level, skipEmpty } = this.parseSectionArguments(token);
+
+    const body: ASTNode[] = [];
+    while (!this.check(TokenType.END_SECTION)) {
+      if (this.isAtEnd()) {
+        throw new SyntaxError(
+          "Unclosed {{SECTION}} block",
+          token.line,
+          token.column,
+          "Add {{END_SECTION}}"
+        );
+      }
+      const node = this.parseNode();
+      if (node) body.push(node);
+    }
+
+    this.consume(TokenType.END_SECTION);
+
+    return {
+      type: "Section",
+      title,
+      level,
+      skipEmpty,
+      body,
+      line: token.line,
+      column: token.column,
+    };
+  }
+
+  /**
+   * Parse the SECTION title (quoted string or variable path) and its
+   * level and skip_empty options
+   */
+  private parseSectionArguments(token: Token): {
+    title: SectionTitle;
+    level: number;
+    skipEmpty: boolean;
+  } {
+    const typeError = (message: string, suggestion: string) =>
+      new TypeError(message, token.line, token.column, suggestion);
+    const syntaxError = (message: string) =>
+      new SyntaxError(
+        message,
+        token.line,
+        token.column,
+        'Expected: {{SECTION "Title" level=2 skip_empty=true}}'
+      );
+
+    let title: SectionTitle | null = null;
+    let level = 2;
+    let skipEmpty = true;
+    const args = token.value.slice("SECTION".length);
+
+    for (const [argument, key, value] of args.matchAll(BLOCK_ARGUMENT)) {
+      if (key === "level") {
+        if (!/^[+-]?\d+$/.test(value)) {
+          throw typeError(
+            `SECTION level must be an integer, got ${value}`,
+            "Use level=1 through level=6"
+          );
+        }
+        level = Math.min(6, Math.max(1, Number(value)));
+      } else if (key === "skip_empty") {
+        if (value !== "true" && value !== "false") {
+          throw typeError(
+            `SECTION skip_empty must be true or false, got ${value}`,
+            "Use skip_empty=true or skip_empty=false"
+          );
+        }
+        skipEmpty = value === "true";
+      } else if (key !== undefined) {
+        throw syntaxError(`Unknown SECTION option: ${key}`);
+      } else if (title !== null) {
+        throw syntaxError(`Unexpected SECTION argument: ${argument}`);
+      } else if (/^(["']).*\1$/.test(argument)) {
+        title = { kind: "literal", text: argument.slice(1, -1) };
+      } else if (VARIABLE_PATH.test(argument)) {
+        title = { kind: "path", path: argument.split(".") };
+      } else {
+        throw syntaxError(`Invalid SECTION title: ${argument}`);
+      }
+    }
+
+    if (title === null || (title.kind === "literal" && title.text === "")) {
+      throw typeError(
+        "SECTION needs a non-empty title",
+        'Give a quoted title or a variable path: {{SECTION "Title"}}'
+      );
+    }
+    return { title, level, skipEmpty };
+  }
+
+  /**
+   * Parse FENCE: {{FENCE lang="md"}}...{{END_FENCE}}
+   */
+  private parseFence(): FenceNode {
+    const token = this.consume(TokenType.FENCE);
+    const lang = this.parseFenceLang(token);
+
+    const body: ASTNode[] = [];
+    while (!this.check(TokenType.END_FENCE)) {
+      if (this.isAtEnd()) {
+        throw new SyntaxError(
+          "Unclosed {{FENCE}} block",
+          token.line,
+          token.column,
+          "Add {{END_FENCE}}"
+        );
+      }
+      const node = this.parseNode();
+      if (node) body.push(node);
+    }
+
+    this.consume(TokenType.END_FENCE);
+
+    return {
+      type: "Fence",
+      lang,
+      body,
+      line: token.line,
+      column: token.column,
+    };
+  }
+
+  /**
+   * Parse the optional FENCE lang option: a quoted string or a variable path
+   */
+  private parseFenceLang(token: Token): FenceLang | null {
+    const syntaxError = (message: string) =>
+      new SyntaxError(
+        message,
+        token.line,
+        token.column,
+        'Expected: {{FENCE lang="markdown"}} or {{FENCE lang=path.to.lang}}'
+      );
+
+    let lang: FenceLang | null = null;
+    const args = token.value.slice("FENCE".length);
+
+    for (const [argument, key, value] of args.matchAll(BLOCK_ARGUMENT)) {
+      if (key !== "lang") {
+        throw syntaxError(
+          key === undefined
+            ? `Unexpected FENCE argument: ${argument}`
+            : `Unknown FENCE option: ${key}`
+        );
+      }
+      if (/^(["']).*\1$/.test(value)) {
+        lang = { kind: "literal", text: value.slice(1, -1) };
+      } else if (VARIABLE_PATH.test(value)) {
+        lang = { kind: "path", path: value.split(".") };
+      } else {
+        throw syntaxError(`Invalid FENCE lang: ${value}`);
+      }
+    }
+    return lang;
   }
 
   /**
