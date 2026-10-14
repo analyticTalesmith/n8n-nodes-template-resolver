@@ -72,14 +72,11 @@
     "tests/headless/e2e-api.test.ts",
     "--json"
   ],
-  "claim": {
-    "owner": "build:implementer",
-    "heartbeat": "2026-10-14T00:38:43.246Z"
-  },
+  "claim": null,
   "blocked_on": null,
   "docs_impact": "none",
   "started": "2026-10-14T01:12:58.803Z",
-  "ended": null,
+  "ended": "2026-10-14T01:42:51.651Z",
   "review_rounds": 2,
   "schema_version": 1,
   "blast_radius": [
