@@ -1,0 +1,62 @@
+{
+  "id": "0040-reject-unknown-characters-in-math-expres",
+  "title": "Reject unknown characters in math expressions",
+  "type": "bug",
+  "parent": null,
+  "depends_on": [],
+  "origin": "math-hang",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "core/src/expressions.ts"
+  ],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [
+      "core/src/expressions.ts"
+    ],
+    "frozen": true
+  },
+  "criteria": [
+    {
+      "text": "mh-no-hang: rendering a template whose math expression contains an unknown character such as a quote returns promptly with a diagnostic and does not loop, while valid math still renders",
+      "verify": "test",
+      "traces": [
+        "tests/regressions/math-unknown-character.test.ts#mh-no-hang"
+      ]
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/regressions/math-unknown-character.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": "2026-10-14T02:12:23.558Z",
+  "ended": "2026-10-14T02:16:40.329Z",
+  "review_rounds": 2,
+  "schema_version": 1,
+  "blast_radius": [
+    "none"
+  ],
+  "freeze": {
+    "at": "2026-10-14T02:11:55.853Z",
+    "brief_sha256": "7ee4590e4f2d38dfc43384eff74cc8aa5da8358c996d9ad52936e20ca555bea2",
+    "brief_core_sha256": "73dd3547bb7681a05b38e8393f7066380936e6ab35648d8b92eab61980fd1d11",
+    "manifest_sha256": "75f476f33d2bb46eb59193d9dbeb0a0c874abc9cad7fa7652242e1d64cae7ac8",
+    "criteria_sha256": "decfc00fc0fc7f71350caa12b848dbeba4a395b17c8ab3a8a88483f6ccfd00f9",
+    "scope_sha256": "096622d7c536e40ead065333da3515185c2dc8a158a74c7783cbbfd5f847b92d",
+    "scope_parts": {
+      "files_scope": "054dde7d6f091a42c29b19d80e0b7d5554c0d02ba6a774d5ec4a4b37cbba40d3",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "497d95104eed499568e236effc1ac0683ae7a464a20f830e1d8d21fb56bb6706"
+    }
+  },
+  "base_commit": "1841245a4190fc635e7e5626ca12bf27fb6493c1"
+}
