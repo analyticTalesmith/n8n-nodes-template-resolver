@@ -10,19 +10,22 @@
   "tier": null,
   "claimed_in": null,
   "files_scope": [
-    "core/src/"
+    "core/src/",
+    "tests/headless"
   ],
   "manifest": {
     "add": [],
     "remove": [],
     "edit": [
-      "core/src/types.ts",
+      "core/src/analyze.ts",
+      "core/src/filters.ts",
+      "core/src/interpreter.ts",
       "core/src/lexer.ts",
       "core/src/parser.ts",
-      "core/src/interpreter.ts",
-      "core/src/filters.ts",
-      "core/src/analyze.ts",
-      "core/src/spec.ts"
+      "core/src/spec.ts",
+      "core/src/types.ts",
+      "core/src/whitespace.ts",
+      "tests/headless/spec.test.ts"
     ],
     "frozen": true
   },
@@ -85,7 +88,7 @@
   },
   "blocked_on": null,
   "docs_impact": "none",
-  "started": null,
+  "started": "2026-10-14T02:41:31.570Z",
   "ended": null,
   "review_rounds": 0,
   "schema_version": 1,
@@ -96,14 +99,74 @@
     "at": "2026-10-14T02:19:33.329Z",
     "brief_sha256": "c0514066958eb9ccaa2533d891e5356b4ed22c6e701f9cd7a50c1fdbc52cbcf3",
     "brief_core_sha256": "bf04b07a9f0aa6c48a32c7dc52afdd6686a78201eb05456093f7515cd6b85818",
-    "manifest_sha256": "21446f81483838a4f3c266736024985f36064bc1fe85550109f674f1f31a1540",
+    "manifest_sha256": "5c3420552fd327153fadd49b690cf87e30cc2c7c2ed5f7ee689797c7320c3861",
     "criteria_sha256": "27823a9a6eca29b5e945629126122c2081f5160e011639132cff8f8c6ac0a5d6",
-    "scope_sha256": "981390044575d82d7a1c2b694ad27864ab80b27b098aecc02fa58ba960cfa224",
+    "scope_sha256": "ab3032d14f4728d692ba1f34cc9c8979b8529e7cfc3e7c37ba348a7f5d497d3b",
     "scope_parts": {
-      "files_scope": "6a6be1dcc3b03a31d1e0d3050332ccc88585a4ca5c643dde65fa2502418a275f",
+      "files_scope": "c4aeb3bfceb47157a684fa403f4d9ed42093374fb5b51d49b1985f602fa54138",
       "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
       "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
       "gate": "8fcab29d4990c7b76a786cc6934bb6a9fdff9726974e0535779a1154e7eb6ba0"
     }
-  }
+  },
+  "base_commit": "b12a2ace597c163c1a55596d0592a3df63566b37",
+  "manifest_amendments": [
+    {
+      "at": "2026-10-14T02:41:31.670Z",
+      "by": "lead",
+      "reason": "heading offset and fence reuse the section card's token flow; the spec fixture test lists engine filters",
+      "from": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/filters.ts",
+            "core/src/interpreter.ts",
+            "core/src/lexer.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/filters.ts",
+            "core/src/interpreter.ts",
+            "core/src/lexer.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts",
+            "core/src/whitespace.ts",
+            "tests/headless/spec.test.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/",
+          "tests/headless"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    }
+  ],
+  "test_amendments": [
+    {
+      "path": "tests/headless/spec.test.ts",
+      "reason": "the exact engine filter list gains fence and heading_offset",
+      "approved_by": "project lead"
+    }
+  ]
 }

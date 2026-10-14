@@ -64,6 +64,8 @@ FENCE block; filters fence, heading_offset and escape_md modes (see the prompt-a
 | `core/src/parser.ts` | edit | none |
 | `core/src/spec.ts` | edit | none |
 | `core/src/types.ts` | edit | none |
+| `core/src/whitespace.ts` | edit | none |
+| `tests/headless/spec.test.ts` | edit | none |
 
-Files scope: `core/src/`
+Files scope: `core/src/`, `tests/headless`
 <!-- end generated scope -->
