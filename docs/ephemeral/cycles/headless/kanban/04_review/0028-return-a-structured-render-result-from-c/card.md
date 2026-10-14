@@ -59,16 +59,16 @@ render, validate, spec, estimateTokens, RenderOptions, RenderResult, Diagnostic 
 <!-- generated scope: from card.json -->
 | Path | Permission (add, edit, remove) | Blast radius |
 | --- | --- | --- |
-| `core/src/estimate.ts` | add | none |
-| `core/src/render.ts` | add | none |
-| `core/src/spec.ts` | add | none |
 | `core/src/analyze.ts` | edit | none |
+| `core/src/estimate.ts` | edit | none |
+| `core/src/filters.ts` | edit | none |
 | `core/src/index.ts` | edit | none |
-| `core/src/resolve.ts` | edit | none |
+| `core/src/interpreter.ts` | edit | none |
+| `core/src/render.ts` | edit | none |
+| `core/src/spec.ts` | edit | none |
 | `n8n/TemplateResolver.node.ts` | edit | none |
 | `package.json` | edit | none |
 | `tsconfig.json` | edit | none |
-| `x` | edit | none |
 
 Files scope: `core/src/`, `n8n/`, `package.json`, `tsconfig.json`
 <!-- end generated scope -->

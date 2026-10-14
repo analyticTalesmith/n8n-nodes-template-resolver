@@ -16,20 +16,19 @@
     "tsconfig.json"
   ],
   "manifest": {
-    "add": [
-      "core/src/render.ts",
-      "core/src/estimate.ts",
-      "core/src/spec.ts"
-    ],
+    "add": [],
     "remove": [],
     "edit": [
-      "core/src/index.ts",
       "core/src/analyze.ts",
-      "core/src/resolve.ts",
+      "core/src/estimate.ts",
+      "core/src/filters.ts",
+      "core/src/index.ts",
+      "core/src/interpreter.ts",
+      "core/src/render.ts",
+      "core/src/spec.ts",
       "n8n/TemplateResolver.node.ts",
       "package.json",
-      "tsconfig.json",
-      "x"
+      "tsconfig.json"
     ],
     "frozen": true
   },
@@ -118,7 +117,7 @@
     "at": "2026-10-14T00:38:39.555Z",
     "brief_sha256": "cdb7e38fcd2a306d8703ec1343835b9a32914650638d4105f29e6f16254d8117",
     "brief_core_sha256": "071cb80bc3f31001b99d893a1f5296b367c8fb5b666cb0417d4ab56099b3c8c6",
-    "manifest_sha256": "1be44f1c318ff9ab0a8bae79580507888cb9b91e62113212a59b9b1941c4d110",
+    "manifest_sha256": "f23362f4c7f1b95929ba9d1174d0ce1f5d53ba121c624428f480c84bf1ad6a3b",
     "criteria_sha256": "8c6b3d937679f6f5df7dceac474e7b9f18e11c05b293d5c7ddfd95bcc6ad4343",
     "scope_sha256": "fba9b75c29ad033871fcc0f67bd500f3bbde0447a7955d561d239f03f4d76613",
     "scope_parts": {
@@ -128,5 +127,120 @@
       "gate": "47522fcafb15c20f0da4e11e569bfff0837c31e0b35ec8ed72f9e5241595f939"
     }
   },
-  "base_commit": "02dd2d32a9f7f781f327ee35005413fbb04eccd9"
+  "base_commit": "02dd2d32a9f7f781f327ee35005413fbb04eccd9",
+  "manifest_amendments": [
+    {
+      "at": "2026-10-14T01:07:05.433Z",
+      "by": "lead",
+      "reason": "the test writer's stubs already existed so the new modules are edits; the shared filter list and an iteration count needed filters and interpreter; resolve and a stray entry were not changed",
+      "from": {
+        "manifest": {
+          "add": [
+            "core/src/estimate.ts",
+            "core/src/render.ts",
+            "core/src/spec.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/index.ts",
+            "core/src/resolve.ts",
+            "n8n/TemplateResolver.node.ts",
+            "package.json",
+            "tsconfig.json",
+            "x"
+          ]
+        },
+        "files_scope": [
+          "core/src/",
+          "n8n/",
+          "package.json",
+          "tsconfig.json"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/filters.ts",
+            "core/src/index.ts",
+            "core/src/interpreter.ts",
+            "n8n/TemplateResolver.node.ts",
+            "package.json",
+            "tsconfig.json"
+          ]
+        },
+        "files_scope": [
+          "core/src/",
+          "n8n/",
+          "package.json",
+          "tsconfig.json"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    },
+    {
+      "at": "2026-10-14T01:07:12.739Z",
+      "by": "lead",
+      "reason": "stubs from the test writer already existed so these modules are edits",
+      "from": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/filters.ts",
+            "core/src/index.ts",
+            "core/src/interpreter.ts",
+            "n8n/TemplateResolver.node.ts",
+            "package.json",
+            "tsconfig.json"
+          ]
+        },
+        "files_scope": [
+          "core/src/",
+          "n8n/",
+          "package.json",
+          "tsconfig.json"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/estimate.ts",
+            "core/src/filters.ts",
+            "core/src/index.ts",
+            "core/src/interpreter.ts",
+            "core/src/render.ts",
+            "core/src/spec.ts",
+            "n8n/TemplateResolver.node.ts",
+            "package.json",
+            "tsconfig.json"
+          ]
+        },
+        "files_scope": [
+          "core/src/",
+          "n8n/",
+          "package.json",
+          "tsconfig.json"
+        ],
+        "blast_radius": [
+          "none"
+        ]
+      }
+    }
+  ]
 }
