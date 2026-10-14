@@ -46,7 +46,10 @@
     "--test-reporter=tap",
     "tools/tests/headless-docs.test.mjs"
   ],
-  "claim": null,
+  "claim": {
+    "owner": "build:implementer",
+    "heartbeat": "2026-10-14T00:38:49.155Z"
+  },
   "blocked_on": null,
   "docs_impact": "none",
   "started": null,
