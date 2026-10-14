@@ -1,0 +1,66 @@
+{
+  "restatement": "When a math expression inside ${{...}} contains a character the math tokenizer does not recognise (a quote, backslash, non-ASCII letter and so on), tokenizing must stop with an error instead of spinning forever, and render must come back promptly with ok false and a located diagnostic, while every valid math expression keeps evaluating to exactly the same value as before. The only file in scope is core/src/expressions.ts.",
+  "brief_mismatch": null,
+  "verification_plan": [
+    "Read tokenizeMath and confirm every loop iteration either advances i or throws, so no input character can leave the loop stuck.",
+    "Confirm the new error path covers any character outside whitespace, operators, digits and the identifier set: quote, single quote, backslash, backtick, non-ASCII letter, astral unicode (emoji).",
+    "Confirm the thrown error reaches render as a diagnostic (ok false, at least one diagnostic, a line and column) and is not swallowed by the interpreter's math fallback, in the default strict mode.",
+    "Confirm the location points at the variable node, including when the expression is not on line 1.",
+    "Confirm valid expressions (sums, precedence, parentheses, modulo, decimals, variables) give the same output as before: the change must touch only the branch that previously never produced a value.",
+    "Run the frozen gate test and check it actually exercises each named character class.",
+    "Confirm no file outside core/src/expressions.ts changed."
+  ],
+  "findings": [
+    {
+      "title": "The frozen test's 'backslash operand' case contains no backslash, so backslash coverage rests on code reading only",
+      "class": "drift",
+      "serves": {
+        "target": "c1",
+        "scenario": "In the TypeScript source \"${{ 2 * \\ }}\", the sequence backslash-space is an escape that yields a plain space, so the template is '${{ 2 *  }}' and fails as 'Invalid math expression', never reaching the unknown-character branch. The gate passes without ever feeding a backslash to tokenizeMath. The implementation does handle a real backslash (verified manually: render returns type-error 'Unexpected character \"\\\\\"'), so this is a test-plan gap, not a defect in the diff."
+      },
+      "rubric": "each criterion is met by the diff and its test",
+      "reproduction": "In the worktree, node -e 'console.log(JSON.stringify(\"${{ 2 * \\ }}\"))' prints \"${{ 2 *  }}\". Rendering a template read from a file that contains a real backslash gives diagnostic 'Unexpected character \"\\\\\" in math expression'.",
+      "evidence": [
+        "test:mh-no-hang: resolveTemplate terminates and reports an error for backslash operand",
+        "code:core/src/expressions.ts:688"
+      ],
+      "location": "tests/regressions/math-unknown-character.test.ts:421"
+    },
+    {
+      "title": "In lenient mode the unknown-character error is still swallowed: render returns ok true, empty output and no diagnostic",
+      "class": "drift",
+      "serves": {
+        "target": "cycle-goal",
+        "scenario": "render('${{ 1 + \"x\" }}', {}, { strictMode: false }) returns { ok: true, output: '', diagnostics: [] }. The hang is gone, but the render does not end with a located error in lenient mode. This is the pre-existing behavior for every math error (interpreter.ts only re-raises a MathSyntaxError when lookup throws MissingVariableError), lives in interpreter.ts outside the card's scope, and c1 is met in the default strict mode, so it is noted for the lead rather than asked as a fix."
+      },
+      "rubric": "no change outside the card scope",
+      "reproduction": "Transpile-require core/src in the worktree and call render('${{ 1 + \"x\" }}', {}, { strictMode: false }); observe ok true and diagnostics [].",
+      "evidence": [
+        "code:core/src/interpreter.ts:185-194",
+        "code:core/src/expressions.ts:688-694"
+      ],
+      "location": "core/src/interpreter.ts:190"
+    }
+  ],
+  "responses": [
+    {
+      "finding": "f1",
+      "verdict": "withdraw",
+      "evidence": [
+        "code:core/src/expressions.ts:689",
+        "code:core/src/interpreter.ts:190-193",
+        "test:mh-no-hang: render returns ok false with a diagnostic for quote after plus"
+      ]
+    }
+  ],
+  "reviewer": {
+    "kind": "fallback",
+    "label": "opus fallback (same model family as the builder; has repository access)"
+  },
+  "at": "2026-10-14T02:16:28.503Z",
+  "card": "0040-reject-unknown-characters-in-math-expres",
+  "tier": "product",
+  "packet_sha256": "33d3cbca484aea1867d011e0ea674a3aa9de5644402de62ccce5578642ba539f",
+  "diff_sha256": "407209db6ab7e965f35ca7137f66df2f0e37cf9e731c958c5f7716c3f89235d9",
+  "dropped": []
+}

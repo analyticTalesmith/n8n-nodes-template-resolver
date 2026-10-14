@@ -34,6 +34,7 @@ Shape: kind bug-fix; intent correct; purpose ship; compatibility preserved; unce
 
 <!-- A stage is a question the cycle asks; record an answer only when it is surprising. Stages with an artifact are done when it exists. Record only: "- <stage> done: <evidence>" for a stage with no artifact, "- <stage> skipped (override): <reason>" for a skip where its own rule says run, and "- <stage> added: <reason>" for a stage chosen on purpose. A spine stage cannot be skipped. -->
 - stg-goals-oracle done: goal: no hang on unknown math characters; oracle: one regression test
+- stg-ready-check done: n/a
 
 ## Who and why
 
@@ -87,5 +88,6 @@ A person judges the cycle done when the template from the verification report re
 <!-- Session instructions: the depth script adds a dated one-line list under a Session instructions heading here, created on first use. Do not write instructions by hand or leave them only in chat. -->
 
 <!-- generated index: replace everything between this line and the end marker -->
+- [design-approval.md](design-approval.md) — Fix the math tokenizer hang on unknown characters.
 - [test-plan.md](test-plan.md) — The tests this cycle plans at each level, and which requirement lines each one proves.
 <!-- end generated index -->
