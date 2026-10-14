@@ -2,7 +2,7 @@
 summary: "Record settled design decision: unknown-names-are-always-errors"
 op: add
 target: docs/living/decisions/adr/0003-unknown-names-are-always-errors.md
-status: open
+status: applied
 ---
 
 # Proposed change

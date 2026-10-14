@@ -522,7 +522,15 @@ npm run test:watch   # Watch mode
 npm run test:coverage # Coverage report
 npm run build        # Build for production
 npm pack             # Create installable package
+node --test tools/tests/*.test.mjs   # Tooling tests (CI, jest reporter, restructure checks)
 ```
+
+The repository has a headless core and a thin n8n wrapper:
+
+- `core/src/` is the pure template library (lexer, parser, interpreter, filters, `analyze`); it imports nothing from n8n and does no I/O.
+- `n8n/` is the node; it imports core directly.
+- `tests/` holds the jest suites, including golden-file cases under `tests/golden/cases/` (update with the harness's update mode); `tools/` holds the jest TAP reporter and node:test tooling tests.
+- `docs/living/` holds the architecture and the decision records (`docs/living/decisions/adr/`).
 
 ---
 

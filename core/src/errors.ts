@@ -19,7 +19,7 @@ export class TemplateError extends Error {
     column: number,
     suggestion?: string
   ): string {
-    let formatted = `âŒ Template Error (line ${line}, col ${column}):\n   ${message}`;
+    let formatted = `Template Error (line ${line}, col ${column}):\n   ${message}`;
     if (suggestion) {
       formatted += `\n   Suggestion: ${suggestion}`;
     }

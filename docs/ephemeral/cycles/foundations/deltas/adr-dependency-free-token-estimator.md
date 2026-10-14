@@ -2,7 +2,7 @@
 summary: "Record settled design decision: dependency-free-token-estimator"
 op: add
 target: docs/living/decisions/adr/0005-dependency-free-token-estimator.md
-status: open
+status: applied
 ---
 
 # Proposed change

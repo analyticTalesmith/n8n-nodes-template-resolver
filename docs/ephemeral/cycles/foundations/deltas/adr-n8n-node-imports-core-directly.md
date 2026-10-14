@@ -2,7 +2,7 @@
 summary: "Record settled design decision: n8n-node-imports-core-directly"
 op: add
 target: docs/living/decisions/adr/0006-n8n-node-imports-core-directly.md
-status: open
+status: applied
 ---
 
 # Proposed change

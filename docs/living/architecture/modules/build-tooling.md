@@ -1,6 +1,6 @@
 ---
 summary: The build, test and CI tooling of the repository - the jest runner, the TAP reporter that lets cards gate on jest, and the GitHub Actions workflow.
-state: planned
+state: built
 ---
 
 # Build tooling

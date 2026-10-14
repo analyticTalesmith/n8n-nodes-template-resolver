@@ -2,7 +2,7 @@
 summary: Recover the repository surface map
 op: recover
 target: docs/living/architecture/overview.md
-status: open
+status: applied
 ---
 
 # Proposed change

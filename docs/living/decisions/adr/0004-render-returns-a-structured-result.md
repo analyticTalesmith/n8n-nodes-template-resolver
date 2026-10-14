@@ -4,7 +4,7 @@ type: adr
 domain: api
 status: accepted
 date: 2026-10-13
-state: planned
+state: built
 ---
 
 # Render returns a structured result

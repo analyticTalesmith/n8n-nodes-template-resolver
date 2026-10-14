@@ -4,7 +4,7 @@ type: adr
 domain: language
 status: accepted
 date: 2026-10-13
-state: planned
+state: built
 ---
 
 # Unknown names are always errors, strict mode governs missing data
