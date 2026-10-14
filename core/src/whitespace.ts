@@ -16,6 +16,8 @@ const STANDALONE_TAGS = new Set<TokenType>([
   TokenType.END_FOR,
   TokenType.SECTION,
   TokenType.END_SECTION,
+  TokenType.FENCE,
+  TokenType.END_FENCE,
   TokenType.RAW,
   TokenType.END_RAW,
   TokenType.COMMENT,

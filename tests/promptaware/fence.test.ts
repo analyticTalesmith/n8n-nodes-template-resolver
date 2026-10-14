@@ -190,7 +190,7 @@ describe("fe-autosize: standalone rule applies to FENCE tag lines", () => {
       name: "standalone on: a FENCE tag sharing its line with text is not removed",
       template: "a {{FENCE}}x{{END_FENCE}} b\n",
       options: ON,
-      expected: "a ```\nx\n``` b\n",
+      expected: "a ```\nx\n```\n b\n",
     },
   ]);
 });

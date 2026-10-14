@@ -12,6 +12,7 @@ import {
   TableRowNode,
   TernaryNode,
   SectionNode,
+  FenceNode,
   VariableMap,
   TemplateValue,
   Limits,
@@ -34,7 +35,7 @@ import {
   evaluateMathExpression,
   isTruthy,
 } from "./expressions";
-import { parseFilter, applyFilters } from "./filters";
+import { parseFilter, applyFilters, fenced } from "./filters";
 
 /**
  * Interpreter: Walks AST and produces output string
@@ -47,7 +48,8 @@ import { parseFilter, applyFilters } from "./filters";
  * - FOR loops with special variables (@index0, @first, @last, etc.)
  * - Lists (numbered, nested)
  * - Tables (with/without headers, alignment)
- * - Filters (head, tail, trim, escape_md)
+ * - Code fences sized to their content (FENCE)
+ * - Filters (head, tail, trim, escape_md, fence, heading_offset)
  * - Default operator (??)
  * - Ternary with variable references
  */
@@ -161,6 +163,8 @@ export class Interpreter {
         return this.visitTable(node as TableNode);
       case "Section":
         return this.visitSection(node as SectionNode);
+      case "Fence":
+        return this.visitFence(node as FenceNode);
       case "Ternary":
         return this.at(node, () => this.visitTernary(node as TernaryNode));
       case "Comment":
@@ -359,6 +363,34 @@ export class Interpreter {
         node.line,
         node.column,
         "Map the title variable to a non-empty string"
+      );
+    }
+    return value;
+  }
+
+  /**
+   * Visit FENCE: the rendered body in a code fence sized to it
+   */
+  private visitFence(node: FenceNode): string {
+    const lang = this.at(node, () => this.fenceLang(node));
+    const body = node.body.map((child) => this.visit(child)).join("");
+    return fenced(body, lang);
+  }
+
+  /**
+   * The FENCE language; a missing, null or empty value gives a bare fence
+   */
+  private fenceLang(node: FenceNode): string {
+    if (node.lang === null) return "";
+    if (node.lang.kind === "literal") return node.lang.text;
+    const value = this.resolveNestedPath(node.lang.path, true);
+    if (value == null) return "";
+    if (typeof value !== "string") {
+      throw new TypeError(
+        `FENCE lang must be a string, got ${describeValue(value)}`,
+        node.line,
+        node.column,
+        "Map the lang variable to a string"
       );
     }
     return value;

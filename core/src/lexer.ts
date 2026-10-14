@@ -12,6 +12,7 @@ const CLOSERS: Partial<Record<TokenType, TokenType>> = {
   [TokenType.END_TABLE]: TokenType.TABLE,
   [TokenType.END_LIST]: TokenType.LIST,
   [TokenType.END_SECTION]: TokenType.SECTION,
+  [TokenType.END_FENCE]: TokenType.FENCE,
 };
 const OPENERS = new Set(Object.values(CLOSERS));
 
@@ -26,6 +27,7 @@ const OPENERS = new Set(Object.values(CLOSERS));
  * - Tables: {{TABLE}}, {{HEADER}}, {{ROW}}, {{END_TABLE}}
  * - Lists: {{LIST}}, {{LIST_ITEM}}, {{END_LIST}}
  * - Sections: {{SECTION "Title" level=2}}, {{END_SECTION}}
+ * - Code fences: {{FENCE lang="md"}}, {{END_FENCE}}
  * - Ternary: {{condition ? "true" : "false"}}
  * - Comments: {{# comment #}}
  * - Literal blocks: {{RAW}}...{{END_RAW}}; \{{ is a literal brace pair
@@ -467,6 +469,8 @@ export class Lexer {
       END_RAW: TokenType.END_RAW,
       SECTION: TokenType.SECTION,
       END_SECTION: TokenType.END_SECTION,
+      FENCE: TokenType.FENCE,
+      END_FENCE: TokenType.END_FENCE,
     };
 
     return mapping[keyword] || null;

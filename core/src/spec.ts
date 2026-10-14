@@ -94,6 +94,13 @@ const BLOCKS: Spec["blocks"] = [
       "A markdown heading at level (default 2, clamped to 1-6), a blank line and the body with its leading and trailing blank lines trimmed; omitted entirely when the body renders empty, unless skip_empty=false keeps the heading",
   },
   {
+    name: "FENCE",
+    closes: "END_FENCE",
+    args: '[lang="language" | lang=path]',
+    description:
+      "A code fence of at least three backticks, longer than any backtick run in the rendered body, with the optional language; one leading and one trailing line break of the body are removed",
+  },
+  {
     name: "RAW",
     closes: "END_RAW",
     args: "",
