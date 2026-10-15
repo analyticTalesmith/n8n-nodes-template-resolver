@@ -26,6 +26,11 @@ Restatement: Math and output mistakes in the template language must stop failing
 - Response to f2: withdraw (evidence: diff:core/src/interpreter.ts, test:mt-cyclic: [$entry] length of $name still prints $out)
 - Response to f3: withdraw (evidence: diff:core/src/interpreter.ts, diff:core/src/expressions.ts, test:mt-keys: [$entry] key a:b with value null prints empty)
 
+## Gate-verified closures
+
+- f7: verified by project lead at 2026-10-15T04:22:45.989Z; gate run at commit 22bdc671972b; test tests/language/math.test.ts; files core/src/expressions.ts, core/src/interpreter.ts, docs/living/architecture/language-contract.md, docs/living/architecture/modules/template-resolver.md
+- f8: verified by project lead at 2026-10-15T04:22:45.989Z; gate run at commit 22bdc671972b; test tests/language/math.test.ts; files core/src/expressions.ts, core/src/interpreter.ts, docs/living/architecture/language-contract.md, docs/living/architecture/modules/template-resolver.md
+
 ## Findings
 
 ### f1: formatNumber rounds integers with 16 or more significant digits, so integer results no longer print unchanged in render
@@ -90,7 +95,7 @@ Restatement: Math and output mistakes in the template language must stop failing
 ### f7: The `lines` collection filter (and `join` items) bypass the unprintable check, so a cyclic value still prints ok with no visible error
 
 - Class: goal-risk
-- Status: fixed
+- Status: verified
 - Serves: c5: KEEPS_RAW_INPUT exempts every collection filter from the pre-filter unprintable check. Per the language contract, though, `lines` takes 'the text form' of its input, and `join` prints items 'as the output step prints them'. Both go through valueToText, which at base printed a cyclic value as empty text (that silent output is the c5 bug itself). So `${{c | lines}}` with a cyclic c returns ok true with an empty-ish list, and `${{xs | join=","}}` with xs = [cyclicObject] prints an empty item. That is the same silent swallow the card removes for `trim`.
 - Raised in round 2; sustained 0, failed fixes 0
 - Reproduction: Let c = {}; c.self = c. Call render('first line\n ${{c | lines}}', {c}, {strictMode: false}). Expected per c5 and the stated rule ('before a filter that turns its input into text'): a type-error at 2:3. Actual by reading: 'lines' is in KEEPS_RAW_INPUT, so this.valueToString(value) is skipped, lines coerces c to text via valueToText (empty for a cyclic value), and the printable list result passes the final check, giving ok true. The same happens with join over a list holding a cyclic item. Smallest change: remove the text-coercing collection filters (`lines`, and decide `join` item printing) from the exemption, or have them throw on an unprintable input or item. Then add rows for them to the mt-cyclic tests.
@@ -100,7 +105,7 @@ Restatement: Math and output mistakes in the template language must stop failing
 ### f8: A malformed math expression that also names a missing variable still renders empty in lenient mode
 
 - Class: goal-risk
-- Status: fixed
+- Status: verified
 - Serves: c4: Only a MathSyntaxError is rethrown after the lookup fallback. Math identifiers resolve during tokenizing and must coerce to a number, otherwise a TypeError is thrown (module doc, Math bullet). So when the expression is malformed and an identifier in it is missing, the missing-variable TypeError comes first, mathError is not a MathSyntaxError, and lenient lookup returns empty. A typo such as `${{total * }}` or `${{qty $ 3}}` then fails visibly only when the data happens to hold the variable, and is silent ok true with empty text otherwise. That is the silent malformed-math output the card goal removes, and it depends on data.
 - Raised in round 2; sustained 0, failed fixes 0
 - Reproduction: render('first line\n ${{total * }}', {}, {strictMode: false}). Expected: a type-error at 2:3, as for '1 + '. Then render('first line\n ${{total * }}', {total: 2}, {strictMode: false}) errors, while the first call (by reading visitVariable: mathError is a non-syntax TypeError, so the hasRootKey branch does not fire, and lenient lookup gives null) returns ok true with only 'first line'. Smallest change: check the expression's structure before treating a missing or non-numeric identifier as missing data, for example by validating the token shape before resolving identifiers, or by letting a MathSyntaxError win over the missing-operand error. Then add a lenient row with a missing identifier in a malformed expression.

@@ -304,7 +304,7 @@
       "location": "core/src/interpreter.ts:47",
       "label": "f7",
       "raised_in": 2,
-      "status": "fixed",
+      "status": "verified",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [
@@ -338,7 +338,7 @@
       "location": "core/src/interpreter.ts:228",
       "label": "f8",
       "raised_in": 2,
-      "status": "fixed",
+      "status": "verified",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [
@@ -434,6 +434,36 @@
           "note": "rows added to the card's own frozen test file pin the fixes; nothing existing changed; logged in test_amendments"
         }
       ]
+    }
+  ],
+  "closures": [
+    {
+      "finding": "f7",
+      "by": "project lead",
+      "at": "2026-10-15T04:22:45.989Z",
+      "gate_commit": "22bdc671972bc0acf1231479936d893f2057fbbb",
+      "test": "tests/language/math.test.ts",
+      "files": [
+        "core/src/expressions.ts",
+        "core/src/interpreter.ts",
+        "docs/living/architecture/language-contract.md",
+        "docs/living/architecture/modules/template-resolver.md"
+      ],
+      "diff_sha256": "83f63569f5f4d5cf2bcb6d24ce87832c0c99681c358c4b084826daa1292565e0"
+    },
+    {
+      "finding": "f8",
+      "by": "project lead",
+      "at": "2026-10-15T04:22:45.989Z",
+      "gate_commit": "22bdc671972bc0acf1231479936d893f2057fbbb",
+      "test": "tests/language/math.test.ts",
+      "files": [
+        "core/src/expressions.ts",
+        "core/src/interpreter.ts",
+        "docs/living/architecture/language-contract.md",
+        "docs/living/architecture/modules/template-resolver.md"
+      ],
+      "diff_sha256": "83f63569f5f4d5cf2bcb6d24ce87832c0c99681c358c4b084826daa1292565e0"
     }
   ]
 }
