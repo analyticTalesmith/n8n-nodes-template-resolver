@@ -1,0 +1,15 @@
+{
+  "summary": "Release notes for the spring update",
+  "padded": "  ready  ",
+  "note": "Use *bold* and _italic_",
+  "name": "ada lovelace",
+  "price": 1.005,
+  "nick": "",
+  "tags": ["pear", "apple", "fig", "apple"],
+  "dupes": ["b", "a", "b"],
+  "poem": "one\ntwo\n\nfour",
+  "config": { "name": "x", "id": 7, "flags": { "z": true, "a": false } },
+  "code": "const x = 1;",
+  "doc": "# Title\n\n## Part",
+  "level": 3
+}

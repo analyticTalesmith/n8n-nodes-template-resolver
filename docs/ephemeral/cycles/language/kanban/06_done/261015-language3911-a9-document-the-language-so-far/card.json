@@ -1,0 +1,159 @@
+{
+  "id": "261015-language3911-a9-document-the-language-so-far",
+  "title": "Document the language so far",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [
+    "261015-language3911-a3-add-the-text-filters",
+    "261015-language3911-a4-add-the-collection-filters",
+    "261015-language3911-a5-bound-the-total-node-count-of-a-template",
+    "261015-language3911-a6-make-math-and-output-errors-visible",
+    "261015-language3911-a7-add-in-not-in-between-and-length-to-cond",
+    "261015-language3911-a8-let-when-match-several-values-a-variable"
+  ],
+  "origin": "language",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "README.md",
+    "changelog.md",
+    "docs/living/architecture",
+    "tests/golden/render-cases/lang-filters-showcase/template.md",
+    "tests/language/surfaces.test.ts"
+  ],
+  "manifest": {
+    "add": [
+      "tests/language/surfaces.test.ts"
+    ],
+    "remove": [],
+    "edit": [
+      "README.md",
+      "changelog.md",
+      "docs/living/architecture/headless-contract.md",
+      "docs/living/architecture/modules/template-resolver.md"
+    ],
+    "frozen": true
+  },
+  "criteria": [
+    {
+      "text": "ld-spec: a test proves every lexer keyword and every registry filter appears in spec(), and every operator the evaluator supports appears in spec().operators",
+      "verify": "tool",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "ld-readme: the README documents each filter, operator, limit option and WHEN form of this cycle with an example that renders as shown (a golden case renders the README example)",
+      "verify": "review",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "ld-contract: the language contract, the template-resolver module page, the api and cli module pages and the headless contract match the code",
+      "verify": "review",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "ld-adr: ADR 0007 (statement tags without a body: SET, INPUT and CALL are single tags like ELSE, recorded beside ADR 0001) exists with the options considered",
+      "verify": "review",
+      "evidence": null,
+      "status": "pending"
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/language/surfaces.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": [
+    "docs/living/architecture/language-contract.md",
+    "docs/living/decisions/adr/0007-statement-tags-without-a-body.md"
+  ],
+  "started": "2026-10-15T05:21:05.167Z",
+  "ended": "2026-10-15T05:42:15.271Z",
+  "review_rounds": 1,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver"
+  ],
+  "docs_deferred": true,
+  "freeze": {
+    "at": "2026-10-15T05:20:57.171Z",
+    "brief_sha256": "11b3fc3cfb707e04398e6c112a4f50c693d4b13990c34629f186abee09100858",
+    "brief_core_sha256": "560a37ef43d50f8e36d3f1cc9d79429df7317f4930e497352a23a9914a9ca7fb",
+    "manifest_sha256": "fe5f4846528bc40ca3cbef31f3e224264c8decba8c3bcfa252a2d97b710681dc",
+    "criteria_sha256": "666380ac502bfd0bcbb26f0c0d596fb6c2a79f7923250d88f9530a84a203ea7b",
+    "scope_sha256": "41fd62fc29482dd06863d9fee0ce28e9f4f0ae0a7c9ceea2153e950e1d90ddcc",
+    "scope_parts": {
+      "files_scope": "a07909e15ba3cc5abdc8f0af2bda31a6282721eb9432c317e09f1184a12a7866",
+      "docs_impact": "28fcf7ec9ffd2b1f9a0b2000e47257f6301314857363093961381566ab543816",
+      "docs_deferred": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+      "gate": "54e7f57846fcf5a15e9dd89127d7afa8e48ce3d51e4f388c7c29de2be3e87438"
+    }
+  },
+  "base_commit": "51d779206f8a0e15e506b54dba1b32a25aa3e92e",
+  "manifest_amendments": [
+    {
+      "at": "2026-10-15T05:33:42.448Z",
+      "by": "lead",
+      "reason": "the showcase template was committed with the tests before the base; two living pages that lagged the code are corrected through their open deltas",
+      "from": {
+        "manifest": {
+          "add": [
+            "tests/golden/render-cases/lang-filters-showcase/template.md",
+            "tests/language/surfaces.test.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "README.md",
+            "changelog.md"
+          ]
+        },
+        "files_scope": [
+          "README.md",
+          "changelog.md",
+          "tests/golden/render-cases/lang-filters-showcase/template.md",
+          "tests/language/surfaces.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [
+            "tests/language/surfaces.test.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "README.md",
+            "changelog.md",
+            "docs/living/architecture/headless-contract.md",
+            "docs/living/architecture/modules/template-resolver.md"
+          ]
+        },
+        "files_scope": [
+          "README.md",
+          "changelog.md",
+          "docs/living/architecture",
+          "tests/golden/render-cases/lang-filters-showcase/template.md",
+          "tests/language/surfaces.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      }
+    }
+  ],
+  "test_amendments": [
+    {
+      "path": "tests/language/surfaces.test.ts",
+      "reason": "add two guard rows: the README holds the showcase data.json and expected.md verbatim (review finding: only the template was guarded)",
+      "approved_by": "project lead"
+    }
+  ]
+}

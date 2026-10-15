@@ -27,20 +27,31 @@ import {
 } from "./errors";
 import {
   tryCoerceToArray,
-  tryCoerceStringForPathSegment,
   tryCoerceToString,
+  tryCoerceStringForPathSegment,
 } from "./coercion";
 import {
+  builtInLength,
+  DivisionByZeroError,
   evaluateCondition,
   evaluateMathExpression,
+  evaluateWhen,
+  formatNumber,
+  hasStrayCharacter,
+  isMathExpression,
   isTruthy,
+  subtractionHint,
 } from "./expressions";
-import {
-  parseFilter,
-  applyFilters,
-  fenced,
-  checkFenceLang,
-} from "./filters";
+import { applyFilters, fenced, checkFenceLang, valueToText } from "./filters";
+import { COLLECTION_FILTERS } from "./filters-collection";
+
+/** Filters that take any value as it is, so they run before the unprintable check */
+const KEEPS_RAW_INPUT = new Set([
+  ...COLLECTION_FILTERS.map((filter) => filter.name).filter(
+    (name) => name !== "lines" && name !== "join"
+  ),
+  "default",
+]);
 
 /**
  * Interpreter: Walks AST and produces output string
@@ -61,15 +72,17 @@ import {
 export class Interpreter {
   private strictMode: boolean;
   private limits: Limits;
+  private render: boolean;
   private iterations = 0;
   private omittedSections = 0;
   private loopContext: Map<string, TemplateValue> = new Map();
 
   constructor(
     private variables: VariableMap,
-    options?: { strictMode?: boolean; limits?: Partial<Limits> }
+    options?: { strictMode?: boolean; limits?: Partial<Limits>; render?: boolean }
   ) {
     this.strictMode = options?.strictMode ?? true;
+    this.render = options?.render ?? false;
     this.limits = withDefaultLimits(options?.limits);
   }
 
@@ -193,26 +206,32 @@ export class Interpreter {
     // Check if this is a math expression (contains operators)
     const pathStr = node.path.join(".");
     let mathError: unknown = null;
-    if (this.isMathExpression(pathStr)) {
+    if (isMathExpression(pathStr) || hasStrayCharacter(pathStr)) {
       try {
-        const result = evaluateMathExpression(pathStr, this.getAllVariables());
-        return String(result);
+        const result = evaluateMathExpression(pathStr, this.getAllVariables(), {
+          zeroIsError: this.render,
+        });
+        return this.render ? formatNumber(result) : String(result);
       } catch (error) {
+        if (error instanceof DivisionByZeroError) throw error;
         // Not a valid math expression, continue with normal resolution
         mathError = error;
       }
     }
 
     const allowUndefined = node.defaultValue !== undefined;
-    let value: TemplateValue;
+    let value: TemplateValue = null;
+    let lookupError: unknown = null;
     try {
       value = this.resolveNestedPath(node.path, allowUndefined);
     } catch (error) {
-      const unparseableMath =
-        error instanceof MissingVariableError &&
-        mathError instanceof MathSyntaxError;
-      throw unparseableMath ? mathError : error;
+      lookupError = error;
     }
+    // A malformed math text is an error only when no variable has that name
+    if (mathError instanceof MathSyntaxError && !this.hasRootKey(node.path[0])) {
+      throw mathError;
+    }
+    if (lookupError !== null) throw lookupError;
 
     // Apply default operator if value is falsy
     if (node.defaultValue !== undefined && !isTruthy(value)) {
@@ -221,61 +240,55 @@ export class Interpreter {
 
     // Apply filters
     if (node.filters && node.filters.length > 0) {
-      const text = this.valueToString(value);
-      const filters = node.filters.map((f) => parseFilter(f.name));
-      value = applyFilters(text, filters);
+      for (const filter of node.filters) {
+        // text filters would turn an unprintable value into ""
+        if (!KEEPS_RAW_INPUT.has(filter.name)) this.valueToString(value);
+        value = applyFilters(value, [filter]) as TemplateValue;
+      }
     }
 
     return this.valueToString(value);
   }
 
   /**
-   * Check if expression is a math expression
-   */
-  private isMathExpression(expr: string): boolean {
-    // Contains math operators but isn't just a path
-    const hasMathOp = /[+\-*/%]/.test(expr);
-    const hasParens = /[()]/.test(expr);
-    return hasMathOp || hasParens;
-  }
-
-  /**
    * Visit IF node
    */
   private visitIf(node: IfNode): string {
-    const result = this.at(node, () =>
-      evaluateCondition(node.condition, this.getAllVariables())
-    );
+    let branch = node;
+    for (;;) {
+      const current = branch;
+      const result = this.at(current, () =>
+        evaluateCondition(current.condition, this.getAllVariables())
+      );
+      if (result) return this.visitBody(current.consequent);
 
-    if (result) {
-      return node.consequent.map((child) => this.visit(child)).join("");
+      const { alternate } = current;
+      if (!alternate) return "";
+      if (Array.isArray(alternate)) return this.visitBody(alternate);
+      branch = alternate;
     }
+  }
 
-    if (node.alternate) {
-      if (Array.isArray(node.alternate)) {
-        // ELSE branch
-        return node.alternate.map((child) => this.visit(child)).join("");
-      } else {
-        // ELSEIF (nested IfNode)
-        return this.visitIf(node.alternate);
-      }
-    }
-
-    return "";
+  private visitBody(nodes: ASTNode[]): string {
+    return nodes.map((child) => this.visit(child)).join("");
   }
 
   /**
    * Visit CASE node
    */
   private visitCase(node: CaseNode): string {
-    const value = this.at(node, () =>
-      this.resolveNestedPath(node.expression.split("."))
+    const valueStr = this.at(node, () =>
+      this.valueToString(this.resolveNestedPath(node.expression.split(".")))
     );
-    const valueStr = this.valueToString(value);
 
     // Check WHEN clauses
     for (const whenNode of node.cases) {
-      if (valueStr === whenNode.value) {
+      const matches = this.at(whenNode, () =>
+        evaluateWhen(whenNode.match, valueStr, (path) =>
+          this.valueToString(this.resolveNestedPath(path))
+        )
+      );
+      if (matches) {
         return whenNode.body.map((child) => this.visit(child)).join("");
       }
     }
@@ -641,7 +654,7 @@ export class Interpreter {
     const rootKey = path[0];
 
     let current: TemplateValue;
-    const hasKey = this.loopContext.has(rootKey) || this.variables.has(rootKey);
+    const hasKey = this.hasRootKey(rootKey);
 
     // Determine correct root value
     if (this.loopContext.has(rootKey)) {
@@ -657,7 +670,8 @@ export class Interpreter {
           rootKey,
           1,
           1,
-          Array.from(this.variables.keys())
+          Array.from(this.variables.keys()),
+          subtractionHint(rootKey)
         );
       }
       return null;
@@ -668,6 +682,14 @@ export class Interpreter {
     // Continue resolving nested keys.
     for (let i = 1; i < path.length; i++) {
       if (current == null) return null;
+
+      if (path[i] === "length") {
+        const built = builtInLength(current);
+        if (built) {
+          current = built.value;
+          continue;
+        }
+      }
 
       // Try JSON parsing if string
       if (typeof current === "string") {
@@ -694,13 +716,26 @@ export class Interpreter {
   }
 
   /**
+   * True when a variable or loop value holds this name, whatever its value
+   */
+  private hasRootKey(rootKey: string): boolean {
+    return this.loopContext.has(rootKey) || this.variables.has(rootKey);
+  }
+
+  /**
    * Convert value to string for output
    */
   private valueToString(value: TemplateValue): string {
     if (value == null) return "";
-
-    const str = tryCoerceToString(value);
-    return str || "";
+    if (tryCoerceToString(value) === null) {
+      throw new TypeError(
+        "Cannot print a value with no text form (a cyclic structure or a BigInt)",
+        1,
+        1,
+        "Map the variable to text, a number or plain data without cycles"
+      );
+    }
+    return valueToText(value);
   }
 
   /**

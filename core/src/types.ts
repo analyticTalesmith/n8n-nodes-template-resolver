@@ -154,9 +154,31 @@ export interface CaseNode extends ASTNode {
  */
 export interface WhenNode extends ASTNode {
   type: "When";
+  /** The text of the first matcher when it is a quoted text, otherwise "" */
   value: string;
+  /** What the clause matches: a list of matchers or one comparison */
+  match: WhenMatch;
   body: ASTNode[];
 }
+
+/**
+ * One matcher of a WHEN: a literal (its text and whether it was written in
+ * quotes) or a variable path
+ */
+export type WhenItem =
+  | { kind: "literal"; text: string; quoted: boolean }
+  | { kind: "path"; path: string[] };
+
+/** The comparison operators a WHEN accepts */
+export type WhenOperator = "==" | "!=" | ">" | "<" | ">=" | "<=";
+
+/**
+ * What a WHEN matches: any item of a list, or the CASE value compared with
+ * one item
+ */
+export type WhenMatch =
+  | { kind: "list"; items: WhenItem[] }
+  | { kind: "comparison"; operator: WhenOperator; item: WhenItem };
 
 /**
  * DEFAULT clause in CASE
@@ -292,6 +314,7 @@ export interface Limits {
   maxIterations: number;
   maxOutputChars: number;
   maxDepth: number;
+  maxNodes: number;
 }
 
 /**
@@ -302,6 +325,7 @@ export const DEFAULT_LIMITS: Limits = {
   maxIterations: 10000,
   maxOutputChars: 1000000,
   maxDepth: 32,
+  maxNodes: 20000,
 };
 
 /**
@@ -312,5 +336,17 @@ export function withDefaultLimits(limits?: Partial<Limits>): Limits {
     maxIterations: limits?.maxIterations ?? DEFAULT_LIMITS.maxIterations,
     maxOutputChars: limits?.maxOutputChars ?? DEFAULT_LIMITS.maxOutputChars,
     maxDepth: limits?.maxDepth ?? DEFAULT_LIMITS.maxDepth,
+    maxNodes: limits?.maxNodes ?? DEFAULT_LIMITS.maxNodes,
   };
+}
+
+/**
+ * One filter in the registry that render, spec and analyze all read.
+ */
+export interface FilterDefinition {
+  name: string;
+  params: string;
+  description: string;
+  paramNames: string[];
+  apply(input: unknown, params: Record<string, string>): unknown;
 }

@@ -1,0 +1,351 @@
+{
+  "card": "261015-language3911-a9-document-the-language-so-far",
+  "rounds": [
+    {
+      "number": 1,
+      "at": "2026-10-15T05:37:16.712Z",
+      "reviewer": {
+        "kind": "fallback",
+        "label": "opus fallback (same model family as the builder; has repository access)"
+      },
+      "output_sha256": "000b83ea03ffe9ed0d801a8b5d3159bd1c40565371925861d7c0d0c86023e1d7",
+      "diff_sha256": "4671e991b653963f51cc71073649b1d45e79744406bea0ad092bb3d63aa458b3",
+      "at_commit": "80572368a79b67d6f0cdf482420fac980219ac5d",
+      "restatement": "This card changes documentation only, plus one guard test. The README, the changelog, the language contract, the template-resolver, api and cli module pages, the headless contract and a new ADR 0007 must describe every filter, operator, limit and WHEN form built in this cycle exactly as the code behaves. They must not present unbuilt constructs such as SET, INPUT, CALL or matches as available. A test must keep spec() in step with the lexer keywords, the filter registry and the evaluator's operators, and a golden case must render the README showcase template so the example is real. No test expectation, runtime dependency or language behavior may change.",
+      "brief_mismatch": "The card scope and manifest (files_scope: README.md, changelog.md, docs/living/architecture, the showcase template.md, surfaces.test.ts) do not cover docs/living/decisions/adr/0007-statement-tags-without-a-body.md, which c4 requires and the diff edits. They also omit the golden case's data.json, expected.md and options.json, which spec.md's Interface lists as added. The scope exceptions log says none were logged. The manifest needs amending, or the lead must say where these files come from.",
+      "evidence": [
+        "diff:README.md",
+        "diff:changelog.md",
+        "diff:docs/living/architecture/modules/template-resolver.md",
+        "diff:docs/living/decisions/adr/0007-statement-tags-without-a-body.md",
+        "doc:docs/living/architecture/language-contract.md",
+        "doc:docs/living/architecture/modules/template-resolver.md",
+        "doc:spec.md (The golden case paragraph and Interface)",
+        "patch:4671e991b653963f51cc71073649b1d45e79744406bea0ad092bb3d63aa458b3",
+        "test:ld-readme: the README holds the filters showcase template verbatim",
+        "test:ld-spec blocks: spec().blocks has no name outside the keyword table"
+      ],
+      "stalled": false,
+      "raised": [
+        "f1",
+        "f2",
+        "f3",
+        "f4",
+        "f5",
+        "f6",
+        "f7",
+        "f8"
+      ],
+      "responses": []
+    }
+  ],
+  "findings": [
+    {
+      "title": "README and changelog call malformed math and unprintable values render-only; the language contract says both entry points",
+      "class": "goal-risk",
+      "serves": {
+        "target": "c2",
+        "scenario": "A core user who calls resolveTemplate with ${{(a + b}} or a cyclic value reads in the README that resolveTemplate keeps its old output. The contract says resolveTemplate raises a located type-error for both. One of the two documents contradicts the code, so the card goal of describing behavior exactly fails."
+      },
+      "rubric": "nothing is described as available that the code does not do; c2 and c3: the documents match the code",
+      "reproduction": "1. Read README.md, the paragraph that begins '`render` only.': 'The zero divisor, the malformed expression, the unprintable value and the 15-digit printing apply to `render` ... Core's `resolveTemplate` keeps its old output for these'. 2. Read docs/living/architecture/language-contract.md, Math and output errors: Malformed math ends 'Applies in both entry points.' and Unprintable output ends 'Applies in both entry points.' 3. Read the changelog line 'Math and output errors in `render`: ... a value with no text form ... `resolveTemplate` keeps its old output for these'. 4. Call resolveTemplate('${{(1 + 2}}', new Map()) and resolveTemplate('${{loop}}', a map holding a cyclic object). If either throws, the README and the changelog are wrong; if neither throws, the contract is wrong. Smallest fix: make the README paragraph and the changelog line name only the zero divisor and the 15-digit printing as render-only, if the code matches the contract.",
+      "evidence": [
+        "diff:README.md",
+        "diff:changelog.md",
+        "doc:docs/living/architecture/language-contract.md"
+      ],
+      "location": "README.md:804",
+      "label": "f1",
+      "raised_in": 1,
+      "status": "verified",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "README and changelog said malformed math and unprintable values keep old output in resolveTemplate",
+          "verify": "Ran resolveTemplate: both throw a located type-error; only zero divisor and 15-digit printing differ",
+          "action": "fixed",
+          "evidence": [
+            "diff:README.md",
+            "diff:changelog.md"
+          ]
+        }
+      ],
+      "rulings": []
+    },
+    {
+      "title": "README says .length on any value other than an array or a text stays null, but an object with its own length key returns that value",
+      "class": "goal-risk",
+      "serves": {
+        "target": "c2",
+        "scenario": "An author passes data {\"o\": {\"length\": 5}} and writes ${{o.length}}. The README says this prints empty (null). The contract says it prints 5 (and the same for a JSON object text with its own length key), so the README makes a claim the code contradicts."
+      },
+      "rubric": "goal-critical question 2: no claim the code contradicts",
+      "reproduction": "1. Read the README bullet '**`.length`** is a path segment after any value: an array gives its element count and a text gives ... Any other value, or missing data, stays null'. 2. Read the language contract bullet .length: 'an object with its own key `length` returns that key's value, null included' and 'unless it is a JSON object text with its own key `length`'. 3. Render ${{o.length}} with {\"o\": {\"length\": 5}}: the output 5 contradicts the README. Smallest fix: add the own-key exception to the README bullet.",
+      "evidence": [
+        "diff:README.md",
+        "doc:docs/living/architecture/language-contract.md"
+      ],
+      "location": "README.md:868",
+      "label": "f2",
+      "raised_in": 1,
+      "status": "verified",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "README .length bullet omitted the own-key length rule",
+          "verify": "Ran render: own key 7, JSON text 9, null key empty, text 3, number empty",
+          "action": "fixed",
+          "evidence": [
+            "diff:README.md"
+          ]
+        }
+      ],
+      "rulings": []
+    },
+    {
+      "title": "Nothing in the packet shows the golden case data and expected output that render the README showcase; the guard checks only the template",
+      "class": "goal-risk",
+      "serves": {
+        "target": "c2",
+        "scenario": "c2 requires 'a golden case renders the README example'. The diff adds no data.json, expected.md or options.json under tests/golden/render-cases/lang-filters-showcase/, and the manifest lists only template.md there (committed before the base). The surfaces test checks only that the template appears verbatim. If the golden files are missing or differ from the README's data block and printed output, the README example is not proven to render as shown, and no test would notice."
+      },
+      "rubric": "c2: a golden case renders the README example; card scope includes the showcase golden case",
+      "reproduction": "1. List tests/golden/render-cases/lang-filters-showcase/ at head 80572368: check whether data.json, expected.md and options.json exist. 2. If they exist, diff data.json against the README's JSON data block and expected.md against the README's 'it renders' block. 3. Change one line of the README's printed output (for example 'length: 4' to 'length: 5') and run the surfaces test: it still passes, because only the template is guarded. Smallest fix: make sure the golden case holds the README data and output, and add a guard that the README contains expected.md (and data.json) verbatim.",
+      "evidence": [
+        "diff:README.md",
+        "test:ld-readme: the README holds the filters showcase template verbatim",
+        "doc:spec.md (The golden case paragraph and Interface)"
+      ],
+      "location": "tests/golden/render-cases/lang-filters-showcase/",
+      "label": "f3",
+      "raised_in": 1,
+      "status": "verified",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "only the showcase template was guarded, not its data and expected output",
+          "verify": "Added rows for data.json and expected.md; changing one README output char fails the row",
+          "action": "fixed",
+          "evidence": [
+            "test:ld-readme: the README holds the filters showcase expected.md verbatim",
+            "diff:tests/language/surfaces.test.ts"
+          ]
+        }
+      ],
+      "rulings": []
+    },
+    {
+      "title": "README analysis-diagnostics table omits limit-nodes, which analyze now raises",
+      "class": "goal-risk",
+      "serves": {
+        "target": "c2",
+        "scenario": "An API user sends a template over maxNodes to POST /v1/analyze and gets a limit-nodes diagnostic. The README table says only syntax-error and limit-depth occur there, so the limit-nodes documentation is incomplete in exactly the existing text the cycle made wrong."
+      },
+      "rubric": "goal-critical question 2: the limit option maxNodes (limit-nodes) documented with no contradicting claim; spec.md: correct existing text the cycle made wrong",
+      "reproduction": "1. Read the README Analysis diagnostics row '`syntax-error`, `limit-depth` | `POST /v1/analyze` only: the template does not parse ...'. 2. Read the language contract, Node limit: limit-nodes 'is raised in `render`, `validate`, `analyze` and `resolveTemplate`'. 3. POST /v1/analyze a template of more than 20000 nodes: the response carries limit-nodes, which the table does not list. Smallest fix: add limit-nodes to that row.",
+      "evidence": [
+        "diff:README.md",
+        "doc:docs/living/architecture/language-contract.md"
+      ],
+      "location": "README.md:1132",
+      "label": "f4",
+      "raised_in": 1,
+      "status": "verified",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "README analyze diagnostics row omitted limit-nodes",
+          "verify": "The row now lists syntax-error, limit-depth and limit-nodes, as the contract and api module say",
+          "action": "fixed",
+          "evidence": [
+            "diff:README.md"
+          ]
+        }
+      ],
+      "rulings": []
+    },
+    {
+      "title": "Template-resolver module page still says filters run on the string form of the value",
+      "class": "goal-risk",
+      "serves": {
+        "target": "c3",
+        "scenario": "c3 requires the template-resolver module page to match the code. Its Interpreting bullet on Variable still ends 'then filters run on the string form'. The same page's Filters section and the contract say filters receive and return values, and the collection filters get lists. A reader changing filters is told the old string-only behavior."
+      },
+      "rubric": "c3: the template-resolver module page matches the code",
+      "reproduction": "1. Read docs/living/architecture/modules/template-resolver.md, Interpreting, the Variable bullet: '... then the `??` default replaces a value that fails `isTruthy`, then filters run on the string form'. 2. Read the language contract, Values: 'A filter receives the resolved value and returns a value'. 3. Render ${{xs | length}} with xs = [\"a\",\"b\"]: the output 2 shows the filter got a list, not the string form. Smallest fix: make the bullet say filters run on the resolved value.",
+      "evidence": [
+        "doc:docs/living/architecture/modules/template-resolver.md",
+        "doc:docs/living/architecture/language-contract.md"
+      ],
+      "location": "docs/living/architecture/modules/template-resolver.md:124",
+      "label": "f5",
+      "raised_in": 1,
+      "status": "verified",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "module page said filters run on the string form",
+          "verify": "Rendered xs | length on a list gives 2; the Variable bullet now says filters run on the resolved value",
+          "action": "fixed",
+          "evidence": [
+            "diff:docs/living/architecture/modules/template-resolver.md"
+          ]
+        }
+      ],
+      "rulings": []
+    },
+    {
+      "title": "ADR 0007 is edited outside the card's manifest and files_scope, with no scope exception logged",
+      "class": "drift",
+      "serves": {
+        "target": "c4",
+        "scenario": "c4 needs ADR 0007 written, but docs/living/decisions/adr/ is outside files_scope (only docs/living/architecture is listed) and outside the manifest. A scope check flags the edit, or a later reader cannot trace why the card touched the file."
+      },
+      "rubric": "the card scope is respected",
+      "reproduction": "Compare the manifest and files_scope in section 1 with the diff path docs/living/decisions/adr/0007-statement-tags-without-a-body.md. The path is not covered, and the scope exceptions log is empty.",
+      "evidence": [
+        "diff:docs/living/decisions/adr/0007-statement-tags-without-a-body.md"
+      ],
+      "location": "docs/living/decisions/adr/0007-statement-tags-without-a-body.md:1",
+      "label": "f6",
+      "raised_in": 1,
+      "status": "withdrawn",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [
+        {
+          "after_round": 1,
+          "ruling": "withdraw",
+          "note": "ADR 0007 is the card's own add delta (docs_impact lists it)"
+        }
+      ]
+    },
+    {
+      "title": "The lexer keyword table in the surfaces test is hand-written, so a keyword the lexer gains without a spec() entry passes",
+      "class": "drift",
+      "serves": {
+        "target": "card-goal",
+        "scenario": "The card goal is a test that keeps spec() in step with the lexer. BLOCK_PAIRS is a fixed list checked against the lexer, so removing a keyword is caught. If a later card adds a keyword such as MESSAGE to the lexer but not to spec(), every test still passes. The filter half derives its list from FILTER_REGISTRY and has no such gap."
+      },
+      "rubric": "c1: every lexer keyword appears in spec()",
+      "reproduction": "Add a new keyword to the lexer's accepted list without adding it to spec.ts or BLOCK_PAIRS, then run tests/language/surfaces.test.ts: it stays green. The test file is frozen, so this is a note for the lead, not a fix request.",
+      "evidence": [
+        "test:ld-spec blocks: spec().blocks has no name outside the keyword table"
+      ],
+      "location": "tests/language/surfaces.test.ts:579",
+      "label": "f7",
+      "raised_in": 1,
+      "status": "filed",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [],
+      "ticket": "261015-language3911-a15-follow-up-the-lexer-keyword-table-in-the"
+    },
+    {
+      "title": "Q9 is marked answered but stays in Open questions, and Interpreting still tags it open",
+      "class": "drift",
+      "serves": {
+        "target": "c3",
+        "scenario": "The module page lists Q9 under Open questions as 'Answered: ...' instead of moving it to Answered, and the Interpreting bullet still carries '[open: Q9]'. A reader cannot tell whether the question is settled."
+      },
+      "rubric": "polish: documents are coherent",
+      "reproduction": "Read docs/living/architecture/modules/template-resolver.md: Q9 is under Open questions, and the Variable bullet under Interpreting ends '[open: Q9]'.",
+      "evidence": [
+        "diff:docs/living/architecture/modules/template-resolver.md"
+      ],
+      "location": "docs/living/architecture/modules/template-resolver.md:187",
+      "label": "f8",
+      "raised_in": 1,
+      "status": "sustained",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [
+        {
+          "after_round": 1,
+          "ruling": "sustain",
+          "note": "fold the Q9 tidy into the same page edit"
+        }
+      ]
+    }
+  ],
+  "closures": [
+    {
+      "finding": "f1",
+      "by": "project lead",
+      "at": "2026-10-15T05:41:42.794Z",
+      "gate_commit": "3f6ade3a946afc32157bd0acf67405ac1649c4d8",
+      "test": "tests/language/surfaces.test.ts",
+      "files": [
+        "README.md",
+        "changelog.md",
+        "docs/living/architecture/modules/template-resolver.md"
+      ],
+      "diff_sha256": "918fc0559129f189ab0f1d419da0daf037ba16e3f7d03bf366c0123c9a0d5dc8"
+    },
+    {
+      "finding": "f2",
+      "by": "project lead",
+      "at": "2026-10-15T05:41:42.794Z",
+      "gate_commit": "3f6ade3a946afc32157bd0acf67405ac1649c4d8",
+      "test": "tests/language/surfaces.test.ts",
+      "files": [
+        "README.md",
+        "changelog.md",
+        "docs/living/architecture/modules/template-resolver.md"
+      ],
+      "diff_sha256": "918fc0559129f189ab0f1d419da0daf037ba16e3f7d03bf366c0123c9a0d5dc8"
+    },
+    {
+      "finding": "f3",
+      "by": "project lead",
+      "at": "2026-10-15T05:41:42.794Z",
+      "gate_commit": "3f6ade3a946afc32157bd0acf67405ac1649c4d8",
+      "test": "tests/language/surfaces.test.ts",
+      "files": [
+        "README.md",
+        "changelog.md",
+        "docs/living/architecture/modules/template-resolver.md"
+      ],
+      "diff_sha256": "918fc0559129f189ab0f1d419da0daf037ba16e3f7d03bf366c0123c9a0d5dc8"
+    },
+    {
+      "finding": "f4",
+      "by": "project lead",
+      "at": "2026-10-15T05:41:42.794Z",
+      "gate_commit": "3f6ade3a946afc32157bd0acf67405ac1649c4d8",
+      "test": "tests/language/surfaces.test.ts",
+      "files": [
+        "README.md",
+        "changelog.md",
+        "docs/living/architecture/modules/template-resolver.md"
+      ],
+      "diff_sha256": "918fc0559129f189ab0f1d419da0daf037ba16e3f7d03bf366c0123c9a0d5dc8"
+    },
+    {
+      "finding": "f5",
+      "by": "project lead",
+      "at": "2026-10-15T05:41:42.794Z",
+      "gate_commit": "3f6ade3a946afc32157bd0acf67405ac1649c4d8",
+      "test": "tests/language/surfaces.test.ts",
+      "files": [
+        "README.md",
+        "changelog.md",
+        "docs/living/architecture/modules/template-resolver.md"
+      ],
+      "diff_sha256": "918fc0559129f189ab0f1d419da0daf037ba16e3f7d03bf366c0123c9a0d5dc8"
+    }
+  ]
+}

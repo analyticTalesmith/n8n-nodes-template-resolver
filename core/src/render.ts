@@ -65,7 +65,7 @@ export function render(
   const limits = withDefaultLimits(options?.limits);
   const interpreter = new Interpreter(
     new Map(Object.entries(data)) as Map<string, TemplateValue>,
-    { strictMode: options?.strictMode, limits }
+    { strictMode: options?.strictMode, limits, render: true }
   );
 
   let output: string;
@@ -73,7 +73,10 @@ export function render(
     const tokens = new Lexer(template, {
       standaloneLines: options?.standaloneLines ?? true,
     }).tokenize();
-    const ast = new Parser(tokens, { maxDepth: limits.maxDepth }).parse();
+    const ast = new Parser(tokens, {
+      maxDepth: limits.maxDepth,
+      maxNodes: limits.maxNodes,
+    }).parse();
     output = interpreter.interpret(ast);
   } catch (error) {
     if (!(error instanceof TemplateError)) throw error;
@@ -107,7 +110,7 @@ export function validate(
   try {
     diagnostics = analyze(template, options).diagnostics.map(
       ({ code, message, line, column }): Diagnostic =>
-        code === "unknown-filter"
+        code === "unknown-filter" || code === "type-error"
           ? { severity: "error", code, message, line, column }
           : { severity: "warning", code: "analysis-warning", message, line, column }
     );

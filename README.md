@@ -89,28 +89,204 @@ Provide a fallback when a variable is empty or missing:
 Author: ${{author ?? "Anonymous"}}
 ```
 
+The `??` default also accepts a variable that is missing in strict mode, which the [`default` filter](#filters-name--filter) does not: `${{name | default="x"}}` is still a `missing-variable` error when `name` is missing in strict mode.
+
 ---
 
 ### Filters: `${{name | filter}}`
 
 Transform values before output.
 
-| Filter              | Example                         | Description                                                                 |
-| ------------------- | ------------------------------- | --------------------------------------------------------------------------- |
-| `trim`              | `${{text \| trim}}`             | Remove leading/trailing whitespace                                          |
-| `head=N`            | `${{text \| head=100}}`         | First N characters; a negative N drops the last \|N\| characters            |
-| `tail=N`            | `${{text \| tail=50}}`          | Last N characters; a negative N drops the first \|N\| characters            |
-| `escape_md`         | `${{text \| escape_md}}`        | Escape markdown special characters (the same as `escape_md=inline`)         |
-| `escape_md=inline`  | `${{title \| escape_md=inline}}` | Escape markdown special characters with a backslash                        |
-| `escape_md=block`   | `${{note \| escape_md=block}}`  | Inline escaping, plus line starts that would read as structure (headings, quotes, list markers, tables, rules, fences) |
-| `fence` / `fence=lang` | `${{code \| fence=ts}}`      | Wrap the value in a code fence longer than any backtick run inside it       |
-| `heading_offset=N`  | `${{doc \| heading_offset=2}}`  | Shift markdown headings by N levels (negative N shifts up), clamped to 1-6  |
+| Filter | Example | Description |
+| --- | --- | --- |
+| `head=N` | `${{text \| head=100}}` | First N characters; a negative N drops the last \|N\| characters |
+| `tail=N` | `${{text \| tail=50}}` | Last N characters; a negative N drops the first \|N\| characters |
+| `trim` | `${{text \| trim}}` | Leading and trailing whitespace removed |
+| `escape_md[=inline\|block]` | `${{note \| escape_md=block}}` | Markdown special characters escaped with a backslash (inline, the default); block also escapes line starts that would read as structure: headings, quotes, list markers, tables, rules and fences |
+| `fence[=lang]` | `${{code \| fence=ts}}` | The value in a code fence of at least three backticks, longer than any backtick run inside it, with the optional language; one leading and one trailing line break of the value are removed |
+| `heading_offset=N` | `${{doc \| heading_offset=2}}` | Markdown ATX headings shifted by N levels (negative N shifts up), clamped to 1-6; headings inside fenced code are untouched |
+| `upper` | `${{name \| upper}}` | Text in upper case |
+| `lower` | `${{name \| lower}}` | Text in lower case |
+| `title` | `${{name \| title}}` | First letter of each whitespace-separated word in upper case, the rest in lower case |
+| `replace:find="a",with="b"` | `${{text \| replace:find="a",with="b"}}` | Every occurrence of the literal text find replaced by with (empty when omitted); find is required and never read as a pattern |
+| `indent[=N]` | `${{text \| indent=4}}` | N spaces (default 2, from 0 to 100) added at the start of every non-empty line; line breaks are kept |
+| `quote` | `${{text \| quote}}` | Text as a JSON double-quoted string, with quotes, backslashes and control characters escaped |
+| `round[=N]` | `${{price \| round=2}}` | A number rounded half away from zero to exactly N decimal places (default 0, up to 20); anything that is not a finite number is left as it is |
+| `default="x"` | `${{nick \| default="n/a"}}` | The given value when the input is missing, null, empty or whitespace-only text, the text 0, false or no (any letter case), the number 0, false, an empty list or an empty object; otherwise the input |
+| `join=SEP` | `${{tags \| join=", "}}` | Items joined with SEP, each as the output step prints it |
+| `length` | `${{tags \| length}}` | Items of a list, UTF-16 code units of a text, keys of an object |
+| `first` | `${{tags \| first}}` | First item of a list, empty when there is none |
+| `last` | `${{tags \| last}}` | Last item of a list, empty when there is none |
+| `sort[=key]` | `${{items \| sort=name}}` | Stable sort: numbers, then strings, then the rest; sort=key orders objects by that key |
+| `unique` | `${{tags \| unique}}` | List with the first occurrence of each value, order kept |
+| `slice[:start=N,end=N]` | `${{tags \| slice:start=1,end=3}}` | Part of a list from start up to end; negative counts from the end |
+| `lines` | `${{text \| lines}}` | Text split on line breaks into a list |
+| `json` | `${{config \| json}}` | Compact JSON text with object keys in stable order |
 
 **Chain multiple filters:**
 
 ```
 ${{description | trim | head=200 | escape_md}}
 ```
+
+**Arguments.** A filter is written `name`, `name=value` (the one parameter of the filter) or `name:key=value,key=value` (named parameters). A value in quotes keeps any `=`, `,` and `:` inside it, so `join="a=b"` and `replace:find="a,b",with="x=y"` each read as one value.
+
+```console
+$ cat args.tpl
+${{a | replace:find="a,b",with="x=y"}}
+${{b | join=": "}}
+${{c | join="a=b"}}
+$ template-resolver render args.tpl --data args.json
+1 x=y 2
+p: q
+xa=by
+```
+
+With `args.json` holding `{"a": "1 a,b 2", "b": ["p", "q"], "c": ["x", "y"]}`.
+
+**Filter errors.** A filter that is not in the table, a parameter the filter does not declare and a bad parameter value are each a located error, in strict mode and with it off alike; `validate` and `analyze` report the first two without data.
+
+```console
+$ printf '${{a | shout}}\n' > bad.tpl
+$ template-resolver render bad.tpl --data a.json
+bad.tpl:1:1: error unknown-filter: Unknown filter: shout
+$ printf '${{a | escape_md:mode=block}}\n' > bad.tpl
+$ template-resolver render bad.tpl --data a.json --no-strict
+bad.tpl:1:1: error type-error: Filter escape_md has no parameter 'mode' (accepts: value)
+$ printf '${{a | indent=500}}\n' > bad.tpl
+$ template-resolver render bad.tpl --data a.json
+bad.tpl:1:1: error type-error: indent requires a whole number from 0 to 100 (e.g., indent=2), got 500
+```
+
+With `a.json` holding `{"a": "hi"}`.
+
+**Lists.** `sort`, `unique`, `slice` and `lines` return a list: printed on its own it is compact JSON, and a filter after it receives the list.
+
+```console
+$ cat lists.tpl
+${{tags | sort}} ${{tags | sort | first}} ${{tags | unique | join="+"}}
+$ template-resolver render lists.tpl --data tags.json
+["apple","apple","pear"] apple pear+apple
+```
+
+With `tags.json` holding `{"tags": ["pear", "apple", "apple"]}`.
+
+**`default` and `round`.** `default="x"` replaces a value that is not truthy by the [truthiness rules](#truthiness) (missing, empty, `0`, `false`, an empty list), but in strict mode a missing variable is still a `missing-variable` error before `default` runs; use it for empty values, or turn strict mode off, or use `??`, which also accepts a missing variable in strict mode. `round=N` rounds half away from zero on the digits of the number, so `1.005` with `round=2` is `1.01`.
+
+```console
+$ cat round.tpl
+${{price | round=2}} ${{price | round}} ${{n | default="none"}} ${{gone ?? "x"}}
+$ template-resolver render round.tpl --data round.json
+1.01 1 none x
+$ printf '${{gone | default="x"}}\n' > gone.tpl
+$ template-resolver render gone.tpl
+gone.tpl:1:1: error missing-variable: Variable 'gone' not found
+$ template-resolver render gone.tpl --no-strict
+x
+```
+
+With `round.json` holding `{"price": 1.005, "n": 0}`.
+
+**All the filters at once.** This template calls every filter once and then branches with the [`between`](#membership-range-and-length) operator and the [WHEN comparison](#casewhen-case):
+
+````
+head: ${{summary | head=11}}
+tail: ${{summary | tail=6}}
+trim: [${{padded | trim}}]
+escape_md: ${{note | escape_md}}
+upper: ${{name | upper}}
+lower: ${{name | lower}}
+title: ${{name | title}}
+replace: ${{name | replace:find="a",with="4"}}
+quote: ${{name | quote}}
+round: ${{price | round=2}}
+default: ${{nick | default="n/a"}}
+join: ${{tags | join=", "}}
+length: ${{tags | length}}
+first: ${{tags | first}}
+last: ${{tags | last}}
+sort: ${{tags | sort}}
+unique and join: ${{dupes | unique | join="+"}}
+slice: ${{tags | slice:start=1,end=3}}
+lines: ${{poem | lines}}
+json: ${{config | json}}
+indent:
+${{poem | indent=2}}
+fence:
+${{code | fence=js}}
+heading_offset:
+${{doc | heading_offset=1}}
+{{IF tags.length > 2 AND level between [1, 5]}}
+Many tags at a usable level.
+{{END_IF}}
+{{CASE level}}
+{{WHEN 1, 2}}
+Level: low
+{{WHEN >= 3}}
+Level: high
+{{END_CASE}}
+````
+
+With this data:
+
+```json
+{
+  "summary": "Release notes for the spring update",
+  "padded": "  ready  ",
+  "note": "Use *bold* and _italic_",
+  "name": "ada lovelace",
+  "price": 1.005,
+  "nick": "",
+  "tags": ["pear", "apple", "fig", "apple"],
+  "dupes": ["b", "a", "b"],
+  "poem": "one\ntwo\n\nfour",
+  "config": { "name": "x", "id": 7, "flags": { "z": true, "a": false } },
+  "code": "const x = 1;",
+  "doc": "# Title\n\n## Part",
+  "level": 3
+}
+```
+
+it renders (default render options, so lines that hold only block tags are removed):
+
+````
+head: Release not
+tail: update
+trim: [ready]
+escape_md: Use \*bold\* and \_italic\_
+upper: ADA LOVELACE
+lower: ada lovelace
+title: Ada Lovelace
+replace: 4d4 lovel4ce
+quote: "ada lovelace"
+round: 1.01
+default: n/a
+join: pear, apple, fig, apple
+length: 4
+first: pear
+last: apple
+sort: ["apple","apple","fig","pear"]
+unique and join: b+a
+slice: ["apple","fig"]
+lines: ["one","two","","four"]
+json: {"flags":{"a":false,"z":true},"id":7,"name":"x"}
+indent:
+  one
+  two
+
+  four
+fence:
+```js
+const x = 1;
+```
+
+heading_offset:
+## Title
+
+### Part
+Many tags at a usable level.
+Level: high
+````
 
 **Escape modes.** Use `escape_md=block` for a value that is placed on its own lines, such as user text pasted into a prompt, so it cannot fake a heading or a list; `escape_md=inline` (or plain `escape_md`) escapes only the characters that would format text. The mode is case-sensitive; any other mode is a `type-error`.
 
@@ -237,7 +413,72 @@ You are a general assistant.
 
 - First matching `{{WHEN}}` wins
 - `{{DEFAULT}}` handles unmatched values (optional)
-- Values must be quoted: `{{WHEN "value"}}`
+- A `{{WHEN}}` takes one of three forms, below
+
+**The three WHEN forms:**
+
+| Form | Example | Matches when |
+| ---- | ------- | ------------ |
+| List of values | `{{WHEN "a", "b"}}` | the subject equals any value in the list |
+| Variable | `{{WHEN other}}` | the subject equals the value of `other` |
+| Comparison | `{{WHEN >= 10}}` | the comparison `==`, `!=`, `>`, `<`, `>=` or `<=` with one value holds |
+
+A value is a quoted text (`"a"` or `'a'`; a comma inside quotes belongs to the text), a number (`5`, `-2`, `1.50`), `true`, `false`, `null` (empty text) or a variable path (`other`, `user.plan`). A list holds one or more values separated by commas, mixing quoted values and variables if you like (`{{WHEN "a", other, 3}}`). A comparison takes exactly one value.
+
+```console
+$ cat when.tpl
+{{CASE plan}}
+{{WHEN "free", "trial"}}
+Limited
+{{END_WHEN}}
+{{WHEN other}}
+Same as other
+{{END_WHEN}}
+{{WHEN >= 10}}
+Big
+{{END_WHEN}}
+{{DEFAULT}}
+Other
+{{END_DEFAULT}}
+{{END_CASE}}
+$ echo '{"plan": "trial", "other": "x"}' > plan.json
+$ template-resolver render when.tpl --data plan.json
+Limited
+$ echo '{"plan": "x", "other": "x"}' > plan.json
+$ template-resolver render when.tpl --data plan.json
+Same as other
+$ echo '{"plan": 12, "other": "x"}' > plan.json
+$ template-resolver render when.tpl --data plan.json
+Big
+```
+
+**Matching.** The subject and every value are compared as the equality rule of the [operators](#equality) says: when either side is a quoted text, both compare as text (`{{WHEN "1"}}` does not match `1.0`); otherwise numeric texts compare as numbers (`{{WHEN 1}}` matches `1.0` and `"01"`) and anything else as text. A variable counts as unquoted. `!=` is the negation of `==`. A null subject, or a missing one with strict mode off, is empty text, which `{{WHEN ""}}` matches. The comparison operators `>`, `<`, `>=` and `<=` need numbers on both sides: a side that is not numeric (empty text for a missing value included) is a located `type-error`, not "no match".
+
+```console
+$ echo '{"plan": "zz", "other": "x"}' > plan.json
+$ template-resolver render when.tpl --data plan.json
+when.tpl:8:1: error type-error: Cannot use operator '>=' with non-numeric values: "zz" >= "10"
+```
+
+**Variables that are missing.** A variable in a `{{WHEN}}` is looked up like the subject: a missing one is a `missing-variable` error in strict mode, located at the `{{WHEN}}`, and empty text with strict mode off. The error is raised only when matching reaches that `{{WHEN}}`.
+
+```console
+$ echo '{"plan": "5"}' > plan.json
+$ template-resolver render when.tpl --data plan.json
+when.tpl:5:1: error missing-variable: Variable 'other' not found
+$ template-resolver render when.tpl --data plan.json --no-strict
+Other
+```
+
+**Syntax errors.** These are `syntax-error` diagnostics located at the `{{WHEN}}` tag, in every mode, even in a branch that never renders: nothing after `WHEN`, an empty list item (`{{WHEN "a",}}`), an unterminated quote, a value that is neither a literal nor a variable path (`{{WHEN a b}}`), and a comparison with no value, with several values (`{{WHEN >= 1, 2}}`) or after a list item (`{{WHEN "a", > 5}}`).
+
+```console
+$ printf '{{CASE n}}{{WHEN >= 1, 2}}a{{END_WHEN}}{{END_CASE}}\n' > bad-when.tpl
+$ template-resolver render bad-when.tpl --data n.json
+bad-when.tpl:1:11: error syntax-error: '>=' in {{WHEN}} takes exactly one value
+```
+
+With `n.json` holding `{"n": 1}`.
 
 ---
 
@@ -522,6 +763,66 @@ Use parentheses for order of operations:
 ${{(base_price + tax) * quantity}}
 ```
 
+**Printing.** A result prints with at most 15 significant digits, so `0.1 + 0.2` prints `0.3` and `1 / 3` prints `0.333333333333333`. Integers of any size and negative numbers print unchanged.
+
+**Names with a hyphen.** A hyphen between two letters is part of a name: `${{first-name}}` reads the variable `first-name`. Arithmetic needs spaces around the minus (`a - b`); `n-1`, `x1-y` and `1-a` are arithmetic too, because a digit sits next to the hyphen. A missing hyphenated name in strict mode is a `missing-variable` error whose suggestion shows the spaced form (`If you meant subtraction, write 'first - name'`).
+
+```console
+$ cat math.tpl
+Sum: ${{a + b}}
+Third: ${{1 / 3}}
+Name: ${{first-name}}, difference: ${{a - b}}
+$ template-resolver render math.tpl --data math.json
+Sum: 0.3
+Third: 0.333333333333333
+Name: Ada, difference: -0.1
+```
+
+With `math.json` holding `{"a": 0.1, "b": 0.2, "first-name": "Ada"}`.
+
+**Errors in math.** In `render` these are located `type-error` diagnostics (the position of the variable placeholder) in every mode, strict or not. Of them, only the zero divisor is `render` only; `resolveTemplate` throws for the other two:
+
+- A zero divisor: `/` or `%` by zero, `0 / 0` and a divisor that computes to zero.
+- A malformed expression, whatever the data holds: `(1 + 2`, `1 +`, `1 + * 2` and `2 $ 3`. With strict mode off it is an error too, not empty output. A well-formed expression that names a missing or non-numeric variable stays missing data: empty with strict mode off. A missing name with an odd character (`a:b`, `Order #`) is plain missing data, not math.
+- A value that has no text form (a cyclic object or array, or a BigInt) used as output, as a `CASE` subject or before a filter that turns its value into text. `null` and a missing value still print as empty.
+
+```console
+$ cat zero.tpl
+Ratio: ${{a / b}}
+$ template-resolver render zero.tpl --data zero.json
+zero.tpl:1:8: error type-error: Cannot divide by zero in math expression
+$ printf '${{(a + b}}\n' > bad-math.tpl
+$ template-resolver render bad-math.tpl --data math.json --no-strict
+bad-math.tpl:1:1: error type-error: Unmatched parentheses in math expression
+$ printf 'Total: ${{total * }}\n' > bad-math2.tpl
+$ template-resolver render bad-math2.tpl --data math.json --no-strict
+bad-math2.tpl:1:8: error type-error: Invalid math expression
+```
+
+With `zero.json` holding `{"a": 1, "b": 0}`.
+
+**`render` only.** Only two things differ between the entry points: a zero divisor (`resolveTemplate` prints `Infinity` or `NaN`) and the 15-digit printing (`resolveTemplate` prints the plain number, `0.1 + 0.2` as `0.30000000000000004`). A malformed math expression and a value with no text form are errors in both: core's `resolveTemplate` throws a located `TemplateError` with code `type-error`, in strict and lenient mode alike, and `render` returns the diagnostic. The command line, the HTTP API, the n8n node and core's `render` all follow `render`. `resolveTemplate` also keeps its old output for `standaloneLines`. The hyphenated names and the condition operators are the same in both.
+
+```console
+$ node -e '
+const { render, resolveTemplate } = require("./dist/core/src");
+const data = { a: 1, b: 0 };
+console.log(JSON.stringify(resolveTemplate("${{a / b}} ${{a % b}} ${{0.1 + 0.2}}", new Map(Object.entries(data)))));
+const r = render("${{a / b}}", data);
+console.log(r.ok, r.diagnostics[0].code);
+try { resolveTemplate("${{(a + b}}", new Map(Object.entries(data))); } catch (e) { console.log(e.code, e.message.split("\n").filter(Boolean).pop().trim()); }
+const loop = {}; loop.self = loop;
+try { resolveTemplate("${{loop}}", new Map([["loop", loop]])); } catch (e) { console.log(e.code); }
+const c = render("${{loop}}", { loop });
+console.log(c.ok, c.diagnostics[0].message);
+'
+"Infinity NaN 0.30000000000000004"
+false type-error
+type-error Unmatched parentheses in math expression
+type-error
+false Cannot print a value with no text form (a cyclic structure or a BigInt)
+```
+
 ---
 
 ## Operators
@@ -539,6 +840,65 @@ ${{(base_price + tax) * quantity}}
 | `contains`   | `email contains "@gmail"` | Substring match  |
 | `startsWith` | `url startsWith "https"`  | Prefix match     |
 | `endsWith`   | `file endsWith ".pdf"`    | Suffix match     |
+
+### Equality
+
+`==` and `!=` follow one rule, also used by the items of `in` and by [`{{WHEN}}`](#casewhen-case): when either side is a quoted literal, both sides compare as text; otherwise two numbers compare numerically and anything else compares as text. So `z == "01234"` is false when `z` is `1234` (the text `1234` is not `01234`), while `z == 1234` is true.
+
+```console
+$ cat eq.tpl
+{{IF z == "01234"}}text match{{ELSE}}no text match{{END_IF}}
+{{IF z == 1234}}number match{{ELSE}}no number match{{END_IF}}
+{{IF z == "1234"}}text equal{{END_IF}}
+$ template-resolver render eq.tpl --data eq.json
+no text match
+number match
+text equal
+```
+
+With `eq.json` holding `{"z": 1234}`.
+
+### Membership, range and length
+
+| Operator     | Example                        | Description                                                      |
+| ------------ | ------------------------------ | ---------------------------------------------------------------- |
+| `in`         | `role in ["admin", "owner"]`   | The left side is one of the items of a list, or a substring of a text |
+| `not in`     | `role not in allowed`          | The exact negation of `in`                                       |
+| `between`    | `score between [1, 10]`        | A number from the first to the second bound, both included       |
+| `.length`    | `tags.length > 2`              | Count of items of an array, or characters of a text              |
+
+- **`in` and `not in`** take a list literal in brackets (items are literals or variable paths separated by commas; `[]` is empty), a variable that holds a list, or a text (a quoted text or a variable holding one: a case-sensitive substring test). Items are compared by the [equality rule](#equality). A missing or null value on either side is not in the list (`not in` is true). The words are case-insensitive.
+- **`between [lo, hi]`** takes exactly two numbers or numeric texts (a boolean is not numeric here) and includes both ends; `lo` above `hi` is false. Anything else, such as a missing or non-numeric bound, a list that is not two items or a right side that is not a list literal, is a `type-error`. There is no `not between`: write `NOT (n between [1, 10])`.
+- **`.length`** is a path segment after any value: an array gives its element count and a text gives its length in UTF-16 code units (an emoji counts 2, as with the `length` filter). An object with its own key `length` returns that key's value (null included), and so does a text holding a JSON object with its own key `length`. Any other value, or missing data, stays null, so no zero appears from nowhere. It works in conditions, in output (`${{tags.length}}`), in math and after other segments (`user.tags.length`). A variable that is itself named `length` is an ordinary variable.
+
+```console
+$ cat ops.tpl
+{{IF role in ["admin", "owner"]}}staff{{ELSE}}guest{{END_IF}}
+{{IF role in allowed}}allowed{{ELSE}}not allowed{{END_IF}}
+{{IF role not in allowed}}not in the list{{END_IF}}
+{{IF "ell" in word}}substring{{END_IF}}
+{{IF score between [1, 10]}}in range{{ELSE}}out of range{{END_IF}}
+{{IF tags.length > 2}}many tags{{END_IF}}
+Tags: ${{tags.length}}, name: ${{name.length}}
+$ template-resolver render ops.tpl --data ops.json
+staff
+not allowed
+not in the list
+substring
+in range
+many tags
+Tags: 3, name: 5
+```
+
+With `ops.json` holding `{"role": "owner", "allowed": ["a", "b"], "word": "hello", "score": 10, "tags": ["x", "y", "z"], "name": "Alice"}`.
+
+```console
+$ printf '${{o.length}}|${{j.length}}|${{n.length}}|${{s.length}}|${{x.length}}\n' > own.tpl
+$ template-resolver render own.tpl --data own.json
+7|9||3|
+```
+
+With `own.json` holding `{"o": {"length": 7, "a": 1}, "j": "{\"length\":9}", "n": {"length": null}, "s": "abc", "x": 5}`.
 
 ### Type Checks
 
@@ -558,7 +918,32 @@ ${{(base_price + tax) * quantity}}
 | `AND`    | `a AND b`        | Both must be true  |
 | `OR`     | `a OR b`         | Either can be true |
 | `NOT()`  | `NOT(expired)`   | Negation           |
+| `&&`     | `a && b`         | The same as `AND`  |
+| `\|\|`   | `a \|\| b`       | The same as `OR`   |
+| `!`      | `!expired`       | The same as `NOT`  |
 | `()`     | `(a AND b) OR c` | Grouping           |
+
+`&&`, `||` and `!` are spellings of `AND`, `OR` and `NOT`:
+
+```console
+$ cat logic.tpl
+{{IF a && !b}}1{{END_IF}}{{IF b || a}}2{{END_IF}}{{IF !(a && b)}}3{{END_IF}}
+$ template-resolver render logic.tpl --data logic.json
+123
+```
+
+With `logic.json` holding `{"a": true, "b": false}`.
+
+### Unknown words
+
+A condition that holds a word the engine does not know is an error in every mode: `{{IF a like b}}` and `{{IF a matches "x"}}` are a located `type-error`, also in a branch that `AND` or `OR` would skip. There is no `matches` operator, and no pattern in a template is ever compiled. `validate` and `analyze` report the same condition as a warning (`analysis-warning`, `unrecognized-condition`) so that a template can be checked without data.
+
+```console
+$ cat like.tpl
+{{IF status is active}}Active{{END_IF}}
+$ template-resolver render like.tpl --data logic.json --no-strict
+like.tpl:1:1: error type-error: Unrecognized condition: status is active
+```
 
 ---
 
@@ -736,15 +1121,16 @@ Render and validate results (`render`, `validate`, `POST /v1/render`, `POST /v1/
 
 | Code               | Severity | When                                                                                                   |
 | ------------------ | -------- | ------------------------------------------------------------------------------------------------------ |
-| `syntax-error`     | error    | The template does not parse: unknown tag, unclosed block, bad `FOR` syntax, stray `END_*`             |
-| `type-error`       | error    | An operation fails on its values: non-numeric comparison or math, bad filter parameters, non-array `FOR` in strict mode |
+| `syntax-error`     | error    | The template does not parse: unknown tag, unclosed block, bad `FOR` or `WHEN` syntax, stray `END_*`   |
+| `type-error`       | error    | An operation fails on its values: non-numeric comparison or math, a division or remainder by zero, a malformed math expression, a value with no text form (a cyclic object or a BigInt), an unrecognized word in a condition, a bad or undeclared filter parameter, non-array `FOR` in strict mode |
 | `missing-variable` | error    | Strict mode and a placeholder reads a variable that is not in the data and has no `??` default         |
-| `unknown-filter`   | error    | A filter other than `head`, `tail`, `trim`, `escape_md`, `fence`, `heading_offset`                      |
+| `unknown-filter`   | error    | A filter that is not in the [filter table](#filters-name--filter)                                       |
 | `limit-iterations` | error    | FOR loops ran more than `maxIterations` iterations in total                                            |
 | `limit-output`     | error    | The output grew past `maxOutputChars`                                                                  |
 | `limit-depth`      | error    | Blocks nest deeper than `maxDepth`                                                                     |
+| `limit-nodes`      | error    | The template holds more than `maxNodes` nodes (each run of text, each placeholder, each comment and each block counts one) |
 | `invalid-input`    | error    | Core `render` was given data that is not an object (the CLI and the API reject such data before rendering) |
-| `analysis-warning` | warning  | `validate` only: a condition the engine cannot read, such as `{{IF status is active}}`                 |
+| `analysis-warning` | warning  | `validate` only: a condition the engine cannot read, such as `{{IF status is active}}` (`render` reports it as a `type-error`) |
 
 #### Analysis diagnostics
 
@@ -752,9 +1138,9 @@ Render and validate results (`render`, `validate`, `POST /v1/render`, `POST /v1/
 
 | Code                     | When                                                                                         |
 | ------------------------ | -------------------------------------------------------------------------------------------- |
-| `unknown-filter`         | A filter other than `head`, `tail`, `trim`, `escape_md`, `fence`, `heading_offset`           |
+| `unknown-filter`         | A filter that is not in the [filter table](#filters-name--filter)                            |
 | `unrecognized-condition` | A condition the engine cannot read, such as `{{IF status is active}}` (`validate` reports it as `analysis-warning`) |
-| `syntax-error`, `limit-depth` | `POST /v1/analyze` only: the template does not parse; the result has empty `variables`, `filters` and `blocks` and this one diagnostic |
+| `syntax-error`, `limit-depth`, `limit-nodes` | `POST /v1/analyze` only: the template does not parse; the result has empty `variables`, `filters` and `blocks` and this one diagnostic |
 
 For a template that does not parse, `template-resolver analyze` prints no JSON: it prints the error to stderr in the format below and exits 1.
 
@@ -774,8 +1160,19 @@ Limits bound the work of one render. Each can be lowered per render; anything le
 | `maxIterations`  | 10000     | Total FOR iterations across the whole render            | `limit-iterations` |
 | `maxOutputChars` | 1000000   | Length of the output                                    | `limit-output`     |
 | `maxDepth`       | 32        | Nesting of blocks (also applied by validate and analyze) | `limit-depth`      |
+| `maxNodes`       | 20000     | Size of the template: the nodes counted while it is parsed (each run of text, each placeholder, each comment and each block counts one; also applied by validate and analyze) | `limit-nodes`      |
 
-The command line sets them with `--max-iterations`, `--max-output-chars` and `--max-depth`; the HTTP API with `options.limits` (a request can only lower the server's limits). `template-resolver spec` and `GET /v1/spec` report the defaults.
+The command line sets them with `--max-iterations`, `--max-output-chars`, `--max-depth` and `--max-nodes`; the HTTP API with `options.limits` (a request can only lower the server's limits). `template-resolver spec` and `GET /v1/spec` report the defaults.
+
+The `limit-nodes` error is located at the node that crossed the limit, so it points at the place where the template grew too large. With `nodes.tpl` holding a two-line template and `nodes.json` holding `{"name": "A", "vip": true}`:
+
+```console
+$ cat nodes.tpl
+Hi ${{name}}
+{{IF vip}}VIP{{END_IF}}
+$ template-resolver render nodes.tpl --data nodes.json --max-nodes 5
+nodes.tpl:2:24: error limit-nodes: Template exceeds the maximum of 5 nodes
+```
 
 ---
 
@@ -813,6 +1210,7 @@ Exit codes for every command:
 | `--max-iterations n`                   | Lower or raise `maxIterations`                                           |
 | `--max-output-chars n`                 | Lower or raise `maxOutputChars`                                          |
 | `--max-depth n`                        | Lower or raise `maxDepth`                                                |
+| `--max-nodes n`                        | Lower or raise `maxNodes`                                                |
 | `--json`                               | Print the full structured render result instead of the text (exit codes unchanged) |
 
 Without `--json`, the output goes to stdout and diagnostics to stderr.
@@ -958,11 +1356,12 @@ $ template-resolver analyze greeting.tpl
 `spec` (the end of it, with the default limits, the render options and the syntax):
 
 ```console
-$ template-resolver spec | tail -n 19
+$ template-resolver spec | tail -n 20
   "limits": {
     "maxIterations": 10000,
     "maxOutputChars": 1000000,
-    "maxDepth": 32
+    "maxDepth": 32,
+    "maxNodes": 20000
   },
   "options": [
     {
@@ -1003,7 +1402,8 @@ Usage: template-resolver <command> [options]
 Commands:
   render <template-file|-> [--data <file|->] [--strict | --no-strict]
          [--standalone-lines | --no-standalone-lines]
-         [--max-iterations n] [--max-output-chars n] [--max-depth n] [--json]
+         [--max-iterations n] [--max-output-chars n] [--max-depth n]
+         [--max-nodes n] [--json]
       Render a template and print the output. A line holding only block tags
       is removed by default; --no-standalone-lines keeps it.
   validate <template-file|->   Check a template; prints {ok, diagnostics} as JSON.
@@ -1040,7 +1440,7 @@ The API is stateless JSON over HTTP. It listens on loopback (`127.0.0.1`) by def
 
 - POST bodies must be JSON with `Content-Type: application/json`, at most 1 MiB.
 - Template problems are results, not HTTP errors: `200` with `ok: false` and diagnostics. An `analyze` of a template that does not parse returns `200` with empty variables and the error in `diagnostics`.
-- `options.strictMode` defaults to `true`. `options.standaloneLines` (boolean) defaults to `true`; `false` keeps lines that hold only block tags (see [Whitespace](#whitespace-standalone-tag-lines-and-trim-markers)). `options.limits` takes `maxIterations`, `maxOutputChars` and `maxDepth`; a request can only lower the server's limits, so a value above the server's is capped at the server's. `validate` and `analyze` use the server's `maxDepth`.
+- `options.strictMode` defaults to `true`. `options.standaloneLines` (boolean) defaults to `true`; `false` keeps lines that hold only block tags (see [Whitespace](#whitespace-standalone-tag-lines-and-trim-markers)). `options.limits` takes `maxIterations`, `maxOutputChars`, `maxDepth` and `maxNodes`; a request can only lower the server's limits, so a value above the server's is capped at the server's. `validate` and `analyze` use the server's `maxDepth` and `maxNodes`.
 
 Request errors are `{"error": {"code", "message"}}`:
 

@@ -1,0 +1,127 @@
+{
+  "id": "261015-language3911-a6-make-math-and-output-errors-visible",
+  "title": "Make math and output errors visible",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [
+    "261015-language3911-a5-bound-the-total-node-count-of-a-template"
+  ],
+  "origin": "language",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "core/src/errors.ts",
+    "core/src/expressions.ts",
+    "core/src/interpreter.ts",
+    "core/src/render.ts",
+    "tests/language/math.test.ts"
+  ],
+  "manifest": {
+    "add": [
+      "tests/language/math.test.ts"
+    ],
+    "remove": [],
+    "edit": [
+      "core/src/errors.ts",
+      "core/src/expressions.ts",
+      "core/src/interpreter.ts",
+      "core/src/render.ts"
+    ],
+    "frozen": true
+  },
+  "criteria": [
+    {
+      "text": "mt-zero: /0 and %0 are a type-error located at the variable in render (resolveTemplate keeps printing Infinity as before)",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/math.test.ts#mt-zero"
+      ]
+    },
+    {
+      "text": "mt-float: arithmetic results print with at most 15 significant digits (0.1+0.2 prints 0.3; 1/3 keeps its digits; integers and negative numbers print unchanged)",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/math.test.ts#mt-float"
+      ]
+    },
+    {
+      "text": "mt-hyphen: a hyphen with a letter on both sides is part of one name, a - b and n-1 stay arithmetic, and a missing hyphenated name suggests the spaced form",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/math.test.ts#mt-hyphen"
+      ]
+    },
+    {
+      "text": "mt-lenient: a malformed math expression fails render in lenient mode too, with a located diagnostic instead of empty output",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/math.test.ts#mt-lenient"
+      ]
+    },
+    {
+      "text": "mt-cyclic: a cyclic or unprintable value used as output is a type-error located at the variable instead of ok true with empty text",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/math.test.ts#mt-cyclic"
+      ]
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/language/math.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": [
+    "docs/living/architecture/modules/template-resolver.md",
+    "docs/living/architecture/language-contract.md"
+  ],
+  "started": "2026-10-15T04:02:47.240Z",
+  "ended": "2026-10-15T04:22:55.675Z",
+  "review_rounds": 2,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver"
+  ],
+  "docs_deferred": true,
+  "freeze": {
+    "at": "2026-10-15T04:02:40.080Z",
+    "brief_sha256": "d1de6242181c459b970e316d87c8ec2b9a4c1cd60e23f4fbb40c1623e015d8e4",
+    "brief_core_sha256": "ec1573dd8eb1298cb6b3605ae3864c219173db9181e539062b426c674d6b1a84",
+    "manifest_sha256": "39bc8291e25a98e75f4f924cdf5180ae613c86c468e522a8a810c926edbb9c7b",
+    "criteria_sha256": "cf6f98e6af8250be4ba880fcfd67ac8a9c52d511b55b69bc84c17c3deb4a8277",
+    "scope_sha256": "bbbe422c10a11c3bd386070fbb956b3283dc067cf93956af8b16b2bedaa0c902",
+    "scope_parts": {
+      "files_scope": "399d283346b23581328b2062f3f1e4ceda668ad578831a7ce7e7c00716376a25",
+      "docs_impact": "734a983468bce1e95b3ea76d75d42c73287af7532427891c8225fc0f0e1f04dd",
+      "docs_deferred": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+      "gate": "4c9c45e4d79e24f18cc347e92c1f39f373cca18a0b03c94b7464d628061e061c"
+    }
+  },
+  "base_commit": "0cf253d3f419553c6c3b4828937721ba31cf133d",
+  "test_amendments": [
+    {
+      "path": "tests/language/math.test.ts",
+      "reason": "review round 1: rows added for large integers, length on unprintable lists, json on a cyclic object, and keys with odd characters; no existing row or expectation changed",
+      "approved_by": "project lead"
+    }
+  ]
+}

@@ -179,7 +179,7 @@ describe("lm-depth: block nesting is bounded and the throw is located at the off
 
 describe("lm-defaults: defaults, partial limits and unchanged rendering", () => {
   it("lm-defaults: DEFAULT_LIMITS is 10000 iterations, 1000000 output chars, depth 32", () => {
-    expect(DEFAULT_LIMITS).toEqual({ maxIterations: 10000, maxOutputChars: 1000000, maxDepth: 32 });
+    expect(DEFAULT_LIMITS).toEqual({ maxIterations: 10000, maxOutputChars: 1000000, maxDepth: 32, maxNodes: 20000 });
   });
 
   it("lm-defaults: with no limits option, 10000 iterations render and 10001 throw limit-iterations", () => {

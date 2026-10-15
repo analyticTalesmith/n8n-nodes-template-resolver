@@ -25,7 +25,7 @@ Built to `dist/cli/index.js`, which `package.json` names as the bin `template-re
 
 | Command | Does |
 |---|---|
-| `render <template-file\|-> [--data <file\|->] [--strict \| --no-strict] [--standalone-lines \| --no-standalone-lines] [--max-iterations n] [--max-output-chars n] [--max-depth n] [--json]` | renders; output to stdout, diagnostics to stderr as `file:line:column: severity code: message`; `--json` prints the whole render result to stdout instead |
+| `render <template-file\|-> [--data <file\|->] [--strict \| --no-strict] [--standalone-lines \| --no-standalone-lines] [--max-iterations n] [--max-output-chars n] [--max-depth n] [--max-nodes n] [--json]` | renders; output to stdout, diagnostics to stderr as `file:line:column: severity code: message`; `--json` prints the whole render result to stdout instead |
 | `validate <template-file\|->` | prints core `validate`'s `{ok, diagnostics}` as JSON |
 | `analyze <template-file\|->` | prints core `analyze` as JSON, whose diagnostics are `{code, message, line, column}` (`unknown-filter`, `unrecognized-condition`); a template that does not parse prints its diagnostic to stderr |
 | `spec` | prints core `spec()` as JSON |

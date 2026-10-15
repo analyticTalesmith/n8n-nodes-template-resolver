@@ -1,0 +1,10 @@
+{
+  "other": "editor",
+  "score": 92,
+  "people": [
+    { "name": "Ann", "role": "owner" },
+    { "name": "Bo", "role": "editor" },
+    { "name": "Cy", "role": "guest" },
+    { "name": "Di", "role": "staff" }
+  ]
+}

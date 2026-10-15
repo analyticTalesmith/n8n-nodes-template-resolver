@@ -1,0 +1,138 @@
+{
+  "id": "261015-language3911-a4-add-the-collection-filters",
+  "title": "Add the collection filters",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [
+    "261015-language3911-a1-dispatch-filters-from-one-registry-with"
+  ],
+  "origin": "language",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "core/src/filters-collection.ts",
+    "docs/ephemeral/cycles/language/deltas",
+    "tests/language/filters-collection.test.ts"
+  ],
+  "manifest": {
+    "add": [
+      "docs/ephemeral/cycles/language/deltas/collection-filters-contract.md",
+      "docs/ephemeral/cycles/language/deltas/collection-filters-module-page.md",
+      "tests/language/filters-collection.test.ts"
+    ],
+    "remove": [],
+    "edit": [
+      "core/src/filters-collection.ts"
+    ],
+    "frozen": true
+  },
+  "criteria": [
+    {
+      "text": "fc-collection: a table per filter over arrays, string inputs coerced exactly as FOR coerces them, objects and empty or missing input: join (join=\", \"), length (items of a list, characters of a text, keys of an object), first, last, slice (slice:start=1,end=3), lines (split text on line breaks, CRLF included) and unique",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "fc-order: sort is stable and deterministic: numbers numeric, strings by code unit, sort=key orders objects by that key, a mixed list sorts numbers before strings; unique keeps the first occurrence of each value",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "fc-json: json prints a compact JSON text of the value with stable key order; a cyclic value is a type-error located at the variable; a wrong or undeclared parameter on any collection filter is a type-error located at the variable",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/language/filters-collection.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": [
+    "docs/living/architecture/modules/template-resolver.md",
+    "docs/living/architecture/language-contract.md"
+  ],
+  "started": "2026-10-15T03:36:10.514Z",
+  "ended": "2026-10-15T03:50:00.150Z",
+  "review_rounds": 1,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver"
+  ],
+  "docs_deferred": true,
+  "freeze": {
+    "at": "2026-10-15T02:51:58.261Z",
+    "brief_sha256": "2e466b9d9813faa13daa678b64f2ff36ace8a2e69b63d5de8384b2920a0df4ae",
+    "brief_core_sha256": "8d9b1e6fbc229d0835a4cf6fd4260005877ee7c0a27dba5428431ba4227bf017",
+    "manifest_sha256": "85d614fde7ccb87301fdf2c1ff8e3dcb90c15b992455265c84b7f494ab90d5e9",
+    "criteria_sha256": "3b928fd3dc090262a7bcb295862ee34705bd79b09035be23ce32ba74addba5d9",
+    "scope_sha256": "b8c7a15dd22f1f86e5754e523931ebaf0cff14681b082ba83497d24070bab79a",
+    "scope_parts": {
+      "files_scope": "f14b256e21d7657023eeeed9095b8e9a91e154b4ea0191be76e8e5d77df2ebdf",
+      "docs_impact": "734a983468bce1e95b3ea76d75d42c73287af7532427891c8225fc0f0e1f04dd",
+      "docs_deferred": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+      "gate": "6190ce463b5551754425979a8781c16ce3af6e9f332368300cd53b3037a3adbb"
+    }
+  },
+  "base_commit": "f4e552a71ebe770925d1bd5eb5a33fdaf91c1974",
+  "manifest_amendments": [
+    {
+      "at": "2026-10-15T03:40:11.051Z",
+      "by": "build lead",
+      "reason": "the card records one delta per living document it changes",
+      "from": {
+        "manifest": {
+          "add": [
+            "tests/language/filters-collection.test.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "core/src/filters-collection.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/filters-collection.ts",
+          "tests/language/filters-collection.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [
+            "docs/ephemeral/cycles/language/deltas/collection-filters-contract.md",
+            "docs/ephemeral/cycles/language/deltas/collection-filters-module-page.md",
+            "tests/language/filters-collection.test.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "core/src/filters-collection.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/filters-collection.ts",
+          "docs/ephemeral/cycles/language/deltas",
+          "tests/language/filters-collection.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      }
+    }
+  ],
+  "test_amendments": [
+    {
+      "path": "tests/language/filters-collection.test.ts",
+      "reason": "the lenient missing-variable row rendered with strict mode on by default; it now passes strictMode false as its name says (named amendment)",
+      "approved_by": "project lead"
+    }
+  ]
+}

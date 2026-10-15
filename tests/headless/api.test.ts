@@ -148,6 +148,7 @@ describe("ap-routes: documented 200 bodies", () => {
       maxIterations: 10000,
       maxOutputChars: 1000000,
       maxDepth: 32,
+      maxNodes: 20000,
     });
   });
 });

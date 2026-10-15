@@ -1,0 +1,32 @@
+{
+  "command": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/language/surfaces.test.ts",
+    "--json"
+  ],
+  "exit_status": 0,
+  "ran_at": "2026-10-15T05:41:50.876Z",
+  "tests": {
+    "passed": 196,
+    "failed": 0
+  },
+  "commit": "3f6ade3a946afc32157bd0acf67405ac1649c4d8",
+  "diff_sha256": "918fc0559129f189ab0f1d419da0daf037ba16e3f7d03bf366c0123c9a0d5dc8",
+  "levels": [
+    {
+      "level": "gate",
+      "command": [
+        "node",
+        "node_modules/jest/bin/jest.js",
+        "--runTestsByPath",
+        "tests/language/surfaces.test.ts",
+        "--json"
+      ],
+      "exit_status": 0,
+      "commit": "3f6ade3a946a"
+    }
+  ],
+  "skipped": []
+}

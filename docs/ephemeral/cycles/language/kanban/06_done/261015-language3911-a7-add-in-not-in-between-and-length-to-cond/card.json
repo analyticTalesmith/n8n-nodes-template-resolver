@@ -1,0 +1,166 @@
+{
+  "id": "261015-language3911-a7-add-in-not-in-between-and-length-to-cond",
+  "title": "Add in, not in, between and length to conditions",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [
+    "261015-language3911-a6-make-math-and-output-errors-visible"
+  ],
+  "origin": "language",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "core/src/analyze.ts",
+    "core/src/expressions.ts",
+    "core/src/interpreter.ts",
+    "core/src/spec.ts",
+    "tests/language/operators.test.ts"
+  ],
+  "manifest": {
+    "add": [
+      "tests/language/operators.test.ts"
+    ],
+    "remove": [],
+    "edit": [
+      "core/src/expressions.ts",
+      "core/src/interpreter.ts",
+      "core/src/spec.ts"
+    ],
+    "frozen": true
+  },
+  "criteria": [
+    {
+      "text": "op-in: x in [\"a\",\"b\"], x in list_var and x in \"text\" (substring) and the not in forms evaluate as written, with a located type-error for an operand that cannot be tested",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "op-between: x between [1, 10] is inclusive at both ends; a non-numeric operand is a type-error located at the condition",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "op-length: .length works on arrays and strings in conditions and in output; an object key named length wins over the built-in",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "op-equality: a side written as a quoted literal compares as text (z == \"01234\" is false for 1234); an unquoted number on the right of contains keeps its written text",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "op-unknown: an unrecognized word next to an operator is an error in every mode (ADR 0003), not only in strict mode",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "op-spec: spec() and analyze list the new operators, and analyze records the variables read by in, between and length",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/language/operators.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": [
+    "docs/living/architecture/modules/template-resolver.md",
+    "docs/living/architecture/language-contract.md"
+  ],
+  "started": "2026-10-15T04:35:45.820Z",
+  "ended": "2026-10-15T04:49:43.000Z",
+  "review_rounds": 1,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver"
+  ],
+  "docs_deferred": true,
+  "freeze": {
+    "at": "2026-10-15T04:34:46.823Z",
+    "brief_sha256": "0cf49156b3c5bf8fe2557f8053216822bb2fdfead74797d4c7b661034508ed0a",
+    "brief_core_sha256": "27c3f5b2d4f52a01f173a72354e9537611b3955bc5e03edd2c868f5077e447ff",
+    "manifest_sha256": "8504e5345febe308d85b583fb65ec595a0921f326bcc828246709676ea220251",
+    "criteria_sha256": "0a4d4fcec9da8aa3b6a79b1f945b3b093276262a9b8c2cca9a6678127640a46b",
+    "scope_sha256": "fb2a98579659e844a34ecc78e8dc4fa2657bdc492cd8775ea1f7e170edf475e5",
+    "scope_parts": {
+      "files_scope": "750cac483f383f0a5df08db08dd8542c66cfbc4b6c52a00cd74ba27dc09d55de",
+      "docs_impact": "734a983468bce1e95b3ea76d75d42c73287af7532427891c8225fc0f0e1f04dd",
+      "docs_deferred": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+      "gate": "b9550b31f779dac373365cc2052c05e557f8a995165bd86b524f14b30d94309f"
+    }
+  },
+  "base_commit": "65cebdfba62585e9d114f2078d66d3672376b259",
+  "manifest_amendments": [
+    {
+      "at": "2026-10-15T04:42:12.607Z",
+      "by": "lead",
+      "reason": "analyze.ts needed no change: conditionOperands is shared and lives in expressions.ts",
+      "from": {
+        "manifest": {
+          "add": [
+            "tests/language/operators.test.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/expressions.ts",
+            "core/src/interpreter.ts",
+            "core/src/spec.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/analyze.ts",
+          "core/src/expressions.ts",
+          "core/src/interpreter.ts",
+          "core/src/spec.ts",
+          "tests/language/operators.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [
+            "tests/language/operators.test.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "core/src/expressions.ts",
+            "core/src/interpreter.ts",
+            "core/src/spec.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/analyze.ts",
+          "core/src/expressions.ts",
+          "core/src/interpreter.ts",
+          "core/src/spec.ts",
+          "tests/language/operators.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      }
+    }
+  ],
+  "test_amendments": [
+    {
+      "path": "tests/language/operators.test.ts",
+      "reason": "review round 1: rows added for the left side of in with no right side, booleans in between, operand text in messages and a quoted literal with no closing bracket; no existing row or expectation changed",
+      "approved_by": "project lead"
+    }
+  ]
+}

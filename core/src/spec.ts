@@ -1,5 +1,5 @@
 import { DEFAULT_LIMITS, Limits } from "./types";
-import { FILTERS } from "./filters";
+import { listFilters } from "./filters";
 
 export interface Spec {
   version: string;
@@ -34,13 +34,14 @@ const BLOCKS: Spec["blocks"] = [
     name: "CASE",
     closes: "END_CASE",
     args: "variable",
-    description: "Renders the first WHEN whose value equals the variable, else DEFAULT",
+    description: "Renders the first WHEN that matches the variable, else DEFAULT",
   },
   {
     name: "WHEN",
     closes: "END_WHEN",
-    args: '"value"',
-    description: "Inside CASE: renders when the CASE variable equals the value",
+    args: 'value[, value...] | variable | operator value',
+    description:
+      'Inside CASE: renders when the CASE variable equals any value in a list ("a", "b"), equals another variable, or passes a comparison (== != > < >= <=) such as >= 10',
   },
   {
     name: "DEFAULT",
@@ -137,6 +138,10 @@ const OPERATORS = [
   "AND",
   "OR",
   "NOT",
+  "in",
+  "not in",
+  "between",
+  ".length",
 ];
 
 /**
@@ -147,7 +152,7 @@ export function spec(): Spec {
   return {
     version: LANGUAGE_VERSION,
     blocks: BLOCKS.map((b) => ({ ...b })),
-    filters: FILTERS.map((f) => ({ ...f })),
+    filters: listFilters(),
     operators: [...OPERATORS],
     limits: { ...DEFAULT_LIMITS },
     options: OPTIONS.map((o) => ({ ...o })),

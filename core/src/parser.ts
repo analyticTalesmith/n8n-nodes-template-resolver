@@ -24,6 +24,8 @@ import {
   DEFAULT_LIMITS,
 } from "./types";
 import { SyntaxError, TypeError, LimitError } from "./errors";
+import { parseFilter } from "./filters";
+import { parseWhenMatch } from "./expressions";
 
 const BLOCK_ARGUMENT = /(\w+)=("[^"]*"|'[^']*'|\S*)|"[^"]*"|'[^']*'|\S+/g;
 const VARIABLE_PATH = /^[A-Za-z_@][\w@]*(\.[\w@]+)*$/;
@@ -36,13 +38,16 @@ const VARIABLE_PATH = /^[A-Za-z_@][\w@]*(\.[\w@]+)*$/;
 export class Parser {
   private pos = 0;
   private depth = 0;
+  private nodes = 0;
   private readonly maxDepth: number;
+  private readonly maxNodes: number;
 
   constructor(
     private tokens: Token[],
-    options?: { maxDepth?: number }
+    options?: { maxDepth?: number; maxNodes?: number }
   ) {
     this.maxDepth = options?.maxDepth ?? DEFAULT_LIMITS.maxDepth;
+    this.maxNodes = options?.maxNodes ?? DEFAULT_LIMITS.maxNodes;
   }
 
   /**
@@ -134,7 +139,7 @@ export class Parser {
    * Parse text node
    */
   private parseText(): TextNode {
-    const token = this.consume(TokenType.TEXT);
+    const token = this.open(TokenType.TEXT);
     return {
       type: "Text",
       content: token.value,
@@ -147,7 +152,7 @@ export class Parser {
    * Parse variable: ${{name}}, ${{user.name | filter}}
    */
   private parseVariable(): VariableNode {
-    const token = this.consume(TokenType.VARIABLE);
+    const token = this.open(TokenType.VARIABLE);
     const parts = this.parseVariableExpression(token.value);
 
     return {
@@ -188,7 +193,7 @@ export class Parser {
       defaultValue = core
         .slice(defaultIdx + 2)
         .trim()
-        .replace(/^["']|["']$/g, "");
+        .replace(/^(["'])(.*)\1$/s, "$2");
     }
 
     // --- 3. Parse path ---
@@ -197,10 +202,7 @@ export class Parser {
     // --- 4. Parse filters ---
     const filters: FilterCall[] =
       filterExprs.length > 0
-        ? filterExprs.map((f) => ({
-            name: f,
-            params: {},
-          }))
+        ? filterExprs.map(parseFilter)
         : [];
 
     return {
@@ -213,11 +215,17 @@ export class Parser {
   /**
    * Split on a separator character, ignoring separators inside quotes.
    * A quote only opens at the start of a value, so an apostrophe inside a
-   * word is plain text.
+   * word is plain text, and so is a quote that never closes: the split is
+   * redone with that quote left out.
    */
-  private splitOutsideQuotes(text: string, separator: string): string[] {
+  private splitOutsideQuotes(
+    text: string,
+    separator: string,
+    plainQuotes: ReadonlySet<number> = new Set()
+  ): string[] {
     const parts: string[] = [];
     let quote: string | null = null;
+    let quoteAt = -1;
     let start = 0;
 
     for (let i = 0; i < text.length; i++) {
@@ -226,13 +234,22 @@ export class Parser {
         if (ch === quote) quote = null;
       } else if (
         (ch === '"' || ch === "'") &&
+        !plainQuotes.has(i) &&
         /(^|\?\?|=)\s*$/.test(text.slice(start, i))
       ) {
         quote = ch;
+        quoteAt = i;
       } else if (ch === separator) {
         parts.push(text.slice(start, i));
         start = i + 1;
       }
+    }
+    if (quote) {
+      return this.splitOutsideQuotes(
+        text,
+        separator,
+        new Set(plainQuotes).add(quoteAt)
+      );
     }
     parts.push(text.slice(start));
     return parts;
@@ -240,15 +257,31 @@ export class Parser {
 
   /**
    * Parse IF block: {{IF condition}}...{{ELSEIF}}...{{ELSE}}...{{END_IF}}
+   * ELSEIF branches nest in the alternate of the branch before them and are
+   * parsed in a loop, so a long chain does not deepen the call stack.
    */
   private parseIf(): IfNode {
-    const token = this.consume(TokenType.IF);
-    const condition = this.extractCondition(token.value);
+    const root = this.parseIfBranch(TokenType.IF);
+    let last = root;
+    while (this.check(TokenType.ELSEIF)) {
+      const branch = this.parseIfBranch(TokenType.ELSEIF);
+      last.alternate = branch;
+      last = branch;
+    }
+    if (this.check(TokenType.ELSE)) last.alternate = this.parseElse(last);
 
+    this.consume(TokenType.END_IF);
+    return root;
+  }
+
+  /**
+   * Parse the head and body of an IF or ELSEIF branch, up to the next
+   * ELSEIF, ELSE or END_IF
+   */
+  private parseIfBranch(type: TokenType.IF | TokenType.ELSEIF): IfNode {
+    const token = this.open(type);
     const consequent: ASTNode[] = [];
-    let alternate: ASTNode[] | IfNode | null = null;
 
-    // Parse consequent (true branch)
     while (
       !this.check(TokenType.ELSEIF) &&
       !this.check(TokenType.ELSE) &&
@@ -256,7 +289,9 @@ export class Parser {
     ) {
       if (this.isAtEnd()) {
         throw new SyntaxError(
-          `Unclosed {{IF}} block starting at line ${token.line}`,
+          type === TokenType.IF
+            ? `Unclosed {{IF}} block starting at line ${token.line}`
+            : "Unclosed {{ELSEIF}} block",
           token.line,
           token.column,
           "Add {{END_IF}}"
@@ -266,162 +301,42 @@ export class Parser {
       if (node) consequent.push(node);
     }
 
-    // Parse ELSEIF/ELSE
-    if (this.check(TokenType.ELSEIF)) {
-      // ELSEIF becomes nested IfNode
-      const elseIfToken = this.consume(TokenType.ELSEIF);
-      const elseIfCondition = this.extractCondition(elseIfToken.value);
-
-      // Create nested IF node
-      const nestedIf: IfNode = {
-        type: "If",
-        condition: elseIfCondition,
-        consequent: [],
-        alternate: null,
-        line: elseIfToken.line,
-        column: elseIfToken.column,
-      };
-
-      // Parse ELSEIF body
-      while (
-        !this.check(TokenType.ELSEIF) &&
-        !this.check(TokenType.ELSE) &&
-        !this.check(TokenType.END_IF)
-      ) {
-        if (this.isAtEnd()) {
-          throw new SyntaxError(
-            "Unclosed {{ELSEIF}} block",
-            elseIfToken.line,
-            elseIfToken.column,
-            "Add {{END_IF}}"
-          );
-        }
-        const node = this.parseNode();
-        if (node) nestedIf.consequent.push(node);
-      }
-
-      // Check for more ELSEIF or ELSE
-      if (this.check(TokenType.ELSEIF) || this.check(TokenType.ELSE)) {
-        // Recursively handle more branches
-        if (this.check(TokenType.ELSEIF)) {
-          this.consume(TokenType.ELSEIF);
-          // Put token back and recurse
-          this.pos--;
-          // Parse as new IF starting from ELSEIF
-          const recursiveIf = this.parseElseIf();
-          nestedIf.alternate = recursiveIf;
-        } else {
-          // ELSE after ELSEIF
-          this.consume(TokenType.ELSE);
-          const elseBody: ASTNode[] = [];
-          while (!this.check(TokenType.END_IF)) {
-            if (this.isAtEnd()) {
-              throw new SyntaxError(
-                "Unclosed {{ELSE}} block",
-                token.line,
-                token.column,
-                "Add {{END_IF}}"
-              );
-            }
-            const node = this.parseNode();
-            if (node) elseBody.push(node);
-          }
-          nestedIf.alternate = elseBody;
-        }
-      }
-
-      alternate = nestedIf;
-    } else if (this.check(TokenType.ELSE)) {
-      this.consume(TokenType.ELSE);
-      alternate = [];
-      while (!this.check(TokenType.END_IF)) {
-        if (this.isAtEnd()) {
-          throw new SyntaxError(
-            "Unclosed {{ELSE}} block",
-            token.line,
-            token.column,
-            "Add {{END_IF}}"
-          );
-        }
-        const node = this.parseNode();
-        if (node) (alternate as ASTNode[]).push(node);
-      }
-    }
-
-    this.consume(TokenType.END_IF);
-
     return {
       type: "If",
-      condition,
+      condition: this.extractCondition(token.value),
       consequent,
-      alternate,
+      alternate: null,
       line: token.line,
       column: token.column,
     };
   }
 
   /**
-   * Helper to parse ELSEIF as nested IF
+   * Parse the ELSE body of a branch, up to END_IF
    */
-  private parseElseIf(): IfNode {
-    const token = this.consume(TokenType.ELSEIF);
-    const condition = this.extractCondition(token.value);
-
-    const consequent: ASTNode[] = [];
-
-    while (
-      !this.check(TokenType.ELSEIF) &&
-      !this.check(TokenType.ELSE) &&
-      !this.check(TokenType.END_IF)
-    ) {
+  private parseElse(branch: IfNode): ASTNode[] {
+    this.consume(TokenType.ELSE);
+    const body: ASTNode[] = [];
+    while (!this.check(TokenType.END_IF)) {
       if (this.isAtEnd()) {
         throw new SyntaxError(
-          "Unclosed {{ELSEIF}} block",
-          token.line,
-          token.column,
+          "Unclosed {{ELSE}} block",
+          branch.line,
+          branch.column,
           "Add {{END_IF}}"
         );
       }
       const node = this.parseNode();
-      if (node) consequent.push(node);
+      if (node) body.push(node);
     }
-
-    let alternate: ASTNode[] | IfNode | null = null;
-
-    if (this.check(TokenType.ELSEIF)) {
-      alternate = this.parseElseIf();
-    } else if (this.check(TokenType.ELSE)) {
-      this.consume(TokenType.ELSE);
-      alternate = [];
-      while (!this.check(TokenType.END_IF)) {
-        if (this.isAtEnd()) {
-          throw new SyntaxError(
-            "Unclosed {{ELSE}} block",
-            token.line,
-            token.column,
-            "Add {{END_IF}}"
-          );
-        }
-        const node = this.parseNode();
-        if (node) (alternate as ASTNode[]).push(node);
-      }
-    }
-
-    return {
-      type: "If",
-      condition,
-      consequent,
-      alternate,
-      line: token.line,
-      column: token.column,
-    };
+    return body;
   }
 
   /**
    * Parse CASE block: {{CASE var}}{{WHEN "val"}}...{{END_WHEN}}{{DEFAULT}}...{{END_CASE}}
    */
   private parseCase(): CaseNode {
-    const token = this.consume(TokenType.CASE);
+    const token = this.open(TokenType.CASE);
     const expression = this.extractExpression(token.value);
 
     const cases: WhenNode[] = [];
@@ -480,8 +395,14 @@ export class Parser {
    * Parse WHEN clause
    */
   private parseWhen(): WhenNode {
-    const token = this.consume(TokenType.WHEN);
-    const value = this.extractQuotedValue(token.value);
+    const token = this.open(TokenType.WHEN);
+    const match = parseWhenMatch(
+      token.value.replace(/^WHEN/i, ""),
+      token.line,
+      token.column
+    );
+    const first = match.kind === "list" ? match.items[0] : null;
+    const value = first?.kind === "literal" && first.quoted ? first.text : "";
 
     const body: ASTNode[] = [];
     while (!this.check(TokenType.END_WHEN)) {
@@ -511,6 +432,7 @@ export class Parser {
     return {
       type: "When",
       value,
+      match,
       body,
       line: token.line,
       column: token.column,
@@ -521,7 +443,7 @@ export class Parser {
    * Parse DEFAULT clause
    */
   private parseDefault(): DefaultNode {
-    const token = this.consume(TokenType.DEFAULT);
+    const token = this.open(TokenType.DEFAULT);
 
     const body: ASTNode[] = [];
     while (!this.check(TokenType.END_DEFAULT)) {
@@ -556,7 +478,7 @@ export class Parser {
    * Parse FOR loop: {{FOR items AS item}}...{{END_FOR}}
    */
   private parseFor(): ForNode {
-    const token = this.consume(TokenType.FOR);
+    const token = this.open(TokenType.FOR);
     const { iterable, itemName } = this.parseForExpression(token.value);
 
     const body: ASTNode[] = [];
@@ -615,7 +537,7 @@ export class Parser {
    * Parse SECTION: {{SECTION "Title" level=2 skip_empty=false}}...{{END_SECTION}}
    */
   private parseSection(): SectionNode {
-    const token = this.consume(TokenType.SECTION);
+    const token = this.open(TokenType.SECTION);
     const { title, level, skipEmpty } = this.parseSectionArguments(token);
 
     const body: ASTNode[] = [];
@@ -712,7 +634,7 @@ export class Parser {
    * Parse FENCE: {{FENCE lang="md"}}...{{END_FENCE}}
    */
   private parseFence(): FenceNode {
-    const token = this.consume(TokenType.FENCE);
+    const token = this.open(TokenType.FENCE);
     const lang = this.parseFenceLang(token);
 
     const body: ASTNode[] = [];
@@ -778,7 +700,7 @@ export class Parser {
    * Parse LIST: {{LIST}}{{LIST_ITEM}}...{{END_LIST_ITEM}}{{END_LIST}}
    */
   private parseList(): ListNode {
-    const token = this.consume(TokenType.LIST);
+    const token = this.open(TokenType.LIST);
     const items: ListItemNode[] = [];
 
     while (!this.check(TokenType.END_LIST)) {
@@ -830,7 +752,7 @@ export class Parser {
    * Parse LIST_ITEM
    */
   private parseListItem(): ListItemNode {
-    const token = this.consume(TokenType.LIST_ITEM);
+    const token = this.open(TokenType.LIST_ITEM);
 
     // Parse optional condition and fallback
     const { condition, fallback } = this.parseListItemAttributes(token.value);
@@ -888,7 +810,7 @@ export class Parser {
    * Parse TABLE: {{TABLE}}{{HEADER}}...{{ROW}}...{{END_TABLE}}
    */
   private parseTable(): TableNode {
-    const token = this.consume(TokenType.TABLE);
+    const token = this.open(TokenType.TABLE);
     const alignment = this.parseTableAlignment(token.value);
 
     let header: TableHeaderNode | null = null;
@@ -910,6 +832,7 @@ export class Parser {
         rows.push(this.parseTableRow());
       } else if (this.check(TokenType.FOR)) {
         // Allow FOR loops to generate rows
+        this.count(this.current());
         const forNode = this.nested(() => this.parseFor());
 
         // Wrap in a special TableRowNode
@@ -969,7 +892,7 @@ export class Parser {
    * Parse table header
    */
   private parseTableHeader(): TableHeaderNode {
-    const token = this.consume(TokenType.HEADER);
+    const token = this.open(TokenType.HEADER);
 
     const content: ASTNode[] = [];
 
@@ -1002,7 +925,7 @@ export class Parser {
    * Parse table row
    */
   private parseTableRow(): TableRowNode {
-    const token = this.consume(TokenType.ROW);
+    const token = this.open(TokenType.ROW);
 
     const content: ASTNode[] = [];
 
@@ -1084,7 +1007,7 @@ export class Parser {
    * Parse comment (excluded from output)
    */
   private parseComment(): CommentNode {
-    const token = this.consume(TokenType.COMMENT);
+    const token = this.open(TokenType.COMMENT);
     return {
       type: "Comment",
       content: token.value,
@@ -1105,14 +1028,6 @@ export class Parser {
    */
   private extractExpression(expr: string): string {
     return expr.replace(/^CASE\s+/i, "").trim();
-  }
-
-  /**
-   * Extract quoted value: 'WHEN "active"' â†’ "active"
-   */
-  private extractQuotedValue(expr: string): string {
-    const match = expr.match(/["'](.+?)["']/);
-    return match ? match[1] : "";
   }
 
   // ==================== Token Stream Helpers ====================
@@ -1137,6 +1052,29 @@ export class Parser {
   private advance(): Token {
     if (!this.isAtEnd()) this.pos++;
     return this.tokens[this.pos - 1];
+  }
+
+  /**
+   * Consume the opening token of a node, counting the node against maxNodes
+   */
+  private open(type: TokenType): Token {
+    const token = this.consume(type);
+    this.count(token);
+    return token;
+  }
+
+  /**
+   * Count one node, failing at its opening token once maxNodes is crossed
+   */
+  private count(token: Token): void {
+    if (++this.nodes <= this.maxNodes) return;
+    throw new LimitError(
+      "limit-nodes",
+      `Template exceeds the maximum of ${this.maxNodes} nodes`,
+      token.line,
+      token.column,
+      "Shorten the template or raise limits.maxNodes"
+    );
   }
 
   /**

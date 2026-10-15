@@ -1,6 +1,6 @@
 import { Lexer } from "./lexer";
 import { Parser } from "./parser";
-import { FILTERS, parseFilter } from "./filters";
+import { FILTER_REGISTRY, undeclaredParameterMessages } from "./filters";
 import {
   conditionOperands,
   hasBareWhitespace,
@@ -75,7 +75,8 @@ export interface TemplateAnalysis {
   diagnostics: AnalysisDiagnostic[];
 }
 
-const KNOWN_FILTERS = new Set(FILTERS.map((f) => f.name));
+/** Nesting bound for analyze when the caller sets no maxDepth */
+const ANALYZE_MAX_DEPTH = 256;
 
 /**
  * Report the variables a template reads and the filters it applies, derived
@@ -87,7 +88,8 @@ export function analyze(
   options?: { limits?: Partial<Limits> }
 ): TemplateAnalysis {
   const ast = new Parser(new Lexer(template).tokenize(), {
-    maxDepth: options?.limits?.maxDepth,
+    maxDepth: options?.limits?.maxDepth ?? ANALYZE_MAX_DEPTH,
+    maxNodes: options?.limits?.maxNodes,
   }).parse();
   const walker = new Walker();
   walker.visitAll(ast.body);
@@ -176,12 +178,22 @@ class Walker {
     }
 
     for (const filter of node.filters ?? []) {
-      const { name } = parseFilter(filter.name);
+      const { name } = filter;
       this.filterCounts.set(name, (this.filterCounts.get(name) ?? 0) + 1);
-      if (!KNOWN_FILTERS.has(name)) {
+      const definition = FILTER_REGISTRY.find((f) => f.name === name);
+      if (!definition) {
         this.diagnostics.push({
           code: "unknown-filter",
           message: `Unknown filter: ${name}`,
+          line: node.line,
+          column: node.column,
+        });
+        continue;
+      }
+      for (const message of undeclaredParameterMessages(definition, filter)) {
+        this.diagnostics.push({
+          code: "type-error",
+          message,
           line: node.line,
           column: node.column,
         });
@@ -190,15 +202,29 @@ class Walker {
   }
 
   private visitIf(node: IfNode, kind: "if" | "elseif"): void {
-    this.visitCondition(node.condition, kind, node);
-    this.visitAll(node.consequent);
-    if (Array.isArray(node.alternate)) this.visitAll(node.alternate);
-    else if (node.alternate) this.visitIf(node.alternate, "elseif");
+    let branch = node;
+    let branchKind = kind;
+    for (;;) {
+      this.visitCondition(branch.condition, branchKind, branch);
+      this.visitAll(branch.consequent);
+      const { alternate } = branch;
+      if (Array.isArray(alternate)) return this.visitAll(alternate);
+      if (!alternate) return;
+      branch = alternate;
+      branchKind = "elseif";
+    }
   }
 
   private visitCase(node: CaseNode): void {
     this.record(node.expression, "case", false);
-    for (const when of node.cases) this.visitAll(when.body);
+    for (const when of node.cases) {
+      const { match } = when;
+      const items = match.kind === "list" ? match.items : [match.item];
+      for (const item of items) {
+        if (item.kind === "path") this.record(item.path.join("."), "case", false);
+      }
+      this.visitAll(when.body);
+    }
     if (node.default) this.visitAll(node.default.body);
   }
 

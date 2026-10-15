@@ -1,0 +1,188 @@
+{
+  "id": "261015-language3911-a8-let-when-match-several-values-a-variable",
+  "title": "Let WHEN match several values, a variable or a comparison",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [
+    "261015-language3911-a7-add-in-not-in-between-and-length-to-cond"
+  ],
+  "origin": "language",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "core/src/analyze.ts",
+    "core/src/expressions.ts",
+    "core/src/interpreter.ts",
+    "core/src/parser.ts",
+    "core/src/spec.ts",
+    "core/src/types.ts",
+    "tests/golden/render-cases/lang-case/template.md",
+    "tests/language/case.test.ts"
+  ],
+  "manifest": {
+    "add": [
+      "tests/language/case.test.ts"
+    ],
+    "remove": [],
+    "edit": [
+      "core/src/analyze.ts",
+      "core/src/expressions.ts",
+      "core/src/interpreter.ts",
+      "core/src/parser.ts",
+      "core/src/spec.ts",
+      "core/src/types.ts"
+    ],
+    "frozen": true
+  },
+  "criteria": [
+    {
+      "text": "cs-values: {{WHEN \"a\", \"b\"}} matches either value",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "cs-var: {{WHEN other}} compares with the variable value under strict-mode rules for a missing variable",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "cs-compare: {{WHEN >= 10}} works with == != > < >= <=, using the equality of the operators card",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "cs-errors: an empty WHEN, or a comparison mixed with a list of values, is a syntax-error located at the tag",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "cs-analyze: analyze records WHEN variables as case usage",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/language/case.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": [
+    "docs/living/architecture/modules/template-resolver.md",
+    "docs/living/architecture/language-contract.md"
+  ],
+  "started": "2026-10-15T04:58:09.052Z",
+  "ended": "2026-10-15T05:13:11.122Z",
+  "review_rounds": 1,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver"
+  ],
+  "docs_deferred": true,
+  "freeze": {
+    "at": "2026-10-15T04:57:54.398Z",
+    "brief_sha256": "ba1876ac641e58aeaed2283dc6132e2ee0632eec1d38fddc0728e71447a47d0f",
+    "brief_core_sha256": "36ee6eef2805fc50139c37da668eb639310fed309b74795904d6527868aca7c7",
+    "manifest_sha256": "da7cb410ab367eff87700cc5ed05de264381a52f3c4016f15723f07bf325d51d",
+    "criteria_sha256": "b30f66f10a6339ca08c05b2daf442422c53149225c983a6421bf1fae8a7d455b",
+    "scope_sha256": "3e9c7b8babdef16920eeeda307d50d66d5288c1490a395fc523ba984e16442ab",
+    "scope_parts": {
+      "files_scope": "fde493aae7c855dd38cc84053deb7db7d7e32f7e98f3f2ab96256a8ae0048bec",
+      "docs_impact": "734a983468bce1e95b3ea76d75d42c73287af7532427891c8225fc0f0e1f04dd",
+      "docs_deferred": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+      "gate": "5b9468df4827755d9e665076750b43ca478aee5933ebdc1d9a7eb38a87305c72"
+    }
+  },
+  "base_commit": "f140e131fd1cb69b9c27aae0022f868d9e3e19ff",
+  "test_amendments": [
+    {
+      "path": "tests/language/case.test.ts",
+      "reason": "remove the two lowercase tag word rows (the lexer only knows upper case tags, so the rows pinned a false claim; trim-marker coverage kept with upper case WHEN); the analyze exact-set assertion ignores the CASE subject and FOR iterable the analyzer always records; the lenient missing-variable row expects D not 2",
+      "approved_by": "project lead"
+    },
+    {
+      "path": "tests/language/case.test.ts",
+      "reason": "add rows for a WHEN variable with a non-ASCII letter in its name (the CASE subject and output accept such names); found by the build lead before review",
+      "approved_by": "project lead"
+    },
+    {
+      "path": "tests/language/case.test.ts",
+      "reason": "review round 1 fixes: rows for names that are not variable paths (limit-1, a--b, a@b) and for a trailing backslash inside quotes, in all four entries",
+      "approved_by": "project lead (round 1 fix instruction)"
+    }
+  ],
+  "manifest_amendments": [
+    {
+      "at": "2026-10-15T05:04:53.804Z",
+      "by": "lead",
+      "reason": "the golden template.md was committed by the test writer before the base, so it is not a change of this card",
+      "from": {
+        "manifest": {
+          "add": [
+            "tests/golden/render-cases/lang-case/template.md",
+            "tests/language/case.test.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/expressions.ts",
+            "core/src/interpreter.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/analyze.ts",
+          "core/src/expressions.ts",
+          "core/src/interpreter.ts",
+          "core/src/parser.ts",
+          "core/src/spec.ts",
+          "core/src/types.ts",
+          "tests/golden/render-cases/lang-case/template.md",
+          "tests/language/case.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [
+            "tests/language/case.test.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/expressions.ts",
+            "core/src/interpreter.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/analyze.ts",
+          "core/src/expressions.ts",
+          "core/src/interpreter.ts",
+          "core/src/parser.ts",
+          "core/src/spec.ts",
+          "core/src/types.ts",
+          "tests/golden/render-cases/lang-case/template.md",
+          "tests/language/case.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      }
+    }
+  ]
+}

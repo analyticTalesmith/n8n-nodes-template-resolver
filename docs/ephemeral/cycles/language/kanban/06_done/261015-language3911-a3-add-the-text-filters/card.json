@@ -1,0 +1,98 @@
+{
+  "id": "261015-language3911-a3-add-the-text-filters",
+  "title": "Add the text filters",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [
+    "261015-language3911-a1-dispatch-filters-from-one-registry-with"
+  ],
+  "origin": "language",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "core/src/filters-text.ts",
+    "tests/language/filters-text.test.ts"
+  ],
+  "manifest": {
+    "add": [
+      "tests/language/filters-text.test.ts"
+    ],
+    "remove": [],
+    "edit": [
+      "core/src/filters-text.ts"
+    ],
+    "frozen": true
+  },
+  "criteria": [
+    {
+      "text": "ft-text: each of upper, lower, title, replace (replace:find=\"a\",with=\"b\", every occurrence), indent (indent=N spaces on every non-empty line, default 2), quote (a JSON-style double-quoted string) and round (round=N decimal places, default 0) gives the expected output for a table of inputs, including empty, number, boolean and non-string input coerced to text first; no existing filter output changes",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "traces": [
+        "tests/language/filters-text.test.ts#ft-text"
+      ]
+    },
+    {
+      "text": "ft-params: a missing required parameter (replace without find, round or indent with a non-integer) or a parameter the filter does not declare is a type-error located at the variable, in every mode",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "traces": [
+        "tests/language/filters-text.test.ts#ft-params"
+      ]
+    },
+    {
+      "text": "ft-default: default=\"x\" replaces a value that is not truthy (missing, null, empty text, 0, false, empty list, empty object); the existing ?? keeps its current behaviour in this card",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "traces": [
+        "tests/language/filters-text.test.ts#ft-default"
+      ]
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/language/filters-text.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": [
+    "docs/living/architecture/modules/template-resolver.md",
+    "docs/living/architecture/language-contract.md"
+  ],
+  "started": "2026-10-15T03:36:10.134Z",
+  "ended": "2026-10-15T03:46:34.611Z",
+  "review_rounds": 1,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver"
+  ],
+  "docs_deferred": true,
+  "freeze": {
+    "at": "2026-10-15T02:53:56.150Z",
+    "brief_sha256": "b8c2cbe6503ca0262a3d73019f3016d601fe54e9dd5f9c4922710e7df2b35caa",
+    "brief_core_sha256": "0b73a5dcd3d2046e9f8fea775d1e95371f469f3f981b4378f44a95968e12dd4e",
+    "manifest_sha256": "4b358cdbaae10f433c2580bc5001444c7338fb4c07bcd4ee9717dd58da6f944d",
+    "criteria_sha256": "3afaec3ab66d775f61aeb6516e48fcd56ac96b1c328e103b9b50ee81a3025f1a",
+    "scope_sha256": "9efaef929a6791f1ecffc91abad1db6c36e323df1076b617b5f6038f67126930",
+    "scope_parts": {
+      "files_scope": "1ca1b27ddee01d14951a5ffbac287c4e67f3887a68bad1f9e637d66465bba4f4",
+      "docs_impact": "734a983468bce1e95b3ea76d75d42c73287af7532427891c8225fc0f0e1f04dd",
+      "docs_deferred": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+      "gate": "86e65c53831c9bc5a24084075fbf5ad2600622a2648b9bb50cbf2c8eb4b26b31"
+    }
+  },
+  "base_commit": "f4e552a71ebe770925d1bd5eb5a33fdaf91c1974",
+  "test_amendments": [
+    {
+      "path": "tests/language/filters-text.test.ts",
+      "reason": "review round 1 finding f1: five round rows for exponent text that is not a finite number",
+      "approved_by": "project lead (round 1 fix instruction)"
+    }
+  ]
+}

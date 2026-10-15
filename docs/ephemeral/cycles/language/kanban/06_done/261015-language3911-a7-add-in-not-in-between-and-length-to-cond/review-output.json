@@ -1,0 +1,93 @@
+{
+  "restatement": "The card adds `in`, `not in`, `between [lo, hi]` and a `.length` path segment to the condition language of a deterministic template engine that never evaluates template text as code. A quoted literal on either side of `==`, `!=` or an `in` list item now compares as text. An unquoted number to the right of contains, startsWith or endsWith keeps the digits as written. Any unrecognized word next to an operator is a located type-error in strict and lenient mode alike. render and resolveTemplate must behave the same, analyze and spec() must list the new operators and the variables they read, and the work must not change existing tests, add a runtime dependency, compile a template-supplied regex, or let an unknown name through in lenient mode.",
+  "brief_mismatch": "The spec says the substring test of `in` against text is case-sensitive and is 'the same result as \"text\" contains x'. The module document (template-resolver.md, Conditions and operators) describes contains as case-insensitive (regex flag i). The frozen test `x in \"hello world\"` with x=\"LO\" expects false, so both statements cannot hold unless contains is case-sensitive today. The diff does not show the contains switch, so I could not settle which one is true. The lead should correct whichever document is wrong.",
+  "verification_plan": [
+    "c1: check that splitMembership finds in or not in (any case, whitespace on both sides) outside quotes, brackets and parentheses.",
+    "c1: check that the list literal parser rejects an empty item, a nested [ and a missing ], allows [], and respects quotes and escaped quotes.",
+    "c1: check that array membership uses the same equality rule as ==, and that array, object and BigInt elements never match.",
+    "c1: check that a text right side gives a case-sensitive substring test, a missing or null left side gives false (not in gives true), not in is exactly the negation of in, and a number, boolean or object right side or an array, object or BigInt left side is a type-error with no raw exception.",
+    "c2: check that between takes exactly two bounds, is inclusive at both ends, gives false when lo > hi, uses the same number coercion as >, and makes every non-numeric operand (including missing x) a located type-error.",
+    "c3: check that one length helper is shared by resolveValue and resolveNestedPath; that arrays give their count and strings their UTF-16 length; that an own length key (null included) wins on objects and JSON-object text; that other values stay null; and that a root `length` stays an ordinary variable.",
+    "c4: check that valuesEqual uses text comparison when either side is quoted, and that the string operators use the written text of an unquoted number on the right.",
+    "c5: check that an operand with bare whitespace that is not a literal or a key throws Unrecognized condition in every mode and in every operator position, that chained operators fail, and that unknown operator words fail.",
+    "c6: check that spec() appends the four entries once each, and that conditionOperands returns the in, between and list-item operands so analyze records them, with malformed forms giving unrecognized-condition.",
+    "m1-m4: check that no existing test file changes, no dependency is added, no regex is built from template text, and nothing lenient-only lets an unknown name through.",
+    "Scope: check that only the files in files_scope change."
+  ],
+  "findings": [
+    {
+      "title": "Two living architecture documents edited outside the card's files scope, with no scope exception logged",
+      "class": "drift",
+      "serves": {
+        "target": "card-goal",
+        "scenario": "The card allows writes only to analyze.ts, expressions.ts, interpreter.ts, spec.ts and operators.test.ts. The diff also rewrites docs/living/architecture/language-contract.md (new 'Condition operators' section) and docs/living/architecture/modules/template-resolver.md. Both documents already say state: built, so they describe unmerged behavior as built, bypassing the delta and apply flow that records durable facts. The new contract text also adds rules the spec does not settle, such as a missing right side of in giving false, and drops the ternary node from the list of error locations."
+      },
+      "rubric": "the card scope is respected (expressions, interpreter, analyze, spec and the operators test file)",
+      "reproduction": "Compare the Manifest and scope section (files_scope) with the diff headers. diff --git a/docs/living/architecture/language-contract.md and diff --git a/docs/living/architecture/modules/template-resolver.md are present, and the scope exceptions log says none were logged.",
+      "evidence": [
+        "diff:docs/living/architecture/language-contract.md",
+        "diff:docs/living/architecture/modules/template-resolver.md",
+        "doc:card.md Scope"
+      ],
+      "location": "docs/living/architecture/language-contract.md:63"
+    },
+    {
+      "title": "in / not in skips the left-side type check when the right side is missing or null",
+      "class": "goal-risk",
+      "serves": {
+        "target": "c1",
+        "scenario": "isMember returns false (so not in returns true) when items and text are both null, before it checks the left side. With `a in list`, an object, array, cyclic or BigInt `a` and no `list` in the data, the result is a silent false or true instead of the type-error the spec gives for such a left side. The same template errors or passes depending on whether unrelated data is present."
+      },
+      "rubric": "each criterion is met by the diff and its test",
+      "reproduction": "render('{{IF a in list}}Y{{ELSE}}N{{END_IF}}', { a: { k: 1 } }) renders 'N' instead of a type-error, because isMember returns at `if (items === null && text === null) return false;` before the !isScalar(left.value) check. No frozen test row covers an untestable left side with a missing right side.",
+      "evidence": [
+        "diff:core/src/expressions.ts",
+        "code:core/src/expressions.ts:625",
+        "doc:spec.md in / not in: 'type-error: ... the left side is an array, an object (cyclic or not) or a BigInt'"
+      ],
+      "location": "core/src/expressions.ts:625"
+    },
+    {
+      "title": "between coerces booleans to numbers, so a boolean operand passes instead of being a type-error",
+      "class": "goal-risk",
+      "serves": {
+        "target": "c2",
+        "scenario": "tryEvaluateBetween runs each operand through tryCoerceToNumber, which per the module document converts booleans to 1 or 0. `flag between [0, 1]` with flag=true returns true, and `x between [true, 5]` reads the bound as 1. The spec limits coercion to 'numbers and numeric text' and says any non-numeric operand is a type-error. If > also coerces booleans, the spec's parenthetical is wrong and needs settling instead."
+      },
+      "rubric": "each criterion is met by the diff and its test",
+      "reproduction": "render('{{IF x between [0, 1]}}Y{{ELSE}}N{{END_IF}}', { x: true }) is expected to give a type-error. By the coercion documented for tryCoerceToNumber ('booleans (1/0)') it renders 'Y'. No frozen test row covers a boolean operand.",
+      "evidence": [
+        "code:core/src/expressions.ts:657",
+        "doc:docs/living/architecture/modules/template-resolver.md Coercion: 'Number: numbers (not NaN), booleans (1/0), non-empty trimmed numeric strings'",
+        "doc:spec.md between: 'the same number coercion as > (numbers and numeric text)'"
+      ],
+      "location": "core/src/expressions.ts:657"
+    },
+    {
+      "title": "describeOperand calls JSON.stringify on operands in error messages, which the spec rules out",
+      "class": "drift",
+      "serves": {
+        "target": "card-goal",
+        "scenario": "The spec says 'do not call JSON.stringify on an operand in a message'. describeOperand does exactly that, inside a try/catch. Raw exceptions are still avoided, so the criterion holds, but a large operand is fully serialized into the error text, and the code departs from the contract's stated rule."
+      },
+      "rubric": "each criterion is met by the diff and its test",
+      "reproduction": "Read describeOperand in the diff: `const json = JSON.stringify(value);` is used by the between, in and > error messages.",
+      "evidence": [
+        "diff:core/src/expressions.ts",
+        "code:core/src/expressions.ts:149"
+      ],
+      "location": "core/src/expressions.ts:149"
+    }
+  ],
+  "responses": [],
+  "reviewer": {
+    "kind": "fallback",
+    "label": "opus fallback (same model family as the builder; has repository access)"
+  },
+  "at": "2026-10-15T04:45:17.662Z",
+  "card": "261015-language3911-a7-add-in-not-in-between-and-length-to-cond",
+  "tier": "product",
+  "packet_sha256": "a43807475bf2f79eb6616ad309c41f51347d65a9a6d153f7951e78fea07a2f03",
+  "diff_sha256": "4092e88afa835395f9f2d78be9655867e66a73485994426b108af56e27b88511",
+  "dropped": []
+}

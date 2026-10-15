@@ -33,7 +33,10 @@ export function resolveTemplate(
   const tokens = lexer.tokenize();
 
   // Parse to AST
-  const parser = new Parser(tokens, { maxDepth: limits.maxDepth });
+  const parser = new Parser(tokens, {
+    maxDepth: limits.maxDepth,
+    maxNodes: limits.maxNodes,
+  });
   const ast = parser.parse();
 
   // Interpret
