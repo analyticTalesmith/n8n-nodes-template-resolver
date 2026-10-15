@@ -259,7 +259,7 @@
       "location": "core/src/interpreter.ts:967",
       "label": "f5",
       "raised_in": 2,
-      "status": "fixed",
+      "status": "verified",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [
@@ -298,6 +298,20 @@
       "replies": [],
       "rulings": [],
       "ticket": "261015-language2c13-a10-follow-up-call-path-arguments-reject-nam"
+    }
+  ],
+  "closures": [
+    {
+      "finding": "f5",
+      "by": "project lead",
+      "at": "2026-10-15T17:00:24.603Z",
+      "gate_commit": "7cc1c409821e76d580bc54baf9982da11c2f2998",
+      "test": "tests/language/macros.test.ts",
+      "files": [
+        "core/src/interpreter.ts",
+        "docs/ephemeral/work/261015-language2c13-a4-define-and-call-macros/gate-run.json"
+      ],
+      "diff_sha256": "9e67fe5b8e3ad02e0c2b173d5b873b113f3990a4c359b9b264531f5656220257"
     }
   ]
 }

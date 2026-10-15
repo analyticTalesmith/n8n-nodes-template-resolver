@@ -26,6 +26,10 @@ Restatement: Add hoisted, top-level-only `{{DEFINE name(params)}}...{{END_DEFINE
 - Response to f2: withdraw (evidence: diff:core/src/interpreter.ts, code:core/src/interpreter.ts:6236, test:mc-compat: a trimming body keeps the output it had before macros)
 - Response to f3: withdraw (evidence: diff:core/src/interpreter.ts, code:core/src/interpreter.ts:6494, code:core/src/interpreter.ts:6680, diff:core/src/render.ts, test:mc-output: a finished list line, table cell and table row counts as it finishes)
 
+## Gate-verified closures
+
+- f5: verified by project lead at 2026-10-15T17:00:24.603Z; gate run at commit 7cc1c409821e; test tests/language/macros.test.ts; files core/src/interpreter.ts, docs/ephemeral/work/261015-language2c13-a4-define-and-call-macros/gate-run.json
+
 ## Findings
 
 ### f1: A DEFINE inside a top-level ROW or HEADER is accepted silently instead of a syntax-error, and analyze then lists a macro that render does not have
@@ -71,7 +75,7 @@ Restatement: Add hoisted, top-level-only `{{DEFINE name(params)}}...{{END_DEFINE
 ### f5: CALLs in one text run of a legacy TABLE-FOR body all run before the output check sees any of them
 
 - Class: goal-risk
-- Status: fixed
+- Status: verified
 - Serves: c7: The card adds 'Call' to the inline kinds of the legacy text-row rule. In tableRowsFrom, flush() renders a run of several inline nodes with `run.map((node) => this.visit(node)).join("")` and only then hands the lines to addText, which is the only place the cells are held. Each CALL in the run checks `held` only while its own body is built, and releases it on return. The outputs of earlier siblings in the same run are never in `held`. runLoop checks the loop total only after the whole iteration. So N CALLs written in one line of a FOR inside a TABLE all run, each producing up to the limit, before limit-output trips. This is the same unbounded-sibling pattern f3 fixed for LIST lines and ROW cells, left open on this path. It breaks the cycle goal that every call and output is bounded and c7's 'before the work holds much more than twice the limit'.
 - Raised in round 2; sustained 0, failed fixes 0
 - Reproduction: Template: `{{DEFINE a()}}` + 'x'.repeat(100) + `{{END_DEFINE}}{{TABLE}}{{FOR one AS i}}` + '{{CALL a()}}'.repeat(100) + `|1\n{{END_FOR}}{{END_TABLE}}`. Data: {one:[1]}. Limits: {maxOutputChars: 1000}. Expected by c7: limit-output with stats.iterations at most about 22. Per the code in the diff, all 100 calls run (the run is visited whole at flush) before addText holds a cell, so stats.iterations is about 101. With a fan-out macro (each top-level call itself producing nearly the limit), the work held grows to N times the limit. Smallest change that restores c7: in flush, hold each visited node's output as it is produced, for example by rendering the run through renderChildren or by calling hold per node and releasing it after addText.
