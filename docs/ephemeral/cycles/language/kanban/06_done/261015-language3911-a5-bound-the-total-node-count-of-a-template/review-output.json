@@ -1,0 +1,46 @@
+{
+  "restatement": "Make template size bounded. A new limit, limits.maxNodes (default 20000), counts every AST node except the Program root while parsing, parent before children, at each node's opening token. Node maxNodes + 1 fails with a limit-nodes diagnostic at that node, with the same code and position in render, validate, analyze and resolveTemplate. Long ELSEIF chains and deep nesting must end in a result or a coded diagnostic, never a stack overflow. The API accepts options.limits.maxNodes but may only lower it, and validate and analyze on the server use the server's maxNodes. The CLI gets --max-nodes, and the OpenAPI Limits and RequestLimits schemas list the field. analyze uses the caller's limits and otherwise the defaults; with no caller maxDepth it stops failing beyond 32 levels and bounds only absurd nesting. Existing test expectations (apart from the named default-limits fixtures) and existing outputs stay unchanged, with no new runtime dependency and no eval.",
+  "brief_mismatch": "Section 1's must-nots and card.md's must-nots disagree. The card lists 'change any existing test expectation other than the one named amendment (if any)' (only spec.test.ts in its interface contract), 'compile a template-supplied regular expression' and 'let an unknown name or bad parameter pass in lenient mode (ADR 0003)'. Contract m1 names three fixture amendments (spec.test.ts, limits.test.ts, api.test.ts), and m2 ('change what any existing template outputs') does not appear in the card. spec.md Decisions resolve the fixture list, but the card text was never brought into line. I reviewed against section 1.",
+  "verification_plan": [
+    "c1: confirm one counting point in the parser that increments at each node's opening token, excludes Program, and throws LimitError('limit-nodes') at the token of node maxNodes + 1. Result: open()/count() at parser.ts:1057-1077; every node-creating parse function changed from consume to open; ELSE uses consume, so it adds no node, as the frozen test expects.",
+    "c1: confirm render, resolveTemplate, analyze and validate all pass limits.maxNodes into the Parser, and that the Parser falls back to DEFAULT_LIMITS.maxNodes. Result: render.ts:76-79, resolve.ts:36-39, analyze.ts:91; Parser constructor default at parser.ts:1171. validate reaches the Parser through analyze, and the frozen validate rows pass in the gate.",
+    "c1: confirm DEFAULT_LIMITS.maxNodes is 20000, so spec().limits and withDefaultLimits carry it. Result: types.ts:306 changes the pre-base stub from 0 to 20000.",
+    "c2: confirm the ELSEIF chain is iterative in the parser, interpreter and analyzer, with the AST shape (nested IfNode in alternate) unchanged. Result: parseIf loop (parser.ts:262-273), Interpreter.visitIf for(;;) (interpreter.ts:238-251), Walker.visitIf for(;;) (analyze.ts:204-215); alternate is still a nested IfNode.",
+    "c2: confirm ELSEIF semantics are unchanged (first true branch wins, ELSE runs when none match, at() relocation per branch). Result: equivalent; at(current, ...) is applied to each branch as the recursion did before.",
+    "c4: confirm analyze uses the caller's maxDepth exactly when given and otherwise an internal 256, and that render and resolveTemplate keep 32. Result: analyze.ts:91 uses `options?.limits?.maxDepth ?? ANALYZE_MAX_DEPTH`; render and resolve pass the filled limits.",
+    "c3: confirm the API generic limit lowering and validation cover maxNodes, and that validate and analyze routes pass the server limits. Result: routes.ts:67 and :76 now pass context.limits whole. renderRoute is unchanged, so lowering and the 400 check must already be generic over Limits keys; the frozen API rows pass in the gate.",
+    "c3: confirm the CLI flag table, parseLimits mapping, usage text, OpenAPI Limits (required, integer, minimum 0) and RequestLimits. Result: present in cli/main.ts and api/openapi.json. joinNegativeValues lets '--max-nodes -1' reach parseCount's named message and affects only string flags followed by a value starting with '-' and a digit.",
+    "m1: confirm the only edited test expectations are the default-limits fixtures. Result: only api.test.ts:151 and limits.test.ts:182 gain maxNodes: 20000; the frozen test file is unchanged in the diff.",
+    "m2: confirm no existing template output changes. Result: the iterative rewrite is behavior-equivalent. The 'Unclosed {{ELSE}}' location now names the last branch rather than the IF, but this is a diagnostic, not an output, and the lexer's block balancing pre-empts it.",
+    "m3/m4: confirm no new imports or dependencies and no eval/Function. Result: none added.",
+    "Scope: compare every diff path with files_scope. Result: docs/living/decisions/adr/INDEX.md is outside scope and unrelated to the card (see finding); the other living-doc edits were ruled in f2.",
+    "Interface heuristics: not applicable; the diff changes no web-app interface."
+  ],
+  "findings": [
+    {
+      "title": "Unrelated ADR index entry for ADR 0007 (statement tags) added outside the card's scope",
+      "class": "drift",
+      "serves": {
+        "target": "card-goal",
+        "scenario": "The card's diff adds a living-index line for ADR 0007 (SET, INPUT and CALL as single tags), which has nothing to do with node limits. No ADR file is in this diff, so the entry either belongs to another card's work or links to a document this change does not add. That blurs which card owns the record."
+      },
+      "rubric": "no change outside the card scope (the card amends its scope to the interpreter, the API routes and two default-limits fixtures)",
+      "reproduction": "Diff the head commit against base f4e552a for docs/living/decisions/adr/INDEX.md: a line for 0007-statement-tags-without-a-body.md is added. The path is in neither files_scope nor the manifest, and no 0007 ADR file appears among the diff's paths.",
+      "evidence": [
+        "diff:docs/living/decisions/adr/INDEX.md"
+      ],
+      "location": "docs/living/decisions/adr/INDEX.md:16"
+    }
+  ],
+  "responses": [],
+  "reviewer": {
+    "kind": "fallback",
+    "label": "opus fallback (same model family as the builder; has repository access)"
+  },
+  "at": "2026-10-15T03:54:03.617Z",
+  "card": "261015-language3911-a5-bound-the-total-node-count-of-a-template",
+  "tier": "product",
+  "packet_sha256": "c3d38ebaa04ea133b3f5e1a94c0ea7e0ea0d595e982f1d147c2e5289d1d7d1bd",
+  "diff_sha256": "d5ab98742646bc2de3fb5cb73c494e37fffbae567e45fd8b3b538cb8414b988e",
+  "dropped": []
+}

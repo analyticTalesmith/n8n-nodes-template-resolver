@@ -2,17 +2,17 @@
 type: review-packet
 card: 261015-language3911-a5-bound-the-total-node-count-of-a-template
 tier: product
-built_at: 2026-10-15T03:42:56.844Z
+built_at: 2026-10-15T03:51:58.462Z
 base: f4e552a71ebe770925d1bd5eb5a33fdaf91c1974
-head: bde45031262c225bcc5964e05620bd7d4e9cce30
-read_at: bde45031262c225bcc5964e05620bd7d4e9cce30
+head: a2af85094bc0585ce64456d3a7f4afda9d9e7f35
+read_at: a2af85094bc0585ce64456d3a7f4afda9d9e7f35
 frozen: true
 brief_sha256: af657247650903bd788ed4119535864dcd3dce3db945023063242e849e7c9b6a
 manifest_sha256: d385e855723f85b089d9273f82a97e34a8d0ddeb664ceb7f08d3ce3118de6613
 criteria_sha256: 9ef6068d08ecf5affc66afba545ad0fbb5f17d9ed261f488b456aa01b444c0ce
 scope_sha256: 6d192b40847d2b0e8bff5ba737213b31ebc34bca51a57afb752545612e7f2f99
-diff_sha256: 7b7ef6f980a12f0dcb77701f8331d9b89d0b03be9150c20390c23ea586c7ae61
-omitted_paths: 22
+diff_sha256: d5ab98742646bc2de3fb5cb73c494e37fffbae567e45fd8b3b538cb8414b988e
+omitted_paths: 28
 criteria_count: 4
 must_not_count: 4
 ---
@@ -81,7 +81,7 @@ polish: is the added code small, and are the ELSEIF loops free of duplicated log
 - docs/living/architecture/language-contract.md
 ```
 
-### spec.md as of base f4e552a71ebe, read at bde45031262c
+### spec.md as of base f4e552a71ebe, read at a2af85094bc0
 
 ```
 # Spec
@@ -107,7 +107,7 @@ polish: is the added code small, and are the ELSEIF loops free of duplicated log
 - Scope amendments: `core/src/interpreter.ts` (iterative ELSEIF), `api/routes.ts` (validate and analyze pass the server's limits), and the one-line default-limits fixtures in `tests/headless/limits.test.ts` and `tests/headless/api.test.ts`.
 ```
 
-### card.md as of base f4e552a71ebe, read at bde45031262c
+### card.md as of base f4e552a71ebe, read at a2af85094bc0
 
 ```
 # Bound the total node count of a template
@@ -495,7 +495,7 @@ The contract for the template language beyond the prompt-aware constructs: filte
 
 ## Frozen tests (read-only)
 
-These test files are shown as committed at bde45031262c, the commit the contract is read at; the diff starts at base f4e552a71ebe, so a file added or changed since then is in the diff too. They are part of the plan, not the builder's reasoning. Judge the diff against them; a change to one of them in section 4 is a deviation from the plan, so report it.
+These test files are shown as committed at a2af85094bc0, the commit the contract is read at; the diff starts at base f4e552a71ebe, so a file added or changed since then is in the diff too. They are part of the plan, not the builder's reasoning. Judge the diff against them; a change to one of them in section 4 is a deviation from the plan, so report it.
 
 ### tests/language/limits-nodes.test.ts (frozen)
 
@@ -927,7 +927,7 @@ describe("ln-surfaces: API, CLI and OpenAPI carry maxNodes", () => {
 
 ## 4. Diff
 
-22 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
+28 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
 
 Delta documents shown below as the card's own deliverables: docs/ephemeral/cycles/language/deltas/node-limit-1.md, docs/ephemeral/cycles/language/deltas/node-limit-2.md, docs/ephemeral/cycles/language/deltas/node-limit-3.md, docs/ephemeral/cycles/language/deltas/node-limit-4.md.
 
@@ -1689,6 +1689,16 @@ index fbfbe22..07a6ec5 100644
  - `spec()` describes the language: `version` (the language version, `"1.0"`), `blocks`, `filters`, `operators`, the default `limits`, the render `options` and `syntax` (variable, comment, trim markers, escape).
  - `analyze` additionally reports `required` per variable (always `!optional`) and `blocks`, a count per block kind (`IF`, `CASE`, `FOR`, `LIST`, `TABLE`, `SECTION`, `FENCE`); it throws on a template that does not parse.
  - The n8n node now detects variables with `analyze`, fails early in strict mode on unmapped required variables, renders with `render` and turns a failed result into a `NodeOperationError` carrying the first diagnostic's message, line and column.
+diff --git a/docs/living/decisions/adr/INDEX.md b/docs/living/decisions/adr/INDEX.md
+index 767f0d0..f2eb4fa 100644
+--- a/docs/living/decisions/adr/INDEX.md
++++ b/docs/living/decisions/adr/INDEX.md
+@@ -13,4 +13,5 @@ Contents of docs/living/decisions/adr.
+ - [0004-render-returns-a-structured-result.md](0004-render-returns-a-structured-result.md) — Render returns a structured result (output, messages, stats, diagnostics) everywhere; the n8n node maps output to its old field.
+ - [0005-dependency-free-token-estimator.md](0005-dependency-free-token-estimator.md) — Core ships a dependency-free token estimator (chars/4, wider error bar for code and JSON) with a hook for a real tokenizer.
+ - [0006-n8n-node-imports-core-directly.md](0006-n8n-node-imports-core-directly.md) — The n8n node imports the core directly, with n8n libraries as peer dependencies; the API is an equally thin consumer.
++- [0007-statement-tags-without-a-body.md](0007-statement-tags-without-a-body.md) — ADR: SET, INPUT and CALL are single tags without an END, like ELSE
+ <!-- end generated index -->
 diff --git a/tests/headless/api.test.ts b/tests/headless/api.test.ts
 index 699b47d..0cc3bee 100644
 --- a/tests/headless/api.test.ts
@@ -1716,7 +1726,7 @@ index 15a14a1..51f9b91 100644
    it("lm-defaults: with no limits option, 10000 iterations render and 10001 throw limit-iterations", () => {
 diff --git a/docs/ephemeral/cycles/language/deltas/node-limit-1.md b/docs/ephemeral/cycles/language/deltas/node-limit-1.md
 new file mode 100644
-index 0000000..8c97b9a
+index 0000000..a1b4d17
 --- /dev/null
 +++ b/docs/ephemeral/cycles/language/deltas/node-limit-1.md
 @@ -0,0 +1,10 @@
@@ -1729,10 +1739,10 @@ index 0000000..8c97b9a
 +
 +# Proposed change
 +
-+<!-- Say what changes in the target document. For add: what the planned document will cover. For modify: which parts change and why. For remove: why the document goes. For recover: the area the recovered document describes; apply it by slug when its archaeology card is done. Other changes are applied when the cycle merges, and the document becomes built. Nobody sets validated here: only an approved close review does. -->
++The template-resolver module now lists `limit-nodes` among the diagnostic codes and adds `maxNodes` (default 20000, counted at parse and located at the node that crosses it) to `Limits`, with `analyze` and `validate` applying the caller's `maxNodes` and `maxDepth` and ELSEIF chains handled in loops.
 diff --git a/docs/ephemeral/cycles/language/deltas/node-limit-2.md b/docs/ephemeral/cycles/language/deltas/node-limit-2.md
 new file mode 100644
-index 0000000..49d3128
+index 0000000..45cb26d
 --- /dev/null
 +++ b/docs/ephemeral/cycles/language/deltas/node-limit-2.md
 @@ -0,0 +1,10 @@
@@ -1745,10 +1755,10 @@ index 0000000..49d3128
 +
 +# Proposed change
 +
-+<!-- Say what changes in the target document. For add: what the planned document will cover. For modify: which parts change and why. For remove: why the document goes. For recover: the area the recovered document describes; apply it by slug when its archaeology card is done. Other changes are applied when the cycle merges, and the document becomes built. Nobody sets validated here: only an approved close review does. -->
++The api module now names `maxNodes` (default 20000) among the core defaults, and says `validate` and `analyze` run with the server's `maxDepth` and `maxNodes`, so an `analyze` parse failure can be `limit-nodes`.
 diff --git a/docs/ephemeral/cycles/language/deltas/node-limit-3.md b/docs/ephemeral/cycles/language/deltas/node-limit-3.md
 new file mode 100644
-index 0000000..15984f4
+index 0000000..8a10253
 --- /dev/null
 +++ b/docs/ephemeral/cycles/language/deltas/node-limit-3.md
 @@ -0,0 +1,10 @@
@@ -1761,10 +1771,10 @@ index 0000000..15984f4
 +
 +# Proposed change
 +
-+<!-- Say what changes in the target document. For add: what the planned document will cover. For modify: which parts change and why. For remove: why the document goes. For recover: the area the recovered document describes; apply it by slug when its archaeology card is done. Other changes are applied when the cycle merges, and the document becomes built. Nobody sets validated here: only an approved close review does. -->
++The cli module now lists the `--max-nodes n` flag in the `render` command row.
 diff --git a/docs/ephemeral/cycles/language/deltas/node-limit-4.md b/docs/ephemeral/cycles/language/deltas/node-limit-4.md
 new file mode 100644
-index 0000000..772348d
+index 0000000..61996cd
 --- /dev/null
 +++ b/docs/ephemeral/cycles/language/deltas/node-limit-4.md
 @@ -0,0 +1,10 @@
@@ -1777,12 +1787,27 @@ index 0000000..772348d
 +
 +# Proposed change
 +
-+<!-- Say what changes in the target document. For add: what the planned document will cover. For modify: which parts change and why. For remove: why the document goes. For recover: the area the recovered document describes; apply it by slug when its archaeology card is done. Other changes are applied when the cycle merges, and the document becomes built. Nobody sets validated here: only an approved close review does. -->
++The headless contract now includes `maxNodes` in `Limits` and its defaults, `limit-nodes` in the diagnostic codes, `--max-nodes` on `render`, and the server `maxNodes` ceiling for `validate` and `analyze`.
 ````
 
 ## Gate run
 
-Gate command green at commit bde45031262c (193 tests).
+Gate command green at commit a2af85094bc0 (193 tests).
+
+## 5. Earlier findings and replies
+
+Answer each fix-class (defect or goal-risk) finding below in `responses` with sustain or withdraw and evidence. Raise new findings only about what the revision changed or an in-scope problem newly evidenced. A finding listed under Already ruled is decided: do not raise it again unless the revision touched it (say so in `responses`) or you have new evidence.
+
+No earlier findings remain open.
+### Already ruled
+
+- f1: IF/ELSEIF condition parsing moved after the body, so a malformed template can now report a different first error (goal-risk, withdrawn)
+  - Review lead ruling: withdraw: Not reproduced: extractCondition is pure (no throw), same at base f4e552a and head. Ran render on '{{IF }}{{FOR bad}}{{END_FOR}}{{END_IF}}' at both: identical diagnostics.
+- f2: Living architecture documents edited directly, outside files_scope, with no scope exception logged (drift, withdrawn)
+  - Review lead ruling: withdraw: living documents are changed by the card on purpose: docs_impact lists them and docs_deferred is true
+- f3: The four node-limit delta documents are empty placeholders: the Proposed change body is only the template comment (drift, withdrawn)
+  - Review lead ruling: withdraw: The four node-limit delta files were empty placeholders at review time and have since been filled (commit 10902f8 docs(language): fill the node limit delta summaries); the finding no longer holds.
+- f4: A caller-raised maxDepth still lets deep nesting overflow the stack in render and analyze (drift, filed)
 
 ## Output
 
