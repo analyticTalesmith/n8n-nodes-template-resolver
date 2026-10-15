@@ -1,0 +1,7 @@
+# Brief: implementer, one fix for the second review of the macros card
+
+Read the fix request `docs/ephemeral/cycles/language-2/kanban/04_review/261015-language2c13-a4-define-and-call-macros/fix-requests-2.md` in the main checkout `C:\Users\jon03\Documents\Projects\Personal\n8n-nodes-template-resolver` (absolute path). It is the contract: in the legacy TABLE-FOR text-row path of `collectRows` (`core/src/interpreter.ts`), render the run of inline nodes through `renderChildren` in a trimming context (`this.trimming(true, ...)`), so each node's output is counted into `held` as it finishes; then split and add rows exactly as today. Every legacy output stays unchanged; a template without CALL behaves as at base (the guard rows in the last block of `tests/language/macros.test.ts` pin it).
+
+Rules: work only in the worktree `C:\Users\jon03\Documents\Projects\Personal\n8n-nodes-template-resolver\.worktrees\feature-define-and-call-macros`; edit only `core/src/interpreter.ts`; never edit a test (if one seems wrong, stop and report it as a numbered question); never push; never redirect output to `nul`; never run `npm install`. Read the spec `docs/ephemeral/work/261015-language2c13-a4-define-and-call-macros/spec.md` first.
+Check: `node node_modules/jest/bin/jest.js --runTestsByPath tests/language/macros.test.ts`, then the whole suite `node node_modules/jest/bin/jest.js` (all green) and `npx tsc --noEmit -p .` (exit 0).
+Commit once: `fix(language): count legacy table text rows as they render`. Then say "done" and report: status, the change in one line, the numbers.
