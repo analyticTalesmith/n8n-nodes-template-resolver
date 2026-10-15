@@ -34,7 +34,7 @@ Group in `filters-text.ts`. Each coerces its input to text as the output step pr
 | `replace:find="a",with="b"` | every non-overlapping occurrence of the literal `find` (required, non-empty) replaced by `with` (default empty text); never read as a pattern |
 | `indent[=N]` | N spaces (whole number 0 to 100, default 2) before every line that has characters; line breaks are kept |
 | `quote` | the text as a JSON double-quoted string; no parameter |
-| `round[=N]` | a number rounded half away from zero to exactly N decimals (whole number 0 to 20, default 0), computed on its digits so `1.005` with `round=2` gives `1.01`; text that is not a number is left as it is |
-| `default="x"` | `x` (required) when the raw value is not truthy (missing, null, empty text, 0, false, empty list, empty object), else the value; `??` keeps its own rule |
+| `round[=N]` | a number rounded half away from zero to exactly N decimals (whole number 0 to 20, default 0), computed on its digits so `1.005` with `round=2` gives `1.01`; text that is not a finite number, or has an exponent beyond 400 (`1e400`), is left as it is |
+| `default="x"` | `x` (required) when the raw value is not truthy by the language rule: missing, null, empty or whitespace-only text, the texts `0`, `false` and `no` in any letter case, the number 0, false, an empty list or an empty object; else the value. `??` keeps its own rule |
 
 In strict mode a missing variable is reported before `default` runs, so `default` replaces missing data in lenient mode only.
