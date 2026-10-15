@@ -2,17 +2,17 @@
 type: review-packet
 card: 261015-language3911-a1-dispatch-filters-from-one-registry-with
 tier: product
-built_at: 2026-10-15T02:23:25.915Z
+built_at: 2026-10-15T02:27:44.240Z
 base: 49e3aebd8eaf7b6001162841f2387f79f7297c1f
-head: 0005c77618b551da3c03960e2486d42bd61beb74
-read_at: 0005c77618b551da3c03960e2486d42bd61beb74
+head: 68fcfb5d098dc45fb11665c31750a05327200c18
+read_at: 68fcfb5d098dc45fb11665c31750a05327200c18
 frozen: true
 brief_sha256: 8129f2277734285a9bc82e6bc2be5a025e2e96373f05ca71c5399925ddcaad06
-manifest_sha256: 24e359250acaf2edf957b713101a76489858d63540d6cfc8538fce36135986c7
+manifest_sha256: 50d7e76597f671f7494d6e0763e10a92148a55525590f8318f3edef71a265773
 criteria_sha256: 87fc4a50c974d102660872e442f8e2af5ed2bdc19ad5d9eea0373e0d7efc8976
-scope_sha256: d701d54c0d77babf6fcadf2545a7b84a8af26b4189bea483998883ed785a9012
-diff_sha256: 8761ba3a2c9f09924627973b0c1ae40cedb6050dad930ae8a39c0ae9a67f9c74
-omitted_paths: 8
+scope_sha256: fae54ac6d0384fa05611f11b4455ef065b309854daf1d95bc7efa3b6762519b7
+diff_sha256: e61a11ebfa0049b0dbdec7c09c13b74940bbe9a18dca70b976ef182ffbabb458
+omitted_paths: 17
 criteria_count: 6
 must_not_count: 4
 ---
@@ -20,6 +20,12 @@ must_not_count: 4
 # Review packet: 261015-language3911-a1-dispatch-filters-from-one-registry-with
 
 Manifest amended after the freeze at 2026-10-15T02:22:56.465Z by lead: stubs and the spec test amendment were committed by the test writer before the base; errors.ts needed no change (add -core/src/filters-collection.ts, add -core/src/filters-text.ts, add -tests/language/filter-registry.test.ts, edit -core/src/errors.ts, edit -core/src/types.ts, edit -tests/headless/spec.test.ts)
+
+Manifest amended after the freeze at 2026-10-15T02:24:49.725Z by lead: review fix adds table rows to the registry test and an analyze check for undeclared parameters (edit +tests/language/filter-registry.test.ts)
+
+Manifest amended after the freeze at 2026-10-15T02:25:38.054Z by lead: validate must report an undeclared filter parameter as an error: one line in render.ts (edit +core/src/render.ts)
+
+Manifest amended after the freeze at 2026-10-15T02:27:39.830Z by lead: render.ts is edited by the review fix (scope +core/src/render.ts)
 
 Read the sections in order. Write `restatement` before you read section 3. At product tier and up, write `verification_plan` from section 1 alone before you read section 3.
 
@@ -83,7 +89,7 @@ polish: is the new code small and does it avoid a second filter list?
 - docs/living/architecture/prompt-aware-contract.md
 ```
 
-### spec.md as of base 49e3aebd8eaf, read at 0005c77618b5
+### spec.md as of base 49e3aebd8eaf, read at 68fcfb5d098d
 
 ```
 # Spec
@@ -112,7 +118,7 @@ polish: is the new code small and does it avoid a second filter list?
 - `${{x ?? '90s hits | head=3}}` renders the default `'90s hits` cut to `'90`, the same as before the quoting fix of an earlier card; `${{x ?? "abc | trim}}` keeps `trim` applying.
 ```
 
-### card.md as of base 49e3aebd8eaf, read at 0005c77618b5
+### card.md as of base 49e3aebd8eaf, read at 68fcfb5d098d
 
 ```
 # Dispatch filters from one registry with quote-aware arguments
@@ -172,9 +178,11 @@ core/src/types.ts gains FilterDefinition {name, params (the signature text spec 
 | `core/src/filters.ts` | edit | template-resolver |
 | `core/src/interpreter.ts` | edit | template-resolver |
 | `core/src/parser.ts` | edit | template-resolver |
+| `core/src/render.ts` | edit | template-resolver |
 | `core/src/spec.ts` | edit | template-resolver |
+| `tests/language/filter-registry.test.ts` | edit | template-resolver |
 
-Files scope: `core/src/analyze.ts`, `core/src/errors.ts`, `core/src/filters-collection.ts`, `core/src/filters-text.ts`, `core/src/filters.ts`, `core/src/interpreter.ts`, `core/src/parser.ts`, `core/src/spec.ts`, `core/src/types.ts`, `tests/headless/spec.test.ts`, `tests/language/filter-registry.test.ts`
+Files scope: `core/src/analyze.ts`, `core/src/errors.ts`, `core/src/filters-collection.ts`, `core/src/filters-text.ts`, `core/src/filters.ts`, `core/src/interpreter.ts`, `core/src/parser.ts`, `core/src/render.ts`, `core/src/spec.ts`, `core/src/types.ts`, `tests/headless/spec.test.ts`, `tests/language/filter-registry.test.ts`
 <!-- end generated scope -->
 ```
 
@@ -186,8 +194,8 @@ No scope exceptions are logged.
 
 - add: none
 - remove: none
-- edit: `core/src/analyze.ts`, `core/src/filters.ts`, `core/src/interpreter.ts`, `core/src/parser.ts`, `core/src/spec.ts`
-- files_scope: `core/src/analyze.ts`, `core/src/errors.ts`, `core/src/filters-collection.ts`, `core/src/filters-text.ts`, `core/src/filters.ts`, `core/src/interpreter.ts`, `core/src/parser.ts`, `core/src/spec.ts`, `core/src/types.ts`, `tests/headless/spec.test.ts`, `tests/language/filter-registry.test.ts`
+- edit: `core/src/analyze.ts`, `core/src/filters.ts`, `core/src/interpreter.ts`, `core/src/parser.ts`, `core/src/render.ts`, `core/src/spec.ts`, `tests/language/filter-registry.test.ts`
+- files_scope: `core/src/analyze.ts`, `core/src/errors.ts`, `core/src/filters-collection.ts`, `core/src/filters-text.ts`, `core/src/filters.ts`, `core/src/interpreter.ts`, `core/src/parser.ts`, `core/src/render.ts`, `core/src/spec.ts`, `core/src/types.ts`, `tests/headless/spec.test.ts`, `tests/language/filter-registry.test.ts`
 
 ## 2. Your verification plan
 
@@ -461,7 +469,7 @@ Settled decisions apply: ADR 0001 (every block is `{{KEYWORD ...}}...{{END_KEYWO
 
 ## Frozen tests (read-only)
 
-These test files are shown as committed at 0005c77618b5, the commit the contract is read at; the diff starts at base 49e3aebd8eaf, so a file added or changed since then is in the diff too. They are part of the plan, not the builder's reasoning. Judge the diff against them; a change to one of them in section 4 is a deviation from the plan, so report it.
+These test files are shown as committed at 68fcfb5d098d, the commit the contract is read at; the diff starts at base 49e3aebd8eaf, so a file added or changed since then is in the diff too. They are part of the plan, not the builder's reasoning. Judge the diff against them; a change to one of them in section 4 is a deviation from the plan, so report it.
 
 ### tests/language/filter-registry.test.ts (frozen)
 
@@ -830,6 +838,27 @@ describe("fr-args: filter calls are parsed once, quote-aware", () => {
         });
       }
     );
+
+    it.each(errorRows)(
+      "fr-args: validate and analyze report the same undeclared parameter, %s",
+      (_n, template, line, column, make) => {
+        if (make) register(make());
+        const v = validate(template);
+        expect(v.ok).toBe(false);
+        expect(v.diagnostics[0]).toMatchObject({ severity: "error", code: "type-error", line, column });
+        const a = analyze(template).diagnostics[0];
+        expect(a).toMatchObject({ code: "type-error", line, column });
+        const r = render(template, { v: "x" }, { ...RAW, strictMode });
+        expect(a?.message).toBe(r.diagnostics[0]?.message);
+      }
+    );
+  });
+
+  it("fr-args: declared parameters give no diagnostic in validate or analyze", () => {
+    for (const t of ["intro\n  ${{ v | escape_md=block }}", "intro\n  ${{ v | head=3 }}", "intro\n  ${{ v | head:value=3 }}"]) {
+      expect(analyze(t).diagnostics).toEqual([]);
+      expect(validate(t).ok).toBe(true);
+    }
   });
 });
 
@@ -979,18 +1008,18 @@ describe("rr-spec: the language spec", () => {
 
 ## 4. Diff
 
-8 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
+17 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
 
 ```diff
 diff --git a/core/src/analyze.ts b/core/src/analyze.ts
-index 4e1af2d..2a45c96 100644
+index 4e1af2d..df97869 100644
 --- a/core/src/analyze.ts
 +++ b/core/src/analyze.ts
 @@ -1,6 +1,6 @@
  import { Lexer } from "./lexer";
  import { Parser } from "./parser";
 -import { FILTERS, parseFilter } from "./filters";
-+import { FILTER_REGISTRY } from "./filters";
++import { FILTER_REGISTRY, undeclaredParameterMessages } from "./filters";
  import {
    conditionOperands,
    hasBareWhitespace,
@@ -1003,7 +1032,7 @@ index 4e1af2d..2a45c96 100644
  /**
   * Report the variables a template reads and the filters it applies, derived
   * from the parsed template. Loop item names (inside their loop) and
-@@ -176,9 +174,9 @@ class Walker {
+@@ -176,15 +174,25 @@ class Walker {
      }
  
      for (const filter of node.filters ?? []) {
@@ -1011,12 +1040,28 @@ index 4e1af2d..2a45c96 100644
 +      const { name } = filter;
        this.filterCounts.set(name, (this.filterCounts.get(name) ?? 0) + 1);
 -      if (!KNOWN_FILTERS.has(name)) {
-+      if (!FILTER_REGISTRY.some((f) => f.name === name)) {
++      const definition = FILTER_REGISTRY.find((f) => f.name === name);
++      if (!definition) {
          this.diagnostics.push({
            code: "unknown-filter",
            message: `Unknown filter: ${name}`,
+           line: node.line,
+           column: node.column,
+         });
++        continue;
++      }
++      for (const message of undeclaredParameterMessages(definition, filter)) {
++        this.diagnostics.push({
++          code: "type-error",
++          message,
++          line: node.line,
++          column: node.column,
++        });
+       }
+     }
+   }
 diff --git a/core/src/filters.ts b/core/src/filters.ts
-index 9207061..dfb5c7f 100644
+index 9207061..f15e6a5 100644
 --- a/core/src/filters.ts
 +++ b/core/src/filters.ts
 @@ -1,8 +1,17 @@
@@ -1077,7 +1122,7 @@ index 9207061..dfb5c7f 100644
    const name = trimmed.slice(0, colonIdx).trim();
    const paramsStr = trimmed.slice(colonIdx + 1);
  
-@@ -88,72 +103,118 @@ function parseParam(param: string, params: Record<string, string>): void {
+@@ -88,72 +103,129 @@ function parseParam(param: string, params: Record<string, string>): void {
  }
  
  /**
@@ -1229,7 +1274,24 @@ index 9207061..dfb5c7f 100644
 -        1,
 -        1,
 -        FILTERS.map((f) => f.name)
+-      );
 +export const FILTERS: FilterSummary[] = listFilters();
++
++/**
++ * One message per parameter the call passes that the filter does not declare;
++ * shared by applyFilter and the static analysis so both word it alike
++ */
++export function undeclaredParameterMessages(
++  definition: { paramNames: string[] },
++  filter: FilterCall
++): string[] {
++  return Object.keys(filter.params)
++    .filter((key) => !definition.paramNames.includes(key))
++    .map(
++      (key) =>
++        `Filter ${filter.name} has no parameter '${key}' (accepts: ${definition.paramNames.join(", ") || "none"})`
++    );
++}
 +
 +/**
 + * Apply single filter to a value: an unknown name or a parameter the filter
@@ -1244,19 +1306,14 @@ index 9207061..dfb5c7f 100644
 +      1,
 +      FILTER_REGISTRY.map((f) => f.name)
 +    );
-+  }
-+  for (const key of Object.keys(filter.params)) {
-+    if (!definition.paramNames.includes(key)) {
-+      throw new Error(
-+        `Filter ${filter.name} has no parameter '${key}' (accepts: ${definition.paramNames.join(", ") || "none"})`
-       );
-+    }
    }
++  const problems = undeclaredParameterMessages(definition, filter);
++  if (problems.length > 0) throw new Error(problems[0]);
 +  return definition.apply(value, filter.params);
  }
  
  /**
-@@ -339,14 +400,8 @@ function escapeInline(text: string): string {
+@@ -339,14 +411,8 @@ function escapeInline(text: string): string {
  }
  
  /**
@@ -1399,6 +1456,19 @@ index 948a79a..41e5bc0 100644
      parts.push(text.slice(start));
      return parts;
    }
+diff --git a/core/src/render.ts b/core/src/render.ts
+index ee12cb2..d604990 100644
+--- a/core/src/render.ts
++++ b/core/src/render.ts
+@@ -107,7 +107,7 @@ export function validate(
+   try {
+     diagnostics = analyze(template, options).diagnostics.map(
+       ({ code, message, line, column }): Diagnostic =>
+-        code === "unknown-filter"
++        code === "unknown-filter" || code === "type-error"
+           ? { severity: "error", code, message, line, column }
+           : { severity: "warning", code: "analysis-warning", message, line, column }
+     );
 diff --git a/core/src/spec.ts b/core/src/spec.ts
 index eab7589..d060adb 100644
 --- a/core/src/spec.ts
@@ -1419,11 +1489,59 @@ index eab7589..d060adb 100644
      operators: [...OPERATORS],
      limits: { ...DEFAULT_LIMITS },
      options: OPTIONS.map((o) => ({ ...o })),
+diff --git a/tests/language/filter-registry.test.ts b/tests/language/filter-registry.test.ts
+index b94e934..44c8b2d 100644
+--- a/tests/language/filter-registry.test.ts
++++ b/tests/language/filter-registry.test.ts
+@@ -362,6 +362,27 @@ describe("fr-args: filter calls are parsed once, quote-aware", () => {
+         });
+       }
+     );
++
++    it.each(errorRows)(
++      "fr-args: validate and analyze report the same undeclared parameter, %s",
++      (_n, template, line, column, make) => {
++        if (make) register(make());
++        const v = validate(template);
++        expect(v.ok).toBe(false);
++        expect(v.diagnostics[0]).toMatchObject({ severity: "error", code: "type-error", line, column });
++        const a = analyze(template).diagnostics[0];
++        expect(a).toMatchObject({ code: "type-error", line, column });
++        const r = render(template, { v: "x" }, { ...RAW, strictMode });
++        expect(a?.message).toBe(r.diagnostics[0]?.message);
++      }
++    );
++  });
++
++  it("fr-args: declared parameters give no diagnostic in validate or analyze", () => {
++    for (const t of ["intro\n  ${{ v | escape_md=block }}", "intro\n  ${{ v | head=3 }}", "intro\n  ${{ v | head:value=3 }}"]) {
++      expect(analyze(t).diagnostics).toEqual([]);
++      expect(validate(t).ok).toBe(true);
++    }
+   });
+ });
+ 
 ```
 
 ## Gate run
 
-Gate command green at commit 0005c77618b5 (107 tests).
+Gate command green at commit 68fcfb5d098d (122 tests).
+
+## 5. Earlier findings and replies
+
+Answer each fix-class (defect or goal-risk) finding below in `responses` with sustain or withdraw and evidence. Raise new findings only about what the revision changed or an in-scope problem newly evidenced. A finding listed under Already ruled is decided: do not raise it again unless the revision touched it (say so in `responses`) or you have new evidence.
+
+### f1: validate and analyze accept an undeclared filter parameter that render rejects
+
+- Class: goal-risk
+- Serves: card-goal: escape_md:mode=block passes validate() and analyze() with no diagnostic, then render() fails with a type-error. The card goal and ADR 0003 want typos caught before a run by validate and analyze, and the brief asks whether every bad filter call fails with a located error.
+- Reproduction: Run validate('${{ v | escape_md:mode=block }}') and analyze on the same template, with no data. The diff's analyze.ts only checks FILTER_REGISTRY.some(f => f.name === name), so no diagnostic is produced and ok is true. render() on the same template returns a type-error at 1:1, because the paramNames check lives only in applyFilter. Each call is already parsed at parse time, so filter.params and the definition's paramNames are available in the analyze walker.
+- Status: fixed
+- Reply (fixed): restate: validate and analyze accepted undeclared filter parameters that render rejects; verify: analyze reports type-error via shared helper; validate maps it to error; jest 1420 and tsc pass; evidence: code:core/src/analyze.ts:189
+
+### Already ruled
+
+- f2: FILTERS is a load-time snapshot that goes stale when the registry changes (drift, filed)
 
 ## Output
 

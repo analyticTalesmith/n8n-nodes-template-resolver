@@ -27,6 +27,39 @@
         "f2"
       ],
       "responses": []
+    },
+    {
+      "number": 2,
+      "at": "2026-10-15T02:28:42.532Z",
+      "reviewer": {
+        "kind": "fallback",
+        "label": "opus fallback (same model family as the builder; has repository access)"
+      },
+      "output_sha256": "f055d492b10819a77b5c888e754b51e86e02b89ec299b034d17c921a38a5d1fe",
+      "diff_sha256": "e61a11ebfa0049b0dbdec7c09c13b74940bbe9a18dca70b976ef182ffbabb458",
+      "at_commit": "68fcfb5d098dc45fb11665c31750a05327200c18",
+      "restatement": "Make one mutable registry of filter definitions the single source for render, spec() and analyze/validate. Filters take and return values, and the six existing filters coerce to text first, so no existing template output changes. Filter calls are parsed once at parse time with quotes respected, so fence=\"a=b\" keeps its whole language. A named parameter a filter does not declare is a located type-error. An unterminated quote in a ?? default no longer swallows the later filters. Two empty group files feed the registry for later cards. No existing test expectation changes beyond the spec test, no runtime dependency is added, and no template text is evaluated as code.",
+      "brief_mismatch": null,
+      "evidence": [
+        "code:core/src/analyze.ts:186",
+        "code:core/src/analyze.ts:189",
+        "code:core/src/render.ts:110",
+        "patch:e61a11ebfa0049b0dbdec7c09c13b74940bbe9a18dca70b976ef182ffbabb458",
+        "test:fr-args: validate and analyze report the same undeclared parameter"
+      ],
+      "stalled": false,
+      "raised": [],
+      "responses": [
+        {
+          "finding": "f1",
+          "verdict": "withdraw",
+          "evidence": [
+            "code:core/src/analyze.ts:186",
+            "code:core/src/render.ts:110",
+            "test:fr-args: validate and analyze report the same undeclared parameter"
+          ]
+        }
+      ]
     }
   ],
   "findings": [
@@ -48,7 +81,7 @@
       "location": "core/src/analyze.ts:177",
       "label": "f1",
       "raised_in": 1,
-      "status": "fixed",
+      "status": "withdrawn",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [

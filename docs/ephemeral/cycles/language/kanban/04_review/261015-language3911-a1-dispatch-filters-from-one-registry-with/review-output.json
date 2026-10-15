@@ -1,59 +1,38 @@
 {
-  "restatement": "The card makes one mutable registry of filter definitions (name, params, description, paramNames, apply) the only place filters are listed, so render, spec() and analyze/validate all read it and a later card can add a row without touching dispatch. Filters take and return values, and the six built-ins coerce their input to text exactly as the output step does, so no existing template output changes. Filter calls are parsed once at parse time with quotes respected. A parameter a filter does not declare is a located type-error, not a silent fallback. An unterminated quote in a ?? default no longer swallows the filters after it. Two empty group files feed the registry. No runtime dependency is added and no template text is evaluated as code.",
+  "restatement": "Make one mutable registry of filter definitions the single source for render, spec() and analyze/validate. Filters take and return values, and the six existing filters coerce to text first, so no existing template output changes. Filter calls are parsed once at parse time with quotes respected, so fence=\"a=b\" keeps its whole language. A named parameter a filter does not declare is a located type-error. An unterminated quote in a ?? default no longer swallows the later filters. Two empty group files feed the registry for later cards. No existing test expectation changes beyond the spec test, no runtime dependency is added, and no template text is evaluated as code.",
   "brief_mismatch": null,
   "verification_plan": [
-    "c1: confirm render, spec(), analyze and validate all read FILTER_REGISTRY at call time, with no load-time cache or second name list. Confirm spec() copies only name, params and description.",
-    "c2: confirm the six built-ins coerce input to text the way the output step does, and that arrays, objects, numbers and null reach a filter as values and print as they would unfiltered.",
-    "c3: trace parseFilter for fence=\"a=b\", fence=\"a:b\", the shorthand and named forms, and its old return shapes. Confirm an undeclared parameter becomes a type-error located at the variable in both strict and lenient mode.",
-    "c4: trace the ?? default split for a quote that never closes and for a closed quoted default that holds a pipe. Check that the retry terminates and that the default text is stripped the way the spec examples say.",
-    "c5: confirm filters-text.ts and filters-collection.ts export empty arrays that the registry spreads in after the six built-ins.",
-    "c6 and m1-m4: confirm the only existing test file touched is spec.test.ts, no built-in's output changed, no dependency was added and nothing is evaluated as code.",
-    "Goal-critical questions: can a filter be missing from render, spec or analyze? Does any existing template render differently? Does every bad filter call fail with a located error everywhere, including validate and analyze? Can a quote hide a pipe or truncate a value?",
-    "Polish: does spec() leak a field beyond name, params and description? Is there a second filter list?"
+    "c1: confirm render, spec() and analyze/validate all read FILTER_REGISTRY at call time, with no load-time copy and no second name list, and that spec() maps to name, params and description only.",
+    "c1: check that a definition pushed into the registry and later removed is seen, then unseen, by all three consumers.",
+    "c2: check that each of the six filters coerces input exactly as the output step does. Check that non-string values reach a custom filter unchanged and that its return value is printed like an unfiltered value.",
+    "c3: check that parse-time filter parsing splits on | and on = or : only outside quotes, and that parseFilter keeps its old results for old strings.",
+    "c3: check that an undeclared named parameter gives a type-error at the variable's line and column in strict and lenient mode, and that validate and analyze agree with render.",
+    "c4: check that an unterminated quote in a ?? default no longer swallows later filters, and that a closed quoted default still hides its pipe.",
+    "c5: check that filters-text.ts and filters-collection.ts export empty arrays that the registry spreads in.",
+    "c6/m1: check that only tests/headless/spec.test.ts changed among existing tests.",
+    "m2: look for any path where existing filter output or default-value handling changes.",
+    "m3/m4: look for new imports or dependencies and for any eval or Function use."
   ],
-  "findings": [
+  "findings": [],
+  "responses": [
     {
-      "title": "validate and analyze accept an undeclared filter parameter that render rejects",
-      "class": "goal-risk",
-      "serves": {
-        "target": "card-goal",
-        "scenario": "escape_md:mode=block passes validate() and analyze() with no diagnostic, then render() fails with a type-error. The card goal and ADR 0003 want typos caught before a run by validate and analyze, and the brief asks whether every bad filter call fails with a located error."
-      },
-      "rubric": "each criterion is met by the diff and its test (c3); goal-critical question 3: bad filter calls fail with a located error and never silently pass",
-      "reproduction": "Run validate('${{ v | escape_md:mode=block }}') and analyze on the same template, with no data. The diff's analyze.ts only checks FILTER_REGISTRY.some(f => f.name === name), so no diagnostic is produced and ok is true. render() on the same template returns a type-error at 1:1, because the paramNames check lives only in applyFilter. Each call is already parsed at parse time, so filter.params and the definition's paramNames are available in the analyze walker.",
+      "finding": "f1",
+      "verdict": "withdraw",
       "evidence": [
-        "diff:core/src/analyze.ts",
-        "diff:core/src/filters.ts",
-        "doc:docs/living/decisions/adr/0003-unknown-names-are-always-errors.md",
-        "test:fr-args: an undeclared parameter is a type-error at the variable"
-      ],
-      "location": "core/src/analyze.ts:177"
-    },
-    {
-      "title": "FILTERS is a load-time snapshot that goes stale when the registry changes",
-      "class": "drift",
-      "serves": {
-        "target": "c1",
-        "scenario": "FILTERS = listFilters() is evaluated once at module load, so a definition pushed into FILTER_REGISTRY later is missing from FILTERS. That is a second, stale copy of the filter list. The spec says no name is looked up once at load, and the brief says the registry is the only place a filter name is listed."
-      },
-      "rubric": "the registry is the only place a filter name is listed (polish)",
-      "reproduction": "Push a definition into FILTER_REGISTRY after import and compare FILTERS.map(f => f.name) with FILTER_REGISTRY.map(f => f.name). They differ. Only a test taken at load time passes.",
-      "evidence": [
-        "diff:core/src/filters.ts",
-        "doc:docs/living/architecture/modules/template-resolver.md"
-      ],
-      "location": "core/src/filters.ts:1241"
+        "code:core/src/analyze.ts:186",
+        "code:core/src/render.ts:110",
+        "test:fr-args: validate and analyze report the same undeclared parameter"
+      ]
     }
   ],
-  "responses": [],
   "reviewer": {
     "kind": "fallback",
     "label": "opus fallback (same model family as the builder; has repository access)"
   },
-  "at": "2026-10-15T02:24:37.707Z",
+  "at": "2026-10-15T02:28:42.252Z",
   "card": "261015-language3911-a1-dispatch-filters-from-one-registry-with",
   "tier": "product",
-  "packet_sha256": "10ca176c27d88de4af7ef9a2c5a6a98a195cf7a4b8aa71e39069cda689f2a9b3",
-  "diff_sha256": "8761ba3a2c9f09924627973b0c1ae40cedb6050dad930ae8a39c0ae9a67f9c74",
+  "packet_sha256": "87532e1942d58adacf2bdd80a3f861e34ae164b37076d4e2b9e06368694937d0",
+  "diff_sha256": "e61a11ebfa0049b0dbdec7c09c13b74940bbe9a18dca70b976ef182ffbabb458",
   "dropped": []
 }
