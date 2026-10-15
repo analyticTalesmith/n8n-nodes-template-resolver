@@ -98,8 +98,12 @@
   ],
   "claim": {
     "owner": "build:implementer",
-    "heartbeat": "2026-10-15T03:36:10.708Z",
-    "agent": "a"
+    "heartbeat": "2026-10-15T03:40:33.039Z",
+    "agent": "a",
+    "built": {
+      "commit": "0224d388f32885f64054a28736c901ec237023c6",
+      "at": "2026-10-15T03:40:33.039Z"
+    }
   },
   "blocked_on": null,
   "docs_impact": [
