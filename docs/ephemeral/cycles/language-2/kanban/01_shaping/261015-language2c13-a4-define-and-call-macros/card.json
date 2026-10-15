@@ -25,7 +25,8 @@
     "tests/golden/render-cases/lang-macro/template.md",
     "tests/golden/render-cases/lang-macro/data.json",
     "tests/golden/render-cases/lang-macro/options.json",
-    "tests/golden/render-cases/lang-macro/expected.md"
+    "tests/golden/render-cases/lang-macro/expected.md",
+    "tests/language/set.test.ts"
   ],
   "manifest": {
     "add": [
@@ -47,9 +48,10 @@
       "core/src/spec.ts",
       "core/src/scope.ts",
       "core/src/errors.ts",
-      "core/src/render.ts"
+      "core/src/render.ts",
+      "tests/language/set.test.ts"
     ],
-    "frozen": false
+    "frozen": true
   },
   "criteria": [
     {
@@ -198,5 +200,26 @@
   ],
   "test_levels": [
     "unit"
-  ]
+  ],
+  "test_amendments": [
+    {
+      "path": "tests/language/set.test.ts",
+      "reason": "the st-keywords row that pins the exact keyword table of the SET card must list DEFINE and CALL once they are keywords; two pairs added to the expected table, no row removed, no assertion weakened",
+      "approved_by": "project lead"
+    }
+  ],
+  "freeze": {
+    "at": "2026-10-15T16:13:35.479Z",
+    "brief_sha256": "645009549a8b38cfe7d6ed9d2564c0444819edf6d341c52bdb54587ebc017a60",
+    "brief_core_sha256": "556e24b4da7db95adf23a9950efcfd7a2bec6f17f2cb22c7234ae0979fe596fd",
+    "manifest_sha256": "b3b7b218442ccbcf8161e4ae1db83bbb97a7e9b87e32deba6513e61d7ac5cdae",
+    "criteria_sha256": "affcf76db5dad610fff7b8d2b8e783ea23a7b286d8015f797f0c1a290668926d",
+    "scope_sha256": "93702e9aa34f792104c3aa05c2677206f6d577f6896428218d265f9c66dad4c7",
+    "scope_parts": {
+      "files_scope": "1f3a099f9253ff64c7f0f886eb1161ab80e1ac864e14060252432f9541e5e00c",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "f48b23450ca29f3aedc2dff00f71578ceda0673638b8f8c56ceefe732d61472d"
+    }
+  }
 }
