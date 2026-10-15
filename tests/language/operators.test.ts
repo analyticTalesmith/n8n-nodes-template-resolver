@@ -749,3 +749,122 @@ describe("op-spec: spec and analyze list the new operators and the variables the
     check(codes, `diagnostic codes for ${cond}`).toContain("unrecognized-condition");
   });
 });
+
+// =====================================================================================
+// review fixes: left side of in first, between rejects booleans, bounded messages
+// =====================================================================================
+
+describe("op-in: the left side is checked before a missing right side", () => {
+  const badLefts: [string, any][] = [
+    ["object", { k: 1 }],
+    ["array", [1]],
+    ["cyclic object", cyc],
+    ["bigint", BigInt(10)],
+  ];
+  const errorRows: Row[] = badLefts.flatMap(([, a]) => [
+    T("a in list", { a }, "type-error", true),
+    T("a not in list", { a }, "type-error", true),
+    T("a in list", { a, list: null }, "type-error", true),
+    T("a not in list", { a, list: null }, "type-error", true),
+  ]);
+  it.each(expand(errorRows, ALL_FORMS))("op-in: [$entry/$form] $cond with $dj is a located type-error", (c) => verifyRow(c));
+
+  const okRows: Row[] = [
+    T("a in list", { a: "x" }, "false"),
+    T("a not in list", { a: "x" }, "true"),
+    T("a in list", { a: 5 }, "false"),
+    T("a not in list", { a: true }, "true"),
+    T("a in list", { a: null }, "false"),
+    T("a not in list", { a: null }, "true"),
+    T("a in list", {}, "false"),
+    T("a not in list", {}, "true"),
+    T("a in list", { a: "x", list: null }, "false"),
+    T("a not in list", { a: "x", list: null }, "true"),
+  ];
+  it.each(expand(okRows))("op-in: [$entry] $cond with $dj is $want", (c) => verifyRow(c));
+});
+
+describe("op-between: booleans are not numbers", () => {
+  const errorRows: Row[] = [
+    T("x between [0, 1]", { x: true }, "type-error", true),
+    T("x between [0, 1]", { x: false }, "type-error", true),
+    T("x between [true, 5]", { x: 3 }, "type-error", true),
+    T("x between [1, false]", { x: 1 }, "type-error", true),
+    T("true between [0, 1]", {}, "type-error", true),
+    T("false between [0, 1]", {}, "type-error", true),
+    T("x between [lo, 5]", { x: 3, lo: true }, "type-error", true),
+    T("x between [1, hi]", { x: 1, hi: false }, "type-error", true),
+  ];
+  it.each(expand(errorRows, ALL_FORMS))("op-between: [$entry/$form] $cond with $dj is a located type-error", (c) => verifyRow(c));
+
+  const okRows: Row[] = [
+    T("x between [0, 1]", { x: "5" }, "false"),
+    T("x between [0, 10]", { x: "5" }, "true"),
+    T("x between [0, 1]", { x: 0 }, "true"),
+    T("x between [0, 1]", { x: 1 }, "true"),
+  ];
+  it.each(expand(okRows))("op-between: [$entry] $cond with $dj is $want", (c) => verifyRow(c));
+});
+
+describe("op-in: error messages describe operands in bounded form", () => {
+  const nullProto = Object.create(null);
+  const throwing = { toString: () => { throw new Error("boom"); } };
+  const long = "z".repeat(500);
+  const bigArray = Array.from({ length: 200 }, (_v, i) => `item-number-${i}`);
+
+  const rows: { cond: string; data: Record<string, any>; code: "type-error" | "any" }[] = [
+    { cond: "a in list", data: { a: cyc, list: ["x"] }, code: "type-error" },
+    { cond: "a in list", data: { a: BigInt(10), list: ["x"] }, code: "type-error" },
+    { cond: "x in list", data: { x: "a", list: cyc }, code: "type-error" },
+    { cond: "x in list", data: { x: "a", list: BigInt(10) }, code: "type-error" },
+    { cond: "a between [1, 2]", data: { a: cyc }, code: "type-error" },
+    { cond: "a between [1, 2]", data: { a: BigInt(10) }, code: "type-error" },
+    { cond: "a > 1", data: { a: cyc }, code: "type-error" },
+    { cond: "a > 1", data: { a: BigInt(10) }, code: "type-error" },
+    { cond: "a > 1", data: { a: nullProto }, code: "type-error" },
+    { cond: "a > 1", data: { a: throwing }, code: "type-error" },
+    { cond: "a == 1", data: { a: cyc }, code: "any" },
+    { cond: "a == 1", data: { a: BigInt(10) }, code: "any" },
+    { cond: "a == 1", data: { a: nullProto }, code: "any" },
+    { cond: "a == 1", data: { a: throwing }, code: "any" },
+  ];
+  it.each(ENTRIES.flatMap((entry) => rows.map((r) => ({ entry, ...r, dj: show(r.data) }))))(
+    "op-in: [$entry] $cond with $dj never throws a raw exception",
+    (c) => {
+      const o = run(c.entry, wrap("if", c.cond), c.data);
+      check(o.code.startsWith("threw:"), `${c.entry}: ${c.cond} gives no raw exception (${o.code})`).toBe(false);
+      if (c.code === "type-error") check(o.code, `${c.entry}: ${c.cond} is a type-error`).toBe("type-error");
+    }
+  );
+
+  it.each(ENTRIES.flatMap((entry) => ["x > 1", "x between [1, 2]"].map((cond) => ({ entry, cond }))))(
+    "op-in: [$entry] $cond with a 500 character text gives a short message without the whole text",
+    (c) => {
+      const o = run(c.entry, wrap("if", c.cond), { x: long });
+      check(o.code, `${c.entry}: ${c.cond} is a type-error`).toBe("type-error");
+      check((o.message ?? "").length, `${c.entry}: ${c.cond} message length`).toBeLessThan(300);
+      check((o.message ?? "").includes(long), `${c.entry}: ${c.cond} message omits the whole text`).toBe(false);
+    }
+  );
+
+  it.each(ENTRIES.flatMap((entry) => ["x > 1", "x between [1, 2]", "x in list"].map((cond) => ({ entry, cond }))))(
+    "op-in: [$entry] $cond with a large array operand gives a message without its items",
+    (c) => {
+      const data = c.cond === "x in list" ? { x: "a", list: { k: bigArray } } : { x: bigArray };
+      const o = run(c.entry, wrap("if", c.cond), data);
+      check(o.code, `${c.entry}: ${c.cond} is a type-error`).toBe("type-error");
+      check((o.message ?? "").includes("item-number-"), `${c.entry}: ${c.cond} message omits the items`).toBe(false);
+    }
+  );
+});
+
+describe("op-unknown: a quote that closes early is not one quoted literal", () => {
+  const rows = ['"x" in ["a"', "'x' in ['a'", '"x" between [1, 2'];
+  it.each(rows)("op-unknown: analyze reports %s as unrecognized-condition", (cond) => {
+    const codes = analyze(wrap("if", cond)).diagnostics.map((d) => d.code);
+    check(codes, `diagnostic codes for ${cond}`).toContain("unrecognized-condition");
+  });
+  it.each(ENTRIES.flatMap((entry) => rows.map((cond) => ({ entry, cond }))))("op-unknown: [$entry] $cond is a located type-error", (c) => {
+    expectLocatedTypeError(c.entry, "if", run(c.entry, wrap("if", c.cond), {}), c.cond);
+  });
+});

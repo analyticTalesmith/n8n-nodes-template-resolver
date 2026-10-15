@@ -1,0 +1,26 @@
+# Brief: implementer, review fixes for the in, between and length card
+
+## Objective and why
+
+Project goal: a deterministic, no-eval template language for prompt assembly, with a headless core and an n8n node as a thin wrapper.
+Card goal: conditions test membership, ranges and sizes with `in`, `not in`, `between [a, b]` and `.length`; unknown words are errors in every mode; no raw exception ever reaches the caller.
+The blind review sustained three small findings. Fix each with the smallest change, and add test rows for each (the lead closes them by gate without another blind round, so the rows must fail on the old code and pass on the new). Read the spec `docs/ephemeral/work/261015-language3911-a7-add-in-not-in-between-and-length-to-cond/spec.md` first.
+
+## Fixes
+
+1. **f2 `in` left-side type check first.** In `isMember` (core/src/expressions.ts) a missing or null right side returns false before the left side is checked. Check the left operand first: a left side that is an array, an object (cyclic or not) or a BigInt is the located `type-error` whatever the right side holds (including no right side), for `in` and `not in`. A plain scalar (text, number, boolean) or null/missing left with a missing/null right side stays false (`not in`: true). Rows: `a in list` and `a not in list` with `a` an object, an array, a cyclic object and a BigInt and no `list` in the data, and with `list: null`; the scalar and null/missing left rows with a missing `list` stay `N`/`Y` as today; each error row is located (IF line 3 or later, a column other than 1) and runs on all four entries (render strict, render lenient, resolveTemplate strict and lenient).
+2. **f3 `between` rejects booleans.** `true` and `false` (a boolean value, or the literal word) are non-numeric for `between`: a boolean x, a boolean low or a boolean high is the located `type-error`. Do not change how `>`, `<` coerce. Do not use `tryCoerceToNumber` on a boolean there. Numeric text and numbers still work. Rows: `x between [0, 1]` with x true and false; `x between [true, 5]`; `x between [1, false]`; the literal `true between [0, 1]`; a bound variable holding a boolean; and the numeric rows that must still pass (text "5", 0, 1 inclusive ends).
+3. **f4 no `JSON.stringify` of operands in error messages.** `describeOperand` serializes the whole operand. Replace it with a bounded description that never serializes a structure: text shown in quotes and cut at 40 characters with `...`; numbers, booleans and null as written (`String`); a BigInt as its digits; an array as `an array of N items`; any other object as `an object`. It must never throw (cyclic, BigInt, null-prototype objects, objects whose `toString` throws; use no `String(obj)`/template interpolation on objects). Use it everywhere the card's code described an operand, including the existing numeric-comparison error message. If an existing test pins the old JSON text of a message, stop and tell me instead of editing that test. Rows: a cyclic object and a BigInt as operands of `in`, `between`, `>`, `==` (messages never throw and are `type-error` where an error is the rule, one row each entry), a very long text operand (500 characters) gives a message shorter than 300 characters and not containing the whole text, and a large array operand gives a message without its items.
+4. **Analyze gap (small, optional).** `parseLiteral` reads `"x" in ["a"` (starts and ends with the same quote character) as one quoted literal, so `analyze` misses the `unrecognized-condition` diagnostic that the evaluator raises. If a small fix works (a quoted literal is only a literal when its quote character does not appear unescaped inside), do it and add rows (`"x" in ["a"`, `'x' in ['a'`, `"x" between [1, 2`): analyze gives `unrecognized-condition`, render gives a located `type-error`. If any existing test breaks because of it, revert this part and say so.
+
+## Owned files and scope
+
+Worktree: the path in the message that launched you (node_modules is linked; never run npm install). Edit only `core/src/expressions.ts`, `core/src/interpreter.ts`, `core/src/spec.ts`, `core/src/analyze.ts` and `tests/language/operators.test.ts`. In the test file you may only add rows or new `it.each` tables; never change or delete an existing row or expectation (use test names starting with the criterion id: `op-in`, `op-between`, `op-length`, `op-unknown`). Do not touch documents or card files.
+
+## How the work is judged
+
+`node node_modules/jest/bin/jest.js --runTestsByPath tests/language/operators.test.ts`, the whole suite `node node_modules/jest/bin/jest.js` and `npx tsc --noEmit -p .` are green (exit 0) before you say done. Before fixing, run the new rows once and confirm they fail on the old code for the right reason (an assertion). Commit once at the end: Conventional Commit, subject at most 72 characters, lowercase, no ids, no attribution, for example `fix(language): check the left side of in first and reject booleans in between`. Never push, never move or claim cards, never redirect output to `nul`. Foreground.
+
+## Result and status
+
+Say "done" and report: files changed, the new row counts per fix, whether each new row failed before the fix, gate, full suite and tsc results with numbers, and whether item 4 was done. End with a status.

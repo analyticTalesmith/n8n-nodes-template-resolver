@@ -59,12 +59,26 @@ export function isTruthy(value: any): boolean {
  * Supports:
  * - Simple truthiness: "varName"
  * - Comparisons: ==, !=, >, <, >=, <=
+ * - Membership and range: in, not in, between [lo, hi]
  * - String ops: contains, startsWith, endsWith
  * - Type checks: isEmpty, isNotEmpty, isArray, isNumber, isObject, isBoolean
  * - Logical: AND, OR, NOT (also &&, ||, !, case-insensitive)
  * - Parentheses for grouping
+ *
+ * Every operand is checked before anything runs, so text the language cannot
+ * read is an error even in a branch a short-circuit would skip.
  */
 export function evaluateCondition(
+  condition: string,
+  variables: VariableMap
+): boolean {
+  for (const operand of conditionOperands(condition)) {
+    readableOperand(operand, variables);
+  }
+  return evaluateConditionText(condition, variables);
+}
+
+function evaluateConditionText(
   condition: string,
   variables: VariableMap
 ): boolean {
@@ -72,7 +86,7 @@ export function evaluateCondition(
 
   // Handle parentheses for grouping - only if they're matching outer parens
   const unwrapped = unwrapParens(trimmed);
-  if (unwrapped !== null) return evaluateCondition(unwrapped, variables);
+  if (unwrapped !== null) return evaluateConditionText(unwrapped, variables);
 
   // Handle logical operators (AND, OR)
   const logicalResult = tryEvaluateLogical(trimmed, variables);
@@ -80,11 +94,17 @@ export function evaluateCondition(
 
   // Handle negation: NOT x, NOT (x), !x
   const negated = splitNegation(trimmed);
-  if (negated !== null) return !evaluateCondition(negated, variables);
+  if (negated !== null) return !evaluateConditionText(negated, variables);
 
   // Handle comparison operators
   const comparisonResult = tryEvaluateComparison(trimmed, variables);
   if (comparisonResult !== null) return comparisonResult;
+
+  // Handle membership and range operators
+  const membershipResult = tryEvaluateMembership(trimmed, variables);
+  if (membershipResult !== null) return membershipResult;
+  const betweenResult = tryEvaluateBetween(trimmed, variables);
+  if (betweenResult !== null) return betweenResult;
 
   // Handle string operators
   const stringResult = tryEvaluateStringOp(trimmed, variables);
@@ -94,26 +114,109 @@ export function evaluateCondition(
   const typeResult = tryEvaluateTypeCheck(trimmed, variables);
   if (typeResult !== null) return typeResult;
 
-  if (!variables.has(trimmed) && hasBareWhitespace(trimmed)) {
-    throw new TypeError(
-      `Unrecognized condition: ${trimmed}`,
-      1,
-      1,
-      "Use a supported operator: ==, !=, >, <, >=, <=, contains, startsWith, endsWith, AND, OR, NOT"
-    );
-  }
-
   // Simple truthiness check
-  const value = resolveValue(trimmed, variables);
-  return isTruthy(value);
+  return isTruthy(readOperand(trimmed, variables).value);
+}
+
+const UNRECOGNIZED_HINT =
+  "Use a supported operator: ==, !=, >, <, >=, <=, contains, startsWith, endsWith, in, not in, between, AND, OR, NOT";
+
+function unrecognizedCondition(text: string): TypeError {
+  return new TypeError(`Unrecognized condition: ${text}`, 1, 1, UNRECOGNIZED_HINT);
+}
+
+function safeString(value: unknown): string {
+  try {
+    return String(value);
+  } catch {
+    return "[unprintable]";
+  }
+}
+
+const DESCRIBE_TEXT_LIMIT = 40;
+
+/**
+ * A bounded description of a value for an error message: never serializes a
+ * structure and never throws (cycles, BigInt, hostile toString)
+ */
+function describeOperand(value: unknown): string {
+  if (typeof value === "string") {
+    const shown =
+      value.length > DESCRIBE_TEXT_LIMIT
+        ? `${value.slice(0, DESCRIBE_TEXT_LIMIT)}...`
+        : value;
+    return `"${shown}"`;
+  }
+  if (
+    typeof value === "number" ||
+    typeof value === "boolean" ||
+    typeof value === "bigint" ||
+    value === null ||
+    value === undefined
+  ) {
+    return String(value);
+  }
+  if (Array.isArray(value)) return `an array of ${value.length} items`;
+  return "an object";
+}
+
+/** An operand read from a condition: its value, and how it was written */
+interface Operand {
+  value: TemplateValue;
+  /** True when written as a quoted literal */
+  quoted: boolean;
+  /** The written text of a number literal */
+  text?: string;
 }
 
 /**
- * Check if parentheses in a string are balanced
+ * Read one operand: a literal or a variable path. Text that is neither, is
+ * not a variable key and holds a bare space is not a condition we can read.
+ */
+function readOperand(expr: string, variables: VariableMap): Operand {
+  const text = expr.trim();
+  if (text === "") return { value: null, quoted: false };
+
+  const literal = parseLiteral(text);
+  if (literal) {
+    return { value: literal.value, quoted: literal.quoted, text: literal.text };
+  }
+  readableOperand(text, variables);
+  return { value: resolveValue(text, variables), quoted: false };
+}
+
+/**
+ * Throw the Unrecognized condition error for an operand that is not a
+ * literal, not a variable key and holds a bare space
+ */
+function readableOperand(text: string, variables: VariableMap): void {
+  if (
+    text !== "" &&
+    parseLiteral(text) === null &&
+    !variables.has(text) &&
+    hasBareWhitespace(text)
+  ) {
+    throw unrecognizedCondition(text);
+  }
+}
+
+/**
+ * Check if parentheses in a string are balanced; parentheses inside quotes
+ * do not count
  */
 function isBalancedParens(str: string): boolean {
   let depth = 0;
-  for (const char of str) {
+  let quoteChar: string | null = null;
+  for (let i = 0; i < str.length; i++) {
+    const char = str[i];
+    if (quoteChar !== null) {
+      if (char === quoteChar && str[i - 1] !== "\\") quoteChar = null;
+      continue;
+    }
+    if (char === '"' || char === "'") {
+      quoteChar = char;
+      continue;
+    }
     if (char === "(") depth++;
     if (char === ")") depth--;
     if (depth < 0) return false; // More closing than opening
@@ -219,10 +322,10 @@ function tryEvaluateLogical(
 ): boolean | null {
   const split = splitLogical(expr);
   if (split === null) return null;
-  const left = evaluateCondition(split.left, variables);
+  const left = evaluateConditionText(split.left, variables);
   return split.op === "or"
-    ? left || evaluateCondition(split.right, variables)
-    : left && evaluateCondition(split.right, variables);
+    ? left || evaluateConditionText(split.right, variables)
+    : left && evaluateConditionText(split.right, variables);
 }
 
 /**
@@ -253,13 +356,20 @@ function numericOf(value: TemplateValue): number | null {
     : null;
 }
 
-function valuesEqual(left: TemplateValue, right: TemplateValue): boolean {
-  const l = left === undefined ? null : left;
-  const r = right === undefined ? null : right;
-  const leftNum = numericOf(l);
-  const rightNum = numericOf(r);
-  if (leftNum !== null && rightNum !== null) return leftNum === rightNum;
-  return String(l) == String(r);
+/**
+ * The one equality rule behind ==, != and in: when either side was written
+ * as a quoted literal both compare as text, otherwise numbers compare
+ * numerically and anything else as text
+ */
+function valuesEqual(left: Operand, right: Operand): boolean {
+  const l = left.value === undefined ? null : left.value;
+  const r = right.value === undefined ? null : right.value;
+  if (!left.quoted && !right.quoted) {
+    const leftNum = numericOf(l);
+    const rightNum = numericOf(r);
+    if (leftNum !== null && rightNum !== null) return leftNum === rightNum;
+  }
+  return safeString(l) === safeString(r);
 }
 
 /**
@@ -318,8 +428,8 @@ function tryEvaluateComparison(
   const split = splitComparison(expr);
   if (split === null) return null;
 
-  const left = resolveValue(split.left, variables);
-  const right = resolveValue(split.right, variables);
+  const left = readOperand(split.left, variables);
+  const right = readOperand(split.right, variables);
 
   switch (split.op) {
     case "==":
@@ -327,7 +437,7 @@ function tryEvaluateComparison(
     case "!=":
       return !valuesEqual(left, right);
     default:
-      return evaluateNumericComparison(left, right, split.op);
+      return evaluateNumericComparison(left.value, right.value, split.op);
   }
 }
 
@@ -344,7 +454,7 @@ function evaluateNumericComparison(
 
   if (leftNum === null || rightNum === null) {
     throw new TypeError(
-      `Cannot use operator '${op}' with non-numeric values: ${JSON.stringify(left)} ${op} ${JSON.stringify(right)}`,
+      `Cannot use operator '${op}' with non-numeric values: ${describeOperand(left)} ${op} ${describeOperand(right)}`,
       1,
       1,
       "Use isNumber check first: {{IF age isNumber AND age > 18}}"
@@ -363,6 +473,232 @@ function evaluateNumericComparison(
     default:
       return false;
   }
+}
+
+/**
+ * Split on the first whitespace-delimited operator word that matches the
+ * pattern, found outside quotes, brackets and parentheses
+ */
+function splitOnWord(
+  expr: string,
+  pattern: RegExp
+): { word: string; left: string; right: string } | null {
+  let depth = 0;
+  let quoteChar: string | null = null;
+
+  for (let i = 0; i < expr.length; i++) {
+    const char = expr[i];
+
+    if (quoteChar !== null) {
+      if (char === quoteChar && expr[i - 1] !== "\\") quoteChar = null;
+      continue;
+    }
+    if (char === '"' || char === "'") {
+      quoteChar = char;
+      continue;
+    }
+    if (char === "(" || char === "[") depth++;
+    if (char === ")" || char === "]") depth--;
+    if (depth !== 0 || !/\s/.test(char)) continue;
+
+    const match = expr.slice(i).match(pattern);
+    if (match) {
+      return {
+        word: match[1].toLowerCase().replace(/\s+/g, " "),
+        left: expr.slice(0, i).trim(),
+        right: expr.slice(i + match[0].length).trim(),
+      };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Split on the first `in` or `not in` (any case) outside quotes, brackets
+ * and parentheses
+ */
+export function splitMembership(
+  expr: string
+): { op: "in" | "not in"; left: string; right: string } | null {
+  const split = splitOnWord(expr, /^\s+(not\s+in|in)\s+/i);
+  if (split === null) return null;
+  return {
+    op: split.word === "in" ? "in" : "not in",
+    left: split.left,
+    right: split.right,
+  };
+}
+
+/**
+ * Split on the first `between` (any case) outside quotes, brackets and
+ * parentheses
+ */
+export function splitBetween(
+  expr: string
+): { left: string; right: string } | null {
+  const split = splitOnWord(expr, /^\s+(between)\s+/i);
+  return split === null ? null : { left: split.left, right: split.right };
+}
+
+/**
+ * The items of a list literal such as [a, "b", 3], each trimmed, or null
+ * when the text is not one list: a missing bracket, a nested bracket, an
+ * empty item or text after the closing bracket. [] is the empty list.
+ */
+function parseListLiteral(text: string): string[] | null {
+  const list = text.trim();
+  if (list.length < 2 || !list.startsWith("[") || !list.endsWith("]")) {
+    return null;
+  }
+
+  const items: string[] = [];
+  let quoteChar: string | null = null;
+  let start = 1;
+
+  for (let i = 1; i < list.length; i++) {
+    const char = list[i];
+    if (quoteChar !== null) {
+      if (char === quoteChar && list[i - 1] !== "\\") quoteChar = null;
+      continue;
+    }
+    if (char === '"' || char === "'") {
+      quoteChar = char;
+      continue;
+    }
+    if (char === "[") return null;
+    if (char === "]" && i !== list.length - 1) return null;
+    if (char === "," || char === "]") {
+      items.push(list.slice(start, i).trim());
+      start = i + 1;
+    }
+  }
+
+  if (quoteChar !== null) return null;
+  if (items.length === 1 && items[0] === "") return [];
+  return items.includes("") ? null : items;
+}
+
+function isScalar(value: TemplateValue): boolean {
+  return (
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  );
+}
+
+/**
+ * Try to evaluate `x in right` and `x not in right`; the right side is a
+ * list literal, a list variable or a text
+ */
+function tryEvaluateMembership(
+  expr: string,
+  variables: VariableMap
+): boolean | null {
+  const split = splitMembership(expr);
+  if (split === null) return null;
+
+  const left = readOperand(split.left, variables);
+
+  let items: Operand[] | null = null;
+  let text: string | null = null;
+  if (split.right.startsWith("[")) {
+    const written = parseListLiteral(split.right);
+    if (written === null) throw unrecognizedCondition(expr);
+    items = written.map((item) => readOperand(item, variables));
+  } else {
+    const right = readOperand(split.right, variables).value;
+    if (Array.isArray(right)) {
+      items = right.map((value) => ({ value, quoted: false }));
+    } else if (typeof right === "string") {
+      text = right;
+    } else if (right != null) {
+      throw new TypeError(
+        `Cannot use '${split.op}' with a right side that is not a list or text: ${describeOperand(right)}`,
+        1,
+        1,
+        "Use a list such as [\"a\", \"b\"], a list variable or a text"
+      );
+    }
+  }
+
+  const found = isMember(left, items, text, split.op);
+  return split.op === "in" ? found : !found;
+}
+
+/**
+ * True when the left operand is in the list or text; missing data (a null
+ * left side or no right side) is not a member
+ */
+function isMember(
+  left: Operand,
+  items: Operand[] | null,
+  text: string | null,
+  op: string
+): boolean {
+  if (left.value != null && !isScalar(left.value)) {
+    throw new TypeError(
+      `Cannot use '${op}' with a left side that is not a text, number or boolean: ${describeOperand(left.value)}`,
+      1,
+      1,
+      "Test one value at a time, for example inside a FOR loop"
+    );
+  }
+
+  if (items === null && text === null) return false;
+  if (left.value == null) return false;
+  if (text !== null) return text.includes(safeString(left.value));
+  return (items ?? []).some(
+    (item) => isScalar(item.value) && valuesEqual(left, item)
+  );
+}
+
+/**
+ * Try to evaluate `x between [lo, hi]`: inclusive, numeric
+ */
+function tryEvaluateBetween(
+  expr: string,
+  variables: VariableMap
+): boolean | null {
+  const split = splitBetween(expr);
+  if (split === null) return null;
+
+  const bounds = parseListLiteral(split.right);
+  if (bounds === null || bounds.length !== 2) throw unrecognizedCondition(expr);
+
+  const [value, low, high] = [split.left, ...bounds].map((operand) => {
+    const read = readOperand(operand, variables).value;
+    const number = typeof read === "boolean" ? null : tryCoerceToNumber(read);
+    if (number === null) {
+      throw new TypeError(
+        `Cannot use 'between' with a non-numeric value: ${describeOperand(read)}`,
+        1,
+        1,
+        "Use isNumber check first: {{IF age isNumber AND age between [18, 65]}}"
+      );
+    }
+    return number;
+  });
+  return value >= low && value <= high;
+}
+
+/**
+ * The built-in .length of an array or a string, as { value }; null when the
+ * built-in does not apply and the segment reads as an ordinary key. A string
+ * that is a JSON object with its own key length gives that key.
+ */
+export function builtInLength(
+  current: TemplateValue
+): { value: TemplateValue } | null {
+  if (Array.isArray(current)) return { value: current.length };
+  if (typeof current === "string") {
+    const object = tryCoerceToObject(current);
+    if (object && Object.prototype.hasOwnProperty.call(object, "length")) {
+      return { value: object.length };
+    }
+    return { value: current.length };
+  }
+  return null;
 }
 
 /**
@@ -392,11 +728,14 @@ function tryEvaluateStringOp(
   const split = splitStringOp(expr);
   if (split === null) return null;
 
-  const leftValue = resolveValue(split.left, variables);
-  const rightValue = tryCoerceToString(resolveValue(split.right, variables));
+  const left = readOperand(split.left, variables);
+  const right = readOperand(split.right, variables);
+  // A number written without quotes keeps its written text (007, 1.50)
+  const rightValue =
+    right.text !== undefined ? right.text : tryCoerceToString(right.value);
   if (rightValue === null) return false;
 
-  const leftStr = tryCoerceToString(leftValue);
+  const leftStr = tryCoerceToString(left.value);
   if (leftStr === null) return false;
 
   switch (split.op) {
@@ -444,7 +783,7 @@ function tryEvaluateTypeCheck(
   const split = splitTypeCheck(expr);
   if (split === null) return null;
 
-  const value = resolveValue(split.operand, variables);
+  const value = readOperand(split.operand, variables).value;
 
   switch (split.check) {
     case "isEmpty": {
@@ -472,21 +811,38 @@ function tryEvaluateTypeCheck(
   }
 }
 
+/** True when the quote character appears inside the text without a backslash before it */
+function hasUnescapedChar(text: string, quote: string): boolean {
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === quote && text[i - 1] !== "\\") return true;
+  }
+  return false;
+}
+
 /**
  * The value of a literal operand (true, false, null, a number or a quoted
- * string), or null when the operand is not a literal
+ * string), or null when the operand is not a literal. A quoted string is
+ * marked quoted; a number carries its written text.
  */
-export function parseLiteral(expr: string): { value: TemplateValue } | null {
-  if (expr === "true") return { value: true };
-  if (expr === "false") return { value: false };
-  if (expr === "null") return { value: null };
+export function parseLiteral(
+  expr: string
+): { value: TemplateValue; quoted: boolean; text?: string } | null {
+  if (expr === "true") return { value: true, quoted: false };
+  if (expr === "false") return { value: false, quoted: false };
+  if (expr === "null") return { value: null, quoted: false };
 
-  if (/^-?\d+(\.\d+)?$/.test(expr)) return { value: Number(expr) };
+  if (/^-?\d+(\.\d+)?$/.test(expr)) {
+    return { value: Number(expr), quoted: false, text: expr };
+  }
 
   const first = expr[0];
   const last = expr[expr.length - 1];
-  if ((first === `"` && last === `"`) || (first === `'` && last === `'`)) {
-    return { value: expr.substring(1, expr.length - 1) };
+  if (
+    expr.length >= 2 &&
+    ((first === `"` && last === `"`) || (first === `'` && last === `'`)) &&
+    !hasUnescapedChar(expr.slice(1, -1), first)
+  ) {
+    return { value: expr.substring(1, expr.length - 1), quoted: true };
   }
 
   return null;
@@ -517,6 +873,23 @@ export function conditionOperands(condition: string): string[] {
 
   const comparison = splitComparison(trimmed);
   if (comparison !== null) return [comparison.left, comparison.right];
+
+  const membership = splitMembership(trimmed);
+  if (membership !== null) {
+    if (!membership.right.startsWith("[")) {
+      return [membership.left, membership.right];
+    }
+    const items = parseListLiteral(membership.right);
+    return items === null ? [trimmed] : [membership.left, ...items];
+  }
+
+  const between = splitBetween(trimmed);
+  if (between !== null) {
+    const bounds = parseListLiteral(between.right);
+    return bounds === null || bounds.length !== 2
+      ? [trimmed]
+      : [between.left, ...bounds];
+  }
 
   const stringOp = splitStringOp(trimmed);
   if (stringOp !== null) return [stringOp.left, stringOp.right];
@@ -635,6 +1008,14 @@ function resolveValue(expr: string, variables: VariableMap): TemplateValue {
 
   for (let i = 1; i < path.length; i++) {
     if (current == null) return null;
+
+    if (path[i] === "length") {
+      const built = builtInLength(current);
+      if (built) {
+        current = built.value;
+        continue;
+      }
+    }
 
     // Parse as JSON if the variable is a string
     if (typeof current === "string") {
@@ -791,7 +1172,7 @@ function tokenizeMath(
     const num = tryCoerceToNumber(value);
     if (num === null) {
       throw new TypeError(
-        `Cannot use non-numeric value in math expression: ${varName} = ${JSON.stringify(value)}`,
+        `Cannot use non-numeric value in math expression: ${varName} = ${describeOperand(value)}`,
         1,
         1,
         "Ensure all variables in math expressions are numbers"

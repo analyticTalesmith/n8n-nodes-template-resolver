@@ -10,9 +10,9 @@
   "tier": null,
   "claimed_in": null,
   "files_scope": [
+    "core/src/analyze.ts",
     "core/src/expressions.ts",
     "core/src/interpreter.ts",
-    "core/src/analyze.ts",
     "core/src/spec.ts",
     "tests/language/operators.test.ts"
   ],
@@ -24,7 +24,6 @@
     "edit": [
       "core/src/expressions.ts",
       "core/src/interpreter.ts",
-      "core/src/analyze.ts",
       "core/src/spec.ts"
     ],
     "frozen": true
@@ -74,19 +73,15 @@
     "tests/language/operators.test.ts",
     "--json"
   ],
-  "claim": {
-    "owner": "build:implementer",
-    "heartbeat": "2026-10-15T04:35:45.633Z",
-    "agent": "a"
-  },
+  "claim": null,
   "blocked_on": null,
   "docs_impact": [
     "docs/living/architecture/modules/template-resolver.md",
     "docs/living/architecture/language-contract.md"
   ],
   "started": "2026-10-15T04:35:45.820Z",
-  "ended": null,
-  "review_rounds": 0,
+  "ended": "2026-10-15T04:49:43.000Z",
+  "review_rounds": 1,
   "schema_version": 1,
   "blast_radius": [
     "template-resolver"
@@ -96,7 +91,7 @@
     "at": "2026-10-15T04:34:46.823Z",
     "brief_sha256": "0cf49156b3c5bf8fe2557f8053216822bb2fdfead74797d4c7b661034508ed0a",
     "brief_core_sha256": "27c3f5b2d4f52a01f173a72354e9537611b3955bc5e03edd2c868f5077e447ff",
-    "manifest_sha256": "12377255331896e0446e5ef46de5ee57223d950ac5b1f570a925f1de3f9990a9",
+    "manifest_sha256": "8504e5345febe308d85b583fb65ec595a0921f326bcc828246709676ea220251",
     "criteria_sha256": "0a4d4fcec9da8aa3b6a79b1f945b3b093276262a9b8c2cca9a6678127640a46b",
     "scope_sha256": "fb2a98579659e844a34ecc78e8dc4fa2657bdc492cd8775ea1f7e170edf475e5",
     "scope_parts": {
@@ -106,5 +101,66 @@
       "gate": "b9550b31f779dac373365cc2052c05e557f8a995165bd86b524f14b30d94309f"
     }
   },
-  "base_commit": "65cebdfba62585e9d114f2078d66d3672376b259"
+  "base_commit": "65cebdfba62585e9d114f2078d66d3672376b259",
+  "manifest_amendments": [
+    {
+      "at": "2026-10-15T04:42:12.607Z",
+      "by": "lead",
+      "reason": "analyze.ts needed no change: conditionOperands is shared and lives in expressions.ts",
+      "from": {
+        "manifest": {
+          "add": [
+            "tests/language/operators.test.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/expressions.ts",
+            "core/src/interpreter.ts",
+            "core/src/spec.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/analyze.ts",
+          "core/src/expressions.ts",
+          "core/src/interpreter.ts",
+          "core/src/spec.ts",
+          "tests/language/operators.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [
+            "tests/language/operators.test.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "core/src/expressions.ts",
+            "core/src/interpreter.ts",
+            "core/src/spec.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/analyze.ts",
+          "core/src/expressions.ts",
+          "core/src/interpreter.ts",
+          "core/src/spec.ts",
+          "tests/language/operators.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      }
+    }
+  ],
+  "test_amendments": [
+    {
+      "path": "tests/language/operators.test.ts",
+      "reason": "review round 1: rows added for the left side of in with no right side, booleans in between, operand text in messages and a quoted literal with no closing bracket; no existing row or expectation changed",
+      "approved_by": "project lead"
+    }
+  ]
 }
