@@ -33,6 +33,9 @@ Shape: kind feature; intent add; purpose ship; compatibility additive; uncertain
 ## Stages
 
 <!-- A stage is a question the cycle asks; record an answer only when it is surprising. Stages with an artifact are done when it exists. Record only: "- <stage> done: <evidence>" for a stage with no artifact, "- <stage> skipped (override): <reason>" for a skip where its own rule says run, and "- <stage> added: <reason>" for a stage chosen on purpose. A spine stage cannot be skipped. -->
+- stg-goals-oracle done: goal: the second half of the language; oracle: new tests per card plus every existing test
+- stg-plan-approval done: design approval recorded in design-approval.md (human approved in chat 2026-10-15)
+- stg-ready-check done: each card has criteria, gate, manifest and red evidence before ready
 
 ## Who and why
 
