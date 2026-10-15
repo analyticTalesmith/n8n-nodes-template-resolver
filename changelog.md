@@ -19,6 +19,15 @@
 - `{{FENCE lang="..."}}` and the `fence` filter wrap content in a code fence longer than any backtick run inside it
 - `heading_offset=N` shifts markdown headings; `escape_md=block` also escapes line starts that would read as structure, `escape_md=inline` is the existing behavior
 - The OpenAPI document describes `options.standaloneLines`, the render options and trim and escape syntax in the spec, and accepts every block kind in the analysis `blocks` counts
+- Filter registry: one table feeds `render`, `validate`, `analyze` and `spec`; a filter is written `name`, `name=value` or `name:key=value,key=value`, quotes keep `=`, `,` and `:` inside a value, and an undeclared parameter is a located error in every mode
+- Text filters: `upper`, `lower`, `title`, `replace`, `indent`, `quote`, `round` (half away from zero, on the digits) and `default`
+- Collection filters: `join`, `length`, `first`, `last`, `sort`, `unique`, `slice`, `lines` and `json`; a list prints as compact JSON and passes to the next filter as a list
+- Math and output errors in `render`: a division or remainder by zero and a value with no text form are located `type-error`s, and results print with at most 15 significant digits (`0.1 + 0.2` prints `0.3`); `resolveTemplate` keeps its old output for these
+- A malformed math expression is a located `type-error` even with strict mode off; a hyphen between two letters is part of a name (`first-name`) and subtraction needs spaces (`a - b`)
+- Condition operators `in`, `not in`, `between` and `.length`; `==` compares as text when a side is a quoted literal (`z == "01234"` is false for 1234); an unrecognized word in a condition is an error in every mode
+- `{{WHEN}}` takes a list of values (`{{WHEN "a", "b"}}`), a variable (`{{WHEN other}}`) or a comparison (`{{WHEN >= 10}}`); a malformed `{{WHEN}}` is a located syntax error
+- Limit `maxNodes` (default 20000) bounds the size of a template, with the `limit-nodes` diagnostic, the `--max-nodes` flag and `options.limits.maxNodes` in the HTTP API; `spec` reports it
+- README documents every filter, operator, limit option and `{{WHEN}}` form with examples that render as shown
 
 ### 1.0.0
 
