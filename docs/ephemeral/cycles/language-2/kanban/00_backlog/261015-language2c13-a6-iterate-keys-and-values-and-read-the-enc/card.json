@@ -1,0 +1,123 @@
+{
+  "id": "261015-language2c13-a6-iterate-keys-and-values-and-read-the-enc",
+  "title": "Iterate keys and values and read the enclosing loop",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [
+    "261015-language2c13-a3-bind-block-scoped-locals-with-set",
+    "261015-language2c13-a4-define-and-call-macros"
+  ],
+  "origin": "language-2",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "core/src/types.ts",
+    "core/src/parser.ts",
+    "core/src/interpreter.ts",
+    "core/src/scope.ts",
+    "core/src/analyze.ts",
+    "core/src/spec.ts",
+    "tests/language/for-pairs.test.ts",
+    "tests/golden/render-cases/lang-for-pairs/template.md",
+    "tests/golden/render-cases/lang-for-pairs/data.json",
+    "tests/golden/render-cases/lang-for-pairs/options.json",
+    "tests/golden/render-cases/lang-for-pairs/expected.md"
+  ],
+  "manifest": {
+    "add": [
+      "tests/language/for-pairs.test.ts",
+      "tests/golden/render-cases/lang-for-pairs/template.md",
+      "tests/golden/render-cases/lang-for-pairs/data.json",
+      "tests/golden/render-cases/lang-for-pairs/options.json",
+      "tests/golden/render-cases/lang-for-pairs/expected.md"
+    ],
+    "remove": [],
+    "edit": [
+      "core/src/types.ts",
+      "core/src/parser.ts",
+      "core/src/interpreter.ts",
+      "core/src/scope.ts",
+      "core/src/analyze.ts",
+      "core/src/spec.ts"
+    ],
+    "frozen": false
+  },
+  "criteria": [
+    {
+      "text": "fo-pairs: objects, arrays, JSON-object text, empty and non-iterable input in strict and lenient mode; `limit`, `offset`, ELSE and `@total` apply to pairs.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/for-pairs.test.ts#fo-pairs"
+      ]
+    },
+    {
+      "text": "fo-parent: every metadata name through one and two levels; a missing level or an outermost loop is a missing variable (strict error, lenient empty).",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/for-pairs.test.ts#fo-parent"
+      ]
+    },
+    {
+      "text": "fo-scope: `k` and `v` never leak after END_FOR; `@parent` is not visible inside a macro body called from the loop (a body loop has its own parent chain).",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/for-pairs.test.ts#fo-scope"
+      ]
+    },
+    {
+      "text": "fo-errors: three names, a repeated name, an invalid name or a SET name collision is a `syntax-error` at the FOR.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/for-pairs.test.ts#fo-errors"
+      ]
+    },
+    {
+      "text": "fo-analyze: `k`, `v` and `@parent` are not inputs.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/for-pairs.test.ts#fo-analyze"
+      ]
+    },
+    {
+      "text": "fo-compat: the full suite passes; no existing test file changes.",
+      "verify": "tool",
+      "evidence": null,
+      "status": "pending"
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/language/for-pairs.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver"
+  ],
+  "test_levels": [
+    "unit"
+  ]
+}

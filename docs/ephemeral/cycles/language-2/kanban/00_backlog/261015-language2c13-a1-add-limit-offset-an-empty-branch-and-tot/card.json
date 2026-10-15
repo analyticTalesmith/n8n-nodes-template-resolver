@@ -1,0 +1,168 @@
+{
+  "id": "261015-language2c13-a1-add-limit-offset-an-empty-branch-and-tot",
+  "title": "Add limit, offset, an empty branch and @total to FOR on one loop runner and a scope stack",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [],
+  "origin": "language-2",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "core/src/types.ts",
+    "core/src/parser.ts",
+    "core/src/interpreter.ts",
+    "core/src/analyze.ts",
+    "core/src/spec.ts",
+    "core/src/expressions.ts",
+    "get",
+    "has",
+    "resolveValue",
+    "core/src/scope.ts",
+    "tests/language/for-window.test.ts",
+    "tests/golden/render-cases/lang-for-window/template.md",
+    "tests/golden/render-cases/lang-for-window/data.json",
+    "tests/golden/render-cases/lang-for-window/options.json",
+    "tests/golden/render-cases/lang-for-window/expected.md"
+  ],
+  "manifest": {
+    "add": [
+      "core/src/scope.ts",
+      "tests/language/for-window.test.ts",
+      "tests/golden/render-cases/lang-for-window/template.md",
+      "tests/golden/render-cases/lang-for-window/data.json",
+      "tests/golden/render-cases/lang-for-window/options.json",
+      "tests/golden/render-cases/lang-for-window/expected.md"
+    ],
+    "remove": [],
+    "edit": [
+      "core/src/types.ts",
+      "core/src/parser.ts",
+      "core/src/interpreter.ts",
+      "core/src/analyze.ts",
+      "core/src/spec.ts",
+      "core/src/expressions.ts",
+      "get",
+      "has",
+      "resolveValue"
+    ],
+    "frozen": false
+  },
+  "criteria": [
+    {
+      "text": "fw-window: a literal or a path gives the window; a negative, non-integer, non-numeric or unsafe-integer value is a `type-error` located at the FOR in every mode; a missing path is `missing-variable` in strict mode and an ignored argument in lenient mode; the paths are read in the scope outside the loop.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/for-window.test.ts#fw-window"
+      ]
+    },
+    {
+      "text": "fw-meta: `@index0 @index1 @first @last @notFirst @notLast` describe the position in the rendered window; `@total` is the number of items the loop renders after offset and limit, the same on every iteration; outside a loop `@total` is a missing variable.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/for-window.test.ts#fw-meta"
+      ]
+    },
+    {
+      "text": "fw-else: the empty branch renders exactly when zero items render: an empty array, offset past the end, `limit=0`, a missing or non-iterable value in lenient mode; it does not render when one item renders; a strict non-iterable keeps today's located `type-error`; the loop name and the `@` names are not bound inside the ELSE body; a second ELSE in one FOR is a `syntax-error` at it; an IF's own ELSE and a FOR inside an IF branch are not confused; ELSE after ELSEIF or outside IF and FOR keeps today's \"Unexpected token\".",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/for-window.test.ts#fw-else"
+      ]
+    },
+    {
+      "text": "fw-args: an unknown argument (`max=3`), a repeated argument, trailing words and a missing item name are a `syntax-error` at the FOR tag in every mode, even in a branch that never renders (question 5).",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/for-window.test.ts#fw-args"
+      ]
+    },
+    {
+      "text": "fw-table: TABLE rows built by FOR use the same runner and get window, ELSE (its body holds ROWs) and `@total`; the legacy rule \"a non-iterable renders no rows, even in strict mode\" is kept (question 4) and in that case the ELSE rows render, without an error;",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/for-window.test.ts#fw-table"
+      ]
+    },
+    {
+      "text": "fw-limits: each rendered item counts toward `maxIterations` (skipped offset items do not); the running output check applies inside the loop and the ELSE body; `stats.iterations` counts rendered items.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/for-window.test.ts#fw-limits"
+      ]
+    },
+    {
+      "text": "fw-scope: loop names and metadata live on a stack frame that is gone after END_FOR; an outer loop's name and metadata are visible again after an inner loop; an inner name shadows an outer or data name only inside; frames carry a parent link so L6 adds `@parent` without reworking the stack.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/for-window.test.ts#fw-scope"
+      ]
+    },
+    {
+      "text": "fw-no-copy: conditions, math and filters read variables through the scope chain; `resolveTemplate` over a loop with an IF, with the data given as a Map subclass that counts `Symbol.iterator`, `entries`, `keys` and `forEach` calls, makes zero copies of the data map during the run (red today: `getAllVariables` copies per condition). The test calls `resolveTemplate` because `render` builds its own Map.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/for-window.test.ts#fw-no-copy"
+      ]
+    },
+    {
+      "text": "fw-own: a non-root path segment reads own properties only, in output, conditions and math (`x.constructor`, `x.__proto__`, `x.toString` and `@parent.constructor` are missing, not inherited engine objects); an own key with those names still works.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/for-window.test.ts#fw-own"
+      ]
+    },
+    {
+      "text": "fw-compat: the full suite passes, including `tests/regressions/nested-for.test.ts` and the TABLE tests of `tests/TemplateResolver.node.test.ts`; no existing test file changes.",
+      "verify": "tool",
+      "evidence": null,
+      "status": "pending"
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/language/for-window.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver"
+  ],
+  "test_levels": [
+    "unit"
+  ]
+}

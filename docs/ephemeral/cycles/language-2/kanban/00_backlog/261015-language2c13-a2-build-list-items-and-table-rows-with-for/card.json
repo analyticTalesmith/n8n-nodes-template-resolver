@@ -1,0 +1,158 @@
+{
+  "id": "261015-language2c13-a2-build-list-items-and-table-rows-with-for",
+  "title": "Build LIST items and TABLE rows with FOR and IF",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [
+    "261015-language2c13-a1-add-limit-offset-an-empty-branch-and-tot"
+  ],
+  "origin": "language-2",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "core/src/types.ts",
+    "core/src/parser.ts",
+    "core/src/interpreter.ts",
+    "core/src/analyze.ts",
+    "core/src/spec.ts",
+    "tests/language/list-table-children.test.ts",
+    "tests/golden/render-cases/lang-list-for/template.md",
+    "tests/golden/render-cases/lang-list-for/data.json",
+    "tests/golden/render-cases/lang-list-for/options.json",
+    "tests/golden/render-cases/lang-list-for/expected.md",
+    "tests/golden/render-cases/lang-table-if/template.md",
+    "tests/golden/render-cases/lang-table-if/data.json",
+    "tests/golden/render-cases/lang-table-if/options.json",
+    "tests/golden/render-cases/lang-table-if/expected.md"
+  ],
+  "manifest": {
+    "add": [
+      "tests/language/list-table-children.test.ts",
+      "tests/golden/render-cases/lang-list-for/template.md",
+      "tests/golden/render-cases/lang-list-for/data.json",
+      "tests/golden/render-cases/lang-list-for/options.json",
+      "tests/golden/render-cases/lang-list-for/expected.md",
+      "tests/golden/render-cases/lang-table-if/template.md",
+      "tests/golden/render-cases/lang-table-if/data.json",
+      "tests/golden/render-cases/lang-table-if/options.json",
+      "tests/golden/render-cases/lang-table-if/expected.md"
+    ],
+    "remove": [],
+    "edit": [
+      "core/src/types.ts",
+      "core/src/parser.ts",
+      "core/src/interpreter.ts",
+      "core/src/analyze.ts",
+      "core/src/spec.ts"
+    ],
+    "frozen": false
+  },
+  "criteria": [
+    {
+      "text": "lc-list: FOR and IF/ELSEIF/ELSE (nested to any allowed depth) inside LIST yield LIST_ITEMs, numbered without gaps across mixed static and generated items; items skipped by their own condition or fallback keep today's numbering rule.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/list-table-children.test.ts#lc-list"
+      ]
+    },
+    {
+      "text": "lc-table: IF/ELSEIF/ELSE inside TABLE, and a FOR or IF inside either, yield ROWs; rows are padded to the widest row as before; the header rule is unchanged.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/list-table-children.test.ts#lc-table"
+      ]
+    },
+    {
+      "text": "lc-close: a LIST_ITEM without END_LIST_ITEM ends at the next item, END_LIST, and now also at END_FOR, ELSE, ELSEIF or END_IF of the enclosing child block; a ROW without END_ROW does the same inside an IF or FOR that builds rows; an unclosed item followed by a FOR or IF is that item's content (no new guess), and a LIST_ITEM found inside such content is a `syntax-error` whose suggestion says to close the item with END_LIST_ITEM.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/list-table-children.test.ts#lc-close"
+      ]
+    },
+    {
+      "text": "lc-errors: any other tag or non-whitespace text inside a FOR or IF that builds LIST items, or an IF that builds TABLE rows, is a `syntax-error` at its own position, in every mode; comments and whitespace are always allowed. A FOR placed directly in a TABLE keeps today's text-row fallback (a body that is not a ROW is rendered and split on `|` into a row), so no existing table template changes (question 4).",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/list-table-children.test.ts#lc-errors"
+      ]
+    },
+    {
+      "text": "lc-limits: FOR and IF in LIST and TABLE count toward maxNodes, maxDepth (parse) and maxIterations (run) exactly as elsewhere.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/list-table-children.test.ts#lc-limits"
+      ]
+    },
+    {
+      "text": "lc-ws: the standalone rule and trim markers apply to the FOR, IF, ELSE and END tags in LIST and TABLE as elsewhere; LIST, TABLE and their parts keep their own spacing.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/list-table-children.test.ts#lc-ws"
+      ]
+    },
+    {
+      "text": "lc-analyze: analyze visits generated items and rows; FOR names inside are scoped; kinds are `list_item` and `table` as today.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/list-table-children.test.ts#lc-analyze"
+      ]
+    },
+    {
+      "text": "lc-pipes: in a table cell a pipe after an even run of backslashes is escaped, after an odd run is left as written. This changes the output of a previously valid template (a cell holding two backslashes and a pipe): named in question 5 and the changelog.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/list-table-children.test.ts#lc-pipes"
+      ]
+    },
+    {
+      "text": "lc-compat: the full suite passes; no existing test file changes.",
+      "verify": "tool",
+      "evidence": null,
+      "status": "pending"
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/language/list-table-children.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver"
+  ],
+  "test_levels": [
+    "unit"
+  ]
+}

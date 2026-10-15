@@ -1,0 +1,170 @@
+{
+  "id": "261015-language2c13-a7-declare-typed-and-required-inputs",
+  "title": "Declare typed and required inputs",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [
+    "261015-language2c13-a3-bind-block-scoped-locals-with-set"
+  ],
+  "origin": "language-2",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "core/src/lexer.ts",
+    "core/src/types.ts",
+    "core/src/parser.ts",
+    "core/src/interpreter.ts",
+    "core/src/analyze.ts",
+    "core/src/whitespace.ts",
+    "core/src/spec.ts",
+    "core/src/errors.ts",
+    "n8n/TemplateResolver.node.ts",
+    "api/openapi.json",
+    "core/src/inputs.ts",
+    "tests/language/input.test.ts",
+    "n8n-workflow",
+    "tests/headless/node.test.ts"
+  ],
+  "manifest": {
+    "add": [
+      "core/src/inputs.ts",
+      "tests/language/input.test.ts",
+      "n8n-workflow",
+      "tests/headless/node.test.ts"
+    ],
+    "remove": [],
+    "edit": [
+      "core/src/lexer.ts",
+      "core/src/types.ts",
+      "core/src/parser.ts",
+      "core/src/interpreter.ts",
+      "core/src/analyze.ts",
+      "core/src/whitespace.ts",
+      "core/src/spec.ts",
+      "core/src/errors.ts",
+      "n8n/TemplateResolver.node.ts",
+      "api/openapi.json"
+    ],
+    "frozen": false
+  },
+  "criteria": [
+    {
+      "text": "in-declare: inside any block, declared twice, an unknown type, an unknown argument or an invalid name is a `syntax-error` located at the tag, in every mode.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/input.test.ts#in-declare"
+      ]
+    },
+    {
+      "text": "in-type: a present value of the wrong type is a `type-error` located at the INPUT; the check uses the coercion rules the language already uses (a numeric text satisfies `number`, a comma text or JSON array text satisfies `array`, `yes`/`no`/`1`/`0` satisfy `boolean`; arrays and objects do not satisfy `string`); the value is checked, never rewritten (question 3); null or missing skips the check.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/input.test.ts#in-type"
+      ]
+    },
+    {
+      "text": "in-required: a required input that is missing or null is a `missing-variable` error located at the INPUT in strict and lenient mode, with the message \"Required input 'x' is missing\"; an empty string is present; a declared required input that no one reads is still required.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/input.test.ts#in-required"
+      ]
+    },
+    {
+      "text": "in-optional: a declared input without `required` that is missing reads as null in strict mode too (question 2), and a FOR over it iterates nothing (its ELSE renders); undeclared variables keep the strict rule.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/input.test.ts#in-optional"
+      ]
+    },
+    {
+      "text": "in-analyze: declared inputs appear in analyze with `declared: true` and `typeHint`, and their `optional` is taken from the declaration (`optional` is true without `required`, whatever the reads), so `required` keeps its documented meaning `!optional`; the new fields are present only on declared inputs, so every existing analyze assertion holds; one that is never read has usage kind `input` only and `validate` warns about it as `analysis-warning`.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/input.test.ts#in-analyze"
+      ]
+    },
+    {
+      "text": "in-node: the n8n node's strict check (it uses `!optional`) names an unmapped declared required input and does not throw for an unmapped declared optional input; in lenient mode the node does not fill a declared required input with `\"\"`, and its missing-variable error comes from render; an explicitly mapped empty string is present.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/input.test.ts#in-node"
+      ]
+    },
+    {
+      "text": "in-openapi: the OpenAPI analysis schema lists `declared` and `typeHint`, and the analyze route returns them.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "integration",
+      "traces": [
+        "tests/language/input.test.ts#in-openapi"
+      ]
+    },
+    {
+      "text": "in-ws: INPUT joins the standalone set and takes trim markers.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/input.test.ts#in-ws"
+      ]
+    },
+    {
+      "text": "in-spec: `spec().blocks` lists INPUT with no `closes`; the derived surfaces test passes without edits.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/input.test.ts#in-spec"
+      ]
+    },
+    {
+      "text": "in-compat: the full suite passes; no existing test file changes.",
+      "verify": "tool",
+      "evidence": null,
+      "status": "pending"
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/language/input.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver",
+    "api"
+  ],
+  "test_levels": [
+    "unit",
+    "integration"
+  ]
+}

@@ -1,0 +1,209 @@
+{
+  "id": "261015-language2c13-a5-pass-partials-in-the-render-options-and",
+  "title": "Pass partials in the render options and expose them in the API, CLI and OpenAPI",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [
+    "261015-language2c13-a4-define-and-call-macros"
+  ],
+  "origin": "language-2",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "core/src/types.ts",
+    "core/src/parser.ts",
+    "core/src/macros.ts",
+    "core/src/interpreter.ts",
+    "core/src/render.ts",
+    "core/src/analyze.ts",
+    "core/src/spec.ts",
+    "core/src/index.ts",
+    "api/routes.ts",
+    "api/openapi.json",
+    "cli/main.ts",
+    "tests/language/partials.test.ts",
+    "tests/golden/render-cases/lang-partials/template.md",
+    "tests/golden/render-cases/lang-partials/data.json",
+    "tests/golden/render-cases/lang-partials/options.json",
+    "tests/golden/render-cases/lang-partials/expected.md",
+    "options.json",
+    "resolveTemplate"
+  ],
+  "manifest": {
+    "add": [
+      "tests/language/partials.test.ts",
+      "tests/golden/render-cases/lang-partials/template.md",
+      "tests/golden/render-cases/lang-partials/data.json",
+      "tests/golden/render-cases/lang-partials/options.json",
+      "tests/golden/render-cases/lang-partials/expected.md",
+      "options.json",
+      "resolveTemplate"
+    ],
+    "remove": [],
+    "edit": [
+      "core/src/types.ts",
+      "core/src/parser.ts",
+      "core/src/macros.ts",
+      "core/src/interpreter.ts",
+      "core/src/render.ts",
+      "core/src/analyze.ts",
+      "core/src/spec.ts",
+      "core/src/index.ts",
+      "api/routes.ts",
+      "api/openapi.json",
+      "cli/main.ts"
+    ],
+    "frozen": false
+  },
+  "criteria": [
+    {
+      "text": "pt-option: `render`, `validate` and `analyze` accept `partials`; partial texts are lexed with the same whitespace options as the template; CALL resolves into them; partials are not interpreted as output and unreferenced ones cost only parse time.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/partials.test.ts#pt-option"
+      ]
+    },
+    {
+      "text": "pt-only: text, a variable, a block other than DEFINE or any other tag in a partial is a `syntax-error` whose message names the partial and whose line and column are inside that partial's text.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/partials.test.ts#pt-only"
+      ]
+    },
+    {
+      "text": "pt-dup: a name defined twice in one partial, in two partials or in a partial and the template is a `syntax-error` naming both places.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/partials.test.ts#pt-dup"
+      ]
+    },
+    {
+      "text": "pt-nodes: partial nodes count toward `maxNodes` (one shared counter across the template and every partial); crossing it is `limit-nodes` located in the partial that crossed it and named; the same in validate and analyze.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/partials.test.ts#pt-nodes"
+      ]
+    },
+    {
+      "text": "pt-validate: without a `partials` option an unknown CALL is an `analysis-warning`; with the option given (even `{}`) it is an error; render without partials is always an error.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/partials.test.ts#pt-validate"
+      ]
+    },
+    {
+      "text": "pt-depth: mutual recursion across two partials is `limit-depth`; fan-out across partials hits `limit-iterations` and `limit-output` as in `mc-iterations` and `mc-output`; the same templates through `validate` and `analyze` return promptly (no expansion).",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/partials.test.ts#pt-depth"
+      ]
+    },
+    {
+      "text": "pt-source: every node knows its source (the template or a partial's name); a runtime error inside a macro body defined in a partial names that partial in its message, and `analyze`/`validate` findings in a partial do too.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/partials.test.ts#pt-source"
+      ]
+    },
+    {
+      "text": "pt-names: partial names `__proto__`, `constructor` are ordinary labels; a partial map built from JSON with those keys never touches a prototype.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/partials.test.ts#pt-names"
+      ]
+    },
+    {
+      "text": "pt-api: `options.partials` on `/v1/render`, `/v1/validate` and `/v1/analyze`; a non-object or a non-string entry is 400 `invalid-request` naming the key; partial nodes count against the server's `maxNodes`.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "integration",
+      "traces": [
+        "tests/language/partials.test.ts#pt-api"
+      ]
+    },
+    {
+      "text": "pt-cli: `--partials <file.json>` on `render`, `validate` and `analyze`; unreadable or invalid JSON or a non-object-of-strings is exit 2; usage text lists the flag.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "integration",
+      "traces": [
+        "tests/language/partials.test.ts#pt-cli"
+      ]
+    },
+    {
+      "text": "pt-openapi: the OpenAPI document describes `options.partials` on the three routes.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "integration",
+      "traces": [
+        "tests/language/partials.test.ts#pt-openapi"
+      ]
+    },
+    {
+      "text": "pt-spec: `spec().options` lists `partials`.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/partials.test.ts#pt-spec"
+      ]
+    },
+    {
+      "text": "pt-compat: the full suite passes; no existing test file changes.",
+      "verify": "tool",
+      "evidence": null,
+      "status": "pending"
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/language/partials.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver",
+    "api",
+    "cli"
+  ],
+  "test_levels": [
+    "unit",
+    "integration"
+  ]
+}
