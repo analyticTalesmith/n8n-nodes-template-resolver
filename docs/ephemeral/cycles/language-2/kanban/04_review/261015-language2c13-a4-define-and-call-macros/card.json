@@ -208,6 +208,11 @@
       "path": "tests/language/set.test.ts",
       "reason": "the st-keywords row that pins the exact keyword table of the SET card must list DEFINE and CALL once they are keywords; two pairs added to the expected table, no row removed, no assertion weakened",
       "approved_by": "project lead"
+    },
+    {
+      "path": "tests/language/macros.test.ts",
+      "reason": "review round 1: a block of new rows appended at the end of the file for the three findings (a DEFINE inside a ROW or HEADER, trimming bodies under the running output check, LIST and TABLE output under it); no existing row changed",
+      "approved_by": "project lead"
     }
   ],
   "freeze": {
