@@ -36,7 +36,6 @@ Must not:
 - docs/living/architecture/language-contract.md
 - docs/living/decisions/adr/0003-unknown-names-are-always-errors.md
 - core/src/interpreter.ts
-- core/src/macros.ts
 - core/src/scope.ts
 - core/src/parser.ts
 - core/src/lexer.ts

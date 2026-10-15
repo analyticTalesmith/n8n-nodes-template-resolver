@@ -183,15 +183,7 @@
     "tests/language/macros.test.ts",
     "--json"
   ],
-  "claim": {
-    "owner": "build:implementer",
-    "heartbeat": "2026-10-15T16:23:52.298Z",
-    "agent": "a",
-    "built": {
-      "commit": "d817324974a2330e5d91c88ce086a7f39b6f0938",
-      "at": "2026-10-15T16:23:52.298Z"
-    }
-  },
+  "claim": null,
   "blocked_on": null,
   "docs_impact": "none",
   "started": "2026-10-15T16:14:02.274Z",
@@ -323,5 +315,8 @@
         ]
       }
     }
-  ]
+  ],
+  "resume_claim": {
+    "owner": "build:implementer"
+  }
 }
