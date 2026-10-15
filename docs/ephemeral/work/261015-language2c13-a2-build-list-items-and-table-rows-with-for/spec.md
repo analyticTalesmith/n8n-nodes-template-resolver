@@ -65,3 +65,8 @@ The previous card's reviewer found compatibility breaks by running templates the
 ## Non-goals
 
 SET, `@parent`, `AS k, v`, macros, partials. No living document edits; no deltas (docs_impact none).
+
+## Notes
+
+- A FOR or IF holding a ROW inside the body of a FOR written directly in a TABLE now builds rows (it rendered nothing before). A non-iterable inner FOR there is silent in strict mode (it was a type-error at base), and a nested FOR with a text body and a ROW only in its ELSE gives one row per iteration (it joined the iterations into one row). Accepted: only templates that rendered no row for the ROW can change.
+- Review round one: in a strict row context (an IF written directly in the TABLE, and every FOR and IF nested in it) each FOR and IF child builds rows through the same path, so a FOR without a ROW (for example only a comment) is silent on a non-iterable; the `holdsRow` test applies only to the generically parsed body of a FOR written directly in the TABLE.

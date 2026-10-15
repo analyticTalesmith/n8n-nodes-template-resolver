@@ -179,6 +179,11 @@
       "path": "tests/language/list-table-children.test.ts",
       "reason": "test defects: the golden helper returned no-result for a passing case, and three header rows expected a 5-hyphen separator for a 6-character cell (the unchanged rule gives 6)",
       "approved_by": "project lead"
+    },
+    {
+      "path": "tests/language/list-table-children.test.ts",
+      "reason": "review round one finding f1: a new block of 44 tests at the end pins a FOR without a ROW inside an IF that builds rows; no existing row changed",
+      "approved_by": "project lead"
     }
   ],
   "manifest_amendments": [

@@ -50,10 +50,21 @@
       "location": "core/src/interpreter.ts:697",
       "label": "f1",
       "raised_in": 1,
-      "status": "open",
+      "status": "fixed",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "A FOR with no ROW inside an IF that builds rows went through visitFor and threw on a strict non-iterable.",
+          "verify": "Confirmed: holdsRow was false for it. A strict flag now sends every FOR and IF child of a strict row context to rowsFromChild.",
+          "action": "fixed",
+          "evidence": [
+            "code:core/src/interpreter.ts",
+            "test:tests/language/list-table-children.test.ts"
+          ]
+        }
+      ],
       "rulings": []
     },
     {

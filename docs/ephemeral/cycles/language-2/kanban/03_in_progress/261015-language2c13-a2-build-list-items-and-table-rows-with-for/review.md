@@ -17,11 +17,12 @@ Restatement: Inside a LIST, FOR blocks and IF/ELSEIF/ELSE blocks (nested to any 
 ### f1: A FOR with no ROW inside an IF that builds rows is rendered through visitFor, so a non-iterable iterable is a strict-mode type-error instead of silent
 
 - Class: defect
-- Status: open
+- Status: fixed
 - Serves: c2: In a strict-mode render, a TABLE whose IF holds a FOR without any ROW in its body (for example, while the author has the ROW commented out) fails with a type-error when the iterable is an object or null. The spec says a FOR inside an IF that builds rows 'renders no rows without error, in strict mode too (a TABLE never errors on a FOR's iterable)'.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: render('{{TABLE}}{{IF t}}{{FOR obj AS x}}{{# row later #}}{{END_FOR}}{{END_IF}}{{END_TABLE}}', {t:true, obj:{k:1}}, {strictMode:true}). parseRowChild drops the comment, so the FOR body is []. rowsFromChild(If) calls tableRowsFrom([For]). holdsRow(For) is false, so the else branch calls addText(this.visit(For)), which calls visitFor and then runLoop(node, false, ...). That throws 'Cannot iterate over non-array value' at the FOR, while the spec expects empty output. Smallest fix: in the strict row context (an IF directly in a TABLE and its nested FOR/IF bodies), send every FOR and IF child to rowsFromChild whatever holdsRow returns. Keep the holdsRow test only for bodies of a direct (legacy) TABLE FOR.
 - Evidence: diff:core/src/interpreter.ts, code:core/src/interpreter.ts:697, code:core/src/interpreter.ts:4001, doc:docs/ephemeral/cycles/language-2/kanban/04_review/261015-language2c13-a2-build-list-items-and-table-rows-with-for/spec.md
+- Reply after round 1 (fixed): restate: A FOR with no ROW inside an IF that builds rows went through visitFor and threw on a strict non-iterable.; verify: Confirmed: holdsRow was false for it. A strict flag now sends every FOR and IF child of a strict row context to rowsFromChild.; evidence: code:core/src/interpreter.ts, test:tests/language/list-table-children.test.ts
 
 ### f2: The frozen test file is edited in the diff: one compat expectation flipped from syntax-error to output, three header separators changed, and the golden helper's pass logic changed
 
