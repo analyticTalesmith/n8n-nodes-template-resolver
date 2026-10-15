@@ -350,10 +350,11 @@ function numericOf(value: TemplateValue): number | null {
 function valuesEqual(left: Operand, right: Operand): boolean {
   const l = left.value === undefined ? null : left.value;
   const r = right.value === undefined ? null : right.value;
-  if (left.quoted || right.quoted) return safeString(l) === safeString(r);
-  const leftNum = numericOf(l);
-  const rightNum = numericOf(r);
-  if (leftNum !== null && rightNum !== null) return leftNum === rightNum;
+  if (!left.quoted && !right.quoted) {
+    const leftNum = numericOf(l);
+    const rightNum = numericOf(r);
+    if (leftNum !== null && rightNum !== null) return leftNum === rightNum;
+  }
   return safeString(l) === safeString(r);
 }
 
