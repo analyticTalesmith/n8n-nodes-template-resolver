@@ -85,10 +85,21 @@
       "location": "core/src/interpreter.ts:628",
       "label": "f2",
       "raised_in": 1,
-      "status": "open",
+      "status": "fixed",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "TABLE FOR non-ROW body merged separate IF blocks into one row, changing valid tables",
+          "verify": "Probed base: one row per block node; fixed so only inline runs merge, block nodes are one row each",
+          "action": "fixed",
+          "evidence": [
+            "test:fw-table: review round 1 rows 1a-1d",
+            "code:core/src/interpreter.ts:tableRowsFrom"
+          ]
+        }
+      ],
       "rulings": []
     },
     {
@@ -108,10 +119,21 @@
       "location": "core/src/parser.ts:550",
       "label": "f3",
       "raised_in": 1,
-      "status": "open",
+      "status": "fixed",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "FOR iterable containing a space was a syntax error; base read the key",
+          "verify": "Probed base: my items read as key; header now takes text up to first AS word as iterable",
+          "action": "fixed",
+          "evidence": [
+            "test:fw-args: review round 1 spaced iterable rows",
+            "code:core/src/parser.ts:parseForHeader"
+          ]
+        }
+      ],
       "rulings": []
     },
     {

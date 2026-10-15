@@ -27,20 +27,22 @@ Restatement: The card replaces the two copies of FOR iteration (plain FOR and TA
 ### f2: The TABLE-FOR fallback now merges separate non-ROW body nodes into one row, changing previously valid tables
 
 - Class: goal-risk
-- Status: open
+- Status: fixed
 - Serves: m5: Before, each non-ROW node in a TABLE FOR body was rendered and split on '|' alone, so a body of two IF blocks that each render one row gave two rows per item. tableRowsFrom now joins every consecutive non-ROW node into one string and splits it on '|' once. The same template gives one row per item, its cells join text across the line break (for example '1', a newline, then 'B'), and the markdown table breaks. m5 allows only two output changes (trailing FOR words and inherited segments), and this is neither.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: resolveTemplate on '{{TABLE}}{{HEADER}}K|V{{END_HEADER}}{{FOR xs AS x}}' + newline + '{{IF x.a}}A|1{{END_IF}}' + newline + '{{IF x.b}}B|2{{END_IF}}' + newline + '{{END_FOR}}{{END_TABLE}}' with xs = [{a:true,b:true}]. At base the output has rows '| A | 1 |' and '| B | 2 |'. At head it has one row whose middle cell holds '1', a line break and 'B'. The smallest restoring change: split the merged run into lines before splitting each non-blank line on '|'. That keeps the frozen case '${{x}}|${{@index0}}' as one row and keeps one row per line.
 - Evidence: code:core/src/interpreter.ts:628, diff:core/src/interpreter.ts, doc:docs/ephemeral/work/261015-language2c13-a1-add-limit-offset-an-empty-branch-and-tot/spec.md
+- Reply after round 1 (fixed): restate: TABLE FOR non-ROW body merged separate IF blocks into one row, changing valid tables; verify: Probed base: one row per block node; fixed so only inline runs merge, block nodes are one row each; evidence: test:fw-table: review round 1 rows 1a-1d, code:core/src/interpreter.ts:tableRowsFrom
 
 ### f3: A FOR iterable that contains whitespace, which rendered before, is now a syntax error
 
 - Class: goal-risk
-- Status: open
+- Status: fixed
 - Serves: m5: The old header regex /FOR\s+(.+?)\s+AS\s+(\w+)/i took everything up to the first ' AS ' as the iterable, so '{{FOR my items AS x}}' read the data key 'my items'. Data keys with spaces are plausible: the language contract treats names such as 'Order #' as plain data. parseForHeader now requires words[2] to be AS, so the same template is 'Invalid FOR syntax'. The words involved come before the item name, so this is not the approved 'trailing words after the FOR item name' exception.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: resolveTemplate('{{FOR my items AS x}}${{x}}{{END_FOR}}', new Map([['my items', ['a']]])) returns 'a' at base. At head it throws syntax-error 'Invalid FOR syntax'. The smallest restoring change: find the first standalone AS word (case-insensitive) after FOR and take words[1..asIndex-1] joined by a space as the iterable, then parse the item name and arguments after it.
 - Evidence: code:core/src/parser.ts:550, diff:core/src/parser.ts, doc:docs/living/architecture/language-contract.md
+- Reply after round 1 (fixed): restate: FOR iterable containing a space was a syntax error; base read the key; verify: Probed base: my items read as key; header now takes text up to first AS word as iterable; evidence: test:fw-args: review round 1 spaced iterable rows, code:core/src/parser.ts:parseForHeader
 
 ### f4: The error path still lists every data key, and does it through Map.prototype.keys, which the fw-no-copy test does not count
 
