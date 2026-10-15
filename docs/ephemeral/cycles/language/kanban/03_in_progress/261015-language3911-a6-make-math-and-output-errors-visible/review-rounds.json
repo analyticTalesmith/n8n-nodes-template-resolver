@@ -304,10 +304,20 @@
       "location": "core/src/interpreter.ts:47",
       "label": "f7",
       "raised_in": 2,
-      "status": "open",
+      "status": "fixed",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 2,
+          "restate": "lines and join skipped the printability check",
+          "verify": "lines and join now check; cyclic and BigInt rows error, plain rows still print",
+          "action": "fixed",
+          "evidence": [
+            "test:tests/language/math.test.ts"
+          ]
+        }
+      ],
       "rulings": []
     },
     {
@@ -328,10 +338,20 @@
       "location": "core/src/interpreter.ts:228",
       "label": "f8",
       "raised_in": 2,
-      "status": "open",
+      "status": "fixed",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 2,
+          "restate": "malformed math with a missing name stayed empty",
+          "verify": "Shape pass runs before any lookup; rows with and without data both error",
+          "action": "fixed",
+          "evidence": [
+            "test:tests/language/math.test.ts"
+          ]
+        }
+      ],
       "rulings": []
     },
     {
