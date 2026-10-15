@@ -1,0 +1,171 @@
+{
+  "card": "261015-language3911-a8-let-when-match-several-values-a-variable",
+  "rounds": [
+    {
+      "number": 1,
+      "at": "2026-10-15T05:08:46.672Z",
+      "reviewer": {
+        "kind": "fallback",
+        "label": "opus fallback (same model family as the builder; has repository access)"
+      },
+      "output_sha256": "2f26338895ea74aa04a1d1758f78f2482978da1ed97f42064b7270a7df56a815",
+      "diff_sha256": "4b365520bdb0e98e1339acc0a688e450b5f58c14033ddaef3594f3962c24fd71",
+      "at_commit": "2a9c386cd847589f149f6e439c584971e631f5af",
+      "restatement": "A CASE branch has to accept more than one quoted value. A WHEN can hold a comma-separated list of literals and variable paths, one variable, or one comparison (== != > < >= <=). Equality uses the operators card rule (valuesEqual): quoted text compares as text, unquoted numbers compare as numbers. The ordered operators use evaluateNumericComparison, and a non-numeric side is a type-error located at the WHEN. A missing variable follows strict mode. A malformed WHEN is a syntax-error at the tag, raised at parse time in render, validate and analyze. analyze records WHEN paths as case usage. render and resolveTemplate behave the same. Existing CASE behavior stays. The work must not change existing test expectations, add a dependency, evaluate template text or compile template regexes, or let unknown names pass in lenient mode.",
+      "brief_mismatch": "Two problems in the brief. First, the spec's Interface section and the card's Interface contract require a golden case folder tests/golden/render-cases/lang-case/ with template.md, data.json and expected.md, but files_scope lists only template.md. The manifest amendment then drops template.md as already committed before the base, so no part of the golden case is in this card's scope or in the diff. Second, the card's must-not allows 'one named amendment (if any)' to the test expectations, while the packet's m1 forbids changing any existing test expectation. No amendment is named anywhere.",
+      "evidence": [
+        "diff:core/src/expressions.ts",
+        "diff:core/src/parser.ts",
+        "diff:docs/living/architecture/language-contract.md",
+        "diff:docs/living/architecture/modules/template-resolver.md",
+        "diff:tests/golden/render-cases/lang-case/template.md",
+        "diff:tests/language/case.test.ts",
+        "doc:docs/ephemeral/work/261015-language3911-a8-let-when-match-several-values-a-variable/spec.md",
+        "doc:docs/living/architecture/language-contract.md",
+        "doc:docs/living/decisions/adr/0003-unknown-names-are-always-errors.md",
+        "patch:4b365520bdb0e98e1339acc0a688e450b5f58c14033ddaef3594f3962c24fd71"
+      ],
+      "stalled": false,
+      "raised": [
+        "f1",
+        "f2",
+        "f3",
+        "f4",
+        "f5"
+      ],
+      "responses": []
+    }
+  ],
+  "findings": [
+    {
+      "title": "The builder changed the frozen case test: one expectation flipped, one assertion loosened, lowercase cases deleted",
+      "class": "defect",
+      "serves": {
+        "target": "m1",
+        "scenario": "tests/language/case.test.ts was committed by the test writer before the base (diff index cefd7ff..1df683a). It is the frozen contract for this card. The diff changes the lenient expectation for WHEN \"a\" ; other with {x:\"b\"} from O(\"2\") to O(\"D\"). It loosens the cs-analyze 'exactly the expected variables' assertion to ignore x and items. It deletes the lowercase-tag cases. The new expectation matches the spec: a lenient missing variable is empty text, and \"b\" does not equal \"\". But the test now encodes what the builder chose rather than what the plan fixed, and no approved amendment covers it. The scope exceptions log lists only the spec.md wording change, not this test file."
+      },
+      "rubric": "each criterion is met by the diff and its test",
+      "reproduction": "git diff f140e131 2a9c386 -- tests/language/case.test.ts. Line ~294 changes O(\"2\") to O(\"D\"). Lines ~566-570 replace the full variable-set equality with a filter that drops 'x' and 'items'. The '{{when \"a\", \"b\"}}' and '{{- when >= 10 -}}' cases are removed. None of these appears in the scope exceptions log.",
+      "evidence": [
+        "diff:tests/language/case.test.ts",
+        "doc:docs/ephemeral/work/261015-language3911-a8-let-when-match-several-values-a-variable/spec.md"
+      ],
+      "location": "tests/language/case.test.ts:294",
+      "label": "f1",
+      "raised_in": 1,
+      "status": "withdrawn",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [
+        {
+          "after_round": 1,
+          "ruling": "withdraw",
+          "note": "the test edits are named amendments in test_amendments approved by the project lead: lowercase tag rows were wrong (lexer matches upper case only), lenient missing variable is empty text"
+        }
+      ]
+    },
+    {
+      "title": "The golden case lang-case is not in the diff and nothing shows it is complete",
+      "class": "goal-risk",
+      "serves": {
+        "target": "card-goal",
+        "scenario": "The spec and the card's Interface contract require tests/golden/render-cases/lang-case/ with template.md, data.json and expected.md, run by the existing harness. That harness is what shows render and resolveTemplate produce the same end-to-end output. The diff adds none of these files, and the manifest amendment says only template.md existed before the base. If data.json or expected.md is missing, the golden case is either skipped or never asserts an output, so the end-to-end check the card promises does not exist."
+      },
+      "rubric": "each criterion is met by the diff and its test",
+      "reproduction": "At 2a9c386, list tests/golden/render-cases/lang-case/. Confirm that expected.md and data.json exist, that the golden harness runs lang-case, and that it fails when expected.md is altered.",
+      "evidence": [
+        "doc:docs/ephemeral/work/261015-language3911-a8-let-when-match-several-values-a-variable/spec.md",
+        "diff:tests/golden/render-cases/lang-case/template.md"
+      ],
+      "location": null,
+      "label": "f2",
+      "raised_in": 1,
+      "status": "withdrawn",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [
+        {
+          "after_round": 1,
+          "ruling": "withdraw",
+          "note": "lang-case folder has all four files, committed before the base in the test writer commit; the golden harness runs it"
+        }
+      ]
+    },
+    {
+      "title": "WHEN_PATH accepts names the language does not treat as names, such as n-1, a-, a--b and @ inside a name",
+      "class": "goal-risk",
+      "serves": {
+        "target": "m4",
+        "scenario": "The language contract says a hyphen joins a name only between two ASCII letters; n-1, x1-y and 1-a are arithmetic. The new WHEN_PATH regex /^[\\p{L}_@][\\p{L}\\p{N}_@-]*(\\.[\\p{L}\\p{N}_@-]+)*$/u accepts limit-1, a-, a--b and a@b as variable paths. It is a second name rule, separate from the parser's VARIABLE_PATH. An author who writes {{WHEN limit-1}} gets no syntax-error at parse. In lenient mode the item reads as a missing variable, which is empty text, so the CASE silently takes the wrong branch. analyze also reports a required variable 'limit-1'. Under ADR 0003 an item that is neither a literal nor a variable path must be an error in every mode."
+      },
+      "rubric": "unknown names, operators and filters are still errors in every mode",
+      "reproduction": "render('{{CASE x}}{{WHEN limit-1}}Y{{DEFAULT}}N{{END_CASE}}', {x:'', limit:5}, {strictMode:false}). Expected per the contract: a syntax-error at 1:11. Observed by reading the code: ok, output 'Y', because limit-1 is read as an empty missing variable and equals the empty subject. analyze on the same template lists 'limit-1'.",
+      "evidence": [
+        "diff:core/src/expressions.ts",
+        "doc:docs/living/architecture/language-contract.md",
+        "doc:docs/living/decisions/adr/0003-unknown-names-are-always-errors.md"
+      ],
+      "location": "core/src/expressions.ts:607",
+      "label": "f3",
+      "raised_in": 1,
+      "status": "open",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": []
+    },
+    {
+      "title": "A quoted WHEN value ending in a backslash, which worked before, is now an unclosed-quote syntax-error",
+      "class": "goal-risk",
+      "serves": {
+        "target": "card-goal",
+        "scenario": "The spec says the old single form keeps matching text exactly as before and that a quoted text is not unescaped. splitCommas treats a quote preceded by a backslash as still open (text[i-1] !== '\\\\'). At the base, {{WHEN 'C:\\'}} matched the text C:\\ through the old regex. At head it fails with 'Unclosed quote in {{WHEN}}', so a template that used to render now stops with an error. The scanner thereby treats a backslash before a quote as an escape, which contradicts the spec's no-unescape rule for WHEN."
+      },
+      "rubric": "each criterion is met by the diff and its test",
+      "reproduction": "render(\"{{CASE p}}{{WHEN 'C:\\\\'}}Y{{DEFAULT}}N{{END_CASE}}\", {p:'C:\\\\'}). At base f140e131 the output is 'Y'. At head the result is a syntax-error at the WHEN. No test covers a trailing backslash inside quotes.",
+      "evidence": [
+        "diff:core/src/expressions.ts",
+        "diff:core/src/parser.ts"
+      ],
+      "location": "core/src/expressions.ts:586",
+      "label": "f4",
+      "raised_in": 1,
+      "status": "open",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": []
+    },
+    {
+      "title": "Two living architecture documents were edited directly, outside the card's scope and with no approved exception",
+      "class": "defect",
+      "serves": {
+        "target": "card-goal",
+        "scenario": "The card says to change only the files listed in Scope. The diff edits docs/living/architecture/language-contract.md, adding a 'CASE matchers' section, and docs/living/architecture/modules/template-resolver.md. Neither is in files_scope or the scope exceptions log. These texts become the record of built behavior without passing the human gate. They also already disagree with the code in places: the contract says names may use 'any letter', yet WHEN_PATH also accepts hyphen forms the contract calls arithmetic. The module page's Dependencies section still says the parser uses only types and errors, but the parser now imports parseWhenMatch from expressions."
+      },
+      "rubric": "the card scope is respected (types, parser, interpreter, analyze, spec, expressions, the case test and the lang-case golden case)",
+      "reproduction": "git diff --stat f140e131 2a9c386 -- docs/living lists both files. Compare against files_scope and the scope exceptions log in the card; neither file appears in either.",
+      "evidence": [
+        "diff:docs/living/architecture/language-contract.md",
+        "diff:docs/living/architecture/modules/template-resolver.md",
+        "diff:core/src/parser.ts"
+      ],
+      "location": "docs/living/architecture/language-contract.md:76",
+      "label": "f5",
+      "raised_in": 1,
+      "status": "withdrawn",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [
+        {
+          "after_round": 1,
+          "ruling": "withdraw",
+          "note": "living documents are changed on purpose: docs_impact lists them and docs_deferred is true"
+        }
+      ]
+    }
+  ]
+}
