@@ -120,6 +120,11 @@
       "path": "tests/language/case.test.ts",
       "reason": "add rows for a WHEN variable with a non-ASCII letter in its name (the CASE subject and output accept such names); found by the build lead before review",
       "approved_by": "project lead"
+    },
+    {
+      "path": "tests/language/case.test.ts",
+      "reason": "review round 1 fixes: rows for names that are not variable paths (limit-1, a--b, a@b) and for a trailing backslash inside quotes, in all four entries",
+      "approved_by": "project lead (round 1 fix instruction)"
     }
   ],
   "manifest_amendments": [
