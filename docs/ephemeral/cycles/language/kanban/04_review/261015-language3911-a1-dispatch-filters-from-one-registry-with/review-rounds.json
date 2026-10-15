@@ -48,10 +48,20 @@
       "location": "core/src/analyze.ts:177",
       "label": "f1",
       "raised_in": 1,
-      "status": "open",
+      "status": "fixed",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "validate and analyze accepted undeclared filter parameters that render rejects",
+          "verify": "analyze reports type-error via shared helper; validate maps it to error; jest 1420 and tsc pass",
+          "action": "fixed",
+          "evidence": [
+            "code:core/src/analyze.ts:189"
+          ]
+        }
+      ],
       "rulings": []
     },
     {
