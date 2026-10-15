@@ -56,6 +56,7 @@ core/src/types.ts gains FilterDefinition {name, params (the signature text spec 
 | `core/src/interpreter.ts` | edit | template-resolver |
 | `core/src/parser.ts` | edit | template-resolver |
 | `core/src/spec.ts` | edit | template-resolver |
+| `tests/language/filter-registry.test.ts` | edit | template-resolver |
 
 Files scope: `core/src/analyze.ts`, `core/src/errors.ts`, `core/src/filters-collection.ts`, `core/src/filters-text.ts`, `core/src/filters.ts`, `core/src/interpreter.ts`, `core/src/parser.ts`, `core/src/spec.ts`, `core/src/types.ts`, `tests/headless/spec.test.ts`, `tests/language/filter-registry.test.ts`
 <!-- end generated scope -->

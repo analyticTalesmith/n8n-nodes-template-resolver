@@ -28,7 +28,8 @@
       "core/src/filters.ts",
       "core/src/interpreter.ts",
       "core/src/parser.ts",
-      "core/src/spec.ts"
+      "core/src/spec.ts",
+      "tests/language/filter-registry.test.ts"
     ],
     "frozen": true
   },
@@ -110,7 +111,7 @@
   ],
   "started": "2026-10-15T02:18:33.454Z",
   "ended": null,
-  "review_rounds": 0,
+  "review_rounds": 1,
   "schema_version": 1,
   "blast_radius": [
     "template-resolver"
@@ -119,7 +120,7 @@
     "at": "2026-10-15T02:23:07.849Z",
     "brief_sha256": "8129f2277734285a9bc82e6bc2be5a025e2e96373f05ca71c5399925ddcaad06",
     "brief_core_sha256": "9053273e407dddc258d6c41f9509f7921c450f55bbfb5f086d7567980a89dabc",
-    "manifest_sha256": "24e359250acaf2edf957b713101a76489858d63540d6cfc8538fce36135986c7",
+    "manifest_sha256": "05ba9668c98cf417d46a07270efe644c6e659d516283ae70a0c92adf3a8f240d",
     "criteria_sha256": "87fc4a50c974d102660872e442f8e2af5ed2bdc19ad5d9eea0373e0d7efc8976",
     "scope_sha256": "d701d54c0d77babf6fcadf2545a7b84a8af26b4189bea483998883ed785a9012",
     "scope_parts": {
@@ -200,7 +201,78 @@
           "template-resolver"
         ]
       }
+    },
+    {
+      "at": "2026-10-15T02:24:49.725Z",
+      "by": "lead",
+      "reason": "review fix adds table rows to the registry test and an analyze check for undeclared parameters",
+      "from": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/filters.ts",
+            "core/src/interpreter.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/analyze.ts",
+          "core/src/errors.ts",
+          "core/src/filters-collection.ts",
+          "core/src/filters-text.ts",
+          "core/src/filters.ts",
+          "core/src/interpreter.ts",
+          "core/src/parser.ts",
+          "core/src/spec.ts",
+          "core/src/types.ts",
+          "tests/headless/spec.test.ts",
+          "tests/language/filter-registry.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/filters.ts",
+            "core/src/interpreter.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts",
+            "tests/language/filter-registry.test.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/analyze.ts",
+          "core/src/errors.ts",
+          "core/src/filters-collection.ts",
+          "core/src/filters-text.ts",
+          "core/src/filters.ts",
+          "core/src/interpreter.ts",
+          "core/src/parser.ts",
+          "core/src/spec.ts",
+          "core/src/types.ts",
+          "tests/headless/spec.test.ts",
+          "tests/language/filter-registry.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      }
     }
   ],
-  "docs_deferred": true
+  "docs_deferred": true,
+  "test_amendments": [
+    {
+      "path": "tests/language/filter-registry.test.ts",
+      "reason": "add rows for an undeclared filter parameter reported by validate and analyze, found in review",
+      "approved_by": "project lead"
+    }
+  ]
 }
