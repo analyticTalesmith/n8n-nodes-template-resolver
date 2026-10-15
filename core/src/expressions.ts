@@ -531,7 +531,63 @@ export function conditionOperands(condition: string): string[] {
  * True when the text is an arithmetic expression rather than a plain path
  */
 export function isMathExpression(expr: string): boolean {
-  return /[+\-*/%()]/.test(expr);
+  if (/[+*/%()]/.test(expr)) return true;
+  for (let i = 0; i < expr.length; i++) {
+    if (expr[i] === "-" && !joinsName(expr, i)) return true;
+  }
+  return false;
+}
+
+const ASCII_LETTER = /[a-zA-Z]/;
+const NAME_CHAR = /[a-zA-Z0-9_@.]/;
+
+/**
+ * True when the hyphen at index i is part of a name: an ASCII letter sits on
+ * both sides of it (first-name), so a-b is one name while a - b, n-1 and
+ * x1-y are subtractions
+ */
+export function joinsName(expr: string, i: number): boolean {
+  return (
+    expr[i] === "-" &&
+    ASCII_LETTER.test(expr[i - 1] ?? "") &&
+    ASCII_LETTER.test(expr[i + 1] ?? "")
+  );
+}
+
+/**
+ * True when the text holds a character no name or operator uses and also a
+ * standalone number ("2 $ 3"), so it can only be a malformed math expression;
+ * without a number ("a:b", "Order #") it is a plain name
+ */
+export function hasStrayCharacter(text: string): boolean {
+  return (
+    /[^\p{L}\p{N}_@.\s-]/u.test(text) && /(?<![\p{L}\p{N}_@.])\d/u.test(text)
+  );
+}
+
+/**
+ * How to write a missing hyphenated name as subtraction, when the name reads
+ * like one (letter-hyphen-letter, no whitespace)
+ */
+export function subtractionHint(name: string): string | undefined {
+  if (/\s/.test(name)) return undefined;
+  let spaced = "";
+  for (let i = 0; i < name.length; i++) {
+    spaced += joinsName(name, i) ? " - " : name[i];
+  }
+  if (spaced === name) return undefined;
+  return `If you meant subtraction, write '${spaced}'`;
+}
+
+/**
+ * The index just past the name that starts at index start
+ */
+function nameEnd(expr: string, start: number): number {
+  let i = start;
+  while (i < expr.length && (NAME_CHAR.test(expr[i]) || joinsName(expr, i))) {
+    i++;
+  }
+  return i;
 }
 
 /**
@@ -550,14 +606,10 @@ export function mathVariableNames(expr: string): string[] {
       continue;
     }
 
-    let name = "";
-    while (i < expr.length && /[a-zA-Z0-9_@.]/.test(expr[i])) {
-      name += expr[i];
-      i++;
-    }
-    if (name === "") {
-      i++;
-    } else if (!/^[\d.]+$/.test(name)) {
+    const end = nameEnd(expr, i);
+    const name = expr.slice(i, end);
+    i = Math.max(end, i + 1);
+    if (name !== "" && !/^[\d.]+$/.test(name)) {
       names.push(name);
     }
   }
@@ -635,10 +687,46 @@ export function evaluateExpression(
  */
 export function evaluateMathExpression(
   expression: string,
-  variables: VariableMap
+  variables: VariableMap,
+  options?: { zeroIsError?: boolean }
 ): number {
+  // Shape first, with every name standing in as a number and no variable read
+  evaluateMathTokens(tokenizeMath(expression, null), false);
   const tokens = tokenizeMath(expression, variables);
-  return evaluateMathTokens(tokens);
+  return evaluateMathTokens(tokens, options?.zeroIsError ?? false);
+}
+
+/**
+ * Division or modulo by zero where zero is an error (render)
+ */
+export class DivisionByZeroError extends TypeError {
+  constructor(operator: string) {
+    super(
+      `Cannot ${operator === "/" ? "divide" : "take a remainder"} by zero in math expression`,
+      1,
+      1,
+      "Check the divisor is not zero before the math runs"
+    );
+    this.name = "DivisionByZeroError";
+    Object.setPrototypeOf(this, DivisionByZeroError.prototype);
+  }
+}
+
+/**
+ * A math result as text: integers print unchanged, other numbers with at most
+ * 15 significant digits, so binary float noise (0.1 + 0.2) does not print
+ */
+export function formatNumber(n: number): string {
+  if (!Number.isFinite(n) || Number.isInteger(n)) return String(n);
+  return String(Number(n.toPrecision(15)));
+}
+
+/**
+ * True when the last token ends an operand (a number or a closing parenthesis)
+ */
+function endsOperand(tokens: (number | string)[]): boolean {
+  const last = tokens[tokens.length - 1];
+  return typeof last === "number" || last === ")";
 }
 
 /**
@@ -646,7 +734,7 @@ export function evaluateMathExpression(
  */
 function tokenizeMath(
   expr: string,
-  variables: VariableMap
+  variables: VariableMap | null
 ): (number | string)[] {
   const tokens: (number | string)[] = [];
   let i = 0;
@@ -660,16 +748,12 @@ function tokenizeMath(
       continue;
     }
 
-    // Operators and parentheses
-    if (["+", "-", "*", "/", "%", "(", ")"].includes(char)) {
-      tokens.push(char);
-      i++;
-      continue;
-    }
-
-    // Numbers
-    if (/\d/.test(char) || (char === "-" && /\d/.test(expr[i + 1]))) {
-      let num = "";
+    // Numbers; a minus right before a digit is a sign when no operand precedes it
+    const signed =
+      char === "-" && /\d/.test(expr[i + 1] ?? "") && !endsOperand(tokens);
+    if (/\d/.test(char) || signed) {
+      let num = signed ? "-" : "";
+      i += num.length;
       while (i < expr.length && /[\d.]/.test(expr[i])) {
         num += expr[i];
         i++;
@@ -678,12 +762,17 @@ function tokenizeMath(
       continue;
     }
 
-    // Variables
-    let varName = "";
-    while (i < expr.length && /[a-zA-Z0-9_@.]/.test(expr[i])) {
-      varName += expr[i];
+    // Operators and parentheses
+    if (["+", "-", "*", "/", "%", "(", ")"].includes(char)) {
+      tokens.push(char);
       i++;
+      continue;
     }
+
+    // Variables
+    const end = nameEnd(expr, i);
+    const varName = expr.slice(i, end);
+    i = end;
 
     if (!varName) {
       throw new MathSyntaxError(
@@ -691,6 +780,11 @@ function tokenizeMath(
         1,
         1
       );
+    }
+
+    if (variables === null) {
+      tokens.push(1);
+      continue;
     }
 
     const value = resolveValue(varName, variables);
@@ -712,7 +806,10 @@ function tokenizeMath(
 /**
  * Evaluate math tokens with proper operator precedence
  */
-function evaluateMathTokens(tokens: (number | string)[]): number {
+function evaluateMathTokens(
+  tokens: (number | string)[],
+  zeroIsError: boolean
+): number {
   // Handle parentheses first
   while (tokens.includes("(")) {
     const openIdx = tokens.lastIndexOf("(");
@@ -723,7 +820,7 @@ function evaluateMathTokens(tokens: (number | string)[]): number {
     }
 
     const subTokens = tokens.slice(openIdx + 1, closeIdx);
-    const result = evaluateMathTokens(subTokens);
+    const result = evaluateMathTokens(subTokens, zeroIsError);
 
     tokens.splice(openIdx, closeIdx - openIdx + 1, result);
   }
@@ -734,6 +831,10 @@ function evaluateMathTokens(tokens: (number | string)[]): number {
     if (op === "*" || op === "/" || op === "%") {
       const left = tokens[i - 1] as number;
       const right = tokens[i + 1] as number;
+
+      if (zeroIsError && op !== "*" && right === 0) {
+        throw new DivisionByZeroError(op);
+      }
 
       let result: number;
       switch (op) {
