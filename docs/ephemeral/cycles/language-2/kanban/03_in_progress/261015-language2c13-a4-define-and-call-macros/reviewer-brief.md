@@ -4,7 +4,7 @@ Project goal: a deterministic, no-eval template language for prompt assembly, wi
 Cycle goal: grow the language so prompts can be built from data (windowed loops with an empty branch, locals, macros, partials) with every unknown name or bad argument an error and every loop, call and output bounded.
 Card goal: `{{DEFINE name(params)}}...{{END_DEFINE}}` (top level, hoisted) and `{{CALL name(args)}}` (single tag) give reusable text blocks; a body sees its parameters and the data only; recursion, fan-out and output growth across calls are bounded by the depth, iteration and output limits; an error inside a body is located at the failing body node and names the macro.
 Must not:
-- change any existing test file, except the logged amendment of the `st-keywords` keyword-table row in `tests/language/set.test.ts` (it lists DEFINE and CALL)
+- change any existing test file
 - add a runtime dependency
 - evaluate template text as code, compile a template-supplied regular expression or read a file named by a template
 - let an unknown macro, a wrong argument count or a bad argument pass in lenient mode (ADR 0003)
