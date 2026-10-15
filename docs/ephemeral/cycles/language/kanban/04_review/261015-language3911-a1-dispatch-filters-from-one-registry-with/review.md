@@ -17,11 +17,12 @@ Restatement: The card makes one mutable registry of filter definitions (name, pa
 ### f1: validate and analyze accept an undeclared filter parameter that render rejects
 
 - Class: goal-risk
-- Status: open
+- Status: fixed
 - Serves: card-goal: escape_md:mode=block passes validate() and analyze() with no diagnostic, then render() fails with a type-error. The card goal and ADR 0003 want typos caught before a run by validate and analyze, and the brief asks whether every bad filter call fails with a located error.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: Run validate('${{ v | escape_md:mode=block }}') and analyze on the same template, with no data. The diff's analyze.ts only checks FILTER_REGISTRY.some(f => f.name === name), so no diagnostic is produced and ok is true. render() on the same template returns a type-error at 1:1, because the paramNames check lives only in applyFilter. Each call is already parsed at parse time, so filter.params and the definition's paramNames are available in the analyze walker.
 - Evidence: diff:core/src/analyze.ts, diff:core/src/filters.ts, doc:docs/living/decisions/adr/0003-unknown-names-are-always-errors.md, test:fr-args: an undeclared parameter is a type-error at the variable
+- Reply after round 1 (fixed): restate: validate and analyze accepted undeclared filter parameters that render rejects; verify: analyze reports type-error via shared helper; validate maps it to error; jest 1420 and tsc pass; evidence: code:core/src/analyze.ts:189
 
 ### f2: FILTERS is a load-time snapshot that goes stale when the registry changes
 
