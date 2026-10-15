@@ -780,7 +780,7 @@ Name: Ada, difference: -0.1
 
 With `math.json` holding `{"a": 0.1, "b": 0.2, "first-name": "Ada"}`.
 
-**Errors in math.** These are located `type-error` diagnostics (the position of the variable placeholder) in every mode, strict or not:
+**Errors in math.** In `render` these are located `type-error` diagnostics (the position of the variable placeholder) in every mode, strict or not. Of them, only the zero divisor is `render` only; `resolveTemplate` throws for the other two:
 
 - A zero divisor: `/` or `%` by zero, `0 / 0` and a divisor that computes to zero.
 - A malformed expression, whatever the data holds: `(1 + 2`, `1 +`, `1 + * 2` and `2 $ 3`. With strict mode off it is an error too, not empty output. A well-formed expression that names a missing or non-numeric variable stays missing data: empty with strict mode off. A missing name with an odd character (`a:b`, `Order #`) is plain missing data, not math.
@@ -801,7 +801,7 @@ bad-math2.tpl:1:8: error type-error: Invalid math expression
 
 With `zero.json` holding `{"a": 1, "b": 0}`.
 
-**`render` only.** The zero divisor, the malformed expression, the unprintable value and the 15-digit printing apply to `render`: the command line, the HTTP API, the n8n node and core's `render`. Core's `resolveTemplate` keeps its old output for these (`Infinity`, `NaN` and the plain number), as it does for `standaloneLines`. The hyphenated names and the condition operators are the same in both.
+**`render` only.** Only two things differ between the entry points: a zero divisor (`resolveTemplate` prints `Infinity` or `NaN`) and the 15-digit printing (`resolveTemplate` prints the plain number, `0.1 + 0.2` as `0.30000000000000004`). A malformed math expression and a value with no text form are errors in both: core's `resolveTemplate` throws a located `TemplateError` with code `type-error`, in strict and lenient mode alike, and `render` returns the diagnostic. The command line, the HTTP API, the n8n node and core's `render` all follow `render`. `resolveTemplate` also keeps its old output for `standaloneLines`. The hyphenated names and the condition operators are the same in both.
 
 ```console
 $ node -e '
@@ -810,12 +810,16 @@ const data = { a: 1, b: 0 };
 console.log(JSON.stringify(resolveTemplate("${{a / b}} ${{a % b}} ${{0.1 + 0.2}}", new Map(Object.entries(data)))));
 const r = render("${{a / b}}", data);
 console.log(r.ok, r.diagnostics[0].code);
+try { resolveTemplate("${{(a + b}}", new Map(Object.entries(data))); } catch (e) { console.log(e.code, e.message.split("\n").filter(Boolean).pop().trim()); }
 const loop = {}; loop.self = loop;
+try { resolveTemplate("${{loop}}", new Map([["loop", loop]])); } catch (e) { console.log(e.code); }
 const c = render("${{loop}}", { loop });
 console.log(c.ok, c.diagnostics[0].message);
 '
 "Infinity NaN 0.30000000000000004"
 false type-error
+type-error Unmatched parentheses in math expression
+type-error
 false Cannot print a value with no text form (a cyclic structure or a BigInt)
 ```
 
@@ -865,7 +869,7 @@ With `eq.json` holding `{"z": 1234}`.
 
 - **`in` and `not in`** take a list literal in brackets (items are literals or variable paths separated by commas; `[]` is empty), a variable that holds a list, or a text (a quoted text or a variable holding one: a case-sensitive substring test). Items are compared by the [equality rule](#equality). A missing or null value on either side is not in the list (`not in` is true). The words are case-insensitive.
 - **`between [lo, hi]`** takes exactly two numbers or numeric texts (a boolean is not numeric here) and includes both ends; `lo` above `hi` is false. Anything else, such as a missing or non-numeric bound, a list that is not two items or a right side that is not a list literal, is a `type-error`. There is no `not between`: write `NOT (n between [1, 10])`.
-- **`.length`** is a path segment after any value: an array gives its element count and a text gives its length in UTF-16 code units (an emoji counts 2, as with the `length` filter). Any other value, or missing data, stays null, so no zero appears from nowhere. It works in conditions, in output (`${{tags.length}}`), in math and after other segments (`user.tags.length`). A variable that is itself named `length` is an ordinary variable.
+- **`.length`** is a path segment after any value: an array gives its element count and a text gives its length in UTF-16 code units (an emoji counts 2, as with the `length` filter). An object with its own key `length` returns that key's value (null included), and so does a text holding a JSON object with its own key `length`. Any other value, or missing data, stays null, so no zero appears from nowhere. It works in conditions, in output (`${{tags.length}}`), in math and after other segments (`user.tags.length`). A variable that is itself named `length` is an ordinary variable.
 
 ```console
 $ cat ops.tpl
@@ -887,6 +891,14 @@ Tags: 3, name: 5
 ```
 
 With `ops.json` holding `{"role": "owner", "allowed": ["a", "b"], "word": "hello", "score": 10, "tags": ["x", "y", "z"], "name": "Alice"}`.
+
+```console
+$ printf '${{o.length}}|${{j.length}}|${{n.length}}|${{s.length}}|${{x.length}}\n' > own.tpl
+$ template-resolver render own.tpl --data own.json
+7|9||3|
+```
+
+With `own.json` holding `{"o": {"length": 7, "a": 1}, "j": "{\"length\":9}", "n": {"length": null}, "s": "abc", "x": 5}`.
 
 ### Type Checks
 
@@ -1128,7 +1140,7 @@ Render and validate results (`render`, `validate`, `POST /v1/render`, `POST /v1/
 | ------------------------ | -------------------------------------------------------------------------------------------- |
 | `unknown-filter`         | A filter that is not in the [filter table](#filters-name--filter)                            |
 | `unrecognized-condition` | A condition the engine cannot read, such as `{{IF status is active}}` (`validate` reports it as `analysis-warning`) |
-| `syntax-error`, `limit-depth` | `POST /v1/analyze` only: the template does not parse; the result has empty `variables`, `filters` and `blocks` and this one diagnostic |
+| `syntax-error`, `limit-depth`, `limit-nodes` | `POST /v1/analyze` only: the template does not parse; the result has empty `variables`, `filters` and `blocks` and this one diagnostic |
 
 For a template that does not parse, `template-resolver analyze` prints no JSON: it prints the error to stderr in the format below and exits 1.
 

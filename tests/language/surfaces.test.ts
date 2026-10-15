@@ -212,6 +212,15 @@ describe("surfaces", () => {
     expect(README.includes(SHOWCASE)).toBe(true);
   });
 
+  it.each(["data.json", "expected.md"])("ld-readme: the README holds the filters showcase %s verbatim", (file) => {
+    const text = fs
+      .readFileSync(path.join(SHOWCASE_DIR, file), "utf8")
+      .replace(/\r\n/g, "\n")
+      .replace(/\n+$/, "");
+    expect(text.length).toBeGreaterThan(0);
+    expect(README.includes(text)).toBe(true);
+  });
+
   it.each(REGISTRY_NAMES)("ld-readme filter %s: the showcase template calls it as a filter", (name) => {
     const calls = new RegExp(`\\|\\s*${name}\\s*(?:[=:}|]|$)`, "m");
     expect(calls.test(SHOWCASE)).toBe(true);
