@@ -12,6 +12,11 @@ Generated from review-rounds.json by core/scripts/rounds.mjs; edits here are ove
 
 Restatement: The card adds nine list-shaping filters (join, length, first, last, sort, unique, slice, lines, json) as rows of the collection group in the single filter registry. They must stay deterministic and free of eval. List filters coerce their input exactly as FOR does, and missing input counts as an empty list. sort must be stable, ordering numbers, then strings by code unit, then everything else, and sort=key must order objects by that key. unique keeps first occurrences. json prints compact JSON with sorted keys and rejects cycles. Every bad or undeclared parameter, and every object given to a list filter, must be a located type-error in both modes. The card must not change existing test expectations, add a runtime dependency or compile template-supplied regular expressions.
 
+## Gate-verified closures
+
+- f3: verified by project lead at 2026-10-15T03:49:49.631Z; gate run at commit 9d2139c8d698; test tests/language/filters-collection.test.ts; files core/src/filters-collection.ts, docs/living/architecture/language-contract.md, docs/ephemeral/cycles/language/deltas/collection-filters-contract.md, docs/ephemeral/cycles/language/deltas/collection-filters-module-page.md
+- f4: verified by project lead at 2026-10-15T03:49:49.631Z; gate run at commit 9d2139c8d698; test tests/language/filters-collection.test.ts; files core/src/filters-collection.ts, docs/living/architecture/language-contract.md, docs/ephemeral/cycles/language/deltas/collection-filters-contract.md, docs/ephemeral/cycles/language/deltas/collection-filters-module-page.md
+
 ## Findings
 
 ### f1: The builder edited the frozen test file without a logged scope exception or a named amendment
@@ -38,7 +43,7 @@ Restatement: The card adds nine list-shaping filters (join, length, first, last,
 ### f3: An object passed as JSON text (the n8n mapping form) silently becomes an empty list in every mode, unlike FOR
 
 - Class: goal-risk
-- Status: fixed
+- Status: verified
 - Serves: c1: n8n mapping values reach the core as strings, so an object mapped into a variable arrives as text such as '{"a":1}'. tryCoerceToArray returns null for a string starting with '{'. toList throws only when typeof input === 'object', so for this string it returns []. join prints '', first and last print nothing, and sort, unique and slice give [], with ok true even in strict mode. FOR raises TypeError in strict mode for the same non-coercible value, so this is not 'coerced exactly as FOR coerces', and the author's mistake passes silently.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: render('${{ v | join="," }}', { v: '{"a":1}' }, { standaloneLines: false, strictMode: true }) returns ok true and output ''. Reading: toList calls tryCoerceToArray, which returns null for a '{'-prefixed string (module page, Coercion), and the object check fails because typeof is 'string', so it falls through to return []. Compare FOR over the same value in strict mode, which throws TypeError (module page, Interpreting/FOR). Smallest fix: in toList, treat any non-null, non-undefined input that tryCoerceToArray rejects as the 'needs a list' error, and add a test row for a JSON-object string.
@@ -48,7 +53,7 @@ Restatement: The card adds nine list-shaping filters (join, length, first, last,
 ### f4: sort's numeric comparator is inconsistent for NaN and for equal infinities, so the order becomes engine-defined
 
 - Class: goal-risk
-- Status: fixed
+- Status: verified
 - Serves: c2: compare returns (a - b) for every number. NaN - x is NaN, which Array.prototype.sort treats as 0, so NaN counts as equal to every number while those numbers still order among themselves. That breaks transitivity, and the resulting order is implementation-defined, so a headless-core caller passing [3, NaN, 1] can get different output on different engines or versions. Infinity - Infinity also yields NaN. The project requires sort to be deterministic.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: COLLECTION_FILTERS.find(f => f.name === 'sort').apply([3, NaN, 1, 2], {}): the comparator calls compare(3, NaN) = NaN (treated as 0) and compare(3, 1) = 2, which is inconsistent, so ECMAScript leaves the result order implementation-defined. Smallest fix: give NaN a fixed place (for example, rank it with the 'other' values or after all numbers) and compare with < and > instead of subtraction, plus a test row containing NaN.

@@ -131,7 +131,7 @@
       "location": "core/src/filters-collection.ts:13",
       "label": "f3",
       "raised_in": 1,
-      "status": "fixed",
+      "status": "verified",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [
@@ -164,7 +164,7 @@
       "location": "core/src/filters-collection.ts:94",
       "label": "f4",
       "raised_in": 1,
-      "status": "fixed",
+      "status": "verified",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [
@@ -225,6 +225,36 @@
       "replies": [],
       "rulings": [],
       "ticket": "261015-language3911-a12-follow-up-length-counts-utf-16-code-unit"
+    }
+  ],
+  "closures": [
+    {
+      "finding": "f3",
+      "by": "project lead",
+      "at": "2026-10-15T03:49:49.631Z",
+      "gate_commit": "9d2139c8d698dd2cdb0050db8ace230710ab23cf",
+      "test": "tests/language/filters-collection.test.ts",
+      "files": [
+        "core/src/filters-collection.ts",
+        "docs/living/architecture/language-contract.md",
+        "docs/ephemeral/cycles/language/deltas/collection-filters-contract.md",
+        "docs/ephemeral/cycles/language/deltas/collection-filters-module-page.md"
+      ],
+      "diff_sha256": "95765132b04f82c0c0995cb0dc89e7d154e016b2614856e92eb0ecf7633cf80d"
+    },
+    {
+      "finding": "f4",
+      "by": "project lead",
+      "at": "2026-10-15T03:49:49.631Z",
+      "gate_commit": "9d2139c8d698dd2cdb0050db8ace230710ab23cf",
+      "test": "tests/language/filters-collection.test.ts",
+      "files": [
+        "core/src/filters-collection.ts",
+        "docs/living/architecture/language-contract.md",
+        "docs/ephemeral/cycles/language/deltas/collection-filters-contract.md",
+        "docs/ephemeral/cycles/language/deltas/collection-filters-module-page.md"
+      ],
+      "diff_sha256": "95765132b04f82c0c0995cb0dc89e7d154e016b2614856e92eb0ecf7633cf80d"
     }
   ]
 }

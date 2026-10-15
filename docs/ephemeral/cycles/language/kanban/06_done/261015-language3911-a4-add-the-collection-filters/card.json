@@ -53,22 +53,14 @@
     "tests/language/filters-collection.test.ts",
     "--json"
   ],
-  "claim": {
-    "owner": "build:implementer",
-    "heartbeat": "2026-10-15T03:48:38.385Z",
-    "agent": "a",
-    "built": {
-      "commit": "48050a6b00f4be5daa858845e408b41d11389ae9",
-      "at": "2026-10-15T03:48:38.385Z"
-    }
-  },
+  "claim": null,
   "blocked_on": null,
   "docs_impact": [
     "docs/living/architecture/modules/template-resolver.md",
     "docs/living/architecture/language-contract.md"
   ],
   "started": "2026-10-15T03:36:10.514Z",
-  "ended": null,
+  "ended": "2026-10-15T03:50:00.150Z",
   "review_rounds": 1,
   "schema_version": 1,
   "blast_radius": [
