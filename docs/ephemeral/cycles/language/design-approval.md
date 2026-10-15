@@ -1,11 +1,11 @@
 ---
 summary: "Language cycle trial: the filter registry card only; design approved by the human in chat on 2026-10-14."
-approved_by: "Jon (front approval)"
+approved_by: "Jon (task brief of 2026-10-14)"
 approved_on: 2026-10-15
 approves:
-- cf0a332c0fa6bc8ad80a9c9957fed148997161d0ec4812d991681ace047612a1 docs/ephemeral/cycles/language/CYCLE.md
-- 2f3cabc2dbb255dd94dfff6deb22c0ae6bb88f436839105ae02c8db5839e9105 docs/ephemeral/cycles/language/test-plan.md
-- aed77676f35e0eba8f446e17f2af5879d258fdd433d5028ab0cbdf03f46c8eba docs/living/architecture/language-contract.md
+- 660b44052e3ebfdccbf903df21d46f87a6d4bb4150a426327e93b8eacc8c873e docs/ephemeral/cycles/language/CYCLE.md
+- 5d394f813efc221f5edc23c08fd34fc96272a477610621b13cf783f612a135d2 docs/ephemeral/cycles/language/test-plan.md
+- 172ac3bf5c3816c30997f79c5e42ea51b2cbf26f75c3abfb93f19b692fc5c693 docs/living/architecture/language-contract.md
 - ccba70e4286db8981e15dd8453f0a3f637f307cffa4c22d46b3d2d1c8318695b docs/ephemeral/work/261015-language3911-a1-dispatch-filters-from-one-registry-with/spec.md
 cards:
   - 261015-language3911-a1-dispatch-filters-from-one-registry-with
@@ -16,7 +16,7 @@ max_spawns: 20
 max_cost:
 cost_unit:
 sweep_rounds: 3
-approval_hash: 1d702528f678db6856c5ebacaf2ef30afeafdfa72ef00824004090e8a9fd7b43
+approval_hash: af810111393a57e897bba045ec21201335fd81a0108f0d66c5fb363913cb621b
 ---
 
 # Design approval
