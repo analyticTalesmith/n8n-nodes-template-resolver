@@ -1,0 +1,26 @@
+{
+  "id": "261015-language3911-a14-follow-up-tag-keywords-are-case-sensitiv",
+  "title": "Follow-up: Tag keywords are case-sensitive, so a lowercase when or if is an unknown tag",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [],
+  "origin": "language",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [],
+    "frozen": false
+  },
+  "criteria": [],
+  "gate": null,
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1
+}
