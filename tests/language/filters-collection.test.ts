@@ -185,7 +185,7 @@ describe("fc-collection: render", () => {
   });
 
   it("fc-collection: a missing variable renders the same as an empty list in lenient mode", () => {
-    const r = render('${{ v | join="," }}|${{ v | length }}', {}, RAW);
+    const r = render('${{ v | join="," }}|${{ v | length }}', {}, { ...RAW, strictMode: false });
     expect(r.ok).toBe(true);
     expect(r.output).toBe("|0");
   });
@@ -471,5 +471,87 @@ describe("fc-json: parameter errors on every collection filter", () => {
   ])("fc-json: declared parameters give no diagnostic in validate or analyze, %s", (_n, template) => {
     expect(validate(template).ok).toBe(true);
     expect(analyze(template).diagnostics).toEqual([]);
+  });
+});
+
+describe("fc-collection: object text and blank input", () => {
+  const LISTY: [string, string][] = [
+    ["join", '${{ v | join="," }}'],
+    ["first", "${{ v | first }}"],
+    ["last", "${{ v | last }}"],
+    ["sort", "${{ v | sort }}"],
+    ["unique", "${{ v | unique }}"],
+    ["slice", "${{ v | slice }}"],
+  ];
+  const rows: [string, string, string, boolean][] = [];
+  for (const [name, template] of LISTY) {
+    for (const text of ['{"a":1}', '  {"a":1}  ']) {
+      for (const strict of [false, true]) rows.push([name, template, text, strict]);
+    }
+  }
+
+  it.each(rows)("fc-collection: %s over the object text %j is a located type-error (strict %s)", (_n, template, text, strict) => {
+    const r = out("intro\n  " + template, text, strict);
+    expect(r.ok).toBe(false);
+    expect(r.diagnostics[0]?.code).toBe("type-error");
+    expect(r.diagnostics[0]?.message).toMatch(/list/);
+    expect({ line: r.diagnostics[0]?.line, column: r.diagnostics[0]?.column }).toEqual({ line: 2, column: 3 });
+  });
+
+  it.each<[string, unknown]>([
+    ["an empty string", ""],
+    ["a blank string", "   "],
+    ["null", null],
+    ["undefined", undefined],
+  ])("fc-collection: %s gives the empty list", (_n, input) => {
+    for (const name of ["sort", "unique", "slice"]) expect(def(name).apply(input, {})).toEqual([]);
+    expect(def("first").apply(input, {})).toBeNull();
+    expect(def("last").apply(input, {})).toBeNull();
+    expect(def("join").apply(input, { value: "," })).toBe("");
+  });
+
+  it.each([false, true])("fc-collection: a missing variable still gives the empty list (strict %s)", (strict) => {
+    const r = render('${{ v | join="," }}', {}, { ...RAW, strictMode: strict });
+    if (!strict) expect(r.output).toBe("");
+    expect(r.diagnostics.every((d) => d.code !== "type-error")).toBe(true);
+  });
+
+  it("fc-collection: length of one emoji is 2 UTF-16 code units", () => {
+    expect(def("length").apply("\uD83D\uDE00", {})).toBe(2);
+  });
+});
+
+describe("fc-order: NaN and infinities", () => {
+  const sort = (input: unknown[], params: Record<string, string> = {}) => def("sort").apply(input, params);
+
+  it("fc-order: NaN sorts after the numbers", () => {
+    expect(sort([3, NaN, 1, 2])).toEqual([1, 2, 3, NaN]);
+  });
+
+  it("fc-order: equal infinities compare equal", () => {
+    expect(sort([Infinity, 1, -Infinity, Infinity])).toEqual([-Infinity, 1, Infinity, Infinity]);
+  });
+
+  it("fc-order: NaN sorts after the strings", () => {
+    expect(sort(["b", NaN, "a", 2])).toEqual([2, "a", "b", NaN]);
+  });
+
+  it("fc-order: two NaNs and an object keep their original order", () => {
+    const obj = { x: 1 };
+    const got = sort([NaN, obj, NaN, 1]) as unknown[];
+    expect(got[0]).toBe(1);
+    expect(got[1]).toBeNaN();
+    expect(got[2]).toBe(obj);
+    expect(got[3]).toBeNaN();
+  });
+
+  it("fc-order: the same input sorted twice is equal", () => {
+    const input = [3, NaN, 1, "a", NaN, Infinity, 2];
+    expect(sort(input)).toEqual(sort(input));
+  });
+
+  it("fc-order: sort=key with NaN key values follows the same order", () => {
+    const got = sort([{ k: 3 }, { k: NaN, n: "x" }, { k: 1 }, { k: "a" }], { value: "k" });
+    expect(got).toEqual([{ k: 1 }, { k: 3 }, { k: "a" }, { k: NaN, n: "x" }]);
   });
 });
