@@ -1,0 +1,226 @@
+{
+ "tableForRow/strict": {
+  "render": "| N | T |\n|:-----|:-----|\n| Ann | 0 |\n| Bo | 1 |",
+  "resolve": "| N | T |\n|:-----|:-----|\n| Ann | 0 |\n| Bo | 1 |"
+ },
+ "tableForRow/lenient": {
+  "render": "| N | T |\n|:-----|:-----|\n| Ann | 0 |\n| Bo | 1 |",
+  "resolve": "| N | T |\n|:-----|:-----|\n| Ann | 0 |\n| Bo | 1 |"
+ },
+ "tableForText/strict": {
+  "render": "| x | 0 |\n| y | 1 |\n| z | 2 |",
+  "resolve": "| x | 0 |\n| y | 1 |\n| z | 2 |"
+ },
+ "tableForText/lenient": {
+  "render": "| x | 0 |\n| y | 1 |\n| z | 2 |",
+  "resolve": "| x | 0 |\n| y | 1 |\n| z | 2 |"
+ },
+ "tableForTextLines/strict": {
+  "render": "| x | 1 |\n| x | 2 |\n| y | 1 |\n| y | 2 |\n| z | 1 |\n| z | 2 |",
+  "resolve": "| x | 1 |\n| x | 2 |\n| y | 1 |\n| y | 2 |\n| z | 1 |\n| z | 2 |"
+ },
+ "tableForTextLines/lenient": {
+  "render": "| x | 1 |\n| x | 2 |\n| y | 1 |\n| y | 2 |\n| z | 1 |\n| z | 2 |",
+  "resolve": "| x | 1 |\n| x | 2 |\n| y | 1 |\n| y | 2 |\n| z | 1 |\n| z | 2 |"
+ },
+ "tableForIfBody/strict": {
+  "render": "| x | o |\n| Y | y |\n| z | o |",
+  "resolve": "| x | o |\n| Y | y |\n| z | o |"
+ },
+ "tableForIfBody/lenient": {
+  "render": "| x | o |\n| Y | y |\n| z | o |",
+  "resolve": "| x | o |\n| Y | y |\n| z | o |"
+ },
+ "tableForIfRow/strict": {
+  "render": "",
+  "resolve": ""
+ },
+ "tableForIfRow/lenient": {
+  "render": "",
+  "resolve": ""
+ },
+ "tableForTwoFors/strict": {
+  "render": "| x | a |\n| y | a |\n| z | a |\n| Ann | b |\n| Bo | b |",
+  "resolve": "| x | a |\n| y | a |\n| z | a |\n| Ann | b |\n| Bo | b |"
+ },
+ "tableForTwoFors/lenient": {
+  "render": "| x | a |\n| y | a |\n| z | a |\n| Ann | b |\n| Bo | b |",
+  "resolve": "| x | a |\n| y | a |\n| z | a |\n| Ann | b |\n| Bo | b |"
+ },
+ "tableForNonIter/strict": {
+  "render": "",
+  "resolve": ""
+ },
+ "tableForNonIter/lenient": {
+  "render": "",
+  "resolve": ""
+ },
+ "tableForSpaced/strict": {
+  "render": "| m1 |\n| m2 |",
+  "resolve": "| m1 |\n| m2 |"
+ },
+ "tableForSpaced/lenient": {
+  "render": "| m1 |\n| m2 |",
+  "resolve": "| m1 |\n| m2 |"
+ },
+ "tableForNested/strict": {
+  "render": "| Ann | aAnn | b |",
+  "resolve": "| Ann | aAnn | b |"
+ },
+ "tableForNested/lenient": {
+  "render": "| Ann | aAnn | b |",
+  "resolve": "| Ann | aAnn | b |"
+ },
+ "tableComment/strict": {
+  "render": [
+   "syntax-error 1:10 Unexpected token in TABLE: COMMENT"
+  ],
+  "resolve": "THROW syntax-error 1:10 Template Error (line 1, col 10):\n   Unexpected token in TABLE: COMMENT\n   Suggestion: Expected {{HEADER}}, {{ROW}}, or {{FOR}}"
+ },
+ "tableComment/lenient": {
+  "render": [
+   "syntax-error 1:10 Unexpected token in TABLE: COMMENT"
+  ],
+  "resolve": "THROW syntax-error 1:10 Template Error (line 1, col 10):\n   Unexpected token in TABLE: COMMENT\n   Suggestion: Expected {{HEADER}}, {{ROW}}, or {{FOR}}"
+ },
+ "tableRowUnclosed/strict": {
+  "render": "| a | b |\n| c | d |",
+  "resolve": "| a | b |\n| c | d |"
+ },
+ "tableRowUnclosed/lenient": {
+  "render": "| a | b |\n| c | d |",
+  "resolve": "| a | b |\n| c | d |"
+ },
+ "tableIfDirect/strict": {
+  "render": [
+   "syntax-error 1:10 Unexpected token in TABLE: IF"
+  ],
+  "resolve": "THROW syntax-error 1:10 Template Error (line 1, col 10):\n   Unexpected token in TABLE: IF\n   Suggestion: Expected {{HEADER}}, {{ROW}}, or {{FOR}}"
+ },
+ "tableIfDirect/lenient": {
+  "render": [
+   "syntax-error 1:10 Unexpected token in TABLE: IF"
+  ],
+  "resolve": "THROW syntax-error 1:10 Template Error (line 1, col 10):\n   Unexpected token in TABLE: IF\n   Suggestion: Expected {{HEADER}}, {{ROW}}, or {{FOR}}"
+ },
+ "tablePipes/strict": {
+  "render": "| a\\|b | a\\|b | p\\|q |",
+  "resolve": "| a\\|b | a\\|b | p\\|q |"
+ },
+ "tablePipes/lenient": {
+  "render": "| a\\|b | a\\|b | p\\|q |",
+  "resolve": "| a\\|b | a\\|b | p\\|q |"
+ },
+ "listPlain/strict": {
+  "render": "1. a\n2. b\n3. fb",
+  "resolve": "1. a\n2. b\n3. fb"
+ },
+ "listPlain/lenient": {
+  "render": "1. a\n2. b\n3. fb",
+  "resolve": "1. a\n2. b\n3. fb"
+ },
+ "listUnclosed/strict": {
+  "render": "1. a\n2. b",
+  "resolve": "1. a\n2. b"
+ },
+ "listUnclosed/lenient": {
+  "render": "1. a\n2. b",
+  "resolve": "1. a\n2. b"
+ },
+ "listNested/strict": {
+  "render": "1. p\n   1. c",
+  "resolve": "1. p\n   1. c"
+ },
+ "listNested/lenient": {
+  "render": "1. p\n   1. c",
+  "resolve": "1. p\n   1. c"
+ },
+ "listItemFor/strict": {
+  "render": "1. x,y,z,",
+  "resolve": "1. x,y,z,"
+ },
+ "listItemFor/lenient": {
+  "render": "1. x,y,z,",
+  "resolve": "1. x,y,z,"
+ },
+ "listItemIf/strict": {
+  "render": "1. Y",
+  "resolve": "1. Y"
+ },
+ "listItemIf/lenient": {
+  "render": "1. Y",
+  "resolve": "1. Y"
+ },
+ "listItemUnclosedFor/strict": {
+  "render": "1. axyz",
+  "resolve": "1. axyz"
+ },
+ "listItemUnclosedFor/lenient": {
+  "render": "1. axyz",
+  "resolve": "1. axyz"
+ },
+ "listComment/strict": {
+  "render": [
+   "syntax-error 1:9 Unexpected token in LIST: COMMENT"
+  ],
+  "resolve": "THROW syntax-error 1:9 Template Error (line 1, col 9):\n   Unexpected token in LIST: COMMENT\n   Suggestion: Expected {{LIST_ITEM}}"
+ },
+ "listComment/lenient": {
+  "render": [
+   "syntax-error 1:9 Unexpected token in LIST: COMMENT"
+  ],
+  "resolve": "THROW syntax-error 1:9 Template Error (line 1, col 9):\n   Unexpected token in LIST: COMMENT\n   Suggestion: Expected {{LIST_ITEM}}"
+ },
+ "listForDirect/strict": {
+  "render": [
+   "syntax-error 1:9 Unexpected token in LIST: FOR"
+  ],
+  "resolve": "THROW syntax-error 1:9 Template Error (line 1, col 9):\n   Unexpected token in LIST: FOR\n   Suggestion: Expected {{LIST_ITEM}}"
+ },
+ "listForDirect/lenient": {
+  "render": [
+   "syntax-error 1:9 Unexpected token in LIST: FOR"
+  ],
+  "resolve": "THROW syntax-error 1:9 Template Error (line 1, col 9):\n   Unexpected token in LIST: FOR\n   Suggestion: Expected {{LIST_ITEM}}"
+ },
+ "listIfDirect/strict": {
+  "render": [
+   "syntax-error 1:9 Unexpected token in LIST: IF"
+  ],
+  "resolve": "THROW syntax-error 1:9 Template Error (line 1, col 9):\n   Unexpected token in LIST: IF\n   Suggestion: Expected {{LIST_ITEM}}"
+ },
+ "listIfDirect/lenient": {
+  "render": [
+   "syntax-error 1:9 Unexpected token in LIST: IF"
+  ],
+  "resolve": "THROW syntax-error 1:9 Template Error (line 1, col 9):\n   Unexpected token in LIST: IF\n   Suggestion: Expected {{LIST_ITEM}}"
+ },
+ "listText/strict": {
+  "render": [
+   "syntax-error 1:9 Unexpected text in LIST: \"hi\""
+  ],
+  "resolve": "THROW syntax-error 1:9 Template Error (line 1, col 9):\n   Unexpected text in LIST: \"hi\"\n   Suggestion: LIST should only contain {{LIST_ITEM}}"
+ },
+ "listText/lenient": {
+  "render": [
+   "syntax-error 1:9 Unexpected text in LIST: \"hi\""
+  ],
+  "resolve": "THROW syntax-error 1:9 Template Error (line 1, col 9):\n   Unexpected text in LIST: \"hi\"\n   Suggestion: LIST should only contain {{LIST_ITEM}}"
+ },
+ "listInFor/strict": {
+  "render": "1. x1. y1. z",
+  "resolve": "1. x1. y1. z"
+ },
+ "listInFor/lenient": {
+  "render": "1. x1. y1. z",
+  "resolve": "1. x1. y1. z"
+ },
+ "forWithRowElsewhere/strict": {
+  "render": "",
+  "resolve": ""
+ },
+ "forWithRowElsewhere/lenient": {
+  "render": "",
+  "resolve": ""
+ }
+}

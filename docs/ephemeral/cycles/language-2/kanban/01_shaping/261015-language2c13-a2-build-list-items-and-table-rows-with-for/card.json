@@ -26,17 +26,7 @@
     "tests/golden/render-cases/lang-table-if/expected.md"
   ],
   "manifest": {
-    "add": [
-      "tests/language/list-table-children.test.ts",
-      "tests/golden/render-cases/lang-list-for/template.md",
-      "tests/golden/render-cases/lang-list-for/data.json",
-      "tests/golden/render-cases/lang-list-for/options.json",
-      "tests/golden/render-cases/lang-list-for/expected.md",
-      "tests/golden/render-cases/lang-table-if/template.md",
-      "tests/golden/render-cases/lang-table-if/data.json",
-      "tests/golden/render-cases/lang-table-if/options.json",
-      "tests/golden/render-cases/lang-table-if/expected.md"
-    ],
+    "add": [],
     "remove": [],
     "edit": [
       "core/src/types.ts",
