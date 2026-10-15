@@ -163,5 +163,17 @@
       "gate": "a1f7b9c53a64abe032ab531d3bc396051f006f544d6cb2cb7b6dae100ea698d7"
     }
   },
-  "base_commit": "fa60d52418cc6f548d16224e48977851f998a1b6"
+  "base_commit": "fa60d52418cc6f548d16224e48977851f998a1b6",
+  "test_amendments": [
+    {
+      "path": "tests/language/list-table-children.test.ts",
+      "reason": "one compat row pinned a syntax error for an unclosed ROW before END_FOR in a FOR directly in a TABLE; criterion lc-close makes the ROW end there, so the row now expects the three rows",
+      "approved_by": "build lead (criterion lc-close; flagged to the project lead)"
+    },
+    {
+      "path": "tests/language/list-table-children.test.ts",
+      "reason": "test defects: the golden helper returned no-result for a passing case, and three header rows expected a 5-hyphen separator for a 6-character cell (the unchanged rule gives 6)",
+      "approved_by": "build lead (flagged to the project lead)"
+    }
+  ]
 }
