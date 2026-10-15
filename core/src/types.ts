@@ -154,9 +154,31 @@ export interface CaseNode extends ASTNode {
  */
 export interface WhenNode extends ASTNode {
   type: "When";
+  /** The text of the first matcher when it is a quoted text, otherwise "" */
   value: string;
+  /** What the clause matches: a list of matchers or one comparison */
+  match: WhenMatch;
   body: ASTNode[];
 }
+
+/**
+ * One matcher of a WHEN: a literal (its text and whether it was written in
+ * quotes) or a variable path
+ */
+export type WhenItem =
+  | { kind: "literal"; text: string; quoted: boolean }
+  | { kind: "path"; path: string[] };
+
+/** The comparison operators a WHEN accepts */
+export type WhenOperator = "==" | "!=" | ">" | "<" | ">=" | "<=";
+
+/**
+ * What a WHEN matches: any item of a list, or the CASE value compared with
+ * one item
+ */
+export type WhenMatch =
+  | { kind: "list"; items: WhenItem[] }
+  | { kind: "comparison"; operator: WhenOperator; item: WhenItem };
 
 /**
  * DEFAULT clause in CASE

@@ -34,13 +34,14 @@ const BLOCKS: Spec["blocks"] = [
     name: "CASE",
     closes: "END_CASE",
     args: "variable",
-    description: "Renders the first WHEN whose value equals the variable, else DEFAULT",
+    description: "Renders the first WHEN that matches the variable, else DEFAULT",
   },
   {
     name: "WHEN",
     closes: "END_WHEN",
-    args: '"value"',
-    description: "Inside CASE: renders when the CASE variable equals the value",
+    args: 'value[, value...] | variable | operator value',
+    description:
+      'Inside CASE: renders when the CASE variable equals any value in a list ("a", "b"), equals another variable, or passes a comparison (== != > < >= <=) such as >= 10',
   },
   {
     name: "DEFAULT",

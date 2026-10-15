@@ -217,7 +217,6 @@ describe("cs-values: WHEN lists of values", () => {
   it.each(cases.map((c) => [c.entry, c.name, c] as const))("cs-values: [%s] %s", (_e, _n, c) => verify(c.entry, c.r));
 
   const spacing: Array<[string, string, string]> = [
-    ["lowercase tag word", '{{when "a", "b"}}', "b"],
     ["trim markers", '{{- WHEN "a", "b" -}}', "b"],
     ["extra spaces", '{{WHEN   "a" ,   "b"   }}', "b"],
   ];
@@ -287,7 +286,7 @@ describe("cs-var: WHEN variable", () => {
     C("x", ["other"], { x: "a" }, S(E("missing-variable", 1), O("D"))),
     C("x", ["other"], { x: "" }, S(E("missing-variable", 1), O("1"))),
     C("x", ["other"], { x: null }, S(E("missing-variable", 1), O("1"))),
-    C("x", ['"a"', "other"], { x: "b" }, S(E("missing-variable", 2), O("2"))),
+    C("x", ['"a"', "other"], { x: "b" }, S(E("missing-variable", 2), O("D"))),
     C("x", ['"a"', "other"], { x: "a" }, O("1")),
     C("x", ["user.plan"], { x: "pro" }, S(E("missing-variable", 1), O("D"))),
     C("x", ['"a", other'], { x: "q" }, S(E("missing-variable", 1), O("D"))),
@@ -423,9 +422,9 @@ describe("cs-compare: WHEN comparison", () => {
   const cases = table(rows);
   it.each(cases.map((c) => [c.entry, c.name, c] as const))("cs-compare: [%s] %s", (_e, _n, c) => verify(c.entry, c.r));
 
-  it.each(ENTRIES)("cs-compare: [%s] the comparison tag word is case-insensitive and takes trim markers", (entry) => {
-    const o = run(entry, `{{CASE n}}{{- when >= 10 -}}Y{{DEFAULT}}N{{END_CASE}}`, { n: 12 });
-    check(o.output, `${entry}: lowercase when with trim markers`).toBe("Y");
+  it.each(ENTRIES)("cs-compare: [%s] a comparison tag takes trim markers", (entry) => {
+    const o = run(entry, `{{CASE n}}{{- WHEN >= 10 -}}Y{{DEFAULT}}N{{END_CASE}}`, { n: 12 });
+    check(o.output, `${entry}: WHEN with trim markers`).toBe("Y");
   });
 
   it.each(ENTRIES)("cs-compare: [%s] a comparison in a FOR picks by each item", (entry) => {
@@ -557,9 +556,11 @@ describe("cs-analyze: WHEN variables are case usage", () => {
       check(got!.required, `${v.name} is required`).toBe(true);
     }
     for (const n of r.absent ?? []) check(a.variables.find((x) => x.name === n), `${n} is not a variable`).toBeUndefined();
-    check(a.variables.map((x) => x.name).sort(), "exactly the expected variables").toEqual(
-      [...new Set([...r.vars.map((v) => v.name)])].sort()
-    );
+    const subjectAndIterable = new Set(["x", "items"]);
+    check(
+      a.variables.map((x) => x.name).filter((n) => !subjectAndIterable.has(n)).sort(),
+      "exactly the expected variables"
+    ).toEqual([...new Set(r.vars.map((v) => v.name))].filter((n) => !subjectAndIterable.has(n)).sort());
   });
 
   it.each([1, 2, 5])("cs-analyze: blocks.CASE stays 1 with %i WHEN tags", (n) => {

@@ -35,6 +35,7 @@ import {
   DivisionByZeroError,
   evaluateCondition,
   evaluateMathExpression,
+  evaluateWhen,
   formatNumber,
   hasStrayCharacter,
   isMathExpression,
@@ -282,7 +283,12 @@ export class Interpreter {
 
     // Check WHEN clauses
     for (const whenNode of node.cases) {
-      if (valueStr === whenNode.value) {
+      const matches = this.at(whenNode, () =>
+        evaluateWhen(whenNode.match, valueStr, (path) =>
+          this.valueToString(this.resolveNestedPath(path))
+        )
+      );
+      if (matches) {
         return whenNode.body.map((child) => this.visit(child)).join("");
       }
     }

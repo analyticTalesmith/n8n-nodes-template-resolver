@@ -217,7 +217,14 @@ class Walker {
 
   private visitCase(node: CaseNode): void {
     this.record(node.expression, "case", false);
-    for (const when of node.cases) this.visitAll(when.body);
+    for (const when of node.cases) {
+      const { match } = when;
+      const items = match.kind === "list" ? match.items : [match.item];
+      for (const item of items) {
+        if (item.kind === "path") this.record(item.path.join("."), "case", false);
+      }
+      this.visitAll(when.body);
+    }
     if (node.default) this.visitAll(node.default.body);
   }
 

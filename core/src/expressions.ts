@@ -1,5 +1,11 @@
-import { VariableMap, TemplateValue } from "./types";
-import { TypeError, MathSyntaxError } from "./errors";
+import {
+  VariableMap,
+  TemplateValue,
+  WhenItem,
+  WhenMatch,
+  WhenOperator,
+} from "./types";
+import { TypeError, MathSyntaxError, SyntaxError } from "./errors";
 import {
   tryCoerceToNumber,
   tryCoerceToArray,
@@ -161,7 +167,7 @@ function describeOperand(value: unknown): string {
 }
 
 /** An operand read from a condition: its value, and how it was written */
-interface Operand {
+export interface Operand {
   value: TemplateValue;
   /** True when written as a quoted literal */
   quoted: boolean;
@@ -361,7 +367,7 @@ function numericOf(value: TemplateValue): number | null {
  * as a quoted literal both compare as text, otherwise numbers compare
  * numerically and anything else as text
  */
-function valuesEqual(left: Operand, right: Operand): boolean {
+export function valuesEqual(left: Operand, right: Operand): boolean {
   const l = left.value === undefined ? null : left.value;
   const r = right.value === undefined ? null : right.value;
   if (!left.quoted && !right.quoted) {
@@ -444,7 +450,7 @@ function tryEvaluateComparison(
 /**
  * Evaluate numeric comparison (>, <, >=, <=)
  */
-function evaluateNumericComparison(
+export function evaluateNumericComparison(
   left: TemplateValue,
   right: TemplateValue,
   op: string
@@ -552,31 +558,139 @@ function parseListLiteral(text: string): string[] | null {
     return null;
   }
 
-  const items: string[] = [];
-  let quoteChar: string | null = null;
-  let start = 1;
+  const items = splitCommas(
+    list.slice(1, -1),
+    (char) => char === "[" || char === "]"
+  );
+  if (items === null) return null;
+  if (items.length === 1 && items[0] === "") return [];
+  return items.includes("") ? null : items;
+}
 
-  for (let i = 1; i < list.length; i++) {
-    const char = list[i];
+/**
+ * Split text on the commas outside quotes, each part trimmed. Null when a
+ * quote is never closed or when reject returns true for a character outside
+ * quotes. Empty text gives one empty part.
+ */
+export function splitCommas(
+  text: string,
+  reject?: (char: string) => boolean
+): string[] | null {
+  const parts: string[] = [];
+  let quoteChar: string | null = null;
+  let start = 0;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
     if (quoteChar !== null) {
-      if (char === quoteChar && list[i - 1] !== "\\") quoteChar = null;
+      if (char === quoteChar && text[i - 1] !== "\\") quoteChar = null;
       continue;
     }
     if (char === '"' || char === "'") {
       quoteChar = char;
       continue;
     }
-    if (char === "[") return null;
-    if (char === "]" && i !== list.length - 1) return null;
-    if (char === "," || char === "]") {
-      items.push(list.slice(start, i).trim());
+    if (reject?.(char)) return null;
+    if (char === ",") {
+      parts.push(text.slice(start, i).trim());
       start = i + 1;
     }
   }
 
   if (quoteChar !== null) return null;
-  if (items.length === 1 && items[0] === "") return [];
-  return items.includes("") ? null : items;
+  parts.push(text.slice(start).trim());
+  return parts;
+}
+
+const WHEN_HINT =
+  'Write {{WHEN "a", "b"}}, {{WHEN variable}} or {{WHEN >= 10}}';
+const WHEN_PATH = /^[A-Za-z_@][\w@-]*(\.[\w@-]+)*$/;
+const WHEN_OPERATOR = /^(==|!=|>=|<=|>|<)/;
+
+function whenItem(text: string, fail: (message: string) => never): WhenItem {
+  if (text === "") fail("Empty value in {{WHEN}}");
+  const literal = parseLiteral(text);
+  if (literal) {
+    if (literal.quoted) {
+      return { kind: "literal", text: String(literal.value), quoted: true };
+    }
+    return {
+      kind: "literal",
+      text: literal.value === null ? "" : (literal.text ?? String(literal.value)),
+      quoted: false,
+    };
+  }
+  if (WHEN_PATH.test(text)) return { kind: "path", path: text.split(".") };
+  return fail(`Cannot read {{WHEN}} value: ${text}`);
+}
+
+/**
+ * Read the text after WHEN: a list of values and variables, or one comparison
+ * (an operator and one value). Throws the SyntaxError for text that is
+ * neither, located at the tag.
+ */
+export function parseWhenMatch(
+  text: string,
+  line: number,
+  column: number
+): WhenMatch {
+  const fail = (message: string): never => {
+    throw new SyntaxError(message, line, column, WHEN_HINT);
+  };
+  const written = text.trim();
+  if (written === "") return fail("{{WHEN}} needs a value to match");
+
+  const comparison = written.match(WHEN_OPERATOR);
+  if (comparison) {
+    const operator = comparison[1] as WhenOperator;
+    const rest = written.slice(operator.length).trim();
+    if (rest === "") return fail(`'${operator}' in {{WHEN}} needs a value`);
+    const parts = splitCommas(rest);
+    if (parts === null) return fail("Unclosed quote in {{WHEN}}");
+    if (parts.length !== 1) {
+      return fail(`'${operator}' in {{WHEN}} takes exactly one value`);
+    }
+    return { kind: "comparison", operator, item: whenItem(parts[0], fail) };
+  }
+
+  const parts = splitCommas(written);
+  if (parts === null) return fail("Unclosed quote in {{WHEN}}");
+  return { kind: "list", items: parts.map((part) => whenItem(part, fail)) };
+}
+
+/**
+ * True when the CASE value (as text) matches the WHEN. A list matches when
+ * any item equals it; a comparison uses the equality or numeric rules of
+ * conditions. lookup gives the text of a variable path and throws for a
+ * missing or unprintable value.
+ */
+export function evaluateWhen(
+  match: WhenMatch,
+  subject: string,
+  lookup: (path: string[]) => string
+): boolean {
+  const left: Operand = { value: subject, quoted: false };
+  const read = (item: WhenItem): Operand =>
+    item.kind === "literal"
+      ? { value: item.text, quoted: item.quoted }
+      : { value: lookup(item.path), quoted: false };
+
+  if (match.kind === "list") {
+    return match.items.some((item) => valuesEqual(left, read(item)));
+  }
+  const right = read(match.item);
+  switch (match.operator) {
+    case "==":
+      return valuesEqual(left, right);
+    case "!=":
+      return !valuesEqual(left, right);
+    default:
+      return evaluateNumericComparison(
+        left.value,
+        right.value,
+        match.operator
+      );
+  }
 }
 
 function isScalar(value: TemplateValue): boolean {

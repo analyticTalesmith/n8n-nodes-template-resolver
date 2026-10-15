@@ -25,6 +25,7 @@ import {
 } from "./types";
 import { SyntaxError, TypeError, LimitError } from "./errors";
 import { parseFilter } from "./filters";
+import { parseWhenMatch } from "./expressions";
 
 const BLOCK_ARGUMENT = /(\w+)=("[^"]*"|'[^']*'|\S*)|"[^"]*"|'[^']*'|\S+/g;
 const VARIABLE_PATH = /^[A-Za-z_@][\w@]*(\.[\w@]+)*$/;
@@ -395,7 +396,13 @@ export class Parser {
    */
   private parseWhen(): WhenNode {
     const token = this.open(TokenType.WHEN);
-    const value = this.extractQuotedValue(token.value);
+    const match = parseWhenMatch(
+      token.value.replace(/^WHEN/i, ""),
+      token.line,
+      token.column
+    );
+    const first = match.kind === "list" ? match.items[0] : null;
+    const value = first?.kind === "literal" && first.quoted ? first.text : "";
 
     const body: ASTNode[] = [];
     while (!this.check(TokenType.END_WHEN)) {
@@ -425,6 +432,7 @@ export class Parser {
     return {
       type: "When",
       value,
+      match,
       body,
       line: token.line,
       column: token.column,
@@ -1020,14 +1028,6 @@ export class Parser {
    */
   private extractExpression(expr: string): string {
     return expr.replace(/^CASE\s+/i, "").trim();
-  }
-
-  /**
-   * Extract quoted value: 'WHEN "active"' â†’ "active"
-   */
-  private extractQuotedValue(expr: string): string {
-    const match = expr.match(/["'](.+?)["']/);
-    return match ? match[1] : "";
   }
 
   // ==================== Token Stream Helpers ====================
