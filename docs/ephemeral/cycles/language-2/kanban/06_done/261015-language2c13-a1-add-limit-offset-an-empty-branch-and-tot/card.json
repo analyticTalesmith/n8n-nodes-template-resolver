@@ -142,19 +142,11 @@
     "tests/language/for-window.test.ts",
     "--json"
   ],
-  "claim": {
-    "owner": "build:implementer",
-    "heartbeat": "2026-10-15T13:48:58.112Z",
-    "agent": "a",
-    "built": {
-      "commit": "d9323806d36ea57875904b390cb702373fe06cb0",
-      "at": "2026-10-15T13:48:58.112Z"
-    }
-  },
+  "claim": null,
   "blocked_on": null,
   "docs_impact": "none",
   "started": "2026-10-15T13:32:10.371Z",
-  "ended": null,
+  "ended": "2026-10-15T13:52:21.127Z",
   "review_rounds": 1,
   "schema_version": 1,
   "blast_radius": [
