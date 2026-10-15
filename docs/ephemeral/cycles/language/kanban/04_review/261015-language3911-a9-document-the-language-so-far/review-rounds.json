@@ -57,10 +57,21 @@
       "location": "README.md:804",
       "label": "f1",
       "raised_in": 1,
-      "status": "open",
+      "status": "fixed",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "README and changelog said malformed math and unprintable values keep old output in resolveTemplate",
+          "verify": "Ran resolveTemplate: both throw a located type-error; only zero divisor and 15-digit printing differ",
+          "action": "fixed",
+          "evidence": [
+            "diff:README.md",
+            "diff:changelog.md"
+          ]
+        }
+      ],
       "rulings": []
     },
     {
@@ -79,10 +90,20 @@
       "location": "README.md:868",
       "label": "f2",
       "raised_in": 1,
-      "status": "open",
+      "status": "fixed",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "README .length bullet omitted the own-key length rule",
+          "verify": "Ran render: own key 7, JSON text 9, null key empty, text 3, number empty",
+          "action": "fixed",
+          "evidence": [
+            "diff:README.md"
+          ]
+        }
+      ],
       "rulings": []
     },
     {
@@ -102,10 +123,21 @@
       "location": "tests/golden/render-cases/lang-filters-showcase/",
       "label": "f3",
       "raised_in": 1,
-      "status": "open",
+      "status": "fixed",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "only the showcase template was guarded, not its data and expected output",
+          "verify": "Added rows for data.json and expected.md; changing one README output char fails the row",
+          "action": "fixed",
+          "evidence": [
+            "test:ld-readme: the README holds the filters showcase expected.md verbatim",
+            "diff:tests/language/surfaces.test.ts"
+          ]
+        }
+      ],
       "rulings": []
     },
     {
@@ -124,10 +156,20 @@
       "location": "README.md:1132",
       "label": "f4",
       "raised_in": 1,
-      "status": "open",
+      "status": "fixed",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "README analyze diagnostics row omitted limit-nodes",
+          "verify": "The row now lists syntax-error, limit-depth and limit-nodes, as the contract and api module say",
+          "action": "fixed",
+          "evidence": [
+            "diff:README.md"
+          ]
+        }
+      ],
       "rulings": []
     },
     {
@@ -146,10 +188,20 @@
       "location": "docs/living/architecture/modules/template-resolver.md:124",
       "label": "f5",
       "raised_in": 1,
-      "status": "open",
+      "status": "fixed",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "module page said filters run on the string form",
+          "verify": "Rendered xs | length on a list gives 2; the Variable bullet now says filters run on the resolved value",
+          "action": "fixed",
+          "evidence": [
+            "diff:docs/living/architecture/modules/template-resolver.md"
+          ]
+        }
+      ],
       "rulings": []
     },
     {
