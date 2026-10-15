@@ -1,6 +1,6 @@
 ---
 summary: "Language cycle trial: the filter registry card only; design approved by the human in chat on 2026-10-14."
-approved_by: "Jon (task brief of 2026-10-14)"
+approved_by: Jon
 approved_on: 2026-10-15
 approves:
 - 660b44052e3ebfdccbf903df21d46f87a6d4bb4150a426327e93b8eacc8c873e docs/ephemeral/cycles/language/CYCLE.md
@@ -16,7 +16,7 @@ max_spawns: 20
 max_cost:
 cost_unit:
 sweep_rounds: 3
-approval_hash: af810111393a57e897bba045ec21201335fd81a0108f0d66c5fb363913cb621b
+approval_hash: 1e7bdb6964c12f210cb1f6720726eaa97e6bd3486f61b7237f6c2fdabb9dd825
 ---
 
 # Design approval
