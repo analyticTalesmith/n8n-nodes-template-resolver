@@ -185,7 +185,7 @@ describe("fc-collection: render", () => {
   });
 
   it("fc-collection: a missing variable renders the same as an empty list in lenient mode", () => {
-    const r = render('${{ v | join="," }}|${{ v | length }}', {}, RAW);
+    const r = render('${{ v | join="," }}|${{ v | length }}', {}, { ...RAW, strictMode: false });
     expect(r.ok).toBe(true);
     expect(r.output).toBe("|0");
   });
