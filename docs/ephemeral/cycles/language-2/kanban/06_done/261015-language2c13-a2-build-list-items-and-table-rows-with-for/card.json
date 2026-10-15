@@ -133,19 +133,11 @@
     "tests/language/list-table-children.test.ts",
     "--json"
   ],
-  "claim": {
-    "owner": "build:implementer",
-    "heartbeat": "2026-10-15T14:34:39.505Z",
-    "agent": "a",
-    "built": {
-      "commit": "73dad9ce05a5ee76f518f6f17e2e0b15972496e5",
-      "at": "2026-10-15T14:34:39.505Z"
-    }
-  },
+  "claim": null,
   "blocked_on": null,
   "docs_impact": "none",
   "started": "2026-10-15T14:18:40.520Z",
-  "ended": null,
+  "ended": "2026-10-15T14:38:07.664Z",
   "review_rounds": 1,
   "schema_version": 1,
   "blast_radius": [
