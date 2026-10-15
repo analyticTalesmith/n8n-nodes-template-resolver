@@ -156,5 +156,12 @@
         ]
       }
     }
+  ],
+  "test_amendments": [
+    {
+      "path": "tests/language/surfaces.test.ts",
+      "reason": "add two guard rows: the README holds the showcase data.json and expected.md verbatim (review finding: only the template was guarded)",
+      "approved_by": "project lead"
+    }
   ]
 }
