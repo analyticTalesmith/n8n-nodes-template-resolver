@@ -63,22 +63,21 @@ See the plan section for this card in docs/ephemeral/research/language-2-plan.md
 <!-- generated scope: from card.json -->
 | Path | Permission (add, edit, remove) | Blast radius |
 | --- | --- | --- |
-| `tests/golden/render-cases/lang-set/data.json` | add | template-resolver |
-| `tests/golden/render-cases/lang-set/expected.md` | add | template-resolver |
-| `tests/golden/render-cases/lang-set/options.json` | add | template-resolver |
-| `tests/golden/render-cases/lang-set/template.md` | add | template-resolver |
-| `tests/language/set.test.ts` | add | template-resolver |
-| `api/openapi.json` | edit | template-resolver |
-| `core/src/analyze.ts` | edit | template-resolver |
-| `core/src/interpreter.ts` | edit | template-resolver |
-| `core/src/lexer.ts` | edit | template-resolver |
-| `core/src/parser.ts` | edit | template-resolver |
-| `core/src/scope.ts` | edit | template-resolver |
-| `core/src/spec.ts` | edit | template-resolver |
-| `core/src/types.ts` | edit | template-resolver |
-| `core/src/whitespace.ts` | edit | template-resolver |
-| `tests/language/surfaces.test.ts` | edit | template-resolver |
-| `visitVariable` | edit | template-resolver |
+| `tests/golden/render-cases/lang-set/data.json` | add | api, template-resolver |
+| `tests/golden/render-cases/lang-set/expected.md` | add | api, template-resolver |
+| `tests/golden/render-cases/lang-set/options.json` | add | api, template-resolver |
+| `tests/golden/render-cases/lang-set/template.md` | add | api, template-resolver |
+| `tests/language/set.test.ts` | add | api, template-resolver |
+| `api/openapi.json` | edit | api, template-resolver |
+| `core/src/analyze.ts` | edit | api, template-resolver |
+| `core/src/interpreter.ts` | edit | api, template-resolver |
+| `core/src/lexer.ts` | edit | api, template-resolver |
+| `core/src/parser.ts` | edit | api, template-resolver |
+| `core/src/scope.ts` | edit | api, template-resolver |
+| `core/src/spec.ts` | edit | api, template-resolver |
+| `core/src/types.ts` | edit | api, template-resolver |
+| `core/src/whitespace.ts` | edit | api, template-resolver |
+| `tests/language/surfaces.test.ts` | edit | api, template-resolver |
 
-Files scope: `api/openapi.json`, `core/src/analyze.ts`, `core/src/interpreter.ts`, `core/src/lexer.ts`, `core/src/parser.ts`, `core/src/scope.ts`, `core/src/spec.ts`, `core/src/types.ts`, `core/src/whitespace.ts`, `tests/golden/render-cases/lang-set/data.json`, `tests/golden/render-cases/lang-set/expected.md`, `tests/golden/render-cases/lang-set/options.json`, `tests/golden/render-cases/lang-set/template.md`, `tests/language/set.test.ts`, `tests/language/surfaces.test.ts`, `visitVariable`
+Files scope: `api/openapi.json`, `core/src/analyze.ts`, `core/src/interpreter.ts`, `core/src/lexer.ts`, `core/src/parser.ts`, `core/src/scope.ts`, `core/src/spec.ts`, `core/src/types.ts`, `core/src/whitespace.ts`, `tests/golden/render-cases/lang-set/data.json`, `tests/golden/render-cases/lang-set/expected.md`, `tests/golden/render-cases/lang-set/options.json`, `tests/golden/render-cases/lang-set/template.md`, `tests/language/set.test.ts`, `tests/language/surfaces.test.ts`
 <!-- end generated scope -->

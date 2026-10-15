@@ -14,7 +14,6 @@
     "core/src/types.ts",
     "core/src/parser.ts",
     "core/src/interpreter.ts",
-    "visitVariable",
     "core/src/analyze.ts",
     "core/src/whitespace.ts",
     "core/src/spec.ts",
@@ -41,7 +40,6 @@
       "core/src/types.ts",
       "core/src/parser.ts",
       "core/src/interpreter.ts",
-      "visitVariable",
       "core/src/analyze.ts",
       "core/src/whitespace.ts",
       "core/src/spec.ts",
@@ -190,5 +188,12 @@
   "test_levels": [
     "unit",
     "integration"
+  ],
+  "test_amendments": [
+    {
+      "path": "tests/language/surfaces.test.ts",
+      "reason": "the hand-written BLOCK_PAIRS table is derived from the lexer keyword table; no row removed, no assertion weakened",
+      "approved_by": "project lead"
+    }
   ]
 }
