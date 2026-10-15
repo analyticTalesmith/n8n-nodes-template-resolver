@@ -17,11 +17,12 @@ Restatement: Add a node-count limit to the template language. limits.maxNodes de
 ### f1: IF/ELSEIF condition parsing moved after the body, so a malformed template can now report a different first error
 
 - Class: goal-risk
-- Status: open
+- Status: rebutted
 - Serves: m2: Base parseIf and parseElseIf called extractCondition(token.value) right after consuming the tag, before parsing the body. The new parseIfBranch calls it inside the returned object literal, after the whole consequent is parsed. Suppose a template's IF or ELSEIF condition is rejected by extractCondition and its body also holds a parse-time error, or enough nodes to cross maxNodes. Base reports the condition error at the IF tag. Head reports the later body error (syntax-error, type-error or limit-nodes) at a different position. For an existing malformed template, render now returns a different diagnostic and location, and resolveTemplate throws a different error.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: Take a template whose IF tag content is something extractCondition rejects, for example an empty condition '{{IF }}', with an invalid FOR inside the body: '{{IF }}{{FOR bad}}{{END_FOR}}{{END_IF}}'. At base f4e552a, render(...).diagnostics[0] gives the condition error located at the IF tag (1:1). At head bde4503, the FOR syntax error comes first, located at the FOR tag. The smallest fix is to compute the condition from token.value right after this.open(type) in parseIfBranch, before the consequent loop, as the base code did.
 - Evidence: diff:core/src/parser.ts, code:core/src/parser.ts:276, code:core/src/parser.ts:301
+- Reply after round 1 (rebut, evidence): restate: Condition parsing moved after the body in parseIfBranch, so a bad IF condition plus a body error now reports the body error first.; verify: extractCondition is a pure replace and trim with no error path at base f4e552a and at head; render of {{IF }}{{FOR bad}}{{END_FOR}}{{END_IF}} gives the FOR syntax-error first at base too.; evidence: code:core/src/parser.ts:1014, code:f4e552a:core/src/parser.ts:1112
 
 ### f2: Living architecture documents edited directly, outside files_scope, with no scope exception logged
 

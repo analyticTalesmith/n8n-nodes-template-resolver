@@ -57,10 +57,22 @@
       "location": "core/src/parser.ts:301",
       "label": "f1",
       "raised_in": 1,
-      "status": "open",
+      "status": "rebutted",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "Condition parsing moved after the body in parseIfBranch, so a bad IF condition plus a body error now reports the body error first.",
+          "verify": "extractCondition is a pure replace and trim with no error path at base f4e552a and at head; render of {{IF }}{{FOR bad}}{{END_FOR}}{{END_IF}} gives the FOR syntax-error first at base too.",
+          "action": "rebut",
+          "ground": "evidence",
+          "evidence": [
+            "code:core/src/parser.ts:1014",
+            "code:f4e552a:core/src/parser.ts:1112"
+          ]
+        }
+      ],
       "rulings": []
     },
     {
