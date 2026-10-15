@@ -70,15 +70,19 @@ function indentLines(text: string, params: Params): string {
     .join("\n");
 }
 
+/** Larger exponents are passed through so no input makes the digit padding grow without limit */
+const MAX_ROUND_EXPONENT = 400;
+
 /**
  * Round a decimal number given as text to `places` places, half away from
- * zero, working on its digits so 1.005 gives 1.01; text that is not a plain
- * decimal number (optionally with an exponent) is returned as null
+ * zero, working on its digits so 1.005 gives 1.01; text that is not a finite
+ * decimal number (optionally with a bounded exponent) is returned as null
  */
 function roundDecimal(text: string, places: number): string | null {
   const match = /^([+-]?)(\d*)(?:\.(\d*))?(?:e([+-]?\d+))?$/i.exec(text);
   if (!match || !/\d/.test(match[2] + (match[3] ?? ""))) return null;
   const [, sign, whole, fraction = "", exponent = "0"] = match;
+  if (!Number.isFinite(Number(text)) || Math.abs(Number(exponent)) > MAX_ROUND_EXPONENT) return null;
   const point = whole.length + Number(exponent);
   let digits = whole + fraction;
   if (point < 0) digits = "0".repeat(-point) + digits;
@@ -142,7 +146,7 @@ export const TEXT_FILTERS: FilterDefinition[] = [
   {
     name: "default",
     params: 'default="x"',
-    description: "The given value when the input is missing, empty, 0, false, an empty list or an empty object; otherwise the input",
+    description: "The given value when the input is missing, null, empty or whitespace-only text, the text 0, false or no (any letter case), the number 0, false, an empty list or an empty object; otherwise the input",
     paramNames: ["value"],
     apply: defaultTo,
   },
