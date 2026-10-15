@@ -10,28 +10,27 @@
   "tier": null,
   "claimed_in": null,
   "files_scope": [
-    "core/src/types.ts",
-    "core/src/parser.ts",
-    "core/src/interpreter.ts",
     "core/src/analyze.ts",
     "core/src/expressions.ts",
+    "core/src/interpreter.ts",
+    "core/src/parser.ts",
     "core/src/spec.ts",
-    "tests/language/case.test.ts",
-    "tests/golden/render-cases/lang-case/template.md"
+    "core/src/types.ts",
+    "tests/golden/render-cases/lang-case/template.md",
+    "tests/language/case.test.ts"
   ],
   "manifest": {
     "add": [
-      "tests/language/case.test.ts",
-      "tests/golden/render-cases/lang-case/template.md"
+      "tests/language/case.test.ts"
     ],
     "remove": [],
     "edit": [
-      "core/src/types.ts",
-      "core/src/parser.ts",
-      "core/src/interpreter.ts",
       "core/src/analyze.ts",
+      "core/src/expressions.ts",
+      "core/src/interpreter.ts",
+      "core/src/parser.ts",
       "core/src/spec.ts",
-      "core/src/expressions.ts"
+      "core/src/types.ts"
     ],
     "frozen": true
   },
@@ -76,8 +75,12 @@
   ],
   "claim": {
     "owner": "build:implementer",
-    "heartbeat": "2026-10-15T04:58:08.865Z",
-    "agent": "a"
+    "heartbeat": "2026-10-15T05:04:38.571Z",
+    "agent": "a",
+    "built": {
+      "commit": "507d936c2f6eabf2a4ddb232b24dc5f281c393a6",
+      "at": "2026-10-15T05:04:38.571Z"
+    }
   },
   "blocked_on": null,
   "docs_impact": [
@@ -96,7 +99,7 @@
     "at": "2026-10-15T04:57:54.398Z",
     "brief_sha256": "ba1876ac641e58aeaed2283dc6132e2ee0632eec1d38fddc0728e71447a47d0f",
     "brief_core_sha256": "36ee6eef2805fc50139c37da668eb639310fed309b74795904d6527868aca7c7",
-    "manifest_sha256": "aee55f05fbec45e763bd05f61c36f84abc3f29eb5dd042aba72ec13885c9df3d",
+    "manifest_sha256": "da7cb410ab367eff87700cc5ed05de264381a52f3c4016f15723f07bf325d51d",
     "criteria_sha256": "b30f66f10a6339ca08c05b2daf442422c53149225c983a6421bf1fae8a7d455b",
     "scope_sha256": "3e9c7b8babdef16920eeeda307d50d66d5288c1490a395fc523ba984e16442ab",
     "scope_parts": {
@@ -117,6 +120,72 @@
       "path": "tests/language/case.test.ts",
       "reason": "add rows for a WHEN variable with a non-ASCII letter in its name (the CASE subject and output accept such names); found by the build lead before review",
       "approved_by": "build lead, for the project lead to confirm"
+    }
+  ],
+  "manifest_amendments": [
+    {
+      "at": "2026-10-15T05:04:53.804Z",
+      "by": "lead",
+      "reason": "the golden template.md was committed by the test writer before the base, so it is not a change of this card",
+      "from": {
+        "manifest": {
+          "add": [
+            "tests/golden/render-cases/lang-case/template.md",
+            "tests/language/case.test.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/expressions.ts",
+            "core/src/interpreter.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/analyze.ts",
+          "core/src/expressions.ts",
+          "core/src/interpreter.ts",
+          "core/src/parser.ts",
+          "core/src/spec.ts",
+          "core/src/types.ts",
+          "tests/golden/render-cases/lang-case/template.md",
+          "tests/language/case.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [
+            "tests/language/case.test.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/expressions.ts",
+            "core/src/interpreter.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/analyze.ts",
+          "core/src/expressions.ts",
+          "core/src/interpreter.ts",
+          "core/src/parser.ts",
+          "core/src/spec.ts",
+          "core/src/types.ts",
+          "tests/golden/render-cases/lang-case/template.md",
+          "tests/language/case.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      }
     }
   ]
 }

@@ -50,7 +50,6 @@ No new keyword. The CASE node gains a list of WHEN matchers (values, variable or
 <!-- generated scope: from card.json -->
 | Path | Permission (add, edit, remove) | Blast radius |
 | --- | --- | --- |
-| `tests/golden/render-cases/lang-case/template.md` | add | template-resolver |
 | `tests/language/case.test.ts` | add | template-resolver |
 | `core/src/analyze.ts` | edit | template-resolver |
 | `core/src/expressions.ts` | edit | template-resolver |
