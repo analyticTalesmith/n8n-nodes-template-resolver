@@ -2,17 +2,17 @@
 type: review-packet
 card: 261015-language3911-a6-make-math-and-output-errors-visible
 tier: product
-built_at: 2026-10-15T04:08:24.375Z
+built_at: 2026-10-15T04:16:14.971Z
 base: 0cf253d3f419553c6c3b4828937721ba31cf133d
-head: a7012a33345689a698a71cb167d9e388948d19c2
-read_at: a7012a33345689a698a71cb167d9e388948d19c2
+head: 53c96123704e02ef4934ca6c415eca783dd305a1
+read_at: 53c96123704e02ef4934ca6c415eca783dd305a1
 frozen: true
 brief_sha256: d1de6242181c459b970e316d87c8ec2b9a4c1cd60e23f4fbb40c1623e015d8e4
 manifest_sha256: 39bc8291e25a98e75f4f924cdf5180ae613c86c468e522a8a810c926edbb9c7b
 criteria_sha256: cf6f98e6af8250be4ba880fcfd67ac8a9c52d511b55b69bc84c17c3deb4a8277
 scope_sha256: bbbe422c10a11c3bd386070fbb956b3283dc067cf93956af8b16b2bedaa0c902
-diff_sha256: 8140be8e90d5f089ef221e6c39556acafc550f91cd70328bc42d892edbce5fde
-omitted_paths: 7
+diff_sha256: 22f0b2fa048ec9007eaad976f85ac98fe222985350d05e0e58073e6e40d6e383
+omitted_paths: 12
 criteria_count: 5
 must_not_count: 4
 ---
@@ -79,7 +79,7 @@ polish: is the render-only flag a single option, and is the added code small wit
 - docs/living/decisions/adr/0003-unknown-names-are-always-errors.md
 ```
 
-### spec.md as of base 0cf253d3f419, read at a7012a333456
+### spec.md as of base 0cf253d3f419, read at 53c96123704e
 
 ```
 # Spec
@@ -106,7 +106,7 @@ polish: is the render-only flag a single option, and is the added code small wit
 - The existing console logging of swallowed math errors, if any, is not part of this card.
 ```
 
-### card.md as of base 0cf253d3f419, read at a7012a333456
+### card.md as of base 0cf253d3f419, read at 53c96123704e
 
 ```
 # Make math and output errors visible
@@ -470,7 +470,7 @@ state: built
 
 ## Frozen tests (read-only)
 
-These test files are shown as committed at a7012a333456, the commit the contract is read at; the diff starts at base 0cf253d3f419, so a file added or changed since then is in the diff too. They are part of the plan, not the builder's reasoning. Judge the diff against them; a change to one of them in section 4 is a deviation from the plan, so report it.
+These test files are shown as committed at 53c96123704e, the commit the contract is read at; the diff starts at base 0cf253d3f419, so a file added or changed since then is in the diff too. They are part of the plan, not the builder's reasoning. Judge the diff against them; a change to one of them in section 4 is a deviation from the plan, so report it.
 
 ### tests/language/math.test.ts (frozen)
 
@@ -583,6 +583,18 @@ describe("mt-float: arithmetic prints with at most 15 significant digits in rend
     check(o.output, `${c.entry}: no binary float noise`).toBe(c.out);
   });
 
+  const bigRows = [
+    { expr: "1234567890123456 + 0", data: {}, out: "1234567890123456" },
+    { expr: "x * 1", data: { x: 9007199254740991 }, out: "9007199254740991" },
+    { expr: "x * 1", data: { x: -9007199254740991 }, out: "-9007199254740991" },
+    { expr: "0.1 + 0.2", data: {}, out: "0.3" },
+  ];
+  it.each(RENDERS.flatMap((entry) => bigRows.map((r) => ({ entry, ...r }))))("mt-float: [$entry] large integer ${{$expr}} prints $out unchanged", (c) => {
+    const o = run(c.entry, "${{" + c.expr + "}}", c.data);
+    check(o.code, `${c.entry}: ok`).toBe("ok");
+    check(o.output, `${c.entry}: integers print unchanged`).toBe(c.out);
+  });
+
   const keep = [
     { expr: "0.1 + 0.2", data: {}, out: String(0.1 + 0.2) },
     { expr: "x * 3", data: { x: 1.1 }, out: String(1.1 * 3) },
@@ -657,6 +669,38 @@ describe("mt-lenient: a malformed math expression is a located error in lenient 
   });
 });
 
+describe("mt-keys: a key that exists is never a math error, a missing plain name stays a plain name", () => {
+  it.each(ENTRIES)("mt-keys: [%s] key a:b with value null prints empty", (entry) => {
+    const o = run(entry, "${{a:b}}", { "a:b": null });
+    check(o.code, `${entry}: ok`).toBe("ok");
+    check(o.output, `${entry}: empty`).toBe("");
+  });
+
+  it.each(ENTRIES)("mt-keys: [%s] key a:b with value 7 prints 7", (entry) => {
+    const o = run(entry, "${{a:b}}", { "a:b": 7 });
+    check(o.code, `${entry}: ok`).toBe("ok");
+    check(o.output, `${entry}: the value`).toBe("7");
+  });
+
+  it.each(ENTRIES)("mt-keys: [%s] key Order # with value null prints empty", (entry) => {
+    const o = run(entry, "${{Order #}}", { "Order #": null });
+    check(o.code, `${entry}: ok`).toBe("ok");
+    check(o.output, `${entry}: empty`).toBe("");
+  });
+
+  const names = ["a:b", "Order #"];
+  it.each(["render-strict", "resolve-strict"].flatMap((entry) => names.map((name) => ({ entry: entry as Entry, name }))))("mt-keys: [$entry] a missing $name is missing-variable", (c) => {
+    const o = run(c.entry, "${{" + c.name + "}}", {});
+    check(o.code, `${c.entry}: missing-variable`).toBe("missing-variable");
+  });
+
+  it.each(["render-lenient", "resolve-lenient"].flatMap((entry) => names.map((name) => ({ entry: entry as Entry, name }))))("mt-keys: [$entry] a missing $name prints empty", (c) => {
+    const o = run(c.entry, "${{" + c.name + "}}", {});
+    check(o.code, `${c.entry}: ok`).toBe("ok");
+    check(o.output, `${c.entry}: empty`).toBe("");
+  });
+});
+
 describe("mt-cyclic: a value with no text form is a located error as output", () => {
   const cyclicObject: any = {};
   cyclicObject.self = cyclicObject;
@@ -702,6 +746,47 @@ describe("mt-cyclic: a value with no text form is a located error as output", ()
     if (c.out !== undefined) check(o.output, `${c.entry}: ${c.name} prints ${JSON.stringify(c.out)}`).toBe(c.out);
   });
 
+  const selfList: any[] = [];
+  selfList.push(selfList);
+  const lengthRows = [
+    { name: "a list that contains itself", xs: selfList, out: "1" },
+    { name: "a list of BigInts", xs: [BigInt(1), BigInt(2)], out: "2" },
+  ];
+  it.each(ENTRIES.flatMap((entry) => lengthRows.map((r) => ({ entry, ...r }))))("mt-cyclic: [$entry] length of $name still prints $out", (c) => {
+    const o = run(c.entry, "${{xs | length}}", { xs: c.xs });
+    check(o.code, `${c.entry}: ok`).toBe("ok");
+    check(o.output, `${c.entry}: the count prints`).toBe(c.out);
+  });
+
+  it.each(ENTRIES)("mt-cyclic: [%s] first of a BigInt list is a type-error because the result is a BigInt", (entry) => {
+    expectLocatedTypeError(entry, run(entry, at("${{xs | first}}"), { xs: [BigInt(1)] }), "first of [1n]");
+  });
+
+  it.each(ENTRIES)("mt-cyclic: [%s] json of a cyclic object is the json filter's own cyclic type-error", (entry) => {
+    const strictMode = entry.endsWith("strict");
+    let message = "";
+    let code = "";
+    let line: number | undefined;
+    if (entry.startsWith("render")) {
+      const r = render(at("${{c | json}}"), { c: cyclicObject }, { strictMode });
+      code = r.diagnostics[0]?.code ?? "ok";
+      message = r.diagnostics[0]?.message ?? "";
+      line = r.diagnostics[0]?.line;
+    } else {
+      try {
+        resolveTemplate(at("${{c | json}}"), new Map([["c", cyclicObject]]), { strictMode });
+        code = "ok";
+      } catch (e) {
+        code = (e as any).code;
+        message = (e as Error).message;
+        line = (e as any).line;
+      }
+    }
+    check(code, `${entry}: type-error`).toBe("type-error");
+    check(line, `${entry}: located on line 2`).toBe(2);
+    check(message.toLowerCase(), `${entry}: the json filter's own error`).toContain("cyclic");
+  });
+
   it("mt-cyclic: a cyclic value in render returns ok false and a diagnostic, not an exception", () => {
     const r = render(at("${{c}}"), { c: cyclicObject }, { strictMode: false });
     check(r.ok, "render is not ok").toBe(false);
@@ -712,7 +797,7 @@ describe("mt-cyclic: a value with no text form is a located error as output", ()
 
 ## 4. Diff
 
-7 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
+12 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
 
 ```diff
 diff --git a/core/src/errors.ts b/core/src/errors.ts
@@ -738,10 +823,10 @@ index c52f702..e050391 100644
      this.name = "MissingVariableError";
      Object.setPrototypeOf(this, MissingVariableError.prototype);
 diff --git a/core/src/expressions.ts b/core/src/expressions.ts
-index bc5afc3..04eab31 100644
+index bc5afc3..e5a8f3f 100644
 --- a/core/src/expressions.ts
 +++ b/core/src/expressions.ts
-@@ -531,7 +531,37 @@ export function conditionOperands(condition: string): string[] {
+@@ -531,7 +531,61 @@ export function conditionOperands(condition: string): string[] {
   * True when the text is an arithmetic expression rather than a plain path
   */
  export function isMathExpression(expr: string): boolean {
@@ -760,12 +845,36 @@ index bc5afc3..04eab31 100644
 + * both sides of it (first-name), so a-b is one name while a - b, n-1 and
 + * x1-y are subtractions
 + */
-+function joinsName(expr: string, i: number): boolean {
++export function joinsName(expr: string, i: number): boolean {
 +  return (
 +    expr[i] === "-" &&
 +    ASCII_LETTER.test(expr[i - 1] ?? "") &&
 +    ASCII_LETTER.test(expr[i + 1] ?? "")
 +  );
++}
++
++/**
++ * True when the text holds a character no name or operator uses and also a
++ * standalone number ("2 $ 3"), so it can only be a malformed math expression;
++ * without a number ("a:b", "Order #") it is a plain name
++ */
++export function hasStrayCharacter(text: string): boolean {
++  return (
++    /[^\p{L}\p{N}_@.\s-]/u.test(text) && /(?<![\p{L}\p{N}_@.])\d/u.test(text)
++  );
++}
++
++/**
++ * How to write a missing hyphenated name as subtraction, when the name reads
++ * like one (letter-hyphen-letter, no whitespace)
++ */
++export function subtractionHint(name: string): string | undefined {
++  if (/\s/.test(name)) return undefined;
++  const spaced = [...name]
++    .map((char, i) => (joinsName(name, i) ? " - " : char))
++    .join("");
++  if (spaced === name) return undefined;
++  return `If you meant subtraction, write '${spaced}'`;
 +}
 +
 +/**
@@ -780,7 +889,7 @@ index bc5afc3..04eab31 100644
  }
  
  /**
-@@ -550,14 +580,10 @@ export function mathVariableNames(expr: string): string[] {
+@@ -550,14 +604,10 @@ export function mathVariableNames(expr: string): string[] {
        continue;
      }
  
@@ -799,7 +908,7 @@ index bc5afc3..04eab31 100644
        names.push(name);
      }
    }
-@@ -635,10 +661,43 @@ export function evaluateExpression(
+@@ -635,10 +685,44 @@ export function evaluateExpression(
   */
  export function evaluateMathExpression(
    expression: string,
@@ -829,11 +938,12 @@ index bc5afc3..04eab31 100644
 +}
 +
 +/**
-+ * A math result as text with at most 15 significant digits, so binary float
-+ * noise (0.1 + 0.2) does not print
++ * A math result as text: integers print unchanged, other numbers with at most
++ * 15 significant digits, so binary float noise (0.1 + 0.2) does not print
 + */
 +export function formatNumber(n: number): string {
-+  return Number.isFinite(n) ? String(Number(n.toPrecision(15))) : String(n);
++  if (!Number.isFinite(n) || Number.isInteger(n)) return String(n);
++  return String(Number(n.toPrecision(15)));
 +}
 +
 +/**
@@ -845,7 +955,7 @@ index bc5afc3..04eab31 100644
  }
  
  /**
-@@ -660,16 +719,12 @@ function tokenizeMath(
+@@ -660,16 +744,12 @@ function tokenizeMath(
        continue;
      }
  
@@ -868,7 +978,7 @@ index bc5afc3..04eab31 100644
        while (i < expr.length && /[\d.]/.test(expr[i])) {
          num += expr[i];
          i++;
-@@ -678,13 +733,18 @@ function tokenizeMath(
+@@ -678,13 +758,18 @@ function tokenizeMath(
        continue;
      }
  
@@ -891,7 +1001,7 @@ index bc5afc3..04eab31 100644
      if (!varName) {
        throw new MathSyntaxError(
          `Unexpected character ${JSON.stringify(char)} in math expression`,
-@@ -712,7 +772,10 @@ function tokenizeMath(
+@@ -712,7 +797,10 @@ function tokenizeMath(
  /**
   * Evaluate math tokens with proper operator precedence
   */
@@ -903,7 +1013,7 @@ index bc5afc3..04eab31 100644
    // Handle parentheses first
    while (tokens.includes("(")) {
      const openIdx = tokens.lastIndexOf("(");
-@@ -723,7 +786,7 @@ function evaluateMathTokens(tokens: (number | string)[]): number {
+@@ -723,7 +811,7 @@ function evaluateMathTokens(tokens: (number | string)[]): number {
      }
  
      const subTokens = tokens.slice(openIdx + 1, closeIdx);
@@ -912,7 +1022,7 @@ index bc5afc3..04eab31 100644
  
      tokens.splice(openIdx, closeIdx - openIdx + 1, result);
    }
-@@ -735,6 +798,10 @@ function evaluateMathTokens(tokens: (number | string)[]): number {
+@@ -735,6 +823,10 @@ function evaluateMathTokens(tokens: (number | string)[]): number {
        const left = tokens[i - 1] as number;
        const right = tokens[i + 1] as number;
  
@@ -924,10 +1034,10 @@ index bc5afc3..04eab31 100644
        switch (op) {
          case "*":
 diff --git a/core/src/interpreter.ts b/core/src/interpreter.ts
-index 623e7b9..945bc4c 100644
+index 623e7b9..6aadc68 100644
 --- a/core/src/interpreter.ts
 +++ b/core/src/interpreter.ts
-@@ -27,14 +27,18 @@ import {
+@@ -27,14 +27,27 @@ import {
  } from "./errors";
  import {
    tryCoerceToArray,
@@ -939,15 +1049,23 @@ index 623e7b9..945bc4c 100644
    evaluateCondition,
    evaluateMathExpression,
 +  formatNumber,
++  hasStrayCharacter,
 +  isMathExpression,
    isTruthy,
++  subtractionHint,
  } from "./expressions";
--import { applyFilters, fenced, checkFenceLang, valueToText } from "./filters";
-+import { applyFilters, fenced, checkFenceLang } from "./filters";
+ import { applyFilters, fenced, checkFenceLang, valueToText } from "./filters";
++import { COLLECTION_FILTERS } from "./filters-collection";
++
++/** Filters that take any value as it is, so they run before the unprintable check */
++const KEEPS_RAW_INPUT = new Set([
++  ...COLLECTION_FILTERS.map((filter) => filter.name),
++  "default",
++]);
  
  /**
   * Interpreter: Walks AST and produces output string
-@@ -55,15 +59,17 @@ import { applyFilters, fenced, checkFenceLang, valueToText } from "./filters";
+@@ -55,15 +68,17 @@ import { applyFilters, fenced, checkFenceLang, valueToText } from "./filters";
  export class Interpreter {
    private strictMode: boolean;
    private limits: Limits;
@@ -966,7 +1084,7 @@ index 623e7b9..945bc4c 100644
      this.limits = withDefaultLimits(options?.limits);
    }
  
-@@ -187,26 +193,29 @@ export class Interpreter {
+@@ -187,26 +202,32 @@ export class Interpreter {
      // Check if this is a math expression (contains operators)
      const pathStr = node.path.join(".");
      let mathError: unknown = null;
@@ -998,18 +1116,25 @@ index 623e7b9..945bc4c 100644
 -        mathError instanceof MathSyntaxError;
 -      throw unparseableMath ? mathError : error;
 +      lookupError = error;
++    }
++    // A malformed math text is an error only when no variable has that name
++    if (mathError instanceof MathSyntaxError && !this.hasRootKey(node.path[0])) {
++      throw mathError;
      }
-+    if (isUnparseableMath(mathError, value, lookupError)) throw mathError;
 +    if (lookupError !== null) throw lookupError;
  
      // Apply default operator if value is falsy
      if (node.defaultValue !== undefined && !isTruthy(value)) {
-@@ -215,22 +224,13 @@ export class Interpreter {
+@@ -215,22 +236,16 @@ export class Interpreter {
  
      // Apply filters
      if (node.filters && node.filters.length > 0) {
-+      this.valueToString(value); // text filters would turn an unprintable value into ""
-       value = applyFilters(value, node.filters) as TemplateValue;
+-      value = applyFilters(value, node.filters) as TemplateValue;
++      for (const filter of node.filters) {
++        // text filters would turn an unprintable value into ""
++        if (!KEEPS_RAW_INPUT.has(filter.name)) this.valueToString(value);
++        value = applyFilters(value, [filter]) as TemplateValue;
++      }
      }
  
      return this.valueToString(value);
@@ -1028,7 +1153,7 @@ index 623e7b9..945bc4c 100644
    /**
     * Visit IF node
     */
-@@ -258,10 +258,9 @@ export class Interpreter {
+@@ -258,10 +273,9 @@ export class Interpreter {
     * Visit CASE node
     */
    private visitCase(node: CaseNode): string {
@@ -1041,7 +1166,16 @@ index 623e7b9..945bc4c 100644
  
      // Check WHEN clauses
      for (const whenNode of node.cases) {
-@@ -647,7 +646,8 @@ export class Interpreter {
+@@ -631,7 +645,7 @@ export class Interpreter {
+     const rootKey = path[0];
+ 
+     let current: TemplateValue;
+-    const hasKey = this.loopContext.has(rootKey) || this.variables.has(rootKey);
++    const hasKey = this.hasRootKey(rootKey);
+ 
+     // Determine correct root value
+     if (this.loopContext.has(rootKey)) {
+@@ -647,7 +661,8 @@ export class Interpreter {
            rootKey,
            1,
            1,
@@ -1051,14 +1185,23 @@ index 623e7b9..945bc4c 100644
          );
        }
        return null;
-@@ -687,7 +687,17 @@ export class Interpreter {
+@@ -683,10 +698,26 @@ export class Interpreter {
+     return current;
+   }
+ 
++  /**
++   * True when a variable or loop value holds this name, whatever its value
++   */
++  private hasRootKey(rootKey: string): boolean {
++    return this.loopContext.has(rootKey) || this.variables.has(rootKey);
++  }
++
+   /**
     * Convert value to string for output
     */
    private valueToString(value: TemplateValue): string {
--    return valueToText(value);
 +    if (value == null) return "";
-+    const text = tryCoerceToString(value);
-+    if (text === null) {
++    if (tryCoerceToString(value) === null) {
 +      throw new TypeError(
 +        "Cannot print a value with no text form (a cyclic structure or a BigInt)",
 +        1,
@@ -1066,51 +1209,9 @@ index 623e7b9..945bc4c 100644
 +        "Map the variable to text, a number or plain data without cycles"
 +      );
 +    }
-+    return text;
+     return valueToText(value);
    }
  
-   /**
-@@ -702,6 +712,40 @@ export class Interpreter {
-   }
- }
- 
-+/**
-+ * True when a variable's text failed as math with a syntax error and nothing
-+ * else reads it: the lookup found no value or a missing variable
-+ */
-+function isUnparseableMath(
-+  mathError: unknown,
-+  value: TemplateValue,
-+  lookupError: unknown
-+): boolean {
-+  return (
-+    mathError instanceof MathSyntaxError &&
-+    value == null &&
-+    (lookupError === null || lookupError instanceof MissingVariableError)
-+  );
-+}
-+
-+/**
-+ * True when the text holds a character no name or operator uses ("2 $ 3"),
-+ * so it can only be a malformed math expression
-+ */
-+function hasStrayCharacter(text: string): boolean {
-+  return /[^\p{L}\p{N}_@.\s-]/u.test(text);
-+}
-+
-+/**
-+ * How to write a missing hyphenated name as subtraction, when the name reads
-+ * like one (letter-hyphen-letter, no whitespace)
-+ */
-+function subtractionHint(name: string): string | undefined {
-+  if (/\s/.test(name) || !/[a-zA-Z]-[a-zA-Z]/.test(name)) return undefined;
-+  const spaced = name.replace(/([a-zA-Z])-(?=[a-zA-Z])/g, "$1 - ");
-+  return `If you meant subtraction, write '${spaced}'`;
-+}
-+
- /**
-  * The value as JSON, or its plain string form when JSON cannot hold it
-  * (a cycle, a BigInt)
 diff --git a/core/src/render.ts b/core/src/render.ts
 index 9c6c184..7d55556 100644
 --- a/core/src/render.ts
@@ -1125,7 +1226,7 @@ index 9c6c184..7d55556 100644
  
    let output: string;
 diff --git a/docs/living/architecture/language-contract.md b/docs/living/architecture/language-contract.md
-index dc21a16..3e1b066 100644
+index dc21a16..4314da6 100644
 --- a/docs/living/architecture/language-contract.md
 +++ b/docs/living/architecture/language-contract.md
 @@ -52,3 +52,11 @@ Nine filters in `filters-collection.ts` (`COLLECTION_FILTERS`), in this order: `
@@ -1136,12 +1237,12 @@ index dc21a16..3e1b066 100644
 +## Math and output errors
 +
 +- **Zero.** In `render`, `/` or `%` with a zero divisor (also `0 / 0` and a divisor computed to zero) is a `type-error` located at the variable, in every mode. `resolveTemplate` keeps its old output (`Infinity`, `NaN`): this is a render-only divergence, as `standaloneLines` is.
-+- **Float printing.** In `render`, an arithmetic result prints with at most 15 significant digits (`0.1 + 0.2` prints `0.3`; `1 / 3` prints `0.333333333333333`; integers and negative numbers print unchanged). `resolveTemplate` prints the plain number, so `0.1 + 0.2` stays `0.30000000000000004` there.
++- **Float printing.** In `render`, an arithmetic result prints with at most 15 significant digits (`0.1 + 0.2` prints `0.3`; `1 / 3` prints `0.333333333333333`; integers of any size and negative numbers print unchanged). `resolveTemplate` prints the plain number, so `0.1 + 0.2` stays `0.30000000000000004` there.
 +- **Hyphens in names.** A hyphen with an ASCII letter on both sides is part of one name (`first-name`, `user.first-name`, `a-b + 1` reads the key `a-b`); `a - b`, `a -b`, `n-1`, `x1-y` and `1-a` are arithmetic. A missing hyphenated name in strict mode is a `missing-variable` error whose suggestion shows the spaced form. `analyze` lists a hyphenated name as one variable. Applies in `render` and `resolveTemplate`.
-+- **Malformed math.** A malformed expression (`(1 + 2`, `1 +`, `1 + * 2`, `2 $ 3`) is a located `type-error` in lenient mode too, instead of empty output. A well-formed expression that names a missing or non-numeric variable stays missing data: empty in lenient mode. Applies in both entry points.
-+- **Unprintable output.** A value with no text form (a cyclic object or array, a BigInt) used as output, as a CASE subject or before a filter is a `type-error` located at the variable or CASE node, in every mode; `null` and missing still print as empty. Applies in both entry points.
++- **Malformed math.** A malformed expression (`(1 + 2`, `1 +`, `1 + * 2`, `2 $ 3`) is a located `type-error` in lenient mode too, instead of empty output. A well-formed expression that names a missing or non-numeric variable stays missing data: empty in lenient mode. The error never replaces an existing key, and a missing name with an odd character (`a:b`, `Order #`) is plain missing data, not math. Applies in both entry points.
++- **Unprintable output.** A value with no text form (a cyclic object or array, a BigInt) used as output, as a CASE subject or before a filter that turns its input into text (not the collection filters or `default`, so `xs | length` still counts) is a `type-error` located at the variable or CASE node, in every mode; `null` and missing still print as empty. Applies in both entry points.
 diff --git a/docs/living/architecture/modules/template-resolver.md b/docs/living/architecture/modules/template-resolver.md
-index 48958b2..49cd622 100644
+index 48958b2..f84491b 100644
 --- a/docs/living/architecture/modules/template-resolver.md
 +++ b/docs/living/architecture/modules/template-resolver.md
 @@ -120,9 +120,9 @@ Added in the current tree (`core/src/whitespace.ts`, the lexer, parser and inter
@@ -1149,10 +1250,10 @@ index 48958b2..49cd622 100644
  
  - Text passes through; comments render as `""` [src: nodes/TemplateResolver/interpreter.ts:75-92]
 -- Variable: if the joined path text contains any of `+ - * / %` or parentheses it is first tried as a math expression, and any error in that attempt is logged with `console.log` and swallowed before normal lookup [src: nodes/TemplateResolver/interpreter.ts:110-119] [src: nodes/TemplateResolver/interpreter.ts:142-147]. Then lookup, then the `??` default replaces a value that fails `isTruthy`, then filters run on the string form [src: nodes/TemplateResolver/interpreter.ts:121-136] [open: Q9]
-+- Variable: if the joined path text contains any of `+ - * / %` or parentheses it (or text holding a character no name or operator uses, such as `2 $ 3`) is first tried as a math expression; a hyphen between two ASCII letters joins a name (`first-name`) and does not count as an operator. A failed attempt falls through to normal lookup, except that a malformed expression (`MathSyntaxError`) stays an error when the lookup finds nothing, in strict and lenient mode alike, and in `render` a division or modulo by zero (`DivisionByZeroError`) is a `type-error` at the variable that is never swallowed. In `render` the result prints with at most 15 significant digits (`formatNumber`); `resolveTemplate` prints `String(result)` and keeps `Infinity`, `NaN` and float noise [src: core/src/interpreter.ts visitVariable] [src: core/src/expressions.ts]. Then lookup, then the `??` default replaces a value that fails `isTruthy`, then filters run on the string form [src: nodes/TemplateResolver/interpreter.ts:121-136] [open: Q9]
++- Variable: if the joined path text contains any of `+ - * / %` or parentheses it (or text holding a character no name or operator uses next to a number, such as `2 $ 3`) is first tried as a math expression; a hyphen between two ASCII letters joins a name (`first-name`) and does not count as an operator. A failed attempt falls through to normal lookup, except that a malformed expression (`MathSyntaxError`) stays an error when no variable has that name, in strict and lenient mode alike, and in `render` a division or modulo by zero (`DivisionByZeroError`) is a `type-error` at the variable that is never swallowed. In `render` the result prints with at most 15 significant digits (`formatNumber`); `resolveTemplate` prints `String(result)` and keeps `Infinity`, `NaN` and float noise [src: core/src/interpreter.ts visitVariable] [src: core/src/expressions.ts]. Then lookup, then the `??` default replaces a value that fails `isTruthy`, then filters run on the string form [src: nodes/TemplateResolver/interpreter.ts:121-136] [open: Q9]
  - Lookup (`resolveNestedPath`): loop variables win over variables; a missing root throws `MissingVariableError` when strict and no `??` is present, else yields `null` [src: nodes/TemplateResolver/interpreter.ts:455-477]. Later path segments walk objects, array indexes (`parseInt`) and JSON-object strings (via `tryCoerceToObject`); a null intermediate, a string that is not a JSON object, or a primitive gives `null`, while a missing property on an object or index in an array gives `undefined` [src: nodes/TemplateResolver/interpreter.ts:483-507]
 -- Output formatting: `null`/`undefined` render as `""`; other values via `tryCoerceToString` (JSON for arrays and objects) [src: nodes/TemplateResolver/interpreter.ts:513-518] [src: nodes/TemplateResolver/coercion.ts:255-275]
-+- Output formatting: `null`/`undefined` render as `""`; other values via `tryCoerceToString` (JSON for arrays and objects); a value with no text form (a cyclic object or array, a BigInt) is a `type-error` located at the variable (or the CASE node) in every mode, also when a filter would follow [src: nodes/TemplateResolver/interpreter.ts:513-518] [src: nodes/TemplateResolver/coercion.ts:255-275]
++- Output formatting: `null`/`undefined` render as `""`; other values via `tryCoerceToString` (JSON for arrays and objects); a value with no text form (a cyclic object or array, a BigInt) is a `type-error` located at the variable (or the CASE node) in every mode, also before a filter that turns its input into text (collection filters and `default` run first; the final value is always checked) [src: nodes/TemplateResolver/interpreter.ts:513-518] [src: nodes/TemplateResolver/coercion.ts:255-275]
  - `IF`: `evaluateCondition` on the condition with variables plus loop context; `ELSE` array or nested `If` for `ELSEIF` [src: nodes/TemplateResolver/interpreter.ts:152-170]
  - `CASE`: the expression is looked up with strict lookup, compared as a string with `===` to each `WHEN` value (case-sensitive); no match falls to `DEFAULT`, else `""` [src: nodes/TemplateResolver/interpreter.ts:175-192]
  - `FOR`: iterable coerced with `tryCoerceToArray`; a non-coercible value throws `TypeError` in strict mode and renders `""` otherwise [src: nodes/TemplateResolver/interpreter.ts:197-211]. Per iteration it sets the item name and the loop variables `@index0`, `@index1`, `@first`, `@last`, `@notFirst`, `@notLast`; bodies are concatenated with no separator [src: nodes/TemplateResolver/interpreter.ts:215-233]. After the loop the whole loop context is cleared, including outer-loop entries [src: nodes/TemplateResolver/interpreter.ts:231] [open: Q4]
@@ -1165,11 +1266,169 @@ index 48958b2..49cd622 100644
  
  ### Filters
  
+diff --git a/tests/language/math.test.ts b/tests/language/math.test.ts
+index 7f26e8f..15d18f2 100644
+--- a/tests/language/math.test.ts
++++ b/tests/language/math.test.ts
+@@ -106,6 +106,18 @@ describe("mt-float: arithmetic prints with at most 15 significant digits in rend
+     check(o.output, `${c.entry}: no binary float noise`).toBe(c.out);
+   });
+ 
++  const bigRows = [
++    { expr: "1234567890123456 + 0", data: {}, out: "1234567890123456" },
++    { expr: "x * 1", data: { x: 9007199254740991 }, out: "9007199254740991" },
++    { expr: "x * 1", data: { x: -9007199254740991 }, out: "-9007199254740991" },
++    { expr: "0.1 + 0.2", data: {}, out: "0.3" },
++  ];
++  it.each(RENDERS.flatMap((entry) => bigRows.map((r) => ({ entry, ...r }))))("mt-float: [$entry] large integer ${{$expr}} prints $out unchanged", (c) => {
++    const o = run(c.entry, "${{" + c.expr + "}}", c.data);
++    check(o.code, `${c.entry}: ok`).toBe("ok");
++    check(o.output, `${c.entry}: integers print unchanged`).toBe(c.out);
++  });
++
+   const keep = [
+     { expr: "0.1 + 0.2", data: {}, out: String(0.1 + 0.2) },
+     { expr: "x * 3", data: { x: 1.1 }, out: String(1.1 * 3) },
+@@ -180,6 +192,38 @@ describe("mt-lenient: a malformed math expression is a located error in lenient
+   });
+ });
+ 
++describe("mt-keys: a key that exists is never a math error, a missing plain name stays a plain name", () => {
++  it.each(ENTRIES)("mt-keys: [%s] key a:b with value null prints empty", (entry) => {
++    const o = run(entry, "${{a:b}}", { "a:b": null });
++    check(o.code, `${entry}: ok`).toBe("ok");
++    check(o.output, `${entry}: empty`).toBe("");
++  });
++
++  it.each(ENTRIES)("mt-keys: [%s] key a:b with value 7 prints 7", (entry) => {
++    const o = run(entry, "${{a:b}}", { "a:b": 7 });
++    check(o.code, `${entry}: ok`).toBe("ok");
++    check(o.output, `${entry}: the value`).toBe("7");
++  });
++
++  it.each(ENTRIES)("mt-keys: [%s] key Order # with value null prints empty", (entry) => {
++    const o = run(entry, "${{Order #}}", { "Order #": null });
++    check(o.code, `${entry}: ok`).toBe("ok");
++    check(o.output, `${entry}: empty`).toBe("");
++  });
++
++  const names = ["a:b", "Order #"];
++  it.each(["render-strict", "resolve-strict"].flatMap((entry) => names.map((name) => ({ entry: entry as Entry, name }))))("mt-keys: [$entry] a missing $name is missing-variable", (c) => {
++    const o = run(c.entry, "${{" + c.name + "}}", {});
++    check(o.code, `${c.entry}: missing-variable`).toBe("missing-variable");
++  });
++
++  it.each(["render-lenient", "resolve-lenient"].flatMap((entry) => names.map((name) => ({ entry: entry as Entry, name }))))("mt-keys: [$entry] a missing $name prints empty", (c) => {
++    const o = run(c.entry, "${{" + c.name + "}}", {});
++    check(o.code, `${c.entry}: ok`).toBe("ok");
++    check(o.output, `${c.entry}: empty`).toBe("");
++  });
++});
++
+ describe("mt-cyclic: a value with no text form is a located error as output", () => {
+   const cyclicObject: any = {};
+   cyclicObject.self = cyclicObject;
+@@ -225,6 +269,47 @@ describe("mt-cyclic: a value with no text form is a located error as output", ()
+     if (c.out !== undefined) check(o.output, `${c.entry}: ${c.name} prints ${JSON.stringify(c.out)}`).toBe(c.out);
+   });
+ 
++  const selfList: any[] = [];
++  selfList.push(selfList);
++  const lengthRows = [
++    { name: "a list that contains itself", xs: selfList, out: "1" },
++    { name: "a list of BigInts", xs: [BigInt(1), BigInt(2)], out: "2" },
++  ];
++  it.each(ENTRIES.flatMap((entry) => lengthRows.map((r) => ({ entry, ...r }))))("mt-cyclic: [$entry] length of $name still prints $out", (c) => {
++    const o = run(c.entry, "${{xs | length}}", { xs: c.xs });
++    check(o.code, `${c.entry}: ok`).toBe("ok");
++    check(o.output, `${c.entry}: the count prints`).toBe(c.out);
++  });
++
++  it.each(ENTRIES)("mt-cyclic: [%s] first of a BigInt list is a type-error because the result is a BigInt", (entry) => {
++    expectLocatedTypeError(entry, run(entry, at("${{xs | first}}"), { xs: [BigInt(1)] }), "first of [1n]");
++  });
++
++  it.each(ENTRIES)("mt-cyclic: [%s] json of a cyclic object is the json filter's own cyclic type-error", (entry) => {
++    const strictMode = entry.endsWith("strict");
++    let message = "";
++    let code = "";
++    let line: number | undefined;
++    if (entry.startsWith("render")) {
++      const r = render(at("${{c | json}}"), { c: cyclicObject }, { strictMode });
++      code = r.diagnostics[0]?.code ?? "ok";
++      message = r.diagnostics[0]?.message ?? "";
++      line = r.diagnostics[0]?.line;
++    } else {
++      try {
++        resolveTemplate(at("${{c | json}}"), new Map([["c", cyclicObject]]), { strictMode });
++        code = "ok";
++      } catch (e) {
++        code = (e as any).code;
++        message = (e as Error).message;
++        line = (e as any).line;
++      }
++    }
++    check(code, `${entry}: type-error`).toBe("type-error");
++    check(line, `${entry}: located on line 2`).toBe(2);
++    check(message.toLowerCase(), `${entry}: the json filter's own error`).toContain("cyclic");
++  });
++
+   it("mt-cyclic: a cyclic value in render returns ok false and a diagnostic, not an exception", () => {
+     const r = render(at("${{c}}"), { c: cyclicObject }, { strictMode: false });
+     check(r.ok, "render is not ok").toBe(false);
 ```
 
 ## Gate run
 
-Gate command green at commit a7012a333456 (203 tests).
+Gate command green at commit 53c96123704e (247 tests).
+
+## 5. Earlier findings and replies
+
+Answer each fix-class (defect or goal-risk) finding below in `responses` with sustain or withdraw and evidence. Raise new findings only about what the revision changed or an in-scope problem newly evidenced. A finding listed under Already ruled is decided: do not raise it again unless the revision touched it (say so in `responses`) or you have new evidence.
+
+### f1: formatNumber rounds integers with 16 or more significant digits, so integer results no longer print unchanged in render
+
+- Class: defect
+- Serves: c2: In render, an arithmetic result that is an integer with more than 15 significant digits (for example a safe integer ID or count near 2^53) is rounded to 15 digits and prints a different integer. This breaks 'integers ... print unchanged' (spec: 'large integers print unchanged') and silently corrupts the output.
+- Reproduction: render('${{1234567890123456 + 0}}', {}): formatNumber computes Number((1234567890123456).toPrecision(15)), which is 1234567890123460, so the output is '1234567890123460' instead of '1234567890123456'. Likewise '${{x * 1}}' with x = 9007199254740991 prints 9007199254740990. The frozen test only covers 1000000 * 1000000 (13 digits), so the gate does not catch this. Smallest change: in formatNumber, return String(n) when Number.isInteger(n), and round only non-integers.
+- Status: fixed
+- Reply (fixed): restate: formatNumber rounded integers of 16+ digits; verify: Now returns String(n) for integers; rows for 1234567890123456 and 9007199254740991 pass; evidence: test:tests/language/math.test.ts
+
+### f2: The unprintable-value check runs before every filter, so filters that turn such a value into a printable result now fail
+
+- Class: goal-risk
+- Serves: card-goal: Spec c5 makes an unprintable value an error when it is used as output, 'after filters that keep it'. The new pre-filter call this.valueToString(value) throws before any filter runs. A template that reduces such a value to printable text, such as `${{xs | length}}` with a list that holds a cycle or a BigInt, used to print a count and is now a type-error in both entry points. A valid output turns into an error, which the card did not ask for, and the language-contract edit writes the broader rule ('or before a filter') into the living contract.
+- Reproduction: Let xs = [1n, 2n] (or a cyclic array). render('${{xs | length}}', {xs}) and resolveTemplate('${{xs | length}}', new Map([['xs', xs]])) now return type-error 'Cannot print a value with no text form'. The length filter returns the number 2, which prints. Smallest change: limit the pre-filter check to filters that coerce their input to text (the text filters and default), or check the final value after filters plus the text-coercing step, and leave collection filters such as length, first, last and slice that return a printable value alone. Align the language-contract wording with whatever the fix settles.
+- Status: fixed
+- Reply (fixed): restate: Pre-filter unprintable check broke xs | length; verify: Filters run one at a time; check only before text-coercing filters; rows for length, first, json pass; evidence: test:tests/language/math.test.ts
+
+### f3: hasStrayCharacter plus isUnparseableMath turn plain keys holding characters like ':' or '#' into math type-errors, even when the key exists with a null value
+
+- Class: goal-risk
+- Serves: card-goal: Any variable path with a character outside letters, digits, _, @, ., whitespace and '-' (for example 'a:b', 'Order #', an emoji key) is now tried as math and fails with a MathSyntaxError. isUnparseableMath then rethrows it whenever the looked-up value is null, including when the key is present with value null. Spec c5 says null still prints empty and missing data stays lenient (ADR 0003: strict mode governs missing data). Before this change, isMathExpression did not match ':' and the result was empty text. resolveTemplate output also changes for these keys, and in strict mode a missing such key loses its missing-variable code and 'Available variables' suggestion.
+- Reproduction: render('${{a:b}}', {'a:b': null}, {strictMode: false}): before the change, output ''; now ok false with type-error 'Unexpected character ":" in math expression'. render('${{Order #}}', {}, {strictMode: false}) is now a type-error instead of empty, and render('${{a:b}}', {}) in strict mode is a type-error instead of missing-variable. Smallest change: in isUnparseableMath, rethrow the math error only when the root key is absent (a MissingVariableError, or no such key in lenient mode), never when the key exists. Then decide whether a stray character in a key that is merely absent should count as malformed math or as missing data.
+- Status: fixed
+- Reply (fixed): restate: Stray-character math error hit existing or merely odd keys; verify: Math error rethrown only when root key is absent and text holds a number literal; mt-keys rows pass; evidence: test:tests/language/math.test.ts
+
+### f4: The hyphen and name-character rules are duplicated in interpreter.ts instead of using the shared helper
+
+- Class: drift
+- Serves: card-goal: Polish question: duplicated math checks. Spec says one hyphen-rule helper, exported from expressions.ts, serves the tokenizer, mathVariableNames and isMathExpression. joinsName is not exported, and subtractionHint re-implements letter-hyphen-letter with its own regexes. hasStrayCharacter adds a third character class (Unicode letters and digits) that disagrees with NAME_CHAR (ASCII only) in expressions.ts. If the rule changes in one place, render, analyze and the suggestion hint drift apart (analyze, for example, does not apply the stray-character test).
+- Reproduction: Compare joinsName in core/src/expressions.ts with the regexes in subtractionHint, and NAME_CHAR with hasStrayCharacter in core/src/interpreter.ts: three definitions of what belongs to a name.
+- Status: sustained
+- Review lead ruling: sustain: the spec asks for one shared hyphen and name-character rule; fix it together with the stray-character handling
+
+### f5: The output step no longer uses valueToText, so the text form has two owners
+
+- Class: simplification
+- Serves: cycle-goal: The language contract says filters coerce their input 'exactly as the output step does' and join items 'print as the output step prints them'. The diff drops valueToText from the interpreter and re-implements printing with tryCoerceToString. Any later change to valueToText in filters.ts now silently diverges from what ${{x}} prints.
+- Reproduction: In core/src/interpreter.ts, valueToString now calls tryCoerceToString directly, while filters still use valueToText from filters.ts. Change either one and ${{x}} and ${{x | join}} print the same item differently. A smaller shape keeps valueToText as the single printer and adds only the unprintable check.
+- Status: open
+
+### Already ruled
+
+- f6: Living documents edited directly, outside files_scope, with no scope exception logged (drift, withdrawn)
+  - Review lead ruling: withdraw: living documents are changed on purpose: docs_impact lists them and docs_deferred is true
 
 ## Output
 

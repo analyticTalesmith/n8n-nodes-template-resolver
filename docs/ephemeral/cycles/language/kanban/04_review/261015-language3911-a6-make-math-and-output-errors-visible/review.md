@@ -12,12 +12,26 @@ Generated from review-rounds.json by core/scripts/rounds.mjs; edits here are ove
 
 Restatement: In the headless, no-eval template core, math and output mistakes should no longer pass silently. In render, a division or modulo by zero should be a type-error located at the variable in every mode, and arithmetic results should print rounded to 15 significant digits so float noise disappears while integers and negatives print unchanged. resolveTemplate keeps its old Infinity/NaN and unrounded output. In both entry points, a hyphen between two ASCII letters joins a name (and a missing hyphenated name suggests the spaced subtraction form), a malformed math expression is a located type-error in lenient mode too, and a value with no text form (cycle, BigInt) used as output is a located type-error instead of ok with empty text. None of this may change existing test expectations, add dependencies, evaluate template text as code, or let unknown names or bad parameters pass in lenient mode.
 
+## Round 2
+
+- Reviewer: opus fallback (same model family as the builder; has repository access)
+- At: 2026-10-15T04:19:34.582Z
+- Stalled: no
+- Brief mismatch: card.md 'Goal and why' says 'All in render only: resolveTemplate keeps its outputs', but the card goal in the objective, the spec Decisions and the frozen tests make only mt-zero and mt-float render-only, and apply mt-hyphen, mt-lenient and mt-cyclic in both entry points. The diff follows the spec and tests, which is right; the card sentence should be corrected. card.md's must-not also adds 'other than the one named amendment (if any)', which the objective's m1 does not have.
+- Raised: f7, f8, f9, f10, f11
+
+Restatement: Math and output mistakes in the template language must stop failing silently. In render, dividing or taking a remainder by zero becomes a located type-error, and arithmetic results print without binary float noise (at most 15 significant digits, integers unchanged). resolveTemplate keeps its old Infinity/NaN and unrounded output for both. In both entry points: a hyphen between two ASCII letters joins one name (a-b), while spaced or digit-adjacent hyphens stay subtraction; a missing hyphenated name in strict mode suggests the spaced form. A malformed math expression is a located type-error in lenient mode too. A value with no text form (cyclic, BigInt) used as output is a located type-error instead of ok with empty text. Throughout, the no-eval core, the zero-dependency rule, existing test expectations and ADR 0003 (unknown names are always errors, strict governs only missing data) must hold.
+
+- Response to f1: withdraw (evidence: diff:core/src/expressions.ts, test:mt-float: [$entry] large integer ${{$expr}} prints $out unchanged)
+- Response to f2: withdraw (evidence: diff:core/src/interpreter.ts, test:mt-cyclic: [$entry] length of $name still prints $out)
+- Response to f3: withdraw (evidence: diff:core/src/interpreter.ts, diff:core/src/expressions.ts, test:mt-keys: [$entry] key a:b with value null prints empty)
+
 ## Findings
 
 ### f1: formatNumber rounds integers with 16 or more significant digits, so integer results no longer print unchanged in render
 
 - Class: defect
-- Status: fixed
+- Status: withdrawn
 - Serves: c2: In render, an arithmetic result that is an integer with more than 15 significant digits (for example a safe integer ID or count near 2^53) is rounded to 15 digits and prints a different integer. This breaks 'integers ... print unchanged' (spec: 'large integers print unchanged') and silently corrupts the output.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: render('${{1234567890123456 + 0}}', {}): formatNumber computes Number((1234567890123456).toPrecision(15)), which is 1234567890123460, so the output is '1234567890123460' instead of '1234567890123456'. Likewise '${{x * 1}}' with x = 9007199254740991 prints 9007199254740990. The frozen test only covers 1000000 * 1000000 (13 digits), so the gate does not catch this. Smallest change: in formatNumber, return String(n) when Number.isInteger(n), and round only non-integers.
@@ -27,7 +41,7 @@ Restatement: In the headless, no-eval template core, math and output mistakes sh
 ### f2: The unprintable-value check runs before every filter, so filters that turn such a value into a printable result now fail
 
 - Class: goal-risk
-- Status: fixed
+- Status: withdrawn
 - Serves: card-goal: Spec c5 makes an unprintable value an error when it is used as output, 'after filters that keep it'. The new pre-filter call this.valueToString(value) throws before any filter runs. A template that reduces such a value to printable text, such as `${{xs | length}}` with a list that holds a cycle or a BigInt, used to print a count and is now a type-error in both entry points. A valid output turns into an error, which the card did not ask for, and the language-contract edit writes the broader rule ('or before a filter') into the living contract.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: Let xs = [1n, 2n] (or a cyclic array). render('${{xs | length}}', {xs}) and resolveTemplate('${{xs | length}}', new Map([['xs', xs]])) now return type-error 'Cannot print a value with no text form'. The length filter returns the number 2, which prints. Smallest change: limit the pre-filter check to filters that coerce their input to text (the text filters and default), or check the final value after filters plus the text-coercing step, and leave collection filters such as length, first, last and slice that return a printable value alone. Align the language-contract wording with whatever the fix settles.
@@ -37,7 +51,7 @@ Restatement: In the headless, no-eval template core, math and output mistakes sh
 ### f3: hasStrayCharacter plus isUnparseableMath turn plain keys holding characters like ':' or '#' into math type-errors, even when the key exists with a null value
 
 - Class: goal-risk
-- Status: fixed
+- Status: withdrawn
 - Serves: card-goal: Any variable path with a character outside letters, digits, _, @, ., whitespace and '-' (for example 'a:b', 'Order #', an emoji key) is now tried as math and fails with a MathSyntaxError. isUnparseableMath then rethrows it whenever the looked-up value is null, including when the key is present with value null. Spec c5 says null still prints empty and missing data stays lenient (ADR 0003: strict mode governs missing data). Before this change, isMathExpression did not match ':' and the result was empty text. resolveTemplate output also changes for these keys, and in strict mode a missing such key loses its missing-variable code and 'Available variables' suggestion.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: render('${{a:b}}', {'a:b': null}, {strictMode: false}): before the change, output ''; now ok false with type-error 'Unexpected character ":" in math expression'. render('${{Order #}}', {}, {strictMode: false}) is now a type-error instead of empty, and render('${{a:b}}', {}) in strict mode is a type-error instead of missing-variable. Smallest change: in isUnparseableMath, rethrow the math error only when the root key is absent (a MissingVariableError, or no such key in lenient mode), never when the key exists. Then decide whether a stray character in a key that is merely absent should count as malformed math or as missing data.
@@ -72,3 +86,50 @@ Restatement: In the headless, no-eval template core, math and output mistakes sh
 - Reproduction: Section 4 shows diffs to both living documents. The manifest and files_scope list only core/src/errors.ts, expressions.ts, interpreter.ts, render.ts and tests/language/math.test.ts, and the scope exceptions log reads 'No scope exceptions are logged.'
 - Evidence: diff:docs/living/architecture/language-contract.md, diff:docs/living/architecture/modules/template-resolver.md
 - Review lead ruling after round 1: withdraw: living documents are changed on purpose: docs_impact lists them and docs_deferred is true
+
+### f7: The `lines` collection filter (and `join` items) bypass the unprintable check, so a cyclic value still prints ok with no visible error
+
+- Class: goal-risk
+- Status: open
+- Serves: c5: KEEPS_RAW_INPUT exempts every collection filter from the pre-filter unprintable check. Per the language contract, though, `lines` takes 'the text form' of its input, and `join` prints items 'as the output step prints them'. Both go through valueToText, which at base printed a cyclic value as empty text (that silent output is the c5 bug itself). So `${{c | lines}}` with a cyclic c returns ok true with an empty-ish list, and `${{xs | join=","}}` with xs = [cyclicObject] prints an empty item. That is the same silent swallow the card removes for `trim`.
+- Raised in round 2; sustained 0, failed fixes 0
+- Reproduction: Let c = {}; c.self = c. Call render('first line\n ${{c | lines}}', {c}, {strictMode: false}). Expected per c5 and the stated rule ('before a filter that turns its input into text'): a type-error at 2:3. Actual by reading: 'lines' is in KEEPS_RAW_INPUT, so this.valueToString(value) is skipped, lines coerces c to text via valueToText (empty for a cyclic value), and the printable list result passes the final check, giving ok true. The same happens with join over a list holding a cyclic item. Smallest change: remove the text-coercing collection filters (`lines`, and decide `join` item printing) from the exemption, or have them throw on an unprintable input or item. Then add rows for them to the mt-cyclic tests.
+- Evidence: diff:core/src/interpreter.ts, doc:docs/living/architecture/language-contract.md, test:mt-cyclic: [$entry] $name as $use is a type-error
+
+### f8: A malformed math expression that also names a missing variable still renders empty in lenient mode
+
+- Class: goal-risk
+- Status: open
+- Serves: c4: Only a MathSyntaxError is rethrown after the lookup fallback. Math identifiers resolve during tokenizing and must coerce to a number, otherwise a TypeError is thrown (module doc, Math bullet). So when the expression is malformed and an identifier in it is missing, the missing-variable TypeError comes first, mathError is not a MathSyntaxError, and lenient lookup returns empty. A typo such as `${{total * }}` or `${{qty $ 3}}` then fails visibly only when the data happens to hold the variable, and is silent ok true with empty text otherwise. That is the silent malformed-math output the card goal removes, and it depends on data.
+- Raised in round 2; sustained 0, failed fixes 0
+- Reproduction: render('first line\n ${{total * }}', {}, {strictMode: false}). Expected: a type-error at 2:3, as for '1 + '. Then render('first line\n ${{total * }}', {total: 2}, {strictMode: false}) errors, while the first call (by reading visitVariable: mathError is a non-syntax TypeError, so the hasRootKey branch does not fire, and lenient lookup gives null) returns ok true with only 'first line'. Smallest change: check the expression's structure before treating a missing or non-numeric identifier as missing data, for example by validating the token shape before resolving identifiers, or by letting a MathSyntaxError win over the missing-operand error. Then add a lenient row with a missing identifier in a malformed expression.
+- Evidence: diff:core/src/interpreter.ts, diff:core/src/expressions.ts, doc:docs/living/architecture/modules/template-resolver.md, test:mt-lenient: [$entry] ${{$expr}} is a type-error at the variable
+
+### f9: isMathExpression and subtractionHint index the string by code point but joinsName reads UTF-16 indexes
+
+- Class: drift
+- Status: sustained
+- Serves: c3: `[...expr].some((char, i) => ... joinsName(expr, i))` and `[...name].map((char, i) => joinsName(name, i) ...)` pass a code-point index to joinsName, which reads expr[i] as a UTF-16 unit. In a name holding an astral character (an emoji) before a letter-hyphen-letter, the hyphen is not recognised as joining: the text is tried as math, and when the key is absent it becomes a type-error in lenient mode instead of empty. The strict hint is also wrong.
+- Raised in round 2; sustained 0, failed fixes 0
+- Reproduction: render('${{🔥hot-take}}', {}, {strictMode: false}). The spread index of '-' is 4, but expr[4] is 't', so joinsName returns false, isMathExpression returns true, the tokenizer fails on the emoji, and with no root key the MathSyntaxError is thrown, giving a type-error instead of the empty lenient output of a missing name. Smallest change: iterate by string index (for i < expr.length) in both places.
+- Evidence: diff:core/src/expressions.ts
+- Review lead ruling after round 2: sustain: iterate by string index in both places so names with astral characters behave
+
+### f10: The list of filters exempt from the unprintable check is a name list in the interpreter, a second owner beside the filter registry
+
+- Class: simplification
+- Status: open
+- Serves: cycle-goal: The contract says every filter is one registry definition that render reads. KEEPS_RAW_INPUT hard-codes 'default' and the collection-group names in interpreter.ts. A filter added later to the registry gets the pre-check by default whether or not it coerces to text, and the `lines` miss above comes from this group-level rule rather than a per-filter fact.
+- Raised in round 2; sustained 0, failed fixes 0
+- Reproduction: Compare KEEPS_RAW_INPUT in core/src/interpreter.ts with FILTER_REGISTRY. 'Keeps raw input' is a property of each filter but is recorded outside its definition. A smaller shape is a per-definition flag in the registry that the interpreter reads.
+- Evidence: diff:core/src/interpreter.ts, doc:docs/living/architecture/language-contract.md
+
+### f11: The frozen test file was extended in the diff (bigRows, mt-keys, length/first/json rows)
+
+- Class: drift
+- Status: withdrawn
+- Serves: m1: The packet says a change to a frozen test file in section 4 is a deviation from the plan. The diff adds rows and a describe block to tests/language/math.test.ts. All the changes are additions that pin fixes for earlier findings, and no existing expectation is altered, so m1 holds. It is still a deviation from the frozen plan for the lead to accept.
+- Raised in round 2; sustained 0, failed fixes 0
+- Reproduction: In section 4, tests/language/math.test.ts hunks at @@ -106 and @@ -180 and @@ -225 add only new rows and blocks; no '-' lines change an expectation.
+- Evidence: diff:tests/language/math.test.ts
+- Review lead ruling after round 2: withdraw: rows added to the card's own frozen test file pin the fixes; nothing existing changed; logged in test_amendments
