@@ -55,10 +55,21 @@
       "location": "core/src/parser.ts:376",
       "label": "f1",
       "raised_in": 1,
-      "status": "open",
+      "status": "fixed",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "A DEFINE inside a top-level ROW or HEADER was accepted; every DEFINE not directly in the program body must be a syntax-error at it.",
+          "verify": "parse() starts DEFINE only at top level; parseNode rejects others at the DEFINE. render of the ROW repro now gives syntax-error 1:8; analyze throws.",
+          "action": "fixed",
+          "evidence": [
+            "diff:core/src/parser.ts",
+            "test:mc-define: a DEFINE inside a ROW or HEADER is a syntax-error at it"
+          ]
+        }
+      ],
       "rulings": []
     },
     {
@@ -78,10 +89,21 @@
       "location": "core/src/interpreter.ts:160",
       "label": "f2",
       "raised_in": 1,
-      "status": "open",
+      "status": "fixed",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "The running output check counted body text that SECTION, LIST_ITEM and cells trim, so valid old templates failed with limit-output.",
+          "verify": "In trimming bodies a child counts its trimmed text plus CALL blanks. The 30-newline SECTION repro renders as at base (8 chars); guard rows match base probes.",
+          "action": "fixed",
+          "evidence": [
+            "diff:core/src/interpreter.ts",
+            "test:mc-compat: trimming bodies keep their base output"
+          ]
+        }
+      ],
       "rulings": []
     },
     {
@@ -103,10 +125,22 @@
       "location": "core/src/interpreter.ts:721",
       "label": "f3",
       "raised_in": 1,
-      "status": "open",
+      "status": "fixed",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "Finished LIST lines and table cells did not count into held, so calls in sibling items or cells all ran; engine-size growth was reported as limit-depth.",
+          "verify": "Lines and cells are held as they finish, restored on return: LIST repro 10 iterations, TABLE repro 11 (was 100). Invalid string length is limit-output in render.",
+          "action": "fixed",
+          "evidence": [
+            "diff:core/src/interpreter.ts",
+            "diff:core/src/render.ts",
+            "test:mc-output: 100 calls of a 100-character macro from LIST_ITEMs and cells stop near the limit"
+          ]
+        }
+      ],
       "rulings": []
     }
   ]

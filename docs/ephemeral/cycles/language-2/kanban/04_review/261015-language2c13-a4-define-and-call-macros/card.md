@@ -20,7 +20,7 @@ Define and call macros.
 - `contract` `mc-ws` DEFINE and END_DEFINE join the standalone set; CALL does not (it outputs, like a variable); trim markers work on all three.
 - `contract` `mc-analyze` analyze and validate walk each DEFINE body exactly once and never follow a CALL, so a fan-out or mutually recursive set of macros costs time linear in the template (rows run through `validate` and `analyze`, not only `render`); parameters are locals in the body; CALL argument paths are usage kind `call`; `blocks` counts DEFINE; unresolved names are warnings in validate; analyze lists the macros it saw in an optional `macros` field present only when DEFINEs exist (a required field would break the hand-built analysis literals in `tests/promptaware/section.test.ts` and `api/routes.ts`).
 - `contract` `mc-spec` `spec().blocks` lists DEFINE (closes END_DEFINE) and CALL (no closes); the derived surfaces test passes without edits.
-- `contract` `mc-compat` the full suite passes; no existing test file changes.
+- `contract` `mc-compat` the full suite passes; no existing test file changes except the logged amendment of the `st-keywords` keyword-table row in `tests/language/set.test.ts` (it lists DEFINE and CALL once they are keywords).
 
 ## Acceptance criteria
 
@@ -36,11 +36,11 @@ Define and call macros.
 - mc-ws: DEFINE and END_DEFINE join the standalone set; CALL does not (it outputs, like a variable); trim markers work on all three.
 - mc-analyze: analyze and validate walk each DEFINE body exactly once and never follow a CALL, so a fan-out or mutually recursive set of macros costs time linear in the template (rows run through `validate` and `analyze`, not only `render`); parameters are locals in the body; CALL argument paths are usage kind `call`; `blocks` counts DEFINE; unresolved names are warnings in validate; analyze lists the macros it saw in an optional `macros` field present only when DEFINEs exist (a required field would break the hand-built analysis literals in `tests/promptaware/section.test.ts` and `api/routes.ts`).
 - mc-spec: `spec().blocks` lists DEFINE (closes END_DEFINE) and CALL (no closes); the derived surfaces test passes without edits.
-- mc-compat: the full suite passes; no existing test file changes.
+- mc-compat: the full suite passes; no existing test file changes except the logged amendment of the `st-keywords` keyword-table row in `tests/language/set.test.ts` (it lists DEFINE and CALL once they are keywords).
 
 ## Must-nots
 
-- change any existing test expectation other than the one named amendment (if any)
+- change any existing test expectation other than the logged amendment of the keyword-table row in `tests/language/set.test.ts`
 - add a runtime dependency
 - evaluate template text as code, compile a template-supplied regular expression or read a file named by a template
 - let an unknown name or bad argument pass in lenient mode (ADR 0003)
