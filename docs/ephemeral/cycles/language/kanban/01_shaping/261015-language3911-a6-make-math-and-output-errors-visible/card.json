@@ -10,6 +10,7 @@
   "tier": null,
   "claimed_in": null,
   "files_scope": [
+    "core/src/errors.ts",
     "core/src/expressions.ts",
     "core/src/interpreter.ts",
     "core/src/render.ts",
@@ -21,6 +22,7 @@
     ],
     "remove": [],
     "edit": [
+      "core/src/errors.ts",
       "core/src/expressions.ts",
       "core/src/interpreter.ts",
       "core/src/render.ts"

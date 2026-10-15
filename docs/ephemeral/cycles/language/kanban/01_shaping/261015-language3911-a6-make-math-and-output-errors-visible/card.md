@@ -51,9 +51,10 @@ No new public names. Render-only behaviour changes; resolveTemplate outputs stay
 | Path | Permission (add, edit, remove) | Blast radius |
 | --- | --- | --- |
 | `tests/language/math.test.ts` | add | template-resolver |
+| `core/src/errors.ts` | edit | template-resolver |
 | `core/src/expressions.ts` | edit | template-resolver |
 | `core/src/interpreter.ts` | edit | template-resolver |
 | `core/src/render.ts` | edit | template-resolver |
 
-Files scope: `core/src/expressions.ts`, `core/src/interpreter.ts`, `core/src/render.ts`, `tests/language/math.test.ts`
+Files scope: `core/src/errors.ts`, `core/src/expressions.ts`, `core/src/interpreter.ts`, `core/src/render.ts`, `tests/language/math.test.ts`
 <!-- end generated scope -->
