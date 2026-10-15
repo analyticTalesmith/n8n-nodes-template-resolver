@@ -7,13 +7,13 @@
     "--json"
   ],
   "exit_status": 0,
-  "ran_at": "2026-10-15T04:16:16.002Z",
+  "ran_at": "2026-10-15T04:22:34.193Z",
   "tests": {
-    "passed": 247,
+    "passed": 295,
     "failed": 0
   },
-  "commit": "53c96123704e02ef4934ca6c415eca783dd305a1",
-  "diff_sha256": "22f0b2fa048ec9007eaad976f85ac98fe222985350d05e0e58073e6e40d6e383",
+  "commit": "deabe1bc54a5d3a036a5f3108de2a4ecb337dbec",
+  "diff_sha256": "83f63569f5f4d5cf2bcb6d24ce87832c0c99681c358c4b084826daa1292565e0",
   "levels": [
     {
       "level": "gate",
@@ -25,7 +25,7 @@
         "--json"
       ],
       "exit_status": 0,
-      "commit": "53c96123704e"
+      "commit": "deabe1bc54a5"
     }
   ],
   "skipped": []

@@ -110,12 +110,13 @@ Restatement: Math and output mistakes in the template language must stop failing
 ### f9: isMathExpression and subtractionHint index the string by code point but joinsName reads UTF-16 indexes
 
 - Class: drift
-- Status: sustained
+- Status: withdrawn
 - Serves: c3: `[...expr].some((char, i) => ... joinsName(expr, i))` and `[...name].map((char, i) => joinsName(name, i) ...)` pass a code-point index to joinsName, which reads expr[i] as a UTF-16 unit. In a name holding an astral character (an emoji) before a letter-hyphen-letter, the hyphen is not recognised as joining: the text is tried as math, and when the key is absent it becomes a type-error in lenient mode instead of empty. The strict hint is also wrong.
 - Raised in round 2; sustained 0, failed fixes 0
 - Reproduction: render('${{🔥hot-take}}', {}, {strictMode: false}). The spread index of '-' is 4, but expr[4] is 't', so joinsName returns false, isMathExpression returns true, the tokenizer fails on the emoji, and with no root key the MathSyntaxError is thrown, giving a type-error instead of the empty lenient output of a missing name. Smallest change: iterate by string index (for i < expr.length) in both places.
 - Evidence: diff:core/src/expressions.ts
 - Review lead ruling after round 2: sustain: iterate by string index in both places so names with astral characters behave
+- Review lead ruling after round 2: withdraw: fixed in the fix commit: both helpers iterate by string index; emoji-name rows pass
 
 ### f10: The list of filters exempt from the unprintable check is a name list in the interpreter, a second owner beside the filter registry
 

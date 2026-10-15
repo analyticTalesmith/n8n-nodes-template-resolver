@@ -369,7 +369,7 @@
       "location": "core/src/expressions.ts:536",
       "label": "f9",
       "raised_in": 2,
-      "status": "sustained",
+      "status": "withdrawn",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [],
@@ -378,6 +378,11 @@
           "after_round": 2,
           "ruling": "sustain",
           "note": "iterate by string index in both places so names with astral characters behave"
+        },
+        {
+          "after_round": 2,
+          "ruling": "withdraw",
+          "note": "fixed in the fix commit: both helpers iterate by string index; emoji-name rows pass"
         }
       ]
     },
