@@ -245,7 +245,6 @@ With this data:
   "doc": "# Title\n\n## Part",
   "level": 3
 }
-
 ```
 
 it renders (default render options, so lines that hold only block tags are removed):
@@ -1117,7 +1116,7 @@ Render and validate results (`render`, `validate`, `POST /v1/render`, `POST /v1/
 | `limit-iterations` | error    | FOR loops ran more than `maxIterations` iterations in total                                            |
 | `limit-output`     | error    | The output grew past `maxOutputChars`                                                                  |
 | `limit-depth`      | error    | Blocks nest deeper than `maxDepth`                                                                     |
-| `limit-nodes`      | error    | The template holds more than `maxNodes` nodes (a text run, a placeholder or a block each count one)   |
+| `limit-nodes`      | error    | The template holds more than `maxNodes` nodes (each run of text, each placeholder, each comment and each block counts one) |
 | `invalid-input`    | error    | Core `render` was given data that is not an object (the CLI and the API reject such data before rendering) |
 | `analysis-warning` | warning  | `validate` only: a condition the engine cannot read, such as `{{IF status is active}}` (`render` reports it as a `type-error`) |
 
@@ -1149,7 +1148,7 @@ Limits bound the work of one render. Each can be lowered per render; anything le
 | `maxIterations`  | 10000     | Total FOR iterations across the whole render            | `limit-iterations` |
 | `maxOutputChars` | 1000000   | Length of the output                                    | `limit-output`     |
 | `maxDepth`       | 32        | Nesting of blocks (also applied by validate and analyze) | `limit-depth`      |
-| `maxNodes`       | 20000     | Size of the template: the nodes counted while it is parsed (each run of text, each placeholder and each block counts one; also applied by validate and analyze) | `limit-nodes`      |
+| `maxNodes`       | 20000     | Size of the template: the nodes counted while it is parsed (each run of text, each placeholder, each comment and each block counts one; also applied by validate and analyze) | `limit-nodes`      |
 
 The command line sets them with `--max-iterations`, `--max-output-chars`, `--max-depth` and `--max-nodes`; the HTTP API with `options.limits` (a request can only lower the server's limits). `template-resolver spec` and `GET /v1/spec` report the defaults.
 
