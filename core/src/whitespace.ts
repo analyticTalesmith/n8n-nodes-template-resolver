@@ -21,6 +21,8 @@ const STANDALONE_TAGS = new Set<TokenType>([
   TokenType.RAW,
   TokenType.END_RAW,
   TokenType.SET,
+  TokenType.DEFINE,
+  TokenType.END_DEFINE,
   TokenType.COMMENT,
 ]);
 

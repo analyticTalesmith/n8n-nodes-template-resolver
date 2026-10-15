@@ -112,6 +112,19 @@ const BLOCKS: Spec["blocks"] = [
       "Binds a local for the rest of its block: the value of a path, arithmetic, a quoted text, number, true, false or null, with ?? default and | filters, kept as it is (an array stays an array). A single tag with no closer; it prints nothing",
   },
   {
+    name: "DEFINE",
+    closes: "END_DEFINE",
+    args: "name(param, ...)",
+    description:
+      "A reusable text block, hoisted: a CALL may come before it. Top level only, never inside another block, and it prints nothing. The body sees its parameters and the data only, never the caller's SET locals, loop names or @ metadata",
+  },
+  {
+    name: "CALL",
+    args: "name(arg, ...)",
+    description:
+      "Prints the output of a macro for its arguments, each a variable path (read in the caller's scope), a quoted text, a number, true, false or null. A single tag with no closer; every call counts one iteration toward maxIterations, and recursion is bounded by the depth limit",
+  },
+  {
     name: "RAW",
     closes: "END_RAW",
     args: "",

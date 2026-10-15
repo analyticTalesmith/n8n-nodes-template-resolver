@@ -68,6 +68,9 @@ export enum TokenType {
   FENCE = "FENCE",
   END_FENCE = "END_FENCE",
   SET = "SET",
+  DEFINE = "DEFINE",
+  END_DEFINE = "END_DEFINE",
+  CALL = "CALL",
   COMMENT = "COMMENT",
   EOF = "EOF",
 }
@@ -145,6 +148,34 @@ export interface SetNode extends ASTNode {
   type: "Set";
   name: string;
   value: ValueExpr;
+}
+
+/**
+ * DEFINE: a reusable text block, hoisted from the top level of the template.
+ * Its body sees its parameters and the data, nothing of the caller.
+ */
+export interface DefineNode extends ASTNode {
+  type: "Define";
+  name: string;
+  params: string[];
+  body: ASTNode[];
+}
+
+/**
+ * One argument of a CALL: a variable path read in the caller's scope, or a
+ * literal value
+ */
+export type CallArg =
+  | { kind: "path"; path: string[] }
+  | { kind: "literal"; value: TemplateValue };
+
+/**
+ * CALL: prints the output of a macro body for the given arguments
+ */
+export interface CallNode extends ASTNode {
+  type: "Call";
+  name: string;
+  args: CallArg[];
 }
 
 /**

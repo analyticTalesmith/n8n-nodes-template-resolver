@@ -15,6 +15,9 @@ import {
   SectionNode,
   FenceNode,
   SetNode,
+  DefineNode,
+  CallNode,
+  CallArg,
   ValueExpr,
   VariableLookup,
   ForWindowArg,
@@ -27,6 +30,7 @@ import {
   MissingVariableError,
   MathSyntaxError,
   LimitError,
+  TemplateError,
   locateError,
 } from "./errors";
 import {
@@ -49,6 +53,13 @@ import {
 import { applyFilters, fenced, checkFenceLang, valueToText } from "./filters";
 import { COLLECTION_FILTERS } from "./filters-collection";
 import { Frame, RootScope, readOwn } from "./scope";
+import { linkProgram, macroNote } from "./macros";
+
+/**
+ * The deepest run-time nesting of blocks and calls, whatever maxDepth says: it
+ * keeps the interpreter's own recursion far from the engine's stack limit
+ */
+const MAX_RUNTIME_DEPTH = 256;
 
 /** Filters that take any value as it is, so they run before the unprintable check */
 const KEEPS_RAW_INPUT = new Set([
@@ -74,6 +85,7 @@ const KEEPS_RAW_INPUT = new Set([
  * - Default operator (??)
  * - Ternary with variable references
  * - SET: locals bound for the rest of their block
+ * - DEFINE and CALL: macros whose bodies see their parameters and the data
  */
 export class Interpreter {
   private strictMode: boolean;
@@ -81,6 +93,12 @@ export class Interpreter {
   private render: boolean;
   private iterations = 0;
   private omittedSections = 0;
+  /** Blocks and calls being run now, bounded by depthCap */
+  private depth = 0;
+  private readonly depthCap: number;
+  /** Characters of the finished children of every body being built, across calls */
+  private held = 0;
+  private macros = new Map<string, DefineNode>();
   private readonly root: RootScope;
   /** The innermost scope: a block or loop frame while one renders, else the root */
   private scope: VariableLookup;
@@ -92,12 +110,13 @@ export class Interpreter {
     this.strictMode = options?.strictMode ?? true;
     this.render = options?.render ?? false;
     this.limits = withDefaultLimits(options?.limits);
+    this.depthCap = Math.min(this.limits.maxDepth, MAX_RUNTIME_DEPTH);
     this.root = new RootScope(variables);
     this.scope = this.root;
   }
 
   /**
-   * FOR iterations run by the latest interpret call
+   * FOR iterations and CALLs run by the latest interpret call
    */
   get iterationCount(): number {
     return this.iterations;
@@ -116,7 +135,11 @@ export class Interpreter {
   interpret(ast: ProgramNode): string {
     this.iterations = 0;
     this.omittedSections = 0;
+    this.depth = 0;
+    this.held = 0;
     this.scope = this.root;
+    // linking comes first: a bad call is found before any output
+    this.macros = linkProgram(ast);
     return this.visitProgram(ast);
   }
 
@@ -124,17 +147,64 @@ export class Interpreter {
    * Visit program node (root)
    */
   private visitProgram(node: ProgramNode): string {
-    return this.block(node.body, () => {
-      const parts: string[] = [];
-      let length = 0;
-      for (const child of node.body) {
-        const output = this.visit(child);
-        length += output.length;
-        this.checkOutputLength(length, child);
+    return this.block(node.body, () => this.renderChildren(node.body));
+  }
+
+  /**
+   * Render the children of one body and join them. Each finished child adds its
+   * characters to the ones already held by every body being built (this one
+   * and the ones around it, across calls); the child that tips the total over
+   * maxOutputChars is where the error is located, or `at` when the caller
+   * names the node (a loop keeps its own place). The body's characters are
+   * released when it returns: the parent then adds the returned text.
+   */
+  private renderChildren(
+    nodes: ASTNode[],
+    at?: ASTNode,
+    render: (child: ASTNode) => string = (child) => this.visit(child)
+  ): string {
+    const parts: string[] = [];
+    let mine = 0;
+    try {
+      for (const child of nodes) {
+        const output = render(child);
         parts.push(output);
+        mine += output.length;
+        this.held += output.length;
+        if (this.held > this.limits.maxOutputChars) {
+          const node = at ?? child;
+          throw this.outputTooLong(node.line, node.column);
+        }
       }
-      return parts.join("");
-    });
+    } finally {
+      this.held -= mine;
+    }
+    return parts.join("");
+  }
+
+  /**
+   * Run a block or a call one level deeper. The counter rises on every block
+   * entered and every CALL and falls when it ends, so it bounds recursion and
+   * nesting alike; crossing the cap is located at the opening tag.
+   */
+  private enter<T>(node: ASTNode, what: "block" | "call", run: () => T): T {
+    if (this.depth >= this.depthCap) {
+      throw new LimitError(
+        "limit-depth",
+        what === "call"
+          ? `Calls and blocks nest deeper than the maximum depth of ${this.depthCap}`
+          : `Block nesting exceeds the maximum depth of ${this.depthCap}`,
+        node.line,
+        node.column,
+        "Flatten nested blocks, end the recursion sooner or raise limits.maxDepth (a depth above 256 is never run)"
+      );
+    }
+    this.depth++;
+    try {
+      return run();
+    } finally {
+      this.depth--;
+    }
   }
 
   /**
@@ -164,12 +234,15 @@ export class Interpreter {
     }
   }
 
-  private countIteration(node: ForNode): void {
+  /** One FOR item or one CALL, counted toward maxIterations */
+  private countIteration(node: ForNode | CallNode): void {
     this.iterations++;
     if (this.iterations > this.limits.maxIterations) {
       throw new LimitError(
         "limit-iterations",
-        `Loops ran more than ${this.limits.maxIterations} iterations in total`,
+        node.type === "Call"
+          ? `Loops and macro calls ran more than ${this.limits.maxIterations} iterations in total`
+          : `Loops ran more than ${this.limits.maxIterations} iterations in total`,
         node.line,
         node.column,
         "Iterate over less data or raise limits.maxIterations"
@@ -218,6 +291,10 @@ export class Interpreter {
         return this.visitFence(node as FenceNode);
       case "Set":
         return this.at(node, () => this.visitSet(node as SetNode));
+      case "Define":
+        return ""; // hoisted into the macro table; prints nothing
+      case "Call":
+        return this.visitCall(node as CallNode);
       case "Ternary":
         return this.at(node, () => this.visitTernary(node as TernaryNode));
       case "Comment":
@@ -252,6 +329,44 @@ export class Interpreter {
     }
     this.scope.set(node.name, value);
     return "";
+  }
+
+  /**
+   * Visit CALL: read the arguments in the caller's scope, then run the macro
+   * body in a scope of its own. The call counts one iteration and one level of
+   * depth. An error raised inside the body keeps the position of the failing
+   * body node and says which macro was running.
+   */
+  private visitCall(node: CallNode): string {
+    const macro = this.macros.get(node.name) as DefineNode; // linked in interpret
+    this.countIteration(node);
+    const args = this.at(node, () => node.args.map((arg) => this.readArgument(arg)));
+    return this.enter(node, "call", () => this.runMacro(macro, node, args));
+  }
+
+  /** An argument value, passed as the value (an array stays an array) */
+  private readArgument(arg: CallArg): TemplateValue {
+    return arg.kind === "literal" ? arg.value : this.resolveNestedPath(arg.path);
+  }
+
+  /**
+   * Run a macro body in a fresh frame over the data alone: its parameters
+   * shadow the data, and the caller's locals, loop names and @ metadata are
+   * out of reach. The caller's scope comes back whatever happens.
+   */
+  private runMacro(macro: DefineNode, call: CallNode, args: TemplateValue[]): string {
+    const frame = new Frame(this.root);
+    macro.params.forEach((param, i) => frame.set(param, args[i]));
+    const outer = this.scope;
+    this.scope = frame;
+    try {
+      return this.renderChildren(macro.body);
+    } catch (error) {
+      if (error instanceof TemplateError) error.addNote(macroNote(macro, call));
+      throw error;
+    } finally {
+      this.scope = outer;
+    }
   }
 
   /**
@@ -332,7 +447,7 @@ export class Interpreter {
    * Visit IF node
    */
   private visitIf(node: IfNode): string {
-    return this.visitBody(this.selectBranch(node));
+    return this.enter(node, "block", () => this.visitBody(this.selectBranch(node)));
   }
 
   /**
@@ -355,18 +470,19 @@ export class Interpreter {
     }
   }
 
-  private visitBody(nodes: ASTNode[]): string {
-    return this.block(nodes, () => this.renderNodes(nodes));
-  }
-
-  private renderNodes(nodes: ASTNode[]): string {
-    return nodes.map((child) => this.visit(child)).join("");
+  /** `loop` is the FOR whose body this is: its output limit is located there */
+  private visitBody(nodes: ASTNode[], loop?: ForNode): string {
+    return this.block(nodes, () => this.renderChildren(nodes, loop));
   }
 
   /**
    * Visit CASE node
    */
   private visitCase(node: CaseNode): string {
+    return this.enter(node, "block", () => this.runCase(node));
+  }
+
+  private runCase(node: CaseNode): string {
     const valueStr = this.at(node, () =>
       this.valueToString(this.resolveNestedPath(node.expression.split(".")))
     );
@@ -392,11 +508,13 @@ export class Interpreter {
    */
   private visitFor(node: ForNode): string {
     const results: string[] = [];
-    this.runLoop(node, false, (nodes) => {
-      const output = this.visitBody(nodes);
-      results.push(output);
-      return output.length;
-    });
+    this.enter(node, "block", () =>
+      this.runLoop(node, false, (nodes) => {
+        const output = this.visitBody(nodes, node);
+        results.push(output);
+        return output.length;
+      })
+    );
     return results.join("");
   }
 
@@ -503,6 +621,10 @@ export class Interpreter {
    * skipEmpty is set
    */
   private visitSection(node: SectionNode): string {
+    return this.enter(node, "block", () => this.runSection(node));
+  }
+
+  private runSection(node: SectionNode): string {
     const title = this.at(node, () => this.sectionTitle(node));
     const heading = `${"#".repeat(node.level)} ${title}\n`;
     const body = this.visitBody(node.body).replace(/\r\n/g, "\n");
@@ -536,6 +658,10 @@ export class Interpreter {
    * Visit FENCE: the rendered body in a code fence sized to it
    */
   private visitFence(node: FenceNode): string {
+    return this.enter(node, "block", () => this.runFence(node));
+  }
+
+  private runFence(node: FenceNode): string {
     const lang = this.at(node, () => {
       const value = this.fenceLang(node);
       checkFenceLang(value);
@@ -568,7 +694,7 @@ export class Interpreter {
    */
   private visitList(node: ListNode, depth = 0): string {
     const lines: string[] = [];
-    this.collectListItems(node.items, depth, lines);
+    this.enter(node, "block", () => this.collectListItems(node.items, depth, lines));
     return lines.join("\n");
   }
 
@@ -595,17 +721,17 @@ export class Interpreter {
           length += line.length;
         }
       } else if (child.type === "If") {
-        length += this.collectListItems(
-          this.selectBranch(child as IfNode),
-          depth,
-          lines
+        length += this.enter(child, "block", () =>
+          this.collectListItems(this.selectBranch(child as IfNode), depth, lines)
         );
       } else if (child.type === "For") {
-        this.runLoop(child as ForNode, false, (nodes) => {
-          const added = this.collectListItems(nodes, depth, lines);
-          length += added;
-          return added;
-        });
+        this.enter(child, "block", () =>
+          this.runLoop(child as ForNode, false, (nodes) => {
+            const added = this.collectListItems(nodes, depth, lines);
+            length += added;
+            return added;
+          })
+        );
       }
     }
     return length;
@@ -628,18 +754,13 @@ export class Interpreter {
     }
 
     // Render content, in a block of its own
-    const content = this.block(node.content, () => {
-      let text = "";
-      for (const child of node.content) {
-        if (child.type === "List") {
-          // Nested list
-          text += "\n" + this.visitList(child as ListNode, depth + 1);
-        } else {
-          text += this.visit(child);
-        }
-      }
-      return text;
-    });
+    const content = this.block(node.content, () =>
+      this.renderChildren(node.content, undefined, (child) =>
+        child.type === "List"
+          ? "\n" + this.visitList(child as ListNode, depth + 1) // nested list
+          : this.visit(child)
+      )
+    );
 
     return content.trim();
   }
@@ -648,6 +769,10 @@ export class Interpreter {
    * Visit TABLE node
    */
   private visitTable(node: TableNode): string {
+    return this.enter(node, "block", () => this.runTable(node));
+  }
+
+  private runTable(node: TableNode): string {
     const rows: string[][] = [];
 
     // Process header
@@ -719,15 +844,19 @@ export class Interpreter {
   private rowsFromChild(child: TableChild, rows: string[][], strict: boolean): number {
     if (child.type === "For") {
       let length = 0;
-      this.runLoop(child, true, (nodes) => {
-        const added = this.tableRowsFrom(nodes, rows, strict);
-        length += added;
-        return added;
-      });
+      this.enter(child, "block", () =>
+        this.runLoop(child, true, (nodes) => {
+          const added = this.tableRowsFrom(nodes, rows, strict);
+          length += added;
+          return added;
+        })
+      );
       return length;
     }
     if (child.type === "If") {
-      return this.tableRowsFrom(this.selectBranch(child), rows, strict);
+      return this.enter(child, "block", () =>
+        this.tableRowsFrom(this.selectBranch(child), rows, strict)
+      );
     }
     const cells = this.processCellsArray(child.cells);
     rows.push(cells);
@@ -763,7 +892,7 @@ export class Interpreter {
         add(text.split("|").map((cell) => cell.trim()));
       }
     };
-    const inline = ["Text", "Variable", "Ternary", "Comment", "Set"];
+    const inline = ["Text", "Variable", "Ternary", "Comment", "Set", "Call"];
     let run: ASTNode[] = [];
     const flush = (): void => {
       if (run.length === 1) {

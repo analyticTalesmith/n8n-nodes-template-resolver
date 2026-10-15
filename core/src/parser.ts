@@ -25,12 +25,15 @@ import {
   FenceLang,
   FilterCall,
   SetNode,
+  DefineNode,
+  CallNode,
   ValueExpr,
   DEFAULT_LIMITS,
 } from "./types";
 import { SyntaxError, TypeError, LimitError } from "./errors";
 import { parseFilter } from "./filters";
 import { parseLiteral, parseWhenMatch } from "./expressions";
+import { parseCallHeader, parseDefineHeader } from "./macros";
 
 const SET_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
 const BLOCK_ARGUMENT = /(\w+)=("[^"]*"|'[^']*'|\S*)|"[^"]*"|'[^']*'|\S+/g;
@@ -52,6 +55,8 @@ export class Parser {
   private itemDepth = 0;
   /** Item names of the FOR bodies that enclose the current token (not their ELSE bodies) */
   private readonly loopNames: string[] = [];
+  /** Parameter names of the DEFINE whose body is being parsed */
+  private macroParams: string[] = [];
   private readonly maxDepth: number;
   private readonly maxNodes: number;
 
@@ -115,6 +120,10 @@ export class Parser {
         return this.parseTableRow();
       case TokenType.SET:
         return this.parseSet();
+      case TokenType.DEFINE:
+        return this.parseDefine();
+      case TokenType.CALL:
+        return this.parseCall();
       case TokenType.COMMENT:
         return this.parseComment();
       case TokenType.EOF:
@@ -269,6 +278,9 @@ export class Parser {
     if (this.loopNames.includes(name)) {
       fail(`"${name}" is the item of an enclosing FOR`);
     }
+    if (this.macroParams.includes(name)) {
+      fail(`"${name}" is a parameter of the enclosing DEFINE`);
+    }
     if (rest.startsWith("=")) fail("a single = binds, == compares");
     const expression = rest.trim();
     if (expression === "") fail("the expression is missing");
@@ -355,6 +367,88 @@ export class Parser {
     }
     parts.push(text.slice(start));
     return parts;
+  }
+
+  /**
+   * Parse DEFINE: {{DEFINE name(param, ...)}}...{{END_DEFINE}}. It sits at the
+   * top level only: any block around it (another DEFINE included) is an error
+   * at the DEFINE.
+   */
+  private parseDefine(): DefineNode {
+    if (this.depth > 0) {
+      const token = this.current();
+      throw new SyntaxError(
+        "A {{DEFINE}} must sit at the top level, outside every block",
+        token.line,
+        token.column,
+        "Move the DEFINE out of the block; a CALL can still sit anywhere"
+      );
+    }
+    return this.nested(() => this.parseDefineBlock());
+  }
+
+  private parseDefineBlock(): DefineNode {
+    const token = this.open(TokenType.DEFINE);
+    const header = parseDefineHeader(token.value.slice("DEFINE".length));
+    if ("error" in header) {
+      throw new SyntaxError(
+        `Invalid DEFINE syntax: ${header.error}`,
+        token.line,
+        token.column,
+        "Expected: {{DEFINE name(param, ...)}}"
+      );
+    }
+
+    this.macroParams = header.params;
+    const body: ASTNode[] = [];
+    while (!this.check(TokenType.END_DEFINE)) {
+      if (this.isAtEnd()) {
+        throw new SyntaxError(
+          "Unclosed {{DEFINE}} block",
+          token.line,
+          token.column,
+          "Add {{END_DEFINE}}"
+        );
+      }
+      const node = this.parseNode();
+      if (node) body.push(node);
+    }
+    this.consume(TokenType.END_DEFINE);
+    this.macroParams = [];
+
+    return {
+      type: "Define",
+      name: header.name,
+      params: header.params,
+      body,
+      line: token.line,
+      column: token.column,
+    };
+  }
+
+  /**
+   * Parse CALL: {{CALL name(arg, ...)}}, a single tag. Every problem is a
+   * syntax error at the tag, found at parse time even in a branch that never
+   * renders.
+   */
+  private parseCall(): CallNode {
+    const token = this.open(TokenType.CALL);
+    const header = parseCallHeader(token.value.slice("CALL".length));
+    if ("error" in header) {
+      throw new SyntaxError(
+        `Invalid CALL syntax: ${header.error}`,
+        token.line,
+        token.column,
+        "Expected: {{CALL name(arg, ...)}} with paths, quoted text, numbers, true, false or null as arguments"
+      );
+    }
+    return {
+      type: "Call",
+      name: header.name,
+      args: header.args,
+      line: token.line,
+      column: token.column,
+    };
   }
 
   /**

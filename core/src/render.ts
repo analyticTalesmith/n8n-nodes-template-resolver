@@ -4,7 +4,7 @@ import {
   WhitespaceOptions,
   withDefaultLimits,
 } from "./types";
-import { DiagnosticCode, TemplateError } from "./errors";
+import { DiagnosticCode, LimitError, TemplateError } from "./errors";
 import { Lexer } from "./lexer";
 import { Parser } from "./parser";
 import { Interpreter } from "./interpreter";
@@ -79,6 +79,10 @@ export function render(
     }).parse();
     output = interpreter.interpret(ast);
   } catch (error) {
+    // a stack overflow inside a very deep template is a depth error, not a crash
+    if (error instanceof RangeError) {
+      return failure(toDiagnostic(tooDeep()), interpreter.iterationCount);
+    }
     if (!(error instanceof TemplateError)) throw error;
     return failure(toDiagnostic(error), interpreter.iterationCount);
   }
@@ -132,6 +136,17 @@ function failure(diagnostic: Diagnostic, iterations: number): RenderResult {
     stats: { chars: 0, estTokens: 0, sectionsOmitted: 0, iterations },
     diagnostics: [diagnostic],
   };
+}
+
+/** The error for a template that overflowed the stack; no position is known */
+function tooDeep(): TemplateError {
+  return new LimitError(
+    "limit-depth",
+    "The template nests too deeply to run",
+    1,
+    1,
+    "Flatten the nested blocks or lower limits.maxDepth"
+  );
 }
 
 function toDiagnostic(error: TemplateError): Diagnostic {

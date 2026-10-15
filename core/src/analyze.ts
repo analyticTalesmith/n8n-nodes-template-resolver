@@ -1,5 +1,12 @@
 import { Lexer } from "./lexer";
 import { Parser } from "./parser";
+import { LimitError, SyntaxError } from "./errors";
+import {
+  buildMacroTable,
+  findCalls,
+  linkProblems,
+  topLevelDefines,
+} from "./macros";
 import { FILTER_REGISTRY, undeclaredParameterMessages } from "./filters";
 import {
   conditionOperands,
@@ -10,7 +17,9 @@ import {
 } from "./expressions";
 import {
   ASTNode,
+  CallNode,
   CaseNode,
+  DefineNode,
   FenceNode,
   ForNode,
   IfNode,
@@ -34,7 +43,8 @@ export type UsageKind =
   | "for"
   | "list_item"
   | "table"
-  | "set";
+  | "set"
+  | "call";
 
 export interface VariableUsage {
   /** Root name, the part before the first dot */
@@ -62,6 +72,7 @@ export interface AnalysisDiagnostic {
 }
 
 export type BlockKind =
+  | "DEFINE"
   | "IF"
   | "CASE"
   | "FOR"
@@ -76,6 +87,8 @@ export interface TemplateAnalysis {
   /** Count per block kind present in the template */
   blocks: Partial<Record<BlockKind, number>>;
   diagnostics: AnalysisDiagnostic[];
+  /** The macros the template defines, in source order; present only when it defines any */
+  macros?: { name: string; params: string[] }[];
 }
 
 /** Nesting bound for analyze when the caller sets no maxDepth */
@@ -84,19 +97,39 @@ const ANALYZE_MAX_DEPTH = 256;
 /**
  * Report the variables a template reads and the filters it applies, derived
  * from the parsed template. Loop item names (inside their loop) and
- * @-metadata are not inputs.
+ * @-metadata are not inputs. A macro body is walked once and a CALL is never
+ * followed, so the work is linear in the template however the macros call
+ * each other.
+ *
+ * A duplicate macro name or a wrong argument count is thrown like a parse
+ * error; an unknown macro is a diagnostic, since partials may supply it at
+ * render.
  */
 export function analyze(
   template: string,
   options?: { limits?: Partial<Limits> }
 ): TemplateAnalysis {
-  const ast = new Parser(new Lexer(template).tokenize(), {
-    maxDepth: options?.limits?.maxDepth ?? ANALYZE_MAX_DEPTH,
-    maxNodes: options?.limits?.maxNodes,
-  }).parse();
-  const walker = new Walker();
-  walker.visitBlock(ast.body);
-  return walker.result();
+  try {
+    const ast = new Parser(new Lexer(template).tokenize(), {
+      maxDepth: options?.limits?.maxDepth ?? ANALYZE_MAX_DEPTH,
+      maxNodes: options?.limits?.maxNodes,
+    }).parse();
+    const macros = buildMacroTable(topLevelDefines(ast));
+    const walker = new Walker(macros);
+    walker.checkCounts(findCalls(ast.body));
+    walker.visitBlock(ast.body);
+    return walker.result();
+  } catch (error) {
+    // a stack overflow in a very deep template is a depth error, not a crash
+    if (!(error instanceof RangeError)) throw error;
+    throw new LimitError(
+      "limit-depth",
+      "The template nests too deeply to analyze",
+      1,
+      1,
+      "Flatten the nested blocks or lower limits.maxDepth"
+    );
+  }
 }
 
 interface Entry {
@@ -113,9 +146,25 @@ class Walker {
   /** Names bound so far in each enclosing block, innermost last: loop items and SET locals */
   private scopes: Set<string>[] = [];
   private tableDepth = 0;
+  private macroList: { name: string; params: string[] }[] = [];
+
+  constructor(private readonly macros: Map<string, DefineNode>) {}
+
+  /** Throw the first call, in source order, that gives a known macro the wrong number of arguments */
+  checkCounts(calls: CallNode[]): void {
+    const wrong = linkProblems(calls, this.macros).find((p) => p.kind === "arity");
+    if (wrong) {
+      throw new SyntaxError(
+        wrong.message,
+        wrong.call.line,
+        wrong.call.column,
+        "Give the call as many arguments as the macro has parameters"
+      );
+    }
+  }
 
   result(): TemplateAnalysis {
-    return {
+    const result: TemplateAnalysis = {
       variables: Array.from(this.entries, ([name, entry]) => ({
         name,
         paths: Array.from(entry.paths),
@@ -130,6 +179,8 @@ class Walker {
       blocks: this.blocks,
       diagnostics: this.diagnostics,
     };
+    if (this.macroList.length > 0) result.macros = this.macroList;
+    return result;
   }
 
   visitAll(nodes: ASTNode[]): void {
@@ -156,6 +207,11 @@ class Walker {
         );
       case "Set":
         return this.visitSet(node as SetNode);
+      case "Define":
+        this.countBlock("DEFINE");
+        return this.visitDefine(node as DefineNode);
+      case "Call":
+        return this.visitCall(node as CallNode);
       case "If":
         this.countBlock("IF");
         return this.visitIf(node as IfNode, "if");
@@ -187,6 +243,39 @@ class Walker {
 
   private countBlock(kind: BlockKind): void {
     this.blocks[kind] = (this.blocks[kind] ?? 0) + 1;
+  }
+
+  /**
+   * A DEFINE body is walked once, as a block of its own: its names are its
+   * parameters, and nothing of the scope around the DEFINE is visible in it
+   */
+  private visitDefine(node: DefineNode): void {
+    this.macroList.push({ name: node.name, params: node.params });
+    const outerScopes = this.scopes;
+    const outerTableDepth = this.tableDepth;
+    this.scopes = [];
+    this.tableDepth = 0;
+    try {
+      this.visitBlock(node.body, node.params);
+    } finally {
+      this.scopes = outerScopes;
+      this.tableDepth = outerTableDepth;
+    }
+  }
+
+  /** A CALL reads each path argument; an unknown macro is a diagnostic; the body is not followed */
+  private visitCall(node: CallNode): void {
+    for (const arg of node.args) {
+      if (arg.kind === "path") this.record(arg.path.join("."), "call", false);
+    }
+    if (!this.macros.has(node.name)) {
+      this.diagnostics.push({
+        code: "unknown-macro",
+        message: `Unknown macro: ${node.name}`,
+        line: node.line,
+        column: node.column,
+      });
+    }
   }
 
   /**

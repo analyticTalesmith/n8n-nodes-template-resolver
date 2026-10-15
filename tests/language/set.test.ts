@@ -864,7 +864,7 @@ describe("st-keywords: the keyword table", () => {
   });
   it("st-keywords: the derived block table keeps today's rows and adds SET with no closer", () => {
     const got = new Map(derivedPairs());
-    const want = new Map<string, string | undefined>([...OLD_PAIRS, ["SET", undefined]]);
+    const want = new Map<string, string | undefined>([...OLD_PAIRS, ["SET", undefined], ["DEFINE", "END_DEFINE"], ["CALL", undefined]]);
     check([...got.entries()].sort(), "the openers with their closers").toEqual([...want.entries()].sort());
   });
   it("st-keywords: every opener in the table has a spec().blocks entry with the closer the table gives", () => {

@@ -35,6 +35,9 @@ export const KEYWORDS: Readonly<Record<string, TokenType>> = {
   FENCE: TokenType.FENCE,
   END_FENCE: TokenType.END_FENCE,
   SET: TokenType.SET,
+  DEFINE: TokenType.DEFINE,
+  END_DEFINE: TokenType.END_DEFINE,
+  CALL: TokenType.CALL,
 };
 
 /** Block closers checked for balance, each with the opener it closes */
@@ -46,6 +49,7 @@ const CLOSERS: Partial<Record<TokenType, TokenType>> = {
   [TokenType.END_LIST]: TokenType.LIST,
   [TokenType.END_SECTION]: TokenType.SECTION,
   [TokenType.END_FENCE]: TokenType.FENCE,
+  [TokenType.END_DEFINE]: TokenType.DEFINE,
 };
 const OPENERS = new Set(Object.values(CLOSERS));
 
@@ -62,6 +66,7 @@ const OPENERS = new Set(Object.values(CLOSERS));
  * - Sections: {{SECTION "Title" level=2}}, {{END_SECTION}}
  * - Code fences: {{FENCE lang="md"}}, {{END_FENCE}}
  * - Locals: {{SET name = expression}}
+ * - Macros: {{DEFINE name(params)}}...{{END_DEFINE}}, {{CALL name(args)}}
  * - Ternary: {{condition ? "true" : "false"}}
  * - Comments: {{# comment #}}
  * - Literal blocks: {{RAW}}...{{END_RAW}}; \{{ is a literal brace pair
