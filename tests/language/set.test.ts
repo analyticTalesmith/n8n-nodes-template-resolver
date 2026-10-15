@@ -707,9 +707,9 @@ const SIZE_ROWS: Row[] = [
   row("a SET of a long text under the default limit", "{{SET x = long | upper}}${{x | length}}", OUT("30")),
   // astral characters keep their length rule (UTF-16 units)
   row("astral: a literal with a filter within the limit binds", '{{SET x = "😀😀" | upper}}${{x | length}}', OUT("4"), { limits: { maxOutputChars: 4 } }),
-  always("astral: a literal with a filter over the limit is a limit-output at the SET", 'a\n  §{{SET x = "😀😀" | upper}}${{x | length}}', "limit-output", undefined, { limits: { maxOutputChars: 3 } }),
+  always("astral: a literal with a filter over the limit is a limit-output at the SET", 'a\n  §{{SET x = "😀😀😀" | upper}}${{x | length}}', "limit-output", undefined, { limits: { maxOutputChars: 4 } }),
   row("astral: a data text within the limit binds", "{{SET x = e2 | upper}}z", OUT("z"), { data: { e2: "😀😀" }, limits: { maxOutputChars: 4 } }),
-  always("astral: a data text over the limit is a limit-output at the SET", "a\n  §{{SET x = e2 | upper}}z", "limit-output", undefined, { data: { e2: "😀😀" }, limits: { maxOutputChars: 3 } }),
+  always("astral: a data text over the limit is a limit-output at the SET", "a\n  §{{SET x = e2 | upper}}z", "limit-output", undefined, { data: { e2: "😀😀😀" }, limits: { maxOutputChars: 4 } }),
   row("astral: the same text through ${{ }} within the limit", "${{e2 | upper}}", OUT("😀😀"), { data: { e2: "😀😀" }, limits: { maxOutputChars: 4 } }),
   row("astral: a chain through ${{ }} over the limit", "${{e2 | upper}}", ERR("limit-output", 1, 1), { data: { e2: "😀😀" }, limits: { maxOutputChars: 3 } }),
   row("astral: length of a bound astral text keeps the filter rule", '{{SET x = "😀😀"}}${{x | length}}', OUT("4")),
