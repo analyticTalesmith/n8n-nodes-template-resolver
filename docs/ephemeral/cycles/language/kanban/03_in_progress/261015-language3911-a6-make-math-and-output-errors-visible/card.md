@@ -4,7 +4,7 @@ Any agent picking this up: read the documents linked below, change only the file
 
 ## Goal and why
 
-Math and output mistakes stop being silent: division or modulo by zero, a malformed math expression and a cyclic value end render with a located error in every mode, results print without binary float noise and a hyphen between two letters is part of a name. All in render only: resolveTemplate keeps its outputs.
+Math and output mistakes stop being silent: division or modulo by zero, a malformed math expression and a cyclic value end render with a located error in every mode, results print without binary float noise and a hyphen between two letters is part of a name. Only division by zero and float printing are render-only: resolveTemplate keeps its outputs for them; the hyphen rule, malformed math and unprintable values apply in both entry points.
 
 ## Must-haves
 
@@ -24,7 +24,7 @@ Math and output mistakes stop being silent: division or modulo by zero, a malfor
 
 ## Must-nots
 
-- change any existing test expectation other than the one named amendment (if any)
+- change any existing test expectation
 - add a runtime dependency
 - evaluate template text as code or compile a template-supplied regular expression
 - let an unknown name or bad parameter pass in lenient mode (ADR 0003)
