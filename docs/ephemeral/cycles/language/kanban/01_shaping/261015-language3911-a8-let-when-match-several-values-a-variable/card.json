@@ -33,7 +33,7 @@
       "core/src/spec.ts",
       "core/src/expressions.ts"
     ],
-    "frozen": false
+    "frozen": true
   },
   "criteria": [
     {
@@ -87,5 +87,19 @@
   "blast_radius": [
     "template-resolver"
   ],
-  "docs_deferred": true
+  "docs_deferred": true,
+  "freeze": {
+    "at": "2026-10-15T04:57:54.398Z",
+    "brief_sha256": "ba1876ac641e58aeaed2283dc6132e2ee0632eec1d38fddc0728e71447a47d0f",
+    "brief_core_sha256": "36ee6eef2805fc50139c37da668eb639310fed309b74795904d6527868aca7c7",
+    "manifest_sha256": "aee55f05fbec45e763bd05f61c36f84abc3f29eb5dd042aba72ec13885c9df3d",
+    "criteria_sha256": "b30f66f10a6339ca08c05b2daf442422c53149225c983a6421bf1fae8a7d455b",
+    "scope_sha256": "3e9c7b8babdef16920eeeda307d50d66d5288c1490a395fc523ba984e16442ab",
+    "scope_parts": {
+      "files_scope": "fde493aae7c855dd38cc84053deb7db7d7e32f7e98f3f2ab96256a8ae0048bec",
+      "docs_impact": "734a983468bce1e95b3ea76d75d42c73287af7532427891c8225fc0f0e1f04dd",
+      "docs_deferred": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+      "gate": "5b9468df4827755d9e665076750b43ca478aee5933ebdc1d9a7eb38a87305c72"
+    }
+  }
 }
