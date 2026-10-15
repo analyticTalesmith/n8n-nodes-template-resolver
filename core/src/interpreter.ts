@@ -588,7 +588,7 @@ export class Interpreter {
     }
 
     // Process rows (ROW, FOR and IF blocks, in source order)
-    for (const child of node.rows) this.rowsFromChild(child, rows);
+    for (const child of node.rows) this.rowsFromChild(child, rows, child.type !== "For");
 
     // Auto-pad rows to match header length
     const maxCols = Math.max(...rows.map((r) => r.length));
@@ -641,20 +641,24 @@ export class Interpreter {
    * Add the rows a TABLE child builds: a ROW gives its cells, an IF the rows
    * of its branch, a FOR the rows of each iteration (or of its ELSE body). A
    * TABLE never errors on the iterable of a FOR that builds rows.
+   * `strict` is a row context: an IF written directly in the TABLE and every FOR
+   * and IF nested in it, which the parser guarantees hold only ROW, FOR and IF.
+   * The body of a FOR written directly in the TABLE is parsed generically, so it
+   * is not strict.
    * Returns the characters the rows hold.
    */
-  private rowsFromChild(child: TableChild, rows: string[][]): number {
+  private rowsFromChild(child: TableChild, rows: string[][], strict: boolean): number {
     if (child.type === "For") {
       let length = 0;
       this.runLoop(child, true, (nodes) => {
-        const added = this.tableRowsFrom(nodes, rows);
+        const added = this.tableRowsFrom(nodes, rows, strict);
         length += added;
         return added;
       });
       return length;
     }
     if (child.type === "If") {
-      return this.tableRowsFrom(this.selectBranch(child), rows);
+      return this.tableRowsFrom(this.selectBranch(child), rows, strict);
     }
     const cells = this.processCellsArray(child.cells);
     rows.push(cells);
@@ -667,12 +671,19 @@ export class Interpreter {
    * nodes is rendered together and split on a pipe.
    * Returns the characters the rows hold.
    */
-  private tableRowsFrom(nodes: ASTNode[], rows: string[][]): number {
+  private tableRowsFrom(nodes: ASTNode[], rows: string[][], strict: boolean): number {
     let length = 0;
     const add = (cells: string[]): void => {
       rows.push(cells);
       length += cells.reduce((sum, cell) => sum + cell.length, 0);
     };
+    if (strict) {
+      for (const bodyNode of nodes) {
+        if (bodyNode.type === "TableRow") add(this.processCellsArray((bodyNode as TableRowNode).cells));
+        else if (bodyNode.type === "For" || bodyNode.type === "If") length += this.rowsFromChild(bodyNode as TableChild, rows, true);
+      }
+      return length;
+    }
 
     const addText = (text: string): void => {
       if (text.trim()) {
@@ -696,7 +707,7 @@ export class Interpreter {
         add(this.processCellsArray((bodyNode as TableRowNode).cells));
       } else if (holdsRow(bodyNode)) {
         flush();
-        length += this.rowsFromChild(bodyNode as TableChild, rows);
+        length += this.rowsFromChild(bodyNode as TableChild, rows, false);
       } else if (inline.includes(bodyNode.type)) {
         run.push(bodyNode);
       } else {

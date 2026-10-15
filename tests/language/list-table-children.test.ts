@@ -853,3 +853,28 @@ describe("lc-pipes: a pipe after an even run of backslashes is escaped in a tabl
 describe("lc-compat: templates that were valid keep their output", () => {
   it.each(expand(COMPAT_ROWS))("lc-compat: [$entry] $name", ({ entry, r }) => verify(entry, r, "lc-compat"));
 });
+
+// =====================================================================================
+// lc-table and lc-errors: a FOR that holds no ROW inside an IF that builds rows
+// =====================================================================================
+
+// Added in review round one. A FOR with no ROW (a comment only) inside an IF in a TABLE was rendered as a plain FOR and
+// threw for a non-iterable in strict mode. A FOR in a row context never errors on a non-iterable, and a missing name
+// keeps its strict missing-variable. The control rows write the FOR directly in the TABLE.
+const ROW_CONTEXT_ROWS: Row[] = [
+  { name: "a FOR with no ROW in an IF over a non-iterable object renders the empty table", tpl: "{{TABLE}}{{IF t}}{{FOR obj AS x}}{{# row later #}}{{END_FOR}}{{END_IF}}{{END_TABLE}}", data: D, want: OUT("") },
+  { name: "a FOR with no ROW in an IF over null renders the empty table", tpl: "{{TABLE}}{{IF t}}{{FOR nul AS x}}{{# row later #}}{{END_FOR}}{{END_IF}}{{END_TABLE}}", data: D, want: OUT("") },
+  { name: "a FOR with no ROW in an IF over an array renders no rows", tpl: "{{TABLE}}{{IF t}}{{FOR xs AS x}}{{# row later #}}{{END_FOR}}{{END_IF}}{{END_TABLE}}", data: D, want: OUT("") },
+  { name: "a FOR with no ROW in an IF over an empty array renders its ELSE rows", tpl: "{{TABLE}}{{IF t}}{{FOR empty AS x}}{{# row later #}}{{ELSE}}{{ROW}}none|0{{END_ROW}}{{END_FOR}}{{END_IF}}{{END_TABLE}}", data: D, want: OUT("| none | 0 |") },
+  { name: "a FOR with no ROW in an IF over a non-iterable object renders its ELSE rows", tpl: "{{TABLE}}{{IF t}}{{FOR obj AS x}}{{# row later #}}{{ELSE}}{{ROW}}none|0{{END_ROW}}{{END_FOR}}{{END_IF}}{{END_TABLE}}", data: D, want: OUT("| none | 0 |") },
+  { name: "a FOR with no ROW in a FOR in an IF over a non-iterable object renders the empty table", tpl: "{{TABLE}}{{IF t}}{{FOR ys AS y}}{{FOR obj AS x}}{{# row later #}}{{END_FOR}}{{END_FOR}}{{END_IF}}{{END_TABLE}}", data: D, want: OUT("") },
+  { name: "a FOR with no ROW in an IF in an IF in a TABLE with a header keeps the header", tpl: "{{TABLE}}{{HEADER}}A|B{{END_HEADER}}{{IF t}}{{IF t}}{{FOR obj AS x}}{{# row later #}}{{END_FOR}}{{END_IF}}{{END_IF}}{{END_TABLE}}", data: D, want: OUT("| A | B |\n|:-----|:-----|") },
+  { name: "a FOR with no ROW in an IF ELSE branch over a non-iterable object renders the empty table", tpl: "{{TABLE}}{{IF f}}{{ROW}}a|1{{END_ROW}}{{ELSE}}{{FOR obj AS x}}{{# row later #}}{{END_FOR}}{{END_IF}}{{END_TABLE}}", data: D, want: OUT("") },
+  { name: "a missing iterable in a FOR with no ROW in an IF: strict missing-variable at the FOR, lenient silent", tpl: "{{TABLE}}{{IF t}}\n  {{FOR nope AS x}}{{# row later #}}{{END_FOR}}{{END_IF}}{{END_TABLE}}", data: D, want: SL(ERR("missing-variable", 2, 3, "nope"), OUT("")) },
+  { name: "control: a FOR with no ROW directly in the TABLE over a non-iterable object renders the empty table", tpl: "{{TABLE}}{{FOR obj AS x}}{{# row later #}}{{END_FOR}}{{END_TABLE}}", data: D, want: OUT("") },
+  { name: "control: a FOR with no ROW directly in the TABLE over an empty array with ELSE rows", tpl: "{{TABLE}}{{FOR empty AS x}}{{# row later #}}{{ELSE}}{{ROW}}none|0{{END_ROW}}{{END_FOR}}{{END_TABLE}}", data: D, want: OUT("| none | 0 |") },
+];
+
+describe("lc-table, lc-errors: a FOR with no ROW in an IF that builds rows never errors on a non-iterable", () => {
+  it.each(expand(ROW_CONTEXT_ROWS))("lc-table: [$entry] $name", ({ entry, r }) => verify(entry, r, "lc-table"));
+});
