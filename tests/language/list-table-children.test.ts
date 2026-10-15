@@ -470,15 +470,15 @@ const PIPE_ROWS: Row[] = [
   { name: "a run of backslashes split across two values", tpl: "{{TABLE}}{{ROW}}${{v}}${{w}}|x{{END_ROW}}{{END_TABLE}}", data: { ...D, ...{"v":"a\\\\","w":"|b"} }, want: OUT("| a\\\\\\|b | x |") },
   { name: "an odd run split across two values", tpl: "{{TABLE}}{{ROW}}${{v}}${{w}}|x{{END_ROW}}{{END_TABLE}}", data: { ...D, ...{"v":"a\\\\\\","w":"|b"} }, want: OUT("| a\\\\\\|b | x |") },
   { name: "two backslashes before a pipe in the second cell", tpl: "{{TABLE}}{{ROW}}k|${{v}}{{END_ROW}}{{END_TABLE}}", data: { ...D, ...{"v":"a\\\\|b"} }, want: OUT("| k | a\\\\\\|b |") },
-  { name: "two backslashes before a pipe in a header cell", tpl: "{{TABLE}}{{HEADER}}${{v}}|h{{END_HEADER}}{{ROW}}1|2{{END_ROW}}{{END_TABLE}}", data: { ...D, ...{"v":"a\\\\|b"} }, want: OUT("| a\\\\\\|b | h |\n|:-----|:-----|\n| 1 | 2 |") },
-  { name: "three backslashes before a pipe in a header cell", tpl: "{{TABLE}}{{HEADER}}${{v}}|h{{END_HEADER}}{{ROW}}1|2{{END_ROW}}{{END_TABLE}}", data: { ...D, ...{"v":"a\\\\\\|b"} }, want: OUT("| a\\\\\\|b | h |\n|:-----|:-----|\n| 1 | 2 |") },
+  { name: "two backslashes before a pipe in a header cell", tpl: "{{TABLE}}{{HEADER}}${{v}}|h{{END_HEADER}}{{ROW}}1|2{{END_ROW}}{{END_TABLE}}", data: { ...D, ...{"v":"a\\\\|b"} }, want: OUT("| a\\\\\\|b | h |\n|:------|:-----|\n| 1 | 2 |") },
+  { name: "three backslashes before a pipe in a header cell", tpl: "{{TABLE}}{{HEADER}}${{v}}|h{{END_HEADER}}{{ROW}}1|2{{END_ROW}}{{END_TABLE}}", data: { ...D, ...{"v":"a\\\\\\|b"} }, want: OUT("| a\\\\\\|b | h |\n|:------|:-----|\n| 1 | 2 |") },
   { name: "no backslash before a pipe in a header cell", tpl: "{{TABLE}}{{HEADER}}${{v}}|h{{END_HEADER}}{{ROW}}1|2{{END_ROW}}{{END_TABLE}}", data: { ...D, ...{"v":"a|b"} }, want: OUT("| a\\|b | h |\n|:-----|:-----|\n| 1 | 2 |") },
   { name: "a pipe after two backslashes in a generated row of an IF", tpl: "{{TABLE}}{{IF t}}{{FOR vs AS v}}{{ROW}}${{v}}|x{{END_ROW}}{{END_FOR}}{{END_IF}}{{END_TABLE}}", data: { ...D, ...{"vs":["a\\\\|b","a\\\\\\|b","a|b","a\\|b","a\\\\\\\\|b"]} }, want: OUT("| a\\\\\\|b | x |\n| a\\\\\\|b | x |\n| a\\|b | x |\n| a\\|b | x |\n| a\\\\\\\\\\|b | x |") },
   { name: "a pipe after two backslashes in a row of a direct TABLE FOR", tpl: "{{TABLE}}{{FOR vs AS v}}{{ROW}}${{v}}|x{{END_ROW}}{{END_FOR}}{{END_TABLE}}", data: { ...D, ...{"vs":["a\\\\|b","a\\\\\\|b"]} }, want: OUT("| a\\\\\\|b | x |\n| a\\\\\\|b | x |") },
   { name: "a pipe after two backslashes in a row from an IF branch", tpl: "{{TABLE}}{{IF f}}{{ROW}}n|n{{END_ROW}}{{ELSE}}{{ROW}}${{v}}|x{{END_ROW}}{{END_IF}}{{END_TABLE}}", data: { ...D, ...{"v":"a\\\\|b"} }, want: OUT("| a\\\\\\|b | x |") },
   { name: "a pipe after two backslashes in a row from a FOR with a window", tpl: "{{TABLE}}{{IF t}}{{FOR vs AS v limit=1 offset=1}}{{ROW}}${{v}}|${{@total}}{{END_ROW}}{{END_FOR}}{{END_IF}}{{END_TABLE}}", data: { ...D, ...{"vs":["z","a\\\\|b","y"]} }, want: OUT("| a\\\\\\|b | 1 |") },
   { name: "a pipe after two backslashes in a cell that holds an IF", tpl: "{{TABLE}}{{ROW}}{{IF t}}${{v}}{{END_IF}}|x{{END_ROW}}{{END_TABLE}}", data: { ...D, ...{"v":"a\\\\|b"} }, want: OUT("| a\\\\\\|b | x |") },
-  { name: "a pipe after two backslashes in a header cell of a table with generated rows", tpl: "{{TABLE}}{{HEADER}}${{v}}|h{{END_HEADER}}{{IF t}}{{FOR xs AS x limit=1}}{{ROW}}${{x}}|1{{END_ROW}}{{END_FOR}}{{END_IF}}{{END_TABLE}}", data: { ...D, ...{"v":"a\\\\|b"} }, want: OUT("| a\\\\\\|b | h |\n|:-----|:-----|\n| a | 1 |") },
+  { name: "a pipe after two backslashes in a header cell of a table with generated rows", tpl: "{{TABLE}}{{HEADER}}${{v}}|h{{END_HEADER}}{{IF t}}{{FOR xs AS x limit=1}}{{ROW}}${{x}}|1{{END_ROW}}{{END_FOR}}{{END_IF}}{{END_TABLE}}", data: { ...D, ...{"v":"a\\\\|b"} }, want: OUT("| a\\\\\\|b | h |\n|:------|:-----|\n| a | 1 |") },
   { name: "a pipe after two backslashes in a list item is left as written (not a table cell)", tpl: "{{LIST}}{{LIST_ITEM}}${{v}}{{END_LIST_ITEM}}{{END_LIST}}", data: { ...D, ...{"v":"a\\\\|b"} }, want: OUT("1. a\\\\|b") },
   { name: "a pipe after two backslashes in plain text is left as written", tpl: "${{v}}", data: { ...D, ...{"v":"a\\\\|b"} }, want: OUT("a\\\\|b") },
 ];
@@ -585,7 +585,7 @@ function goldenCase(name: string): { count: number; message: string } {
       },
       { update: false }
     );
-    return { count: results.length, message: results[0]?.message ?? "no result" };
+    return { count: results.length, message: results[0]?.passed ? "" : (results[0]?.message ?? "no result") };
   } finally {
     fs.rmSync(only, { recursive: true, force: true });
   }
