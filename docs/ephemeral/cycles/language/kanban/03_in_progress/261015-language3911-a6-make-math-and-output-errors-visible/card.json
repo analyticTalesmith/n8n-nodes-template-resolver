@@ -88,13 +88,17 @@
     "tests/language/math.test.ts",
     "--json"
   ],
-  "claim": null,
+  "claim": {
+    "owner": "build:implementer",
+    "heartbeat": "2026-10-15T04:02:47.052Z",
+    "agent": "a"
+  },
   "blocked_on": null,
   "docs_impact": [
     "docs/living/architecture/modules/template-resolver.md",
     "docs/living/architecture/language-contract.md"
   ],
-  "started": null,
+  "started": "2026-10-15T04:02:47.240Z",
   "ended": null,
   "review_rounds": 0,
   "schema_version": 1,
@@ -115,5 +119,6 @@
       "docs_deferred": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
       "gate": "4c9c45e4d79e24f18cc347e92c1f39f373cca18a0b03c94b7464d628061e061c"
     }
-  }
+  },
+  "base_commit": "0cf253d3f419553c6c3b4828937721ba31cf133d"
 }
