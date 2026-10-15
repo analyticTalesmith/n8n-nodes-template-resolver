@@ -191,6 +191,14 @@ describe("cs-values: WHEN lists of values", () => {
     C("x", ['"a", ""'], { x: "a" }, O("1")),
     C("x", ['"", "a"'], { x: "b" }, O("D")),
     C("x", ['"a", ""'], {}, S(E("missing-variable", "case"), O("1"))),
+    // cs-backslash: a quote after a backslash closes the text when it ends the item
+    C("x", ["'C:\\'"], { x: "C:\\" }, O("1")),
+    C("x", ["'C:\\'"], { x: "C:" }, O("D")),
+    C("x", ['"a\\", "b"'], { x: "b" }, O("1")),
+    C("x", ['"a\\", "b"'], { x: "a\\" }, O("1")),
+    C("x", ['"a\\", "b"'], { x: "a" }, O("D")),
+    C("x", ['"x\\"y"'], { x: 'x\\"y' }, O("1")),
+    C("x", ['"x\\"y"'], { x: 'x"y' }, O("D")),
     // the old single form is unchanged
     C("x", ['"a"'], { x: "a" }, O("1")),
     C("x", ['"a"'], { x: "b" }, O("D")),
@@ -267,7 +275,10 @@ describe("cs-var: WHEN variable", () => {
     C("x", ["café"], { x: "a", "café": "a" }, O("1")),
     C("x", ["café"], { x: "a", "café": "b" }, O("D")),
     C("x", ["user.prénom"], { x: "Zoé", user: { "prénom": "Zoé" } }, O("1")),
-    C("x", ["== café"], { x: "a", "café": "a" }, O("1")),
+    // cs-backslash in a comparison
+    C("x", ["== 'C:\\'"], { x: "C:\\" }, O("1")),
+    C("x", ["!= 'C:\\'"], { x: "C:\\" }, O("D")),
+    C("x", ["== café"],{ x: "a", "café": "a" }, O("1")),
     C("x", ["other"], { x: [1, 2], other: [1, 2] }, O("1")),
     C("x", ["other"], { x: [1, 2], other: [1, 3] }, O("D")),
     C("x", ["other"], { x: "[1,2]", other: [1, 2] }, O("1")),
@@ -464,6 +475,20 @@ describe("cs-errors: bad WHEN tags are syntax errors at the tag", () => {
     '> 5, "a"',
     "a == b",
     "x==1",
+    // cs-name: a WHEN name follows the language's name rule
+    "limit-1",
+    'a-, "b"',
+    "a--b",
+    "a@b",
+    "-a",
+    "1-a",
+    "a.",
+    ".a",
+    "a..b",
+    '"a", limit-1',
+    '"a", a@b',
+    "> limit-1",
+    "== a--b",
   ];
   const tag = (w: string) => (w === "" ? "{{WHEN}}" : `{{WHEN ${w}}}`);
 
@@ -500,6 +525,21 @@ describe("cs-errors: bad WHEN tags are syntax errors at the tag", () => {
     const tpl = `a\n{{CASE x}}\n{{WHEN "a"}}Y\n  {{WHEN >= 1, 2}}Z{{END_CASE}}`;
     const o = run(entry, tpl, { x: "a" });
     expectLocated(entry, o, "syntax-error", 4, 3, "the bad second WHEN");
+  });
+
+  it.each(ENTRIES.flatMap((e) => ["first-name", "café", "user.prénom", "items.0"].map((w) => [e, w] as const)))(
+    "cs-name: [%s] WHEN %s still matches as a name",
+    (entry, w) => {
+      const data = { x: "5", "first-name": "5", café: "5", user: { prénom: "5" }, items: ["5"] };
+      const o = run(entry, `a\n{{CASE x}}\n{{WHEN ${w}}}Y{{DEFAULT}}D{{END_CASE}}`, data);
+      check(o.code, `${entry}: WHEN ${w} parses`).toBe("ok");
+      check((o.output ?? "").replace(/\s+/g, ""), `${entry}: WHEN ${w} matches`).toBe("aY");
+    }
+  );
+
+  it.each(ENTRIES)("cs-name: [%s] a loose name is a syntax-error, not a match, even with an empty subject", (entry) => {
+    const o = run(entry, "{{CASE x}}{{WHEN limit-1}}Y{{DEFAULT}}N{{END_CASE}}", { x: "" });
+    expectLocated(entry, o, "syntax-error", 1, 11, "WHEN limit-1");
   });
 
   const good: Array<[string, string]> = [

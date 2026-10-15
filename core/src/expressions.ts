@@ -570,11 +570,14 @@ function parseListLiteral(text: string): string[] | null {
 /**
  * Split text on the commas outside quotes, each part trimmed. Null when a
  * quote is never closed or when reject returns true for a character outside
- * quotes. Empty text gives one empty part.
+ * quotes. Empty text gives one empty part. With closeBeforeComma, a quote
+ * followed (after spaces) by a comma or the end closes the text even after a
+ * backslash, so 'C:\' is one text.
  */
 export function splitCommas(
   text: string,
-  reject?: (char: string) => boolean
+  reject?: (char: string) => boolean,
+  closeBeforeComma = false
 ): string[] | null {
   const parts: string[] = [];
   let quoteChar: string | null = null;
@@ -583,7 +586,12 @@ export function splitCommas(
   for (let i = 0; i < text.length; i++) {
     const char = text[i];
     if (quoteChar !== null) {
-      if (char === quoteChar && text[i - 1] !== "\\") quoteChar = null;
+      if (char === quoteChar) {
+        const escaped = text[i - 1] === "\\";
+        if (!escaped || (closeBeforeComma && endsItem(text, i + 1))) {
+          quoteChar = null;
+        }
+      }
       continue;
     }
     if (char === '"' || char === "'") {
@@ -602,9 +610,43 @@ export function splitCommas(
   return parts;
 }
 
+function endsItem(text: string, from: number): boolean {
+  const rest = text.slice(from).trimStart();
+  return rest === "" || rest[0] === ",";
+}
+
 const WHEN_HINT =
   'Write {{WHEN "a", "b"}}, {{WHEN variable}} or {{WHEN >= 10}}';
-const WHEN_PATH = /^[\p{L}_@][\p{L}\p{N}_@-]*(\.[\p{L}\p{N}_@-]+)*$/u;
+const NAME_START = /^[\p{L}_]$/u;
+const NAME_PART = /^[\p{L}\p{N}_]$/u;
+
+/**
+ * True when the text is a variable path: names joined by dots, the first
+ * starting with a letter, _ or @ (@ only as the very first character), a
+ * hyphen only between two ASCII letters
+ */
+function isWhenPath(text: string): boolean {
+  let segmentStart = true;
+  let index = 0;
+  for (const char of text) {
+    const at = index;
+    index += char.length;
+    if (char === ".") {
+      if (segmentStart) return false;
+      segmentStart = true;
+    } else if (segmentStart) {
+      const ok =
+        at === 0
+          ? NAME_START.test(char) || char === "@"
+          : NAME_PART.test(char);
+      if (!ok) return false;
+      segmentStart = false;
+    } else if (char === "-" ? !joinsName(text, at) : !NAME_PART.test(char)) {
+      return false;
+    }
+  }
+  return !segmentStart;
+}
 const WHEN_OPERATOR = /^(==|!=|>=|<=|>|<)/;
 
 function whenItem(text: string, fail: (message: string) => never): WhenItem {
@@ -620,7 +662,7 @@ function whenItem(text: string, fail: (message: string) => never): WhenItem {
       quoted: false,
     };
   }
-  if (WHEN_PATH.test(text)) return { kind: "path", path: text.split(".") };
+  if (isWhenPath(text)) return { kind: "path", path: text.split(".") };
   return fail(`Cannot read {{WHEN}} value: ${text}`);
 }
 
@@ -645,7 +687,7 @@ export function parseWhenMatch(
     const operator = comparison[1] as WhenOperator;
     const rest = written.slice(operator.length).trim();
     if (rest === "") return fail(`'${operator}' in {{WHEN}} needs a value`);
-    const parts = splitCommas(rest);
+    const parts = splitCommas(rest, undefined, true);
     if (parts === null) return fail("Unclosed quote in {{WHEN}}");
     if (parts.length !== 1) {
       return fail(`'${operator}' in {{WHEN}} takes exactly one value`);
@@ -653,7 +695,7 @@ export function parseWhenMatch(
     return { kind: "comparison", operator, item: whenItem(parts[0], fail) };
   }
 
-  const parts = splitCommas(written);
+  const parts = splitCommas(written, undefined, true);
   if (parts === null) return fail("Unclosed quote in {{WHEN}}");
   return { kind: "list", items: parts.map((part) => whenItem(part, fail)) };
 }
