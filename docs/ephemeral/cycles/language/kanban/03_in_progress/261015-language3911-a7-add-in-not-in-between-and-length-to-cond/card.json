@@ -163,5 +163,12 @@
         ]
       }
     }
+  ],
+  "test_amendments": [
+    {
+      "path": "tests/language/operators.test.ts",
+      "reason": "review round 1: rows added for the left side of in with no right side, booleans in between, operand text in messages and a quoted literal with no closing bracket; no existing row or expectation changed",
+      "approved_by": "project lead"
+    }
   ]
 }
