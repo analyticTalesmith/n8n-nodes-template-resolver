@@ -24,3 +24,4 @@ Working memory for this ticket, next to card.md. The lead updates it in small ed
 
 | Date | Path | Kind | Reason | Approved by |
 | --- | --- | --- | --- | --- |
+| 2026-10-15 | docs/ephemeral/work/261015-language2c13-a2-build-list-items-and-table-rows-with-for/spec.md | edit | notes on rows built from a FOR or IF inside a direct TABLE FOR body and on the strict row context, asked for by the project lead in review round one | project lead |
