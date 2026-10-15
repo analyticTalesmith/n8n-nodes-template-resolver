@@ -113,5 +113,7 @@ A person judges the cycle done when the SEO-brief showcase template (SET, FOR wi
 <!-- Session instructions: the depth script adds a dated one-line list under a Session instructions heading here, created on first use. Do not write instructions by hand or leave them only in chat. -->
 
 <!-- generated index: replace everything between this line and the end marker -->
+- [deltas/](deltas/INDEX.md) — Index of docs/ephemeral/cycles/language/deltas.
+- [design-approval.md](design-approval.md) — Language cycle trial: the filter registry card only; design approved by the human in chat on 2026-10-14.
 - [test-plan.md](test-plan.md) — The tests this cycle plans at each level, and which requirement lines each one proves.
 <!-- end generated index -->
