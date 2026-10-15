@@ -183,6 +183,11 @@
       "path": "tests/language/for-window.test.ts",
       "reason": "56 strict-mode entries expected missing-variable for a missing non-root segment or a missing name in an IF condition, which strict mode never raised; they now expect the lenient outcome (the card own test file, corrected before review)",
       "approved_by": "project lead"
+    },
+    {
+      "path": "tests/language/for-window.test.ts",
+      "reason": "review round 1 findings f2 and f3: 15 new rows pin table rows per block node and a FOR iterable that holds a space; no existing row changed",
+      "approved_by": "project lead (round 1 fix instruction)"
     }
   ],
   "manifest_amendments": [
