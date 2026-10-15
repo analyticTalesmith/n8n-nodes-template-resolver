@@ -1,0 +1,5 @@
+{
+  "people": ["Ann", "Bo", "Cy", "Di"],
+  "tags": ["x", "y"],
+  "cfg": { "size": 2, "skip": 1 }
+}
