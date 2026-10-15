@@ -46,8 +46,10 @@ core/src/filters-collection.ts exports COLLECTION_FILTERS: FilterDefinition[] wi
 <!-- generated scope: from card.json -->
 | Path | Permission (add, edit, remove) | Blast radius |
 | --- | --- | --- |
+| `docs/ephemeral/cycles/language/deltas/collection-filters-contract.md` | add | template-resolver |
+| `docs/ephemeral/cycles/language/deltas/collection-filters-module-page.md` | add | template-resolver |
 | `tests/language/filters-collection.test.ts` | add | template-resolver |
 | `core/src/filters-collection.ts` | edit | template-resolver |
 
-Files scope: `core/src/filters-collection.ts`, `tests/language/filters-collection.test.ts`
+Files scope: `core/src/filters-collection.ts`, `docs/ephemeral/cycles/language/deltas`, `tests/language/filters-collection.test.ts`
 <!-- end generated scope -->
