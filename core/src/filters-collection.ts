@@ -1,7 +1,7 @@
 import { FilterDefinition } from "./types";
 
-function notImplemented(): never {
-  throw new Error("not implemented");
+function neutral(): unknown {
+  return null;
 }
 
 function stub(
@@ -10,7 +10,7 @@ function stub(
   description: string,
   paramNames: string[]
 ): FilterDefinition {
-  return { name, params, description, paramNames, apply: notImplemented };
+  return { name, params, description, paramNames, apply: neutral };
 }
 
 export const COLLECTION_FILTERS: FilterDefinition[] = [
