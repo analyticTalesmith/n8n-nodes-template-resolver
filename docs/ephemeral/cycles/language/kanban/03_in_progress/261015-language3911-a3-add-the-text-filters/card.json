@@ -59,13 +59,17 @@
     "tests/language/filters-text.test.ts",
     "--json"
   ],
-  "claim": null,
+  "claim": {
+    "owner": "build:implementer",
+    "heartbeat": "2026-10-15T03:36:09.967Z",
+    "agent": "a"
+  },
   "blocked_on": null,
   "docs_impact": [
     "docs/living/architecture/modules/template-resolver.md",
     "docs/living/architecture/language-contract.md"
   ],
-  "started": null,
+  "started": "2026-10-15T03:36:10.134Z",
   "ended": null,
   "review_rounds": 0,
   "schema_version": 1,
@@ -86,5 +90,6 @@
       "docs_deferred": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
       "gate": "86e65c53831c9bc5a24084075fbf5ad2600622a2648b9bb50cbf2c8eb4b26b31"
     }
-  }
+  },
+  "base_commit": "f4e552a71ebe770925d1bd5eb5a33fdaf91c1974"
 }
