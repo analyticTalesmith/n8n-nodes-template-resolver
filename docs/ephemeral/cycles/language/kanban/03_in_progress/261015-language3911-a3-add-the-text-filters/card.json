@@ -61,11 +61,11 @@
   ],
   "claim": {
     "owner": "build:implementer",
-    "heartbeat": "2026-10-15T03:38:51.584Z",
+    "heartbeat": "2026-10-15T03:44:09.049Z",
     "agent": "a",
     "built": {
-      "commit": "505621e4371acf71b0d65d9b67e2d8a8f36abd50",
-      "at": "2026-10-15T03:38:51.584Z"
+      "commit": "fb7fe00285523262f029f82e497a2c1670af5aef",
+      "at": "2026-10-15T03:44:09.049Z"
     }
   },
   "blocked_on": null,
@@ -95,5 +95,12 @@
       "gate": "86e65c53831c9bc5a24084075fbf5ad2600622a2648b9bb50cbf2c8eb4b26b31"
     }
   },
-  "base_commit": "f4e552a71ebe770925d1bd5eb5a33fdaf91c1974"
+  "base_commit": "f4e552a71ebe770925d1bd5eb5a33fdaf91c1974",
+  "test_amendments": [
+    {
+      "path": "tests/language/filters-text.test.ts",
+      "reason": "review round 1 finding f1: five round rows for exponent text that is not a finite number",
+      "approved_by": "project lead (round 1 fix instruction)"
+    }
+  ]
 }

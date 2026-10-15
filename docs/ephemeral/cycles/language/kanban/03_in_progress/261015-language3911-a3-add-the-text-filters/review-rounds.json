@@ -57,10 +57,22 @@
       "location": "core/src/filters-text.ts:80",
       "label": "f1",
       "raised_in": 1,
-      "status": "open",
+      "status": "fixed",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "round expanded exponent text such as 1e400 and could allocate without bound instead of passing non-finite input through",
+          "verify": "roundDecimal now returns null when Number(text) is not finite or the exponent exceeds 400; five new ft-text round rows pass",
+          "action": "fixed",
+          "evidence": [
+            "code:core/src/filters-text.ts",
+            "test:tests/language/filters-text.test.ts",
+            "diff:0150b74"
+          ]
+        }
+      ],
       "rulings": []
     },
     {

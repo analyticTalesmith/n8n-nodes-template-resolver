@@ -17,11 +17,12 @@ Restatement: Template authors should be able to reshape a value inside the deter
 ### f1: round expands exponent text that is not a finite number instead of passing it through, and allocates without bound on a large exponent
 
 - Class: defect
-- Status: open
+- Status: fixed
 - Serves: c1: The settled spec says round passes through input that is not a finite number. roundDecimal accepts any digit string with an exponent and pads the digits to the exponent's length. The text '1e400' (Number gives Infinity) therefore renders as '1' followed by 400 zeros instead of '1e400'. Text such as '1e300000000' or '1e-999999999' makes padEnd or repeat build a string of hundreds of megabytes, or throw RangeError 'Invalid string length'. That error surfaces as a type-error instead of a pass-through, and a single data value sent through the api module can stall or exhaust memory before the maxOutputChars limit applies, which defeats deterministic, bounded rendering.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: 1. render('${{ v | round }}', { v: '1e400' }, { strictMode: false }). Expected per spec: output '1e400'. Actual per code: a 401-character integer. 2. render('${{ v | round }}', { v: '1e-999999999' }, { strictMode: false }). Expected: output '1e-999999999'. Actual: '0'.repeat(999999999) throws RangeError, and the result is ok:false with a type-error. Smallest restoring change: return null from roundDecimal (so the text passes through) when Number(text) is not finite, or bound the exponent, before any padding.
 - Evidence: diff:core/src/filters-text.ts, code:core/src/filters-text.ts:80, code:core/src/filters-text.ts:85, code:core/src/filters-text.ts:86, doc:spec.md (Behavior settled: round, input that is not a finite number passes through unchanged), test:ft-text: round (round), Infinity is not finite (covers only the literal 'Infinity', not exponent overflow)
+- Reply after round 1 (fixed): restate: round expanded exponent text such as 1e400 and could allocate without bound instead of passing non-finite input through; verify: roundDecimal now returns null when Number(text) is not finite or the exponent exceeds 400; five new ft-text round rows pass; evidence: code:core/src/filters-text.ts, test:tests/language/filters-text.test.ts, diff:0150b74
 
 ### f2: Living documents edited directly, outside files_scope and outside the logged scope exceptions
 
