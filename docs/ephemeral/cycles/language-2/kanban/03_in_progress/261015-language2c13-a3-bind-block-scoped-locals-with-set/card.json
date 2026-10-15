@@ -174,10 +174,14 @@
     "tests/language/set.test.ts",
     "--json"
   ],
-  "claim": null,
+  "claim": {
+    "owner": "build:implementer",
+    "heartbeat": "2026-10-15T15:01:10.245Z",
+    "agent": "a"
+  },
   "blocked_on": null,
   "docs_impact": "none",
-  "started": null,
+  "started": "2026-10-15T15:01:10.422Z",
   "ended": null,
   "review_rounds": 0,
   "schema_version": 1,
@@ -209,5 +213,6 @@
       "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
       "gate": "7125bcd75f05272c325089472215ac80ef370fa49bce0572379008353f1adbde"
     }
-  }
+  },
+  "base_commit": "02e8dc84b5035b8a398b63d593f3ef66a3405768"
 }
