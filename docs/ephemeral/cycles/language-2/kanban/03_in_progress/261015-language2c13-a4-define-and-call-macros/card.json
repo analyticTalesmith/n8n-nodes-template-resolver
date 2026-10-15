@@ -188,10 +188,14 @@
     "tests/language/macros.test.ts",
     "--json"
   ],
-  "claim": null,
+  "claim": {
+    "owner": "build:implementer",
+    "heartbeat": "2026-10-15T16:14:01.990Z",
+    "agent": "a"
+  },
   "blocked_on": null,
   "docs_impact": "none",
-  "started": null,
+  "started": "2026-10-15T16:14:02.274Z",
   "ended": null,
   "review_rounds": 0,
   "schema_version": 1,
@@ -221,5 +225,6 @@
       "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
       "gate": "f48b23450ca29f3aedc2dff00f71578ceda0673638b8f8c56ceefe732d61472d"
     }
-  }
+  },
+  "base_commit": "c96d1a74c954729614be4395dc582c4deecf58ea"
 }
