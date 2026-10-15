@@ -22,3 +22,19 @@ The contract for the template language beyond the prompt-aware constructs: filte
 - **Defaults.** A quote in a `??` default opens only when a value starts with it and closes; an unterminated quote is plain text and never hides the filters after it.
 - **Static checks.** `validate` and `analyze` report an undeclared parameter as a `type-error` at the variable, the same code, position and wording as `render`.
 - **Known gap.** `FILTERS` (exported for compatibility) is a snapshot of the registry names taken at load; code that needs the live list reads `FILTER_REGISTRY` or `spec()`.
+
+### Text filters
+
+Group in `filters-text.ts`. Each coerces its input to text as the output step prints it, except `default`. A missing or invalid parameter value is a `type-error` at the variable in every mode; `validate` and `analyze` run without data, so they check names and undeclared parameters, and a bad value shows at render. The shorthand `name=value` is the parameter `value`.
+
+| Filter | Result |
+|---|---|
+| `upper`, `lower` | the text in upper or lower case; no parameter |
+| `title` | the first letter of each whitespace-separated word in upper case, the rest in lower case; no parameter |
+| `replace:find="a",with="b"` | every non-overlapping occurrence of the literal `find` (required, non-empty) replaced by `with` (default empty text); never read as a pattern |
+| `indent[=N]` | N spaces (whole number 0 to 100, default 2) before every line that has characters; line breaks are kept |
+| `quote` | the text as a JSON double-quoted string; no parameter |
+| `round[=N]` | a number rounded half away from zero to exactly N decimals (whole number 0 to 20, default 0), computed on its digits so `1.005` with `round=2` gives `1.01`; text that is not a number is left as it is |
+| `default="x"` | `x` (required) when the raw value is not truthy (missing, null, empty text, 0, false, empty list, empty object), else the value; `??` keeps its own rule |
+
+In strict mode a missing variable is reported before `default` runs, so `default` replaces missing data in lenient mode only.
