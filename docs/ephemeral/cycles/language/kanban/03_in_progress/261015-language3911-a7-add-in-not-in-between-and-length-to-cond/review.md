@@ -12,6 +12,11 @@ Generated from review-rounds.json by core/scripts/rounds.mjs; edits here are ove
 
 Restatement: The card adds `in`, `not in`, `between [lo, hi]` and a `.length` path segment to the condition language of a deterministic template engine that never evaluates template text as code. A quoted literal on either side of `==`, `!=` or an `in` list item now compares as text. An unquoted number to the right of contains, startsWith or endsWith keeps the digits as written. Any unrecognized word next to an operator is a located type-error in strict and lenient mode alike. render and resolveTemplate must behave the same, analyze and spec() must list the new operators and the variables they read, and the work must not change existing tests, add a runtime dependency, compile a template-supplied regex, or let an unknown name through in lenient mode.
 
+## Gate-verified closures
+
+- f2: verified by project lead at 2026-10-15T04:49:31.957Z; gate run at commit 928ba1d5bed8; test tests/language/operators.test.ts; files core/src/expressions.ts, docs/living/architecture/language-contract.md, docs/living/architecture/modules/template-resolver.md
+- f3: verified by project lead at 2026-10-15T04:49:31.957Z; gate run at commit 928ba1d5bed8; test tests/language/operators.test.ts; files core/src/expressions.ts, docs/living/architecture/language-contract.md, docs/living/architecture/modules/template-resolver.md
+
 ## Findings
 
 ### f1: Two living architecture documents edited outside the card's files scope, with no scope exception logged
@@ -27,27 +32,30 @@ Restatement: The card adds `in`, `not in`, `between [lo, hi]` and a `.length` pa
 ### f2: in / not in skips the left-side type check when the right side is missing or null
 
 - Class: goal-risk
-- Status: open
+- Status: verified
 - Serves: c1: isMember returns false (so not in returns true) when items and text are both null, before it checks the left side. With `a in list`, an object, array, cyclic or BigInt `a` and no `list` in the data, the result is a silent false or true instead of the type-error the spec gives for such a left side. The same template errors or passes depending on whether unrelated data is present.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: render('{{IF a in list}}Y{{ELSE}}N{{END_IF}}', { a: { k: 1 } }) renders 'N' instead of a type-error, because isMember returns at `if (items === null && text === null) return false;` before the !isScalar(left.value) check. No frozen test row covers an untestable left side with a missing right side.
 - Evidence: diff:core/src/expressions.ts, code:core/src/expressions.ts:625, doc:spec.md in / not in: 'type-error: ... the left side is an array, an object (cyclic or not) or a BigInt'
+- Reply after round 1 (fixed): restate: isMember accepted a missing right side before checking the left operand type; verify: isMember now throws a located type-error for array, object or BigInt on the left first; 26 new rows pass; evidence: code:core/src/expressions.ts
 
 ### f3: between coerces booleans to numbers, so a boolean operand passes instead of being a type-error
 
 - Class: goal-risk
-- Status: open
+- Status: verified
 - Serves: c2: tryEvaluateBetween runs each operand through tryCoerceToNumber, which per the module document converts booleans to 1 or 0. `flag between [0, 1]` with flag=true returns true, and `x between [true, 5]` reads the bound as 1. The spec limits coercion to 'numbers and numeric text' and says any non-numeric operand is a type-error. If > also coerces booleans, the spec's parenthetical is wrong and needs settling instead.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: render('{{IF x between [0, 1]}}Y{{ELSE}}N{{END_IF}}', { x: true }) is expected to give a type-error. By the coercion documented for tryCoerceToNumber ('booleans (1/0)') it renders 'Y'. No frozen test row covers a boolean operand.
 - Evidence: code:core/src/expressions.ts:657, doc:docs/living/architecture/modules/template-resolver.md Coercion: 'Number: numbers (not NaN), booleans (1/0), non-empty trimmed numeric strings', doc:spec.md between: 'the same number coercion as > (numbers and numeric text)'
+- Reply after round 1 (fixed): restate: between coerced booleans to numbers; verify: between rejects boolean values and literals as a type-error; 12 new rows pass; evidence: code:core/src/expressions.ts
 
 ### f4: describeOperand calls JSON.stringify on operands in error messages, which the spec rules out
 
 - Class: drift
-- Status: sustained
+- Status: withdrawn
 - Serves: card-goal: The spec says 'do not call JSON.stringify on an operand in a message'. describeOperand does exactly that, inside a try/catch. Raw exceptions are still avoided, so the criterion holds, but a large operand is fully serialized into the error text, and the code departs from the contract's stated rule.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: Read describeOperand in the diff: `const json = JSON.stringify(value);` is used by the between, in and > error messages.
 - Evidence: diff:core/src/expressions.ts, code:core/src/expressions.ts:149
 - Review lead ruling after round 1: sustain: the spec forbids JSON.stringify of operands in messages; use describeOperand without it
+- Review lead ruling after round 1: withdraw: fixed: describeOperand no longer stringifies operands; never-throws rows pass

@@ -83,10 +83,20 @@
       "location": "core/src/expressions.ts:625",
       "label": "f2",
       "raised_in": 1,
-      "status": "open",
+      "status": "verified",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "isMember accepted a missing right side before checking the left operand type",
+          "verify": "isMember now throws a located type-error for array, object or BigInt on the left first; 26 new rows pass",
+          "action": "fixed",
+          "evidence": [
+            "code:core/src/expressions.ts"
+          ]
+        }
+      ],
       "rulings": []
     },
     {
@@ -106,10 +116,20 @@
       "location": "core/src/expressions.ts:657",
       "label": "f3",
       "raised_in": 1,
-      "status": "open",
+      "status": "verified",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "between coerced booleans to numbers",
+          "verify": "between rejects boolean values and literals as a type-error; 12 new rows pass",
+          "action": "fixed",
+          "evidence": [
+            "code:core/src/expressions.ts"
+          ]
+        }
+      ],
       "rulings": []
     },
     {
@@ -128,7 +148,7 @@
       "location": "core/src/expressions.ts:149",
       "label": "f4",
       "raised_in": 1,
-      "status": "sustained",
+      "status": "withdrawn",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [],
@@ -137,8 +157,41 @@
           "after_round": 1,
           "ruling": "sustain",
           "note": "the spec forbids JSON.stringify of operands in messages; use describeOperand without it"
+        },
+        {
+          "after_round": 1,
+          "ruling": "withdraw",
+          "note": "fixed: describeOperand no longer stringifies operands; never-throws rows pass"
         }
       ]
+    }
+  ],
+  "closures": [
+    {
+      "finding": "f2",
+      "by": "project lead",
+      "at": "2026-10-15T04:49:31.957Z",
+      "gate_commit": "928ba1d5bed89c5d014164fac07cb1fb5891e8b9",
+      "test": "tests/language/operators.test.ts",
+      "files": [
+        "core/src/expressions.ts",
+        "docs/living/architecture/language-contract.md",
+        "docs/living/architecture/modules/template-resolver.md"
+      ],
+      "diff_sha256": "3cbe16b3085a4e4276e5eb0f6adbaf789c431318f5ee760560aa4e1ad3001672"
+    },
+    {
+      "finding": "f3",
+      "by": "project lead",
+      "at": "2026-10-15T04:49:31.957Z",
+      "gate_commit": "928ba1d5bed89c5d014164fac07cb1fb5891e8b9",
+      "test": "tests/language/operators.test.ts",
+      "files": [
+        "core/src/expressions.ts",
+        "docs/living/architecture/language-contract.md",
+        "docs/living/architecture/modules/template-resolver.md"
+      ],
+      "diff_sha256": "3cbe16b3085a4e4276e5eb0f6adbaf789c431318f5ee760560aa4e1ad3001672"
     }
   ]
 }
