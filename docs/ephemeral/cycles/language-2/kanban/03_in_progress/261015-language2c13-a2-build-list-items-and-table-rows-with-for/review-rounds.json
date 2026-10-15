@@ -50,7 +50,7 @@
       "location": "core/src/interpreter.ts:697",
       "label": "f1",
       "raised_in": 1,
-      "status": "fixed",
+      "status": "verified",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [
@@ -115,6 +115,21 @@
       "failed_fixes": 0,
       "replies": [],
       "rulings": []
+    }
+  ],
+  "closures": [
+    {
+      "finding": "f1",
+      "by": "project lead",
+      "at": "2026-10-15T14:35:58.422Z",
+      "gate_commit": "1e994fceb18b714b515e9072bba809bdcbbc3192",
+      "test": "tests/language/list-table-children.test.ts",
+      "files": [
+        "core/src/interpreter.ts",
+        "docs/ephemeral/work/261015-language2c13-a2-build-list-items-and-table-rows-with-for/gate-run.json",
+        "docs/ephemeral/work/261015-language2c13-a2-build-list-items-and-table-rows-with-for/spec.md"
+      ],
+      "diff_sha256": "c2af327a14628d034434a33b076fc16190d6d5ed3334adc246a51bfea70d7cb8"
     }
   ]
 }

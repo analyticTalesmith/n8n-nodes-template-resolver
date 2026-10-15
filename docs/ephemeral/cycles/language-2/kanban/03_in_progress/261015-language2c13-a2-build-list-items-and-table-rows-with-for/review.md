@@ -12,12 +12,16 @@ Generated from review-rounds.json by core/scripts/rounds.mjs; edits here are ove
 
 Restatement: Inside a LIST, FOR blocks and IF/ELSEIF/ELSE blocks (nested to any depth) must produce LIST_ITEMs that share one gap-free counter with static items. Inside a TABLE, IF blocks and FOR or IF blocks nested in them must produce ROWs, padded and headed as before. Both kinds of generated child run on the existing loop runner. Unclosed items and rows also end at END_FOR, ELSE, ELSEIF and END_IF. Any other content in these child blocks is a located syntax-error found at parse time. Every node, depth, iteration and output limit applies to them. analyze must see the generated children. Every template that was valid before must keep its output, with two exceptions: the approved change that escapes a table-cell pipe after an even run of backslashes, and the listed loosened parses.
 
+## Gate-verified closures
+
+- f1: verified by project lead at 2026-10-15T14:35:58.422Z; gate run at commit 1e994fceb18b; test tests/language/list-table-children.test.ts; files core/src/interpreter.ts, docs/ephemeral/work/261015-language2c13-a2-build-list-items-and-table-rows-with-for/gate-run.json, docs/ephemeral/work/261015-language2c13-a2-build-list-items-and-table-rows-with-for/spec.md
+
 ## Findings
 
 ### f1: A FOR with no ROW inside an IF that builds rows is rendered through visitFor, so a non-iterable iterable is a strict-mode type-error instead of silent
 
 - Class: defect
-- Status: fixed
+- Status: verified
 - Serves: c2: In a strict-mode render, a TABLE whose IF holds a FOR without any ROW in its body (for example, while the author has the ROW commented out) fails with a type-error when the iterable is an object or null. The spec says a FOR inside an IF that builds rows 'renders no rows without error, in strict mode too (a TABLE never errors on a FOR's iterable)'.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: render('{{TABLE}}{{IF t}}{{FOR obj AS x}}{{# row later #}}{{END_FOR}}{{END_IF}}{{END_TABLE}}', {t:true, obj:{k:1}}, {strictMode:true}). parseRowChild drops the comment, so the FOR body is []. rowsFromChild(If) calls tableRowsFrom([For]). holdsRow(For) is false, so the else branch calls addText(this.visit(For)), which calls visitFor and then runLoop(node, false, ...). That throws 'Cannot iterate over non-array value' at the FOR, while the spec expects empty output. Smallest fix: in the strict row context (an IF directly in a TABLE and its nested FOR/IF bodies), send every FOR and IF child to rowsFromChild whatever holdsRow returns. Keep the holdsRow test only for bodies of a direct (legacy) TABLE FOR.
