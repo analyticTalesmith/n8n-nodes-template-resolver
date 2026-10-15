@@ -106,5 +106,12 @@
       "gate": "5b9468df4827755d9e665076750b43ca478aee5933ebdc1d9a7eb38a87305c72"
     }
   },
-  "base_commit": "f140e131fd1cb69b9c27aae0022f868d9e3e19ff"
+  "base_commit": "f140e131fd1cb69b9c27aae0022f868d9e3e19ff",
+  "test_amendments": [
+    {
+      "path": "tests/language/case.test.ts",
+      "reason": "remove the two lowercase tag word rows (the lexer only knows upper case tags, so the rows pinned a false claim; trim-marker coverage kept with upper case WHEN); the analyze exact-set assertion ignores the CASE subject and FOR iterable the analyzer always records; the lenient missing-variable row expects D not 2",
+      "approved_by": "project lead"
+    }
+  ]
 }

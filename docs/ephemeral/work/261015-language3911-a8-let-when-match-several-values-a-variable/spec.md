@@ -15,7 +15,7 @@ Same in `render` and `resolveTemplate`. Unknown names and bad operands are error
 **Forms of a WHEN.** The text after `WHEN` is one of:
 1. a list of one or more matchers separated by commas outside quotes: each a quoted text (`"a"`, `'a'`), a number (`5`, `-2`, `1.50`), `true`, `false`, `null`, or a variable path (`other`, `user.plan`, `first-name`; the same names the CASE subject accepts). Spaces around commas are free (`"a","b"`, `"a" , "b"`). A comma inside quotes belongs to the text.
 2. one comparison: an operator `==`, `!=`, `>=`, `<=`, `>`, `<` then exactly one matcher (`>= 10`, `== "a"`, `!= other`, `< limit.max`).
-The tag word is case-insensitive as before; quotes may be `"` or `'`. A quoted text is not unescaped (same as conditions).
+Tag words are upper case only, as for every tag (the lexer does not accept lower case); quotes may be `"` or `'`. A quoted text is not unescaped (same as conditions).
 
 **Syntax errors** (`syntax-error`, located at the WHEN tag line and column, raised at parse so render, validate and analyze all report it): nothing after `WHEN`; an empty list item (`"a",`, `,"b"`, `"a",,"b"`); an unterminated quote; an item that is neither a literal nor a variable path (`a b`, `"a" "b"`, `1abc`, `x==1`); a comparison with no operand, with more than one operand (`>= 1, 2`, `> 1 > 2`) or mixed with a list item before it (`"a", > 5`). The message names the problem and the hint shows the valid forms.
 
