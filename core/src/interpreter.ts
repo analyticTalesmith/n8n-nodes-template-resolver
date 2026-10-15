@@ -9,6 +9,7 @@ import {
   ListNode,
   ListItemNode,
   TableNode,
+  TableChild,
   TableRowNode,
   TernaryNode,
   SectionNode,
@@ -261,17 +262,25 @@ export class Interpreter {
    * Visit IF node
    */
   private visitIf(node: IfNode): string {
+    return this.visitBody(this.selectBranch(node));
+  }
+
+  /**
+   * The body an IF chain runs: the first branch whose condition holds, else
+   * the ELSE body, else nothing
+   */
+  private selectBranch(node: IfNode): ASTNode[] {
     let branch = node;
     for (;;) {
       const current = branch;
       const result = this.at(current, () =>
         evaluateCondition(current.condition, this.scope)
       );
-      if (result) return this.visitBody(current.consequent);
+      if (result) return current.consequent;
 
       const { alternate } = current;
-      if (!alternate) return "";
-      if (Array.isArray(alternate)) return this.visitBody(alternate);
+      if (!alternate) return [];
+      if (Array.isArray(alternate)) return alternate;
       branch = alternate;
     }
   }
@@ -492,29 +501,54 @@ export class Interpreter {
    * Visit LIST node
    */
   private visitList(node: ListNode, depth = 0): string {
-    const indent = "   ".repeat(depth); // 3 spaces per level
-    let counter = 1;
-    const results: string[] = [];
+    const lines: string[] = [];
+    this.collectListItems(node.items, depth, lines);
+    return lines.join("\n");
+  }
 
-    for (const item of node.items) {
-      const output = this.visitListItem(item, counter, depth);
-      if (output !== null) {
-        results.push(`${indent}${counter}. ${output}`);
-        counter++;
+  /**
+   * Add the numbered lines of LIST children: an item gives its line, an IF
+   * the lines of its branch, a FOR the lines of each iteration (or of its
+   * ELSE body). The numbering follows the lines already collected for this
+   * LIST, so items from any source share one counter. Returns the characters
+   * the lines hold.
+   */
+  private collectListItems(
+    children: ASTNode[],
+    depth: number,
+    lines: string[]
+  ): number {
+    const indent = "   ".repeat(depth); // 3 spaces per level
+    let length = 0;
+    for (const child of children) {
+      if (child.type === "ListItem") {
+        const output = this.visitListItem(child as ListItemNode, depth);
+        if (output !== null) {
+          const line = `${indent}${lines.length + 1}. ${output}`;
+          lines.push(line);
+          length += line.length;
+        }
+      } else if (child.type === "If") {
+        length += this.collectListItems(
+          this.selectBranch(child as IfNode),
+          depth,
+          lines
+        );
+      } else if (child.type === "For") {
+        this.runLoop(child as ForNode, false, (nodes) => {
+          const added = this.collectListItems(nodes, depth, lines);
+          length += added;
+          return added;
+        });
       }
     }
-
-    return results.join("\n");
+    return length;
   }
 
   /**
    * Visit LIST_ITEM node
    */
-  private visitListItem(
-    node: ListItemNode,
-    counter: number,
-    depth: number
-  ): string | null {
+  private visitListItem(node: ListItemNode, depth: number): string | null {
     // Check condition
     if (node.condition) {
       const condition = node.condition;
@@ -553,24 +587,8 @@ export class Interpreter {
       rows.push(headerCells);
     }
 
-    // Process rows (may include FOR loops)
-    for (const rowNode of node.rows) {
-      // Check if this row contains a FOR loop
-      if (
-        rowNode.cells.length === 1 &&
-        rowNode.cells[0].length === 1 &&
-        rowNode.cells[0][0].type === "For"
-      ) {
-        const forNode = rowNode.cells[0][0] as ForNode;
-
-        // Generate rows with the loop runner
-        this.runLoop(forNode, true, (nodes) => this.tableRowsFrom(nodes, rows));
-      } else {
-        // Regular row - process all cells
-        const cells = this.processCellsArray(rowNode.cells);
-        rows.push(cells);
-      }
-    }
+    // Process rows (ROW, FOR and IF blocks, in source order)
+    for (const child of node.rows) this.rowsFromChild(child, rows);
 
     // Auto-pad rows to match header length
     const maxCols = Math.max(...rows.map((r) => r.length));
@@ -620,8 +638,33 @@ export class Interpreter {
   }
 
   /**
-   * Render the nodes of a FOR body in a TABLE into rows: a ROW node gives its
-   * cells, and a run of other nodes is rendered together and split on a pipe.
+   * Add the rows a TABLE child builds: a ROW gives its cells, an IF the rows
+   * of its branch, a FOR the rows of each iteration (or of its ELSE body). A
+   * TABLE never errors on the iterable of a FOR that builds rows.
+   * Returns the characters the rows hold.
+   */
+  private rowsFromChild(child: TableChild, rows: string[][]): number {
+    if (child.type === "For") {
+      let length = 0;
+      this.runLoop(child, true, (nodes) => {
+        const added = this.tableRowsFrom(nodes, rows);
+        length += added;
+        return added;
+      });
+      return length;
+    }
+    if (child.type === "If") {
+      return this.tableRowsFrom(this.selectBranch(child), rows);
+    }
+    const cells = this.processCellsArray(child.cells);
+    rows.push(cells);
+    return cells.reduce((sum, cell) => sum + cell.length, 0);
+  }
+
+  /**
+   * Render the nodes of a FOR or IF body in a TABLE into rows: a ROW node gives its
+   * cells, an IF or FOR that holds a ROW builds rows too, and a run of other
+   * nodes is rendered together and split on a pipe.
    * Returns the characters the rows hold.
    */
   private tableRowsFrom(nodes: ASTNode[], rows: string[][]): number {
@@ -651,6 +694,9 @@ export class Interpreter {
       if (bodyNode.type === "TableRow") {
         flush();
         add(this.processCellsArray((bodyNode as TableRowNode).cells));
+      } else if (holdsRow(bodyNode)) {
+        flush();
+        length += this.rowsFromChild(bodyNode as TableChild, rows);
       } else if (inline.includes(bodyNode.type)) {
         run.push(bodyNode);
       } else {
@@ -669,7 +715,12 @@ export class Interpreter {
   private processCellsArray(cells: ASTNode[][]): string[] {
     return cells.map((cellNodes) => {
       const content = cellNodes.map((node) => this.visit(node)).join("");
-      return content.replace(/\r?\n/g, " ").replace(/(?<!\\)\|/g, "\\|").trim();
+      return content
+        .replace(/\r?\n/g, " ")
+        .replace(/(\\*)\|/g, (found, slashes: string) =>
+          slashes.length % 2 === 0 ? `${slashes}\\|` : found
+        )
+        .trim();
     });
   }
 
@@ -799,6 +850,28 @@ export class Interpreter {
     }
     return valueToText(value);
   }
+}
+
+/**
+ * True for an IF or FOR that holds a ROW directly in one of its branches or
+ * bodies, through nested IF and FOR: it builds table rows
+ */
+function holdsRow(node: ASTNode): boolean {
+  const holds = (nodes: ASTNode[]): boolean =>
+    nodes.some((child) => child.type === "TableRow" || holdsRow(child));
+  if (node.type === "For") {
+    const { body, elseBody } = node as ForNode;
+    return holds(body) || (elseBody !== undefined && holds(elseBody));
+  }
+  if (node.type !== "If") return false;
+  let branch: IfNode | null = node as IfNode;
+  while (branch) {
+    if (holds(branch.consequent)) return true;
+    const alternate: ASTNode[] | IfNode | null = branch.alternate;
+    if (Array.isArray(alternate)) return holds(alternate);
+    branch = alternate;
+  }
+  return false;
 }
 
 /**

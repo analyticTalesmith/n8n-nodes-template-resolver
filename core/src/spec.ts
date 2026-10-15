@@ -61,20 +61,22 @@ const BLOCKS: Spec["blocks"] = [
     name: "LIST",
     closes: "END_LIST",
     args: "",
-    description: "A numbered list of LIST_ITEM entries; lists nest",
+    description:
+      "A numbered list of LIST_ITEM entries; lists nest. FOR and IF (with ELSEIF and ELSE) inside it build items, numbered in one sequence",
   },
   {
     name: "LIST_ITEM",
     closes: "END_LIST_ITEM",
     args: '[condition] [| fallback="text"]',
     description:
-      "Inside LIST: one numbered item, skipped or replaced by its fallback when the condition is false",
+      "Inside LIST: one numbered item, skipped or replaced by its fallback when the condition is false. Without END_LIST_ITEM it ends at the next item, END_LIST, END_FOR, ELSE, ELSEIF or END_IF",
   },
   {
     name: "TABLE",
     closes: "END_TABLE",
     args: '[align="left|center|right"]',
-    description: "A markdown table of an optional HEADER and ROW or FOR-generated rows; align takes one alignment per column",
+    description:
+      "A markdown table of an optional HEADER and rows; ROW, FOR and IF (with ELSEIF and ELSE) build the rows, and align takes one alignment per column",
   },
   {
     name: "HEADER",
@@ -86,7 +88,8 @@ const BLOCKS: Spec["blocks"] = [
     name: "ROW",
     closes: "END_ROW",
     args: "",
-    description: "Inside TABLE: row cells separated by |",
+    description:
+      "Inside TABLE, or a FOR or IF that builds rows: row cells separated by |. Without END_ROW it ends at the next ROW, END_TABLE, END_FOR, ELSE, ELSEIF or END_IF",
   },
   {
     name: "SECTION",

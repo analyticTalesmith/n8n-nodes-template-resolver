@@ -147,7 +147,9 @@ class Walker {
         return this.visitFor(node as ForNode);
       case "List":
         this.countBlock("LIST");
-        return (node as ListNode).items.forEach((i) => this.visitListItem(i));
+        return this.visitAll((node as ListNode).items);
+      case "ListItem":
+        return this.visitListItem(node as ListItemNode);
       case "Table":
         this.countBlock("TABLE");
         return this.visitTable(node as TableNode);
@@ -260,7 +262,12 @@ class Walker {
 
   private visitTable(node: TableNode): void {
     if (node.header) this.visitCells(node.header);
-    for (const row of node.rows) this.visitCells(row);
+    for (const row of node.rows) {
+      // a FOR written directly in a TABLE reads its body as table cells
+      this.tableDepth++;
+      this.visit(row);
+      this.tableDepth--;
+    }
   }
 
   private visitCells(node: TableHeaderNode | TableRowNode): void {

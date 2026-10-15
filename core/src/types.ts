@@ -261,8 +261,14 @@ export interface FenceNode extends ASTNode {
  */
 export interface ListNode extends ASTNode {
   type: "List";
-  items: ListItemNode[];
+  items: ListChild[];
 }
+
+/**
+ * A child of a LIST: an item, or a FOR or IF whose bodies hold more children
+ * of the same kind
+ */
+export type ListChild = ListItemNode | ForNode | IfNode;
 
 /**
  * List item node
@@ -280,10 +286,15 @@ export interface ListItemNode extends ASTNode {
 export interface TableNode extends ASTNode {
   type: "Table";
   header: TableHeaderNode | null;
-  rows: TableRowNode[];
+  rows: TableChild[];
   hasHeader: boolean;
   alignment?: string[];
 }
+
+/**
+ * A child of a TABLE: a row, or a FOR or IF that builds rows
+ */
+export type TableChild = TableRowNode | ForNode | IfNode;
 
 /**
  * Table header node

@@ -12,8 +12,10 @@ import {
   ForNode,
   ForWindowArg,
   ListNode,
+  ListChild,
   ListItemNode,
   TableNode,
+  TableChild,
   TableHeaderNode,
   TableRowNode,
   CommentNode,
@@ -31,6 +33,9 @@ import { parseWhenMatch } from "./expressions";
 const BLOCK_ARGUMENT = /(\w+)=("[^"]*"|'[^']*'|\S*)|"[^"]*"|'[^']*'|\S+/g;
 const VARIABLE_PATH = /^[A-Za-z_@][\w@]*(\.[\w@]+)*$/;
 
+/** Parses one child of a block body; null for a child that leaves no node */
+type ChildParser = () => ASTNode | null;
+
 /**
  * Parser: Builds Abstract Syntax Tree from tokens
  *
@@ -40,6 +45,8 @@ export class Parser {
   private pos = 0;
   private depth = 0;
   private nodes = 0;
+  /** How many LIST_ITEM contents the parser is inside */
+  private itemDepth = 0;
   private readonly maxDepth: number;
   private readonly maxNodes: number;
 
@@ -105,14 +112,28 @@ export class Parser {
         return this.parseComment();
       case TokenType.EOF:
         return null;
+      case TokenType.LIST_ITEM:
+        if (this.itemDepth > 0) {
+          throw new SyntaxError(
+            "A {{LIST_ITEM}} cannot sit inside the content of another item",
+            token.line,
+            token.column,
+            "Close the item with {{END_LIST_ITEM}} before the FOR or IF that builds items"
+          );
+        }
+        return this.unexpectedToken(token);
       default:
-        throw new SyntaxError(
-          `Unexpected token: ${token.type}`,
-          token.line,
-          token.column,
-          "Check template syntax"
-        );
+        return this.unexpectedToken(token);
     }
+  }
+
+  private unexpectedToken(token: Token): never {
+    throw new SyntaxError(
+      `Unexpected token: ${token.type}`,
+      token.line,
+      token.column,
+      "Check template syntax"
+    );
   }
 
   /**
@@ -261,15 +282,15 @@ export class Parser {
    * ELSEIF branches nest in the alternate of the branch before them and are
    * parsed in a loop, so a long chain does not deepen the call stack.
    */
-  private parseIf(): IfNode {
-    const root = this.parseIfBranch(TokenType.IF);
+  private parseIf(child: ChildParser = () => this.parseNode()): IfNode {
+    const root = this.parseIfBranch(TokenType.IF, child);
     let last = root;
     while (this.check(TokenType.ELSEIF)) {
-      const branch = this.parseIfBranch(TokenType.ELSEIF);
+      const branch = this.parseIfBranch(TokenType.ELSEIF, child);
       last.alternate = branch;
       last = branch;
     }
-    if (this.check(TokenType.ELSE)) last.alternate = this.parseElse(last);
+    if (this.check(TokenType.ELSE)) last.alternate = this.parseElse(last, child);
 
     this.consume(TokenType.END_IF);
     return root;
@@ -279,7 +300,10 @@ export class Parser {
    * Parse the head and body of an IF or ELSEIF branch, up to the next
    * ELSEIF, ELSE or END_IF
    */
-  private parseIfBranch(type: TokenType.IF | TokenType.ELSEIF): IfNode {
+  private parseIfBranch(
+    type: TokenType.IF | TokenType.ELSEIF,
+    child: ChildParser
+  ): IfNode {
     const token = this.open(type);
     const consequent: ASTNode[] = [];
 
@@ -298,7 +322,7 @@ export class Parser {
           "Add {{END_IF}}"
         );
       }
-      const node = this.parseNode();
+      const node = child();
       if (node) consequent.push(node);
     }
 
@@ -315,7 +339,7 @@ export class Parser {
   /**
    * Parse the ELSE body of a branch, up to END_IF
    */
-  private parseElse(branch: IfNode): ASTNode[] {
+  private parseElse(branch: IfNode, child: ChildParser): ASTNode[] {
     this.consume(TokenType.ELSE);
     const body: ASTNode[] = [];
     while (!this.check(TokenType.END_IF)) {
@@ -327,7 +351,7 @@ export class Parser {
           "Add {{END_IF}}"
         );
       }
-      const node = this.parseNode();
+      const node = child();
       if (node) body.push(node);
     }
     return body;
@@ -480,7 +504,7 @@ export class Parser {
    * An {{ELSE}} directly in the body starts the branch that renders when no
    * item does; an IF inside the body parses its own ELSE.
    */
-  private parseFor(): ForNode {
+  private parseFor(child: ChildParser = () => this.parseNode()): ForNode {
     const token = this.open(TokenType.FOR);
     const header = this.parseForHeader(token);
 
@@ -508,7 +532,7 @@ export class Parser {
         elseBody = [];
         continue;
       }
-      const node = this.parseNode();
+      const node = child();
       if (node) (elseBody ?? body).push(node);
     }
 
@@ -744,10 +768,11 @@ export class Parser {
 
   /**
    * Parse LIST: {{LIST}}{{LIST_ITEM}}...{{END_LIST_ITEM}}{{END_LIST}}
+   * Its children are items, and FOR and IF blocks that build items.
    */
   private parseList(): ListNode {
     const token = this.open(TokenType.LIST);
-    const items: ListItemNode[] = [];
+    const items: ListChild[] = [];
 
     while (!this.check(TokenType.END_LIST)) {
       if (this.isAtEnd()) {
@@ -758,30 +783,8 @@ export class Parser {
           "Add {{END_LIST}}"
         );
       }
-
-      if (this.check(TokenType.LIST_ITEM)) {
-        items.push(this.parseListItem());
-      } else if (this.check(TokenType.TEXT)) {
-        // Skip whitespace text between list items
-        const textToken = this.current();
-        if (textToken.value.trim() !== "") {
-          throw new SyntaxError(
-            `Unexpected text in LIST: "${textToken.value.trim()}"`,
-            textToken.line,
-            textToken.column,
-            "LIST should only contain {{LIST_ITEM}}"
-          );
-        }
-        this.advance(); // Skip whitespace
-      } else {
-        const unexpected = this.current();
-        throw new SyntaxError(
-          `Unexpected token in LIST: ${unexpected.type}`,
-          unexpected.line,
-          unexpected.column,
-          "Expected {{LIST_ITEM}}"
-        );
-      }
+      const child = this.parseListChild();
+      if (child) items.push(child as ListChild);
     }
 
     this.consume(TokenType.END_LIST);
@@ -795,7 +798,46 @@ export class Parser {
   }
 
   /**
-   * Parse LIST_ITEM
+   * Parse one child of a LIST, or of a FOR or IF that builds items: an item,
+   * a FOR, an IF, a comment or whitespace; anything else is a syntax error at
+   * its own token
+   */
+  private parseListChild(): ASTNode | null {
+    const token = this.current();
+    switch (token.type) {
+      case TokenType.LIST_ITEM:
+        return this.parseListItem();
+      case TokenType.FOR:
+        return this.nested(() => this.parseFor(() => this.parseListChild()));
+      case TokenType.IF:
+        return this.nested(() => this.parseIf(() => this.parseListChild()));
+      case TokenType.COMMENT:
+        this.parseComment();
+        return null;
+      case TokenType.TEXT:
+        if (token.value.trim() !== "") {
+          throw new SyntaxError(
+            `Unexpected text in LIST: "${token.value.trim()}"`,
+            token.line,
+            token.column,
+            "LIST should only contain {{LIST_ITEM}}, {{FOR}} or {{IF}}"
+          );
+        }
+        this.advance(); // Skip whitespace
+        return null;
+      default:
+        throw new SyntaxError(
+          `Unexpected token in LIST: ${token.type}`,
+          token.line,
+          token.column,
+          "Expected {{LIST_ITEM}}, {{FOR}} or {{IF}}"
+        );
+    }
+  }
+
+  /**
+   * Parse LIST_ITEM. Without END_LIST_ITEM the item ends at the next item,
+   * END_LIST, or the closer or branch word of the FOR or IF around it.
    */
   private parseListItem(): ListItemNode {
     const token = this.open(TokenType.LIST_ITEM);
@@ -804,8 +846,16 @@ export class Parser {
     const { condition, fallback } = this.parseListItemAttributes(token.value);
 
     const content: ASTNode[] = [];
+    this.itemDepth++;
     while (!this.check(TokenType.END_LIST_ITEM)) {
-      if (this.check(TokenType.LIST_ITEM) || this.check(TokenType.END_LIST)) {
+      if (
+        this.check(TokenType.LIST_ITEM) ||
+        this.check(TokenType.END_LIST) ||
+        this.check(TokenType.END_FOR) ||
+        this.check(TokenType.ELSE) ||
+        this.check(TokenType.ELSEIF) ||
+        this.check(TokenType.END_IF)
+      ) {
         break;
       }
       if (this.isAtEnd()) {
@@ -819,6 +869,7 @@ export class Parser {
       const node = this.parseNode();
       if (node) content.push(node);
     }
+    this.itemDepth--;
 
     if (this.check(TokenType.END_LIST_ITEM)) {
       this.consume(TokenType.END_LIST_ITEM);
@@ -854,13 +905,16 @@ export class Parser {
 
   /**
    * Parse TABLE: {{TABLE}}{{HEADER}}...{{ROW}}...{{END_TABLE}}
+   * Its rows come from ROW, FOR and IF blocks. A FOR written directly in the
+   * TABLE keeps its generic body (a body that is not a ROW is split on a
+   * pipe when it runs); an IF holds rows only.
    */
   private parseTable(): TableNode {
     const token = this.open(TokenType.TABLE);
     const alignment = this.parseTableAlignment(token.value);
 
     let header: TableHeaderNode | null = null;
-    const rows: TableRowNode[] = [];
+    const rows: TableChild[] = [];
 
     while (!this.check(TokenType.END_TABLE)) {
       if (this.isAtEnd()) {
@@ -874,40 +928,13 @@ export class Parser {
 
       if (this.check(TokenType.HEADER)) {
         header = this.parseTableHeader();
-      } else if (this.check(TokenType.ROW)) {
-        rows.push(this.parseTableRow());
       } else if (this.check(TokenType.FOR)) {
-        // Allow FOR loops to generate rows
+        // A FOR generates rows; its body is parsed as in any FOR
         this.count(this.current());
-        const forNode = this.nested(() => this.parseFor());
-
-        // Wrap in a special TableRowNode
-        rows.push({
-          type: "TableRow",
-          cells: [[forNode]],
-          line: forNode.line,
-          column: forNode.column,
-        });
-      } else if (this.check(TokenType.TEXT)) {
-        // Skip whitespace text between rows
-        const textToken = this.current();
-        if (textToken.value.trim() !== "") {
-          throw new SyntaxError(
-            `Unexpected text in TABLE: "${textToken.value.trim()}"`,
-            textToken.line,
-            textToken.column,
-            "TABLE should only contain {{HEADER}}, {{ROW}}, or {{FOR}}"
-          );
-        }
-        this.advance(); // Skip whitespace
+        rows.push(this.nested(() => this.parseFor()));
       } else {
-        const unexpected = this.current();
-        throw new SyntaxError(
-          `Unexpected token in TABLE: ${unexpected.type}`,
-          unexpected.line,
-          unexpected.column,
-          "Expected {{HEADER}}, {{ROW}}, or {{FOR}}"
-        );
+        const child = this.parseRowChild();
+        if (child) rows.push(child as TableChild);
       }
     }
 
@@ -922,6 +949,44 @@ export class Parser {
       line: token.line,
       column: token.column,
     };
+  }
+
+  /**
+   * Parse one child of a TABLE, or of an IF or FOR that builds rows: a ROW, a
+   * FOR, an IF, a comment or whitespace; anything else is a syntax error at
+   * its own token. A HEADER is only accepted by the TABLE itself.
+   */
+  private parseRowChild(): ASTNode | null {
+    const token = this.current();
+    switch (token.type) {
+      case TokenType.ROW:
+        return this.parseTableRow();
+      case TokenType.FOR:
+        return this.nested(() => this.parseFor(() => this.parseRowChild()));
+      case TokenType.IF:
+        return this.nested(() => this.parseIf(() => this.parseRowChild()));
+      case TokenType.COMMENT:
+        this.parseComment();
+        return null;
+      case TokenType.TEXT:
+        if (token.value.trim() !== "") {
+          throw new SyntaxError(
+            `Unexpected text in TABLE: "${token.value.trim()}"`,
+            token.line,
+            token.column,
+            "TABLE should only contain {{HEADER}}, {{ROW}}, {{FOR}} or {{IF}}"
+          );
+        }
+        this.advance(); // Skip whitespace
+        return null;
+      default:
+        throw new SyntaxError(
+          `Unexpected token in TABLE: ${token.type}`,
+          token.line,
+          token.column,
+          "Expected {{HEADER}}, {{ROW}}, {{FOR}} or {{IF}}"
+        );
+    }
   }
 
   /**
@@ -968,7 +1033,8 @@ export class Parser {
   }
 
   /**
-   * Parse table row
+   * Parse table row. Without END_ROW the row ends at the next ROW,
+   * END_TABLE, or the closer or branch word of the FOR or IF around it.
    */
   private parseTableRow(): TableRowNode {
     const token = this.open(TokenType.ROW);
@@ -976,7 +1042,16 @@ export class Parser {
     const content: ASTNode[] = [];
 
     while (!this.check(TokenType.END_ROW)) {
-      if (this.check(TokenType.ROW) || this.check(TokenType.END_TABLE)) break;
+      if (
+        this.check(TokenType.ROW) ||
+        this.check(TokenType.END_TABLE) ||
+        this.check(TokenType.END_FOR) ||
+        this.check(TokenType.ELSE) ||
+        this.check(TokenType.ELSEIF) ||
+        this.check(TokenType.END_IF)
+      ) {
+        break;
+      }
       if (this.isAtEnd()) {
         throw new SyntaxError(
           "Unclosed {{ROW}} block",

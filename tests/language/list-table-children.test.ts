@@ -428,7 +428,7 @@ const COMPAT_ROWS: Row[] = [
   { name: "TABLE with an unclosed ROW before the next ROW", tpl: "{{TABLE}}{{ROW}}a|b{{ROW}}c|d{{END_TABLE}}", data: D, want: OUT("| a | b |\n| c | d |") },
   { name: "TABLE with unclosed rows and a header and different widths", tpl: "{{TABLE}}{{HEADER}}H1|H2{{END_HEADER}}{{ROW}}a{{ROW}}c|d|e{{END_TABLE}}", data: D, want: OUT("| H1 | H2 |  |\n|:-----|:-----|:-----|\n| a |  |  |\n| c | d | e |") },
   { name: "TABLE with a header only", tpl: "{{TABLE}}{{HEADER}}A|B{{END_HEADER}}{{END_TABLE}}", data: D, want: OUT("| A | B |\n|:-----|:-----|") },
-  { name: "TABLE FOR with an unclosed ROW is still a syntax error at END_FOR", tpl: "{{TABLE}}{{FOR xs AS x}}{{ROW}}${{x}}|1{{END_FOR}}{{END_TABLE}}", data: D, want: ERR("syntax-error", 1, 40, "Unexpected token: END_FOR") },
+  { name: "TABLE FOR with an unclosed ROW ends the ROW at END_FOR", tpl: "{{TABLE}}{{FOR xs AS x}}{{ROW}}${{x}}|1{{END_FOR}}{{END_TABLE}}", data: D, want: OUT("| a | 1 |\n| b | 1 |\n| c | 1 |") },
   { name: "a LIST with conditions and fallbacks", tpl: "{{LIST}}{{LIST_ITEM}}a{{END_LIST_ITEM}}{{LIST_ITEM t}}b{{END_LIST_ITEM}}{{LIST_ITEM f}}c{{END_LIST_ITEM}}{{LIST_ITEM f | fallback=\"fb\"}}d{{END_LIST_ITEM}}{{END_LIST}}", data: D, want: OUT("1. a\n2. b\n3. fb") },
   { name: "a LIST with a missing condition name", tpl: "{{LIST}}{{LIST_ITEM nope}}a{{END_LIST_ITEM}}{{LIST_ITEM nope | fallback=\"fb\"}}b{{END_LIST_ITEM}}{{END_LIST}}", data: D, want: OUT("1. fb") },
   { name: "a LIST with an unclosed item before the next item", tpl: "{{LIST}}{{LIST_ITEM}}a{{LIST_ITEM}}b{{END_LIST}}", data: D, want: OUT("1. a\n2. b") },
