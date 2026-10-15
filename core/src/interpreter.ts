@@ -31,6 +31,7 @@ import {
   tryCoerceStringForPathSegment,
 } from "./coercion";
 import {
+  builtInLength,
   DivisionByZeroError,
   evaluateCondition,
   evaluateMathExpression,
@@ -675,6 +676,14 @@ export class Interpreter {
     // Continue resolving nested keys.
     for (let i = 1; i < path.length; i++) {
       if (current == null) return null;
+
+      if (path[i] === "length") {
+        const built = builtInLength(current);
+        if (built) {
+          current = built.value;
+          continue;
+        }
+      }
 
       // Try JSON parsing if string
       if (typeof current === "string") {

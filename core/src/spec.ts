@@ -137,6 +137,10 @@ const OPERATORS = [
   "AND",
   "OR",
   "NOT",
+  "in",
+  "not in",
+  "between",
+  ".length",
 ];
 
 /**
