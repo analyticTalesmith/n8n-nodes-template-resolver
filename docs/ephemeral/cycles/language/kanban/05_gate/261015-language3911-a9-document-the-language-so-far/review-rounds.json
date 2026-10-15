@@ -57,7 +57,7 @@
       "location": "README.md:804",
       "label": "f1",
       "raised_in": 1,
-      "status": "fixed",
+      "status": "verified",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [
@@ -90,7 +90,7 @@
       "location": "README.md:868",
       "label": "f2",
       "raised_in": 1,
-      "status": "fixed",
+      "status": "verified",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [
@@ -123,7 +123,7 @@
       "location": "tests/golden/render-cases/lang-filters-showcase/",
       "label": "f3",
       "raised_in": 1,
-      "status": "fixed",
+      "status": "verified",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [
@@ -156,7 +156,7 @@
       "location": "README.md:1132",
       "label": "f4",
       "raised_in": 1,
-      "status": "fixed",
+      "status": "verified",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [
@@ -188,7 +188,7 @@
       "location": "docs/living/architecture/modules/template-resolver.md:124",
       "label": "f5",
       "raised_in": 1,
-      "status": "fixed",
+      "status": "verified",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [
@@ -279,6 +279,73 @@
           "note": "fold the Q9 tidy into the same page edit"
         }
       ]
+    }
+  ],
+  "closures": [
+    {
+      "finding": "f1",
+      "by": "project lead",
+      "at": "2026-10-15T05:41:42.794Z",
+      "gate_commit": "3f6ade3a946afc32157bd0acf67405ac1649c4d8",
+      "test": "tests/language/surfaces.test.ts",
+      "files": [
+        "README.md",
+        "changelog.md",
+        "docs/living/architecture/modules/template-resolver.md"
+      ],
+      "diff_sha256": "918fc0559129f189ab0f1d419da0daf037ba16e3f7d03bf366c0123c9a0d5dc8"
+    },
+    {
+      "finding": "f2",
+      "by": "project lead",
+      "at": "2026-10-15T05:41:42.794Z",
+      "gate_commit": "3f6ade3a946afc32157bd0acf67405ac1649c4d8",
+      "test": "tests/language/surfaces.test.ts",
+      "files": [
+        "README.md",
+        "changelog.md",
+        "docs/living/architecture/modules/template-resolver.md"
+      ],
+      "diff_sha256": "918fc0559129f189ab0f1d419da0daf037ba16e3f7d03bf366c0123c9a0d5dc8"
+    },
+    {
+      "finding": "f3",
+      "by": "project lead",
+      "at": "2026-10-15T05:41:42.794Z",
+      "gate_commit": "3f6ade3a946afc32157bd0acf67405ac1649c4d8",
+      "test": "tests/language/surfaces.test.ts",
+      "files": [
+        "README.md",
+        "changelog.md",
+        "docs/living/architecture/modules/template-resolver.md"
+      ],
+      "diff_sha256": "918fc0559129f189ab0f1d419da0daf037ba16e3f7d03bf366c0123c9a0d5dc8"
+    },
+    {
+      "finding": "f4",
+      "by": "project lead",
+      "at": "2026-10-15T05:41:42.794Z",
+      "gate_commit": "3f6ade3a946afc32157bd0acf67405ac1649c4d8",
+      "test": "tests/language/surfaces.test.ts",
+      "files": [
+        "README.md",
+        "changelog.md",
+        "docs/living/architecture/modules/template-resolver.md"
+      ],
+      "diff_sha256": "918fc0559129f189ab0f1d419da0daf037ba16e3f7d03bf366c0123c9a0d5dc8"
+    },
+    {
+      "finding": "f5",
+      "by": "project lead",
+      "at": "2026-10-15T05:41:42.794Z",
+      "gate_commit": "3f6ade3a946afc32157bd0acf67405ac1649c4d8",
+      "test": "tests/language/surfaces.test.ts",
+      "files": [
+        "README.md",
+        "changelog.md",
+        "docs/living/architecture/modules/template-resolver.md"
+      ],
+      "diff_sha256": "918fc0559129f189ab0f1d419da0daf037ba16e3f7d03bf366c0123c9a0d5dc8"
     }
   ]
 }
