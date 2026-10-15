@@ -24,12 +24,15 @@ import {
   FenceNode,
   FenceLang,
   FilterCall,
+  SetNode,
+  ValueExpr,
   DEFAULT_LIMITS,
 } from "./types";
 import { SyntaxError, TypeError, LimitError } from "./errors";
 import { parseFilter } from "./filters";
-import { parseWhenMatch } from "./expressions";
+import { parseLiteral, parseWhenMatch } from "./expressions";
 
+const SET_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
 const BLOCK_ARGUMENT = /(\w+)=("[^"]*"|'[^']*'|\S*)|"[^"]*"|'[^']*'|\S+/g;
 const VARIABLE_PATH = /^[A-Za-z_@][\w@]*(\.[\w@]+)*$/;
 
@@ -47,6 +50,8 @@ export class Parser {
   private nodes = 0;
   /** How many LIST_ITEM contents the parser is inside */
   private itemDepth = 0;
+  /** Item names of the FOR bodies that enclose the current token (not their ELSE bodies) */
+  private readonly loopNames: string[] = [];
   private readonly maxDepth: number;
   private readonly maxNodes: number;
 
@@ -108,6 +113,8 @@ export class Parser {
         return this.parseTableHeader();
       case TokenType.ROW:
         return this.parseTableRow();
+      case TokenType.SET:
+        return this.parseSet();
       case TokenType.COMMENT:
         return this.parseComment();
       case TokenType.EOF:
@@ -206,32 +213,105 @@ export class Parser {
     const filterExprs = parts.slice(1);
 
     // --- 2. Extract default operator (??) ---
-    let pathExpr = core;
-    let defaultValue: string | undefined = undefined;
-
-    const defaultIdx = core.indexOf("??");
-    if (defaultIdx !== -1) {
-      pathExpr = core.slice(0, defaultIdx).trim();
-      defaultValue = core
-        .slice(defaultIdx + 2)
-        .trim()
-        .replace(/^(["'])(.*)\1$/s, "$2");
-    }
+    const { head, defaultValue } = this.splitDefault(core);
 
     // --- 3. Parse path ---
-    const path = pathExpr.split(".").map((p) => p.trim());
+    const path = head.split(".").map((p) => p.trim());
 
     // --- 4. Parse filters ---
-    const filters: FilterCall[] =
-      filterExprs.length > 0
-        ? filterExprs.map(parseFilter)
-        : [];
+    return { path, defaultValue, filters: this.parseFilters(filterExprs) };
+  }
+
+  /**
+   * Split "path ?? default" into the path text and the default text (a quoted
+   * default loses its quotes)
+   */
+  private splitDefault(core: string): { head: string; defaultValue?: string } {
+    const defaultIdx = core.indexOf("??");
+    if (defaultIdx === -1) return { head: core };
+    return {
+      head: core.slice(0, defaultIdx).trim(),
+      defaultValue: core
+        .slice(defaultIdx + 2)
+        .trim()
+        .replace(/^(["'])(.*)\1$/s, "$2"),
+    };
+  }
+
+  private parseFilters(filterExprs: string[]): FilterCall[] | undefined {
+    return filterExprs.length > 0 ? filterExprs.map(parseFilter) : undefined;
+  }
+
+  /**
+   * Parse SET: {{SET name = expression}}, a single tag. Every problem is a
+   * syntax error at the tag, found at parse time even in a branch that never
+   * renders.
+   */
+  private parseSet(): SetNode {
+    const token = this.open(TokenType.SET);
+    const fail = (why: string): never => {
+      throw new SyntaxError(
+        `Invalid SET syntax: ${why}`,
+        token.line,
+        token.column,
+        "Expected: {{SET name = expression}}"
+      );
+    };
+
+    const match = /^\s+([^\s=]*)\s*=([\s\S]*)$/.exec(
+      token.value.slice("SET".length)
+    );
+    if (!match) return fail(token.value);
+    const [, name, rest] = match;
+    if (name === "") fail("a name is missing");
+    if (name.startsWith("@")) fail(`"${name}" is a name the loops own`);
+    if (!SET_NAME.test(name)) fail(`bad name "${name}"`);
+    if (this.loopNames.includes(name)) {
+      fail(`"${name}" is the item of an enclosing FOR`);
+    }
+    if (rest.startsWith("=")) fail("a single = binds, == compares");
+    const expression = rest.trim();
+    if (expression === "") fail("the expression is missing");
 
     return {
-      path,
-      defaultValue,
-      filters: filters.length > 0 ? filters : undefined,
+      type: "Set",
+      name,
+      value: this.parseSetExpression(expression, fail),
+      line: token.line,
+      column: token.column,
     };
+  }
+
+  /**
+   * The expression of a SET: what ${{ }} takes, plus a literal first term
+   * (quoted text, a number, true, false or null)
+   */
+  private parseSetExpression(
+    expression: string,
+    fail: (why: string) => never
+  ): ValueExpr {
+    const quote = expression[0];
+    if (quote === '"' || quote === "'") {
+      const close = expression.indexOf(quote, 1);
+      if (close === -1) return fail("a quoted text is not closed");
+      const tail = expression.slice(close + 1).trim();
+      if (tail !== "" && !tail.startsWith("??") && !tail.startsWith("|")) {
+        return fail(`unexpected "${tail}" after the text`);
+      }
+      // the quoted text is never read for ?? or |; only what follows it is
+      const parts = this.splitOutsideQuotes(tail, "|").map((p) => p.trim());
+      return {
+        path: [],
+        literal: { value: expression.slice(1, close) },
+        defaultValue: this.splitDefault(parts[0]).defaultValue,
+        filters: this.parseFilters(parts.slice(1)),
+      };
+    }
+
+    const parsed = this.parseVariableExpression(expression);
+    // "2 * 3" is arithmetic: parseLiteral only takes a lone number
+    const literal = parseLiteral(parsed.path.join("."));
+    return literal ? { ...parsed, path: [], literal: { value: literal.value } } : parsed;
   }
 
   /**
@@ -507,6 +587,7 @@ export class Parser {
   private parseFor(child: ChildParser = () => this.parseNode()): ForNode {
     const token = this.open(TokenType.FOR);
     const header = this.parseForHeader(token);
+    this.loopNames.push(header.itemName);
 
     const body: ASTNode[] = [];
     let elseBody: ASTNode[] | undefined;
@@ -530,6 +611,7 @@ export class Parser {
           );
         }
         elseBody = [];
+        this.loopNames.pop(); // the ELSE body is outside the loop
         continue;
       }
       const node = child();
@@ -537,6 +619,7 @@ export class Parser {
     }
 
     this.consume(TokenType.END_FOR);
+    if (elseBody === undefined) this.loopNames.pop();
 
     const node: ForNode = {
       type: "For",

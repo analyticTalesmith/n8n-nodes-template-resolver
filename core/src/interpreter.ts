@@ -14,6 +14,8 @@ import {
   TernaryNode,
   SectionNode,
   FenceNode,
+  SetNode,
+  ValueExpr,
   VariableLookup,
   ForWindowArg,
   TemplateValue,
@@ -71,6 +73,7 @@ const KEEPS_RAW_INPUT = new Set([
  * - Filters (head, tail, trim, escape_md, fence, heading_offset)
  * - Default operator (??)
  * - Ternary with variable references
+ * - SET: locals bound for the rest of their block
  */
 export class Interpreter {
   private strictMode: boolean;
@@ -79,7 +82,7 @@ export class Interpreter {
   private iterations = 0;
   private omittedSections = 0;
   private readonly root: RootScope;
-  /** The innermost scope: a loop frame while a loop renders, else the root */
+  /** The innermost scope: a block or loop frame while one renders, else the root */
   private scope: VariableLookup;
 
   constructor(
@@ -121,15 +124,33 @@ export class Interpreter {
    * Visit program node (root)
    */
   private visitProgram(node: ProgramNode): string {
-    const parts: string[] = [];
-    let length = 0;
-    for (const child of node.body) {
-      const output = this.visit(child);
-      length += output.length;
-      this.checkOutputLength(length, child);
-      parts.push(output);
+    return this.block(node.body, () => {
+      const parts: string[] = [];
+      let length = 0;
+      for (const child of node.body) {
+        const output = this.visit(child);
+        length += output.length;
+        this.checkOutputLength(length, child);
+        parts.push(output);
+      }
+      return parts.join("");
+    });
+  }
+
+  /**
+   * Run a block's nodes. A block that directly holds a SET gets its own frame
+   * for the run, so a SET never outlives its block and never writes the
+   * caller's data; any other block keeps the scope it has.
+   */
+  private block<T>(nodes: ASTNode[], run: () => T): T {
+    if (!nodes.some((child) => child.type === "Set")) return run();
+    const outer = this.scope;
+    this.scope = new Frame(outer);
+    try {
+      return run();
+    } finally {
+      this.scope = outer;
     }
-    return parts.join("");
   }
 
   /**
@@ -158,14 +179,18 @@ export class Interpreter {
 
   private checkOutputLength(length: number, node: ASTNode): void {
     if (length > this.limits.maxOutputChars) {
-      throw new LimitError(
-        "limit-output",
-        `Output is longer than ${this.limits.maxOutputChars} characters`,
-        node.line,
-        node.column,
-        "Render less content or raise limits.maxOutputChars"
-      );
+      throw this.outputTooLong(node.line, node.column);
     }
+  }
+
+  private outputTooLong(line: number, column: number): LimitError {
+    return new LimitError(
+      "limit-output",
+      `Output is longer than ${this.limits.maxOutputChars} characters`,
+      line,
+      column,
+      "Render less content or raise limits.maxOutputChars"
+    );
   }
 
   /**
@@ -191,6 +216,8 @@ export class Interpreter {
         return this.visitSection(node as SectionNode);
       case "Fence":
         return this.visitFence(node as FenceNode);
+      case "Set":
+        return this.at(node, () => this.visitSet(node as SetNode));
       case "Ternary":
         return this.at(node, () => this.visitTernary(node as TernaryNode));
       case "Comment":
@@ -211,15 +238,40 @@ export class Interpreter {
    * Visit variable node: ${{name}}, ${{user.name | filter}}, ${{a + b}}
    */
   private visitVariable(node: VariableNode): string {
+    return this.valueToString(this.evaluateValue(node));
+  }
+
+  /**
+   * Visit SET: bind the value in the block's own frame, print nothing
+   */
+  private visitSet(node: SetNode): string {
+    const value = this.evaluateValue(node.value);
+    this.checkValueSize(value);
+    if (!(this.scope instanceof Frame)) {
+      throw new Error("A SET ran outside a block frame");
+    }
+    this.scope.set(node.name, value);
+    return "";
+  }
+
+  /**
+   * The one value evaluator behind ${{ }} and SET: a path, arithmetic or a
+   * literal, then the ?? default and the filter chain. Returns the value, not
+   * its text.
+   */
+  private evaluateValue(expr: ValueExpr): TemplateValue {
+    if (expr.literal) return this.shapeValue(expr, expr.literal.value);
+
     // Check if this is a math expression (contains operators)
-    const pathStr = node.path.join(".");
+    const pathStr = expr.path.join(".");
     let mathError: unknown = null;
     if (isMathExpression(pathStr) || hasStrayCharacter(pathStr)) {
       try {
         const result = evaluateMathExpression(pathStr, this.scope, {
           zeroIsError: this.render,
         });
-        return this.render ? formatNumber(result) : String(result);
+        // render binds the number its output prints
+        return this.render ? Number(formatNumber(result)) : result;
       } catch (error) {
         if (error instanceof DivisionByZeroError) throw error;
         // Not a valid math expression, continue with normal resolution
@@ -227,35 +279,53 @@ export class Interpreter {
       }
     }
 
-    const allowUndefined = node.defaultValue !== undefined;
+    const allowUndefined = expr.defaultValue !== undefined;
     let value: TemplateValue = null;
     let lookupError: unknown = null;
     try {
-      value = this.resolveNestedPath(node.path, allowUndefined);
+      value = this.resolveNestedPath(expr.path, allowUndefined);
     } catch (error) {
       lookupError = error;
     }
     // A malformed math text is an error only when no variable has that name
-    if (mathError instanceof MathSyntaxError && !this.hasRootKey(node.path[0])) {
+    if (mathError instanceof MathSyntaxError && !this.hasRootKey(expr.path[0])) {
       throw mathError;
     }
     if (lookupError !== null) throw lookupError;
 
-    // Apply default operator if value is falsy
-    if (node.defaultValue !== undefined && !isTruthy(value)) {
-      value = node.defaultValue;
+    return this.shapeValue(expr, value);
+  }
+
+  /**
+   * Apply the ?? default (when the value is falsy), then each filter, checking
+   * the size of a text result after every filter so a chain cannot grow a text
+   * without bound
+   */
+  private shapeValue(expr: ValueExpr, start: TemplateValue): TemplateValue {
+    let value = start;
+    if (expr.defaultValue !== undefined && !isTruthy(value)) {
+      value = expr.defaultValue;
     }
 
-    // Apply filters
-    if (node.filters && node.filters.length > 0) {
-      for (const filter of node.filters) {
-        // text filters would turn an unprintable value into ""
-        if (!KEEPS_RAW_INPUT.has(filter.name)) this.valueToString(value);
-        value = applyFilters(value, [filter]) as TemplateValue;
-      }
+    for (const filter of expr.filters ?? []) {
+      // text filters would turn an unprintable value into ""
+      if (!KEEPS_RAW_INPUT.has(filter.name)) this.valueToString(value);
+      value = applyFilters(value, [filter]) as TemplateValue;
+      this.checkValueSize(value);
     }
+    return value;
+  }
 
-    return this.valueToString(value);
+  /**
+   * A text longer than maxOutputChars is a limit-output; arrays, objects and
+   * numbers are not measured (no filter grows an array past its input). The
+   * caller locates the error at its node.
+   */
+  private checkValueSize(value: TemplateValue): void {
+    if (typeof value !== "string" || value.length <= this.limits.maxOutputChars) {
+      return;
+    }
+    throw this.outputTooLong(1, 1);
   }
 
   /**
@@ -286,6 +356,10 @@ export class Interpreter {
   }
 
   private visitBody(nodes: ASTNode[]): string {
+    return this.block(nodes, () => this.renderNodes(nodes));
+  }
+
+  private renderNodes(nodes: ASTNode[]): string {
     return nodes.map((child) => this.visit(child)).join("");
   }
 
@@ -304,15 +378,11 @@ export class Interpreter {
           this.valueToString(this.resolveNestedPath(path))
         )
       );
-      if (matches) {
-        return whenNode.body.map((child) => this.visit(child)).join("");
-      }
+      if (matches) return this.visitBody(whenNode.body);
     }
 
     // Fall to DEFAULT
-    if (node.default) {
-      return node.default.body.map((child) => this.visit(child)).join("");
-    }
+    if (node.default) return this.visitBody(node.default.body);
 
     return "";
   }
@@ -435,10 +505,7 @@ export class Interpreter {
   private visitSection(node: SectionNode): string {
     const title = this.at(node, () => this.sectionTitle(node));
     const heading = `${"#".repeat(node.level)} ${title}\n`;
-    const body = node.body
-      .map((child) => this.visit(child))
-      .join("")
-      .replace(/\r\n/g, "\n");
+    const body = this.visitBody(node.body).replace(/\r\n/g, "\n");
 
     if (body.trim() === "") {
       if (!node.skipEmpty) return heading;
@@ -474,8 +541,7 @@ export class Interpreter {
       checkFenceLang(value);
       return value;
     });
-    const body = node.body.map((child) => this.visit(child)).join("");
-    return fenced(body, lang);
+    return fenced(this.visitBody(node.body), lang);
   }
 
   /**
@@ -561,16 +627,19 @@ export class Interpreter {
       }
     }
 
-    // Render content
-    let content = "";
-    for (const child of node.content) {
-      if (child.type === "List") {
-        // Nested list
-        content += "\n" + this.visitList(child as ListNode, depth + 1);
-      } else {
-        content += this.visit(child);
+    // Render content, in a block of its own
+    const content = this.block(node.content, () => {
+      let text = "";
+      for (const child of node.content) {
+        if (child.type === "List") {
+          // Nested list
+          text += "\n" + this.visitList(child as ListNode, depth + 1);
+        } else {
+          text += this.visit(child);
+        }
       }
-    }
+      return text;
+    });
 
     return content.trim();
   }
@@ -672,6 +741,10 @@ export class Interpreter {
    * Returns the characters the rows hold.
    */
   private tableRowsFrom(nodes: ASTNode[], rows: string[][], strict: boolean): number {
+    return this.block(nodes, () => this.collectRows(nodes, rows, strict));
+  }
+
+  private collectRows(nodes: ASTNode[], rows: string[][], strict: boolean): number {
     let length = 0;
     const add = (cells: string[]): void => {
       rows.push(cells);
@@ -690,7 +763,7 @@ export class Interpreter {
         add(text.split("|").map((cell) => cell.trim()));
       }
     };
-    const inline = ["Text", "Variable", "Ternary", "Comment"];
+    const inline = ["Text", "Variable", "Ternary", "Comment", "Set"];
     let run: ASTNode[] = [];
     const flush = (): void => {
       if (run.length === 1) {
@@ -724,15 +797,18 @@ export class Interpreter {
    * Returns an array of strings, one per cell
    */
   private processCellsArray(cells: ASTNode[][]): string[] {
-    return cells.map((cellNodes) => {
-      const content = cellNodes.map((node) => this.visit(node)).join("");
-      return content
-        .replace(/\r?\n/g, " ")
-        .replace(/(\\*)\|/g, (found, slashes: string) =>
-          slashes.length % 2 === 0 ? `${slashes}\\|` : found
-        )
-        .trim();
-    });
+    // one block for the whole row: a SET in one cell reads on in the next
+    return this.block(cells.flat(), () =>
+      cells.map((cellNodes) => {
+        const content = cellNodes.map((node) => this.visit(node)).join("");
+        return content
+          .replace(/\r?\n/g, " ")
+          .replace(/(\\*)\|/g, (found, slashes: string) =>
+            slashes.length % 2 === 0 ? `${slashes}\\|` : found
+          )
+          .trim();
+      })
+    );
   }
 
   /**

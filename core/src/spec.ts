@@ -106,6 +106,12 @@ const BLOCKS: Spec["blocks"] = [
       "A code fence of at least three backticks, longer than any backtick run in the rendered body, with the optional language; one leading and one trailing line break of the body are removed",
   },
   {
+    name: "SET",
+    args: "name = expression",
+    description:
+      "Binds a local for the rest of its block: the value of a path, arithmetic, a quoted text, number, true, false or null, with ?? default and | filters, kept as it is (an array stays an array). A single tag with no closer; it prints nothing",
+  },
+  {
     name: "RAW",
     closes: "END_RAW",
     args: "",

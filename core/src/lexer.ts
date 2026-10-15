@@ -34,6 +34,7 @@ export const KEYWORDS: Readonly<Record<string, TokenType>> = {
   END_SECTION: TokenType.END_SECTION,
   FENCE: TokenType.FENCE,
   END_FENCE: TokenType.END_FENCE,
+  SET: TokenType.SET,
 };
 
 /** Block closers checked for balance, each with the opener it closes */
@@ -60,6 +61,7 @@ const OPENERS = new Set(Object.values(CLOSERS));
  * - Lists: {{LIST}}, {{LIST_ITEM}}, {{END_LIST}}
  * - Sections: {{SECTION "Title" level=2}}, {{END_SECTION}}
  * - Code fences: {{FENCE lang="md"}}, {{END_FENCE}}
+ * - Locals: {{SET name = expression}}
  * - Ternary: {{condition ? "true" : "false"}}
  * - Comments: {{# comment #}}
  * - Literal blocks: {{RAW}}...{{END_RAW}}; \{{ is a literal brace pair
@@ -474,7 +476,10 @@ export class Lexer {
    * Map keyword to TokenType
    */
   private getTokenType(keyword: string): TokenType | null {
-    return KEYWORDS[keyword] || null;
+    // Own property only: a word such as "constructor" is not a keyword
+    return Object.prototype.hasOwnProperty.call(KEYWORDS, keyword)
+      ? KEYWORDS[keyword]
+      : null;
   }
 
   /**

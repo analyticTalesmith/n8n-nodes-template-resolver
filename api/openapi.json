@@ -461,17 +461,9 @@
                 },
                 "usedIn": {
                   "type": "array",
+                  "description": "The constructs that read the name: output, if, elseif, case, for, list_item, table, set (later call and input)",
                   "items": {
-                    "type": "string",
-                    "enum": [
-                      "output",
-                      "if",
-                      "elseif",
-                      "case",
-                      "for",
-                      "list_item",
-                      "table"
-                    ]
+                    "type": "string"
                   }
                 },
                 "optional": {

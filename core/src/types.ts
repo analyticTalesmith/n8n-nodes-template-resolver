@@ -67,6 +67,7 @@ export enum TokenType {
   END_SECTION = "END_SECTION",
   FENCE = "FENCE",
   END_FENCE = "END_FENCE",
+  SET = "SET",
   COMMENT = "COMMENT",
   EOF = "EOF",
 }
@@ -119,13 +120,31 @@ export interface TextNode extends ASTNode {
 }
 
 /**
- * Variable substitution node
+ * What the one value evaluator reads: a path (or a literal first term, only
+ * in SET), an optional default and a filter chain
  */
-export interface VariableNode extends ASTNode {
-  type: "Variable";
+export interface ValueExpr {
   path: string[];
   defaultValue?: string;
   filters?: FilterCall[];
+  /** A literal first term; the path is then empty */
+  literal?: { value: TemplateValue };
+}
+
+/**
+ * Variable substitution node
+ */
+export interface VariableNode extends ASTNode, ValueExpr {
+  type: "Variable";
+}
+
+/**
+ * SET: binds a local for the rest of its block
+ */
+export interface SetNode extends ASTNode {
+  type: "Set";
+  name: string;
+  value: ValueExpr;
 }
 
 /**
