@@ -133,17 +133,31 @@ function safeString(value: unknown): string {
   }
 }
 
+const DESCRIBE_TEXT_LIMIT = 40;
+
 /**
- * A value as text for an error message; never throws (cycles, BigInt)
+ * A bounded description of a value for an error message: never serializes a
+ * structure and never throws (cycles, BigInt, hostile toString)
  */
 function describeOperand(value: unknown): string {
-  try {
-    const json = JSON.stringify(value);
-    if (json !== undefined) return json;
-  } catch {
-    // fall through to the plain string form
+  if (typeof value === "string") {
+    const shown =
+      value.length > DESCRIBE_TEXT_LIMIT
+        ? `${value.slice(0, DESCRIBE_TEXT_LIMIT)}...`
+        : value;
+    return `"${shown}"`;
   }
-  return safeString(value);
+  if (
+    typeof value === "number" ||
+    typeof value === "boolean" ||
+    typeof value === "bigint" ||
+    value === null ||
+    value === undefined
+  ) {
+    return String(value);
+  }
+  if (Array.isArray(value)) return `an array of ${value.length} items`;
+  return "an object";
 }
 
 /** An operand read from a condition: its value, and how it was written */
@@ -622,9 +636,7 @@ function isMember(
   text: string | null,
   op: string
 ): boolean {
-  if (items === null && text === null) return false;
-  if (left.value == null) return false;
-  if (!isScalar(left.value)) {
+  if (left.value != null && !isScalar(left.value)) {
     throw new TypeError(
       `Cannot use '${op}' with a left side that is not a text, number or boolean: ${describeOperand(left.value)}`,
       1,
@@ -633,6 +645,8 @@ function isMember(
     );
   }
 
+  if (items === null && text === null) return false;
+  if (left.value == null) return false;
   if (text !== null) return text.includes(safeString(left.value));
   return (items ?? []).some(
     (item) => isScalar(item.value) && valuesEqual(left, item)
@@ -654,7 +668,7 @@ function tryEvaluateBetween(
 
   const [value, low, high] = [split.left, ...bounds].map((operand) => {
     const read = readOperand(operand, variables).value;
-    const number = tryCoerceToNumber(read);
+    const number = typeof read === "boolean" ? null : tryCoerceToNumber(read);
     if (number === null) {
       throw new TypeError(
         `Cannot use 'between' with a non-numeric value: ${describeOperand(read)}`,
@@ -797,6 +811,14 @@ function tryEvaluateTypeCheck(
   }
 }
 
+/** True when the quote character appears inside the text without a backslash before it */
+function hasUnescapedChar(text: string, quote: string): boolean {
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === quote && text[i - 1] !== "\\") return true;
+  }
+  return false;
+}
+
 /**
  * The value of a literal operand (true, false, null, a number or a quoted
  * string), or null when the operand is not a literal. A quoted string is
@@ -817,7 +839,8 @@ export function parseLiteral(
   const last = expr[expr.length - 1];
   if (
     expr.length >= 2 &&
-    ((first === `"` && last === `"`) || (first === `'` && last === `'`))
+    ((first === `"` && last === `"`) || (first === `'` && last === `'`)) &&
+    !hasUnescapedChar(expr.slice(1, -1), first)
   ) {
     return { value: expr.substring(1, expr.length - 1), quoted: true };
   }
