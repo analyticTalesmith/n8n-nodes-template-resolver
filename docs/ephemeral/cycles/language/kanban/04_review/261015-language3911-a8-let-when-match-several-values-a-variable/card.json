@@ -119,7 +119,7 @@
     {
       "path": "tests/language/case.test.ts",
       "reason": "add rows for a WHEN variable with a non-ASCII letter in its name (the CASE subject and output accept such names); found by the build lead before review",
-      "approved_by": "build lead, for the project lead to confirm"
+      "approved_by": "project lead"
     }
   ],
   "manifest_amendments": [
