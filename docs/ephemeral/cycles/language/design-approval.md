@@ -5,7 +5,7 @@ approved_on: 2026-10-15
 approves:
 - 660b44052e3ebfdccbf903df21d46f87a6d4bb4150a426327e93b8eacc8c873e docs/ephemeral/cycles/language/CYCLE.md
 - 5d394f813efc221f5edc23c08fd34fc96272a477610621b13cf783f612a135d2 docs/ephemeral/cycles/language/test-plan.md
-- 4f015b601aee34b5e66ff2cedb4e1d6afa6ed903d6ad28d93680275d2dca75f1 docs/living/architecture/language-contract.md
+- 6b9132984989d8e48935f5624b026ca6766b14c62ffec1de0701e7458a0fa637 docs/living/architecture/language-contract.md
 - ccba70e4286db8981e15dd8453f0a3f637f307cffa4c22d46b3d2d1c8318695b docs/ephemeral/work/261015-language3911-a1-dispatch-filters-from-one-registry-with/spec.md
 cards:
   - 261015-language3911-a1-dispatch-filters-from-one-registry-with
@@ -25,7 +25,7 @@ max_spawns: 20
 max_cost:
 cost_unit:
 sweep_rounds: 3
-approval_hash: 0eb404e77660af32e8e42adde6b455c8b44e7def8ee6c54623d2030dec319b1e
+approval_hash: dd32361f07046dcaf607a2613b058e320df2e594c45672388e807efb86f31e3e
 ---
 
 # Design approval
