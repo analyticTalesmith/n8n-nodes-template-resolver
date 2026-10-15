@@ -50,14 +50,16 @@ types.ts: Limits gains maxNodes (DEFAULT_LIMITS.maxNodes = 20000); errors.ts gai
 | --- | --- | --- |
 | `tests/language/limits-nodes.test.ts` | add | api, cli, template-resolver |
 | `api/openapi.json` | edit | api, cli, template-resolver |
+| `api/routes.ts` | edit | api, cli, template-resolver |
 | `cli/main.ts` | edit | api, cli, template-resolver |
 | `core/src/analyze.ts` | edit | api, cli, template-resolver |
 | `core/src/errors.ts` | edit | api, cli, template-resolver |
+| `core/src/interpreter.ts` | edit | api, cli, template-resolver |
 | `core/src/parser.ts` | edit | api, cli, template-resolver |
 | `core/src/render.ts` | edit | api, cli, template-resolver |
 | `core/src/resolve.ts` | edit | api, cli, template-resolver |
 | `core/src/types.ts` | edit | api, cli, template-resolver |
 | `tests/headless/spec.test.ts` | edit | api, cli, template-resolver |
 
-Files scope: `api/openapi.json`, `cli/main.ts`, `core/src/analyze.ts`, `core/src/errors.ts`, `core/src/parser.ts`, `core/src/render.ts`, `core/src/resolve.ts`, `core/src/types.ts`, `tests/headless/spec.test.ts`, `tests/language/limits-nodes.test.ts`
+Files scope: `api/openapi.json`, `api/routes.ts`, `cli/main.ts`, `core/src/analyze.ts`, `core/src/errors.ts`, `core/src/interpreter.ts`, `core/src/parser.ts`, `core/src/render.ts`, `core/src/resolve.ts`, `core/src/types.ts`, `tests/headless/spec.test.ts`, `tests/language/limits-nodes.test.ts`
 <!-- end generated scope -->
