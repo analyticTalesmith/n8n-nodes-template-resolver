@@ -4,7 +4,17 @@ Source: `docs/ephemeral/research/language-2-plan.md` section L2 (criteria are fr
 
 ## Acceptance criteria
 
-The nine criteria `lc-list lc-table lc-close lc-errors lc-limits lc-ws lc-analyze lc-pipes lc-compat` in `card.json` are the contract (`lc-compat` is a tool criterion, the full suite).
+The criteria below are verbatim from card.json and are the contract (lc-compat is a tool criterion, the full suite).
+
+- lc-list: FOR and IF/ELSEIF/ELSE (nested to any allowed depth) inside LIST yield LIST_ITEMs, numbered without gaps across mixed static and generated items; items skipped by their own condition or fallback keep today's numbering rule.
+- lc-table: IF/ELSEIF/ELSE inside TABLE, and a FOR or IF inside either, yield ROWs; rows are padded to the widest row as before; the header rule is unchanged.
+- lc-close: a LIST_ITEM without END_LIST_ITEM ends at the next item, END_LIST, and now also at END_FOR, ELSE, ELSEIF or END_IF of the enclosing child block; a ROW without END_ROW does the same inside an IF or FOR that builds rows; an unclosed item followed by a FOR or IF is that item's content (no new guess), and a LIST_ITEM found inside such content is a `syntax-error` whose suggestion says to close the item with END_LIST_ITEM.
+- lc-errors: any other tag or non-whitespace text inside a FOR or IF that builds LIST items, or an IF that builds TABLE rows, is a `syntax-error` at its own position, in every mode; comments and whitespace are always allowed. A FOR placed directly in a TABLE keeps today's text-row fallback (a body that is not a ROW is rendered and split on `|` into a row), so no existing table template changes (question 4).
+- lc-limits: FOR and IF in LIST and TABLE count toward maxNodes, maxDepth (parse) and maxIterations (run) exactly as elsewhere.
+- lc-ws: the standalone rule and trim markers apply to the FOR, IF, ELSE and END tags in LIST and TABLE as elsewhere; LIST, TABLE and their parts keep their own spacing.
+- lc-analyze: analyze visits generated items and rows; FOR names inside are scoped; kinds are `list_item` and `table` as today.
+- lc-pipes: in a table cell a pipe after an even run of backslashes is escaped, after an odd run is left as written. This changes the output of a previously valid template (a cell holding two backslashes and a pipe): named in question 5 and the changelog.
+- lc-compat: the full suite passes; no existing test file changes.
 
 ## Syntax settled
 

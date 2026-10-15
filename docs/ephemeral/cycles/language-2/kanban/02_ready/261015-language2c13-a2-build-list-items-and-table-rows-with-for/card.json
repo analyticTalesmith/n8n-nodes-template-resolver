@@ -35,7 +35,7 @@
       "core/src/analyze.ts",
       "core/src/spec.ts"
     ],
-    "frozen": false
+    "frozen": true
   },
   "criteria": [
     {
@@ -144,5 +144,19 @@
   ],
   "test_levels": [
     "unit"
-  ]
+  ],
+  "freeze": {
+    "at": "2026-10-15T14:18:33.401Z",
+    "brief_sha256": "d8f241740e535b78261402e11e163f56581a3d3a5a9e5b3569c477b41bd0c6a8",
+    "brief_core_sha256": "94bac7bf8c28050fd459f313677071caf9691e8ab8b96668de206c6389a79658",
+    "manifest_sha256": "a09af7a8f2e4395a07af8df2c8bffab3214238cbe77a283600628851db6ee76b",
+    "criteria_sha256": "dbf6b581274021a00477a78f085c83446aefcadb68b9aefaa9f490a34c4f9083",
+    "scope_sha256": "2ca27d4f2adc38ce5894c651961d76f53fa5475d14215a647d17052e21bc8a77",
+    "scope_parts": {
+      "files_scope": "42b763b1c171754324a7e4bb86ed356b161af43355b32b5059a34c7a0961cfaf",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "a1f7b9c53a64abe032ab531d3bc396051f006f544d6cb2cb7b6dae100ea698d7"
+    }
+  }
 }
