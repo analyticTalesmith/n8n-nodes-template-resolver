@@ -7,4 +7,4 @@ status: open
 
 # Proposed change
 
-<!-- Say what changes in the target document. For add: what the planned document will cover. For modify: which parts change and why. For remove: why the document goes. For recover: the area the recovered document describes; apply it by slug when its archaeology card is done. Other changes are applied when the cycle merges, and the document becomes built. Nobody sets validated here: only an approved close review does. -->
+The template-resolver module now lists `limit-nodes` among the diagnostic codes and adds `maxNodes` (default 20000, counted at parse and located at the node that crosses it) to `Limits`, with `analyze` and `validate` applying the caller's `maxNodes` and `maxDepth` and ELSEIF chains handled in loops.
