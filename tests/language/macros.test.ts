@@ -2022,3 +2022,73 @@ describe("mc-output: a finished list line, table cell and table row counts as it
     check(r.output, `[${entry}] no output`).toBe("");
   });
 });
+
+// ---- mc-output and mc-compat: a legacy text row of a TABLE FOR counts each node as it finishes ----
+
+const ROWTXT_DATA = { ...DATA, xs: [1] };
+/** The row text of a TABLE FOR with 100 calls, in the shapes a legacy text row can take: [label, text] */
+const ROWTXT_BODIES: Array<[string, string]> = [
+  ["100 calls on one line", calls("a", 100)],
+  ["100 calls with a pipe after each", rep("{{CALL a()}}|", 100)],
+  ["100 calls mixed with text and variables", rep("t${{x}}{{CALL a()}}", 100)],
+  ["100 calls in an IF in the FOR", `{{IF t}}${calls("a", 100)}{{END_IF}}`],
+];
+const ROWTXT_WRAPS: Array<[string, (c: string) => string]> = [
+  ["the top level", (c) => c],
+  ["an IF body", (c) => `{{IF t}}${c}{{END_IF}}`],
+];
+const ROWTXT_FAN = ROWTXT_BODIES.flatMap(([label, body]) =>
+  ROWTXT_WRAPS.flatMap(([where, wrap]) =>
+    ENTRIES.map((entry) => ({ entry, name: `${label} at ${where}`, tpl: ADEF + wrap(`{{TABLE}}{{FOR xs AS x}}${body}{{END_FOR}}{{END_TABLE}}`) })),
+  ),
+);
+/** Rows that fill a limit exactly: 5 calls in one cell, and 1 call in each of 3 cells */
+const ROWTXT_CELL5 = `| ${rep("x", 500)} |`;
+const ROWTXT_CELL3 = `| ${X100} | ${X100} | ${X100} |`;
+const ROWTXT_EXACT = [
+  { name: "5 calls in one cell of a text row", body: calls("a", 5), out: ROWTXT_CELL5 },
+  { name: "3 cells of a text row with a call each", body: "{{CALL a()}}|{{CALL a()}}|{{CALL a()}}", out: ROWTXT_CELL3 },
+].flatMap((r) =>
+  ROWTXT_WRAPS.flatMap(([where, wrap]) =>
+    ENTRIES.map((entry) => ({ entry, name: `${r.name} at ${where}`, out: r.out, tpl: ADEF + wrap(`{{TABLE}}{{FOR xs AS x}}${r.body}{{END_FOR}}{{END_TABLE}}`) })),
+  ),
+);
+/** Old templates, no CALL: [name, template, limits, the base output (the four entries agree; the error row pins the code only, the base located it at 1:10)] */
+const ROWTXT_GUARDS: Array<[string, string, Partial<Limits> | undefined, string]> = [
+  ["a Variable in a text row", "{{TABLE}}{{FOR xs AS x}}${{x}}|1\n{{END_FOR}}{{END_TABLE}}", undefined, "| b | 1 |\n| a | 1 |"],
+  ["a Text in a text row", "{{TABLE}}{{FOR xs AS x}}k|1\n{{END_FOR}}{{END_TABLE}}", undefined, "| k | 1 |\n| k | 1 |"],
+  ["a Set in a text row", "{{TABLE}}{{FOR xs AS x}}{{SET w = x}}${{w}}|1\n{{END_FOR}}{{END_TABLE}}", undefined, "| b | 1 |\n| a | 1 |"],
+  ["a Comment in a text row", "{{TABLE}}{{FOR xs AS x}}{{# note #}}${{x}}|1\n{{END_FOR}}{{END_TABLE}}", undefined, "| b | 1 |\n| a | 1 |"],
+  ["a pipe line in a text row", "{{TABLE}}{{FOR xs AS x}}a | ${{x}} | c\n{{END_FOR}}{{END_TABLE}}", undefined, "| a | b | c |\n| a | a | c |"],
+  ["multi-line text in a text row", "{{TABLE}}{{FOR xs AS x}}p${{x}}|1\nq|2\n{{END_FOR}}{{END_TABLE}}", undefined, "| pb | 1 |\n| q | 2 |\n| pa | 1 |\n| q | 2 |"],
+  ["a text row in an IF in the FOR", "{{TABLE}}{{FOR xs AS x}}{{IF t}}${{x}}|1\n{{END_IF}}{{END_FOR}}{{END_TABLE}}", undefined, "| b | 1 |\n| a | 1 |"],
+  ["a trailing-blank body at limit 30", "{{TABLE}}{{FOR xs AS x}}${{x}}|1   \n\n   {{END_FOR}}{{END_TABLE}}", { maxOutputChars: 30 }, "| b | 1 |\n| a | 1 |"],
+  ["a trailing-blank body at limit 19, the exact size", "{{TABLE}}{{FOR xs AS x}}${{x}}|1   \n\n   {{END_FOR}}{{END_TABLE}}", { maxOutputChars: 19 }, "| b | 1 |\n| a | 1 |"],
+  ["a trailing-blank body at limit 18, one under", "{{TABLE}}{{FOR xs AS x}}${{x}}|1   \n\n   {{END_FOR}}{{END_TABLE}}", { maxOutputChars: 18 }, "!limit-output@1:1"],
+  ["a long text row at limit 20", "{{TABLE}}{{FOR xs AS x}}${{x}}|0123456789012345678901234567890\n{{END_FOR}}{{END_TABLE}}", { maxOutputChars: 20 }, "!limit-output@*:*"],
+  ["a padded text row at limit 20", "{{TABLE}}{{FOR xs AS x}}                    ${{x}}|1                    {{END_FOR}}{{END_TABLE}}", { maxOutputChars: 20 }, "| b | 1 |\n| a | 1 |"],
+];
+
+describe("mc-output: a legacy text row of a TABLE FOR counts each node as it finishes", () => {
+  it.each(ROWTXT_FAN)("mc-output: [$entry] $name end in limit-output after about 11 calls", ({ entry, tpl }) => {
+    const o = run(entry, tpl, ROWTXT_DATA, OUT_LIMITS);
+    check(o.code, `[${entry}] limit-output (got ${o.code} ${o.message ?? ""})`).toBe("limit-output");
+    if (entry.startsWith("render")) check(o.iterations, `[${entry}] stats.iterations ${o.iterations} <= 22: the calls stop when the held text passes the limit`).toBeLessThanOrEqual(22);
+  });
+  it.each(ROWTXT_EXACT)("mc-output: [$entry] $name fill a limit exactly and render", ({ entry, tpl, out }) => {
+    const o = run(entry, tpl, ROWTXT_DATA, { maxOutputChars: out.length });
+    check(o.code, `[${entry}] renders at the limit (got ${o.code} ${o.message ?? ""})`).toBe("ok");
+    check(o.output, `[${entry}] the whole row`).toBe(out);
+  });
+  it.each(ROWTXT_EXACT)("mc-output: [$entry] $name are limit-output with a limit one under", ({ entry, tpl, out }) => {
+    const o = run(entry, tpl, ROWTXT_DATA, { maxOutputChars: out.length - 1 });
+    check(o.code, `[${entry}] one character over the limit (got ${o.code} ${o.message ?? ""})`).toBe("limit-output");
+  });
+});
+
+describe("mc-compat: legacy text rows of a TABLE FOR keep their output", () => {
+  const cases = ROWTXT_GUARDS.flatMap(([name, tpl, limits, want]) => ENTRIES.map((entry) => ({ entry, name, tpl, limits, want })));
+  it.each(cases)("mc-compat: [$entry] $name", ({ entry, name, tpl, limits, want }) => {
+    guardCheck(run(entry, tpl, { xs: ["b", "a"], t: true }, limits), want, `mc-compat [${entry}] ${name}`);
+  });
+});
