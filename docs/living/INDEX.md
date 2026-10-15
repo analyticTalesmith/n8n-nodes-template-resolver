@@ -9,4 +9,5 @@ Durable project knowledge. Give every document a one-line summary in its frontma
 <!-- generated index: replace everything between this line and the end marker -->
 - [architecture/](architecture/INDEX.md) — Index of docs/living/architecture.
 - [decisions/](decisions/INDEX.md) — Index of docs/living/decisions.
+- [testing.md](testing.md) — How this project tests: the stack, the command for each level, where results appear, who revises what and what green means.
 <!-- end generated index -->

@@ -1,0 +1,101 @@
+{
+  "id": "261015-language3911-a1-dispatch-filters-from-one-registry-with",
+  "title": "Dispatch filters from one registry with quote-aware arguments",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [],
+  "origin": "language",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "core/src/filters.ts",
+    "core/src/parser.ts",
+    "core/src/interpreter.ts",
+    "core/src/analyze.ts",
+    "core/src/spec.ts",
+    "core/src/types.ts",
+    "core/src/errors.ts",
+    "core/src/filters-text.ts",
+    "core/src/filters-collection.ts",
+    "tests/language/filter-registry.test.ts",
+    "tests/headless/spec.test.ts"
+  ],
+  "manifest": {
+    "add": [
+      "core/src/filters-text.ts",
+      "core/src/filters-collection.ts",
+      "tests/language/filter-registry.test.ts"
+    ],
+    "remove": [],
+    "edit": [
+      "core/src/filters.ts",
+      "core/src/parser.ts",
+      "core/src/interpreter.ts",
+      "core/src/analyze.ts",
+      "core/src/spec.ts",
+      "core/src/types.ts",
+      "core/src/errors.ts",
+      "tests/headless/spec.test.ts"
+    ],
+    "frozen": false
+  },
+  "criteria": [
+    {
+      "text": "fr-registry: render, spec() and analyze use one table of filter definitions {name, params, description, paramNames, apply}: a definition added to the table is accepted by render, listed by spec() and accepted by analyze and validate with no other change, and spec() exposes only name, params and description (no function)",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "fr-values: filters receive and return values; the six existing filters coerce their input to text first exactly as the output step does, so every existing template renders the same output as before",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "fr-args: filter calls are parsed once at parse time, quote-aware: fence=\"a=b\" and fence=\"a:b\" keep the whole language text; a named parameter the filter does not declare (escape_md:mode=block) is a type-error located at the variable instead of a silent fallback; parseFilter and the strings it parsed before still give the same results",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "fr-default-quote: an unterminated quote in a ?? default (an apostrophe or a double quote that never closes) no longer swallows the filters after it, and a closed quoted default still keeps a pipe inside it",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "fr-groups: core/src/filters-text.ts and core/src/filters-collection.ts exist, each exporting an empty list of filter definitions that the registry includes, so later cards add rows there without touching the dispatch",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "fr-compat: the full existing suite passes; the only existing test file changed is tests/headless/spec.test.ts, whose fixed six-name list becomes a check that spec lists exactly the registry",
+      "verify": "tool",
+      "evidence": null,
+      "status": "pending"
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/language/filter-registry.test.ts",
+    "tests/headless/spec.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": [
+    "docs/living/architecture/modules/template-resolver.md",
+    "docs/living/architecture/language-contract.md"
+  ],
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver"
+  ]
+}
