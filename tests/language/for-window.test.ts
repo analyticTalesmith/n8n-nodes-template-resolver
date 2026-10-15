@@ -889,3 +889,60 @@ describe("fw-window: analyze and spec", () => {
     check(blocks[0].closes, "ELSE has no closing keyword").toBeUndefined();
   });
 });
+
+describe("review round 1 regressions", () => {
+  const RESOLVE: Entry[] = ["resolve-strict", "resolve-lenient"];
+
+  it.each(RESOLVE)("fw-table: non-ROW FOR body keeps one row per IF block with newlines between (review round 1) [%s]", (entry) => {
+    const tpl = "{{TABLE}}{{HEADER}}K|V{{END_HEADER}}{{FOR xs AS x}}\n{{IF x.a}}A|1{{END_IF}}\n{{IF x.b}}B|2{{END_IF}}\n{{END_FOR}}{{END_TABLE}}";
+    const o = run(entry, tpl, { xs: [{ a: true, b: true }] });
+    check(o.code, "renders").toBe("ok");
+    const lines = (o.output ?? "").split("\n");
+    check(lines, "header row present").toContain("| K | V |");
+    check(lines, "first block is its own row").toContain("| A | 1 |");
+    check(lines, "second block is its own row").toContain("| B | 2 |");
+  });
+
+  it.each(RESOLVE)("fw-table: two IF blocks without newlines give the base rows (review round 1) [%s]", (entry) => {
+    const tpl = "{{TABLE}}{{FOR xs AS x}}{{IF x > 1}}a|b{{END_IF}}{{IF x > 0}}c|d{{END_IF}}{{END_FOR}}{{END_TABLE}}";
+    const o = run(entry, tpl, { xs: [1, 2] });
+    check(o.output, "base output kept").toBe("| c | d |\n| a | b |\n| c | d |");
+  });
+
+  it.each(RESOLVE)("fw-table: one IF with a line break in its text gives the base output (review round 1) [%s]", (entry) => {
+    const tpl = "{{TABLE}}{{FOR xs AS x}}{{IF x > 0}}a|b\nc|d{{END_IF}}{{END_FOR}}{{END_TABLE}}";
+    const o = run(entry, tpl, { xs: [1] });
+    check(o.output, "base output kept").toBe("| a | b\nc | d |");
+  });
+
+  it.each(RESOLVE)("fw-table: inline run stays one row per iteration (review round 1) [%s]", (entry) => {
+    const tpl = "{{TABLE}}{{FOR xs AS x}}${{x}}|${{x}}{{END_FOR}}{{END_TABLE}}";
+    const o = run(entry, tpl, { xs: [1, 2] });
+    check(o.output, "one row per iteration").toBe("| 1 | 1 |\n| 2 | 2 |");
+  });
+
+  it.each([
+    ["{{FOR my items AS x}}${{x}},{{END_FOR}}", "1,2,"],
+    ["{{FOR my items as x}}${{x}},{{END_FOR}}", "1,2,"],
+    ["{{FOR my items AS x limit=1}}${{x}},{{END_FOR}}", "1,"],
+  ])("fw-args: spaced iterable %j reads that key (review round 1)", (tpl, want) => {
+    for (const entry of RESOLVE) {
+      const o = run(entry, tpl, { "my items": [1, 2] });
+      check(o.output, `${entry} output`).toBe(want);
+    }
+  });
+
+  it.each([
+    "{{FOR my items AS}}x{{END_FOR}}",
+    "{{FOR AS x}}x{{END_FOR}}",
+    "{{FOR items AS x y}}x{{END_FOR}}",
+    "{{FOR items}}x{{END_FOR}}",
+  ])("fw-args: %j is a syntax error at the FOR tag (review round 1)", (tpl) => {
+    for (const entry of RESOLVE) {
+      const o = run(entry, tpl, { items: [1], "my items": [1] });
+      check(o.code, `${entry} code`).toBe("syntax-error");
+      check(o.line, `${entry} line`).toBe(1);
+      check(o.column, `${entry} column`).toBe(1);
+    }
+  });
+});
