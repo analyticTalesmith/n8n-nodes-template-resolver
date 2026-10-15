@@ -124,5 +124,12 @@
       "gate": "4c9c45e4d79e24f18cc347e92c1f39f373cca18a0b03c94b7464d628061e061c"
     }
   },
-  "base_commit": "0cf253d3f419553c6c3b4828937721ba31cf133d"
+  "base_commit": "0cf253d3f419553c6c3b4828937721ba31cf133d",
+  "test_amendments": [
+    {
+      "path": "tests/language/math.test.ts",
+      "reason": "review round 1: rows added for large integers, length on unprintable lists, json on a cyclic object, and keys with odd characters; no existing row or expectation changed",
+      "approved_by": "project lead"
+    }
+  ]
 }
