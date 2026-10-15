@@ -71,11 +71,12 @@ Restatement: Add hoisted, top-level-only `{{DEFINE name(params)}}...{{END_DEFINE
 ### f5: CALLs in one text run of a legacy TABLE-FOR body all run before the output check sees any of them
 
 - Class: goal-risk
-- Status: open
+- Status: fixed
 - Serves: c7: The card adds 'Call' to the inline kinds of the legacy text-row rule. In tableRowsFrom, flush() renders a run of several inline nodes with `run.map((node) => this.visit(node)).join("")` and only then hands the lines to addText, which is the only place the cells are held. Each CALL in the run checks `held` only while its own body is built, and releases it on return. The outputs of earlier siblings in the same run are never in `held`. runLoop checks the loop total only after the whole iteration. So N CALLs written in one line of a FOR inside a TABLE all run, each producing up to the limit, before limit-output trips. This is the same unbounded-sibling pattern f3 fixed for LIST lines and ROW cells, left open on this path. It breaks the cycle goal that every call and output is bounded and c7's 'before the work holds much more than twice the limit'.
 - Raised in round 2; sustained 0, failed fixes 0
 - Reproduction: Template: `{{DEFINE a()}}` + 'x'.repeat(100) + `{{END_DEFINE}}{{TABLE}}{{FOR one AS i}}` + '{{CALL a()}}'.repeat(100) + `|1\n{{END_FOR}}{{END_TABLE}}`. Data: {one:[1]}. Limits: {maxOutputChars: 1000}. Expected by c7: limit-output with stats.iterations at most about 22. Per the code in the diff, all 100 calls run (the run is visited whole at flush) before addText holds a cell, so stats.iterations is about 101. With a fan-out macro (each top-level call itself producing nearly the limit), the work held grows to N times the limit. Smallest change that restores c7: in flush, hold each visited node's output as it is produced, for example by rendering the run through renderChildren or by calling hold per node and releasing it after addText.
 - Evidence: diff:core/src/interpreter.ts, code:core/src/interpreter.ts:967, test:mc-output: a finished list line, table cell and table row counts as it finishes
+- Reply after round 2 (fixed): restate: In a legacy TABLE-FOR text row, flush() ran every inline node (many CALLs on one line) before any cell was held, so all calls ran before limit-output.; verify: flush() renders the run through renderChildren in a trimming context, counting each node as it finishes: the 100-call repro has stats.iterations <= 22 (was 101); legacy outputs equal base.; evidence: diff:core/src/interpreter.ts, test:mc-output: 100 calls in one legacy TABLE-FOR text row stop near the limit
 
 ### f6: CALL path arguments reject names the language accepts elsewhere (hyphenated and non-ASCII)
 

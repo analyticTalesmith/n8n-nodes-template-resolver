@@ -259,10 +259,21 @@
       "location": "core/src/interpreter.ts:967",
       "label": "f5",
       "raised_in": 2,
-      "status": "open",
+      "status": "fixed",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 2,
+          "restate": "In a legacy TABLE-FOR text row, flush() ran every inline node (many CALLs on one line) before any cell was held, so all calls ran before limit-output.",
+          "verify": "flush() renders the run through renderChildren in a trimming context, counting each node as it finishes: the 100-call repro has stats.iterations <= 22 (was 101); legacy outputs equal base.",
+          "action": "fixed",
+          "evidence": [
+            "diff:core/src/interpreter.ts",
+            "test:mc-output: 100 calls in one legacy TABLE-FOR text row stop near the limit"
+          ]
+        }
+      ],
       "rulings": []
     },
     {
