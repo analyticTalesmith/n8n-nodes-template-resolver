@@ -28,19 +28,28 @@
       "text": "ft-text: each of upper, lower, title, replace (replace:find=\"a\",with=\"b\", every occurrence), indent (indent=N spaces on every non-empty line, default 2), quote (a JSON-style double-quoted string) and round (round=N decimal places, default 0) gives the expected output for a table of inputs, including empty, number, boolean and non-string input coerced to text first; no existing filter output changes",
       "verify": "test",
       "evidence": null,
-      "status": "pending"
+      "status": "pending",
+      "traces": [
+        "tests/language/filters-text.test.ts#ft-text"
+      ]
     },
     {
       "text": "ft-params: a missing required parameter (replace without find, round or indent with a non-integer) or a parameter the filter does not declare is a type-error located at the variable, in every mode",
       "verify": "test",
       "evidence": null,
-      "status": "pending"
+      "status": "pending",
+      "traces": [
+        "tests/language/filters-text.test.ts#ft-params"
+      ]
     },
     {
       "text": "ft-default: default=\"x\" replaces a value that is not truthy (missing, null, empty text, 0, false, empty list, empty object); the existing ?? keeps its current behaviour in this card",
       "verify": "test",
       "evidence": null,
-      "status": "pending"
+      "status": "pending",
+      "traces": [
+        "tests/language/filters-text.test.ts#ft-default"
+      ]
     }
   ],
   "gate": [
