@@ -1,0 +1,148 @@
+{
+  "restatement": "This card changes documentation only, plus one guard test. The README, the changelog, the language contract, the template-resolver, api and cli module pages, the headless contract and a new ADR 0007 must describe every filter, operator, limit and WHEN form built in this cycle exactly as the code behaves. They must not present unbuilt constructs such as SET, INPUT, CALL or matches as available. A test must keep spec() in step with the lexer keywords, the filter registry and the evaluator's operators, and a golden case must render the README showcase template so the example is real. No test expectation, runtime dependency or language behavior may change.",
+  "brief_mismatch": "The card scope and manifest (files_scope: README.md, changelog.md, docs/living/architecture, the showcase template.md, surfaces.test.ts) do not cover docs/living/decisions/adr/0007-statement-tags-without-a-body.md, which c4 requires and the diff edits. They also omit the golden case's data.json, expected.md and options.json, which spec.md's Interface lists as added. The scope exceptions log says none were logged. The manifest needs amending, or the lead must say where these files come from.",
+  "verification_plan": [
+    "c1: confirm the surfaces test checks each lexer opening keyword and its END_ closer against spec().blocks, checks the reverse direction, checks registry filters against spec().filters in both directions, and maps every evaluator operator and the spellings &&, || and ! to spec().operators.",
+    "c1: confirm the test fails if a keyword, a filter or an operator is removed from spec(), and judge whether it also fails when the lexer or evaluator gains one that spec() lacks.",
+    "c2: confirm all 23 filters appear in the README with parameter forms and that each example's claimed output follows from the contract's rules for the given data.",
+    "c2: confirm a golden case (template, data, expected output) exists whose template matches the README showcase verbatim, and that the README's printed data and output match that case.",
+    "c2: confirm the operators in, not in, between and .length, the equality rule, maxNodes (API option, CLI flag, limit-nodes), the three WHEN forms and the render-only behaviors are documented, with nothing the contract or code contradicts.",
+    "c2: confirm stale README text (the filter table, the unknown-filter rows, limits, spec output, CASE, Math, operators, the notes on missing variables and defaults) is corrected.",
+    "c3: compare the language contract, the template-resolver, api and cli module pages and the headless contract against each other and against the code facts the packet shows (defaults, option names, flags, codes, spec shape).",
+    "c4: confirm ADR 0007 has context, options considered, a decision and consequences, stays consistent with ADR 0001 and does not describe SET, INPUT or CALL as built.",
+    "m1-m4: confirm no existing test expectation changes, no runtime dependency is added, and no document promises regex or eval behavior or lenient acceptance of unknown names.",
+    "scope: confirm only the files the card names change, and look for plan codes or review-process words."
+  ],
+  "findings": [
+    {
+      "title": "README and changelog call malformed math and unprintable values render-only; the language contract says both entry points",
+      "class": "goal-risk",
+      "serves": {
+        "target": "c2",
+        "scenario": "A core user who calls resolveTemplate with ${{(a + b}} or a cyclic value reads in the README that resolveTemplate keeps its old output. The contract says resolveTemplate raises a located type-error for both. One of the two documents contradicts the code, so the card goal of describing behavior exactly fails."
+      },
+      "rubric": "nothing is described as available that the code does not do; c2 and c3: the documents match the code",
+      "reproduction": "1. Read README.md, the paragraph that begins '`render` only.': 'The zero divisor, the malformed expression, the unprintable value and the 15-digit printing apply to `render` ... Core's `resolveTemplate` keeps its old output for these'. 2. Read docs/living/architecture/language-contract.md, Math and output errors: Malformed math ends 'Applies in both entry points.' and Unprintable output ends 'Applies in both entry points.' 3. Read the changelog line 'Math and output errors in `render`: ... a value with no text form ... `resolveTemplate` keeps its old output for these'. 4. Call resolveTemplate('${{(1 + 2}}', new Map()) and resolveTemplate('${{loop}}', a map holding a cyclic object). If either throws, the README and the changelog are wrong; if neither throws, the contract is wrong. Smallest fix: make the README paragraph and the changelog line name only the zero divisor and the 15-digit printing as render-only, if the code matches the contract.",
+      "evidence": [
+        "diff:README.md",
+        "diff:changelog.md",
+        "doc:docs/living/architecture/language-contract.md"
+      ],
+      "location": "README.md:804"
+    },
+    {
+      "title": "README says .length on any value other than an array or a text stays null, but an object with its own length key returns that value",
+      "class": "goal-risk",
+      "serves": {
+        "target": "c2",
+        "scenario": "An author passes data {\"o\": {\"length\": 5}} and writes ${{o.length}}. The README says this prints empty (null). The contract says it prints 5 (and the same for a JSON object text with its own length key), so the README makes a claim the code contradicts."
+      },
+      "rubric": "goal-critical question 2: no claim the code contradicts",
+      "reproduction": "1. Read the README bullet '**`.length`** is a path segment after any value: an array gives its element count and a text gives ... Any other value, or missing data, stays null'. 2. Read the language contract bullet .length: 'an object with its own key `length` returns that key's value, null included' and 'unless it is a JSON object text with its own key `length`'. 3. Render ${{o.length}} with {\"o\": {\"length\": 5}}: the output 5 contradicts the README. Smallest fix: add the own-key exception to the README bullet.",
+      "evidence": [
+        "diff:README.md",
+        "doc:docs/living/architecture/language-contract.md"
+      ],
+      "location": "README.md:868"
+    },
+    {
+      "title": "Nothing in the packet shows the golden case data and expected output that render the README showcase; the guard checks only the template",
+      "class": "goal-risk",
+      "serves": {
+        "target": "c2",
+        "scenario": "c2 requires 'a golden case renders the README example'. The diff adds no data.json, expected.md or options.json under tests/golden/render-cases/lang-filters-showcase/, and the manifest lists only template.md there (committed before the base). The surfaces test checks only that the template appears verbatim. If the golden files are missing or differ from the README's data block and printed output, the README example is not proven to render as shown, and no test would notice."
+      },
+      "rubric": "c2: a golden case renders the README example; card scope includes the showcase golden case",
+      "reproduction": "1. List tests/golden/render-cases/lang-filters-showcase/ at head 80572368: check whether data.json, expected.md and options.json exist. 2. If they exist, diff data.json against the README's JSON data block and expected.md against the README's 'it renders' block. 3. Change one line of the README's printed output (for example 'length: 4' to 'length: 5') and run the surfaces test: it still passes, because only the template is guarded. Smallest fix: make sure the golden case holds the README data and output, and add a guard that the README contains expected.md (and data.json) verbatim.",
+      "evidence": [
+        "diff:README.md",
+        "test:ld-readme: the README holds the filters showcase template verbatim",
+        "doc:spec.md (The golden case paragraph and Interface)"
+      ],
+      "location": "tests/golden/render-cases/lang-filters-showcase/"
+    },
+    {
+      "title": "README analysis-diagnostics table omits limit-nodes, which analyze now raises",
+      "class": "goal-risk",
+      "serves": {
+        "target": "c2",
+        "scenario": "An API user sends a template over maxNodes to POST /v1/analyze and gets a limit-nodes diagnostic. The README table says only syntax-error and limit-depth occur there, so the limit-nodes documentation is incomplete in exactly the existing text the cycle made wrong."
+      },
+      "rubric": "goal-critical question 2: the limit option maxNodes (limit-nodes) documented with no contradicting claim; spec.md: correct existing text the cycle made wrong",
+      "reproduction": "1. Read the README Analysis diagnostics row '`syntax-error`, `limit-depth` | `POST /v1/analyze` only: the template does not parse ...'. 2. Read the language contract, Node limit: limit-nodes 'is raised in `render`, `validate`, `analyze` and `resolveTemplate`'. 3. POST /v1/analyze a template of more than 20000 nodes: the response carries limit-nodes, which the table does not list. Smallest fix: add limit-nodes to that row.",
+      "evidence": [
+        "diff:README.md",
+        "doc:docs/living/architecture/language-contract.md"
+      ],
+      "location": "README.md:1132"
+    },
+    {
+      "title": "Template-resolver module page still says filters run on the string form of the value",
+      "class": "goal-risk",
+      "serves": {
+        "target": "c3",
+        "scenario": "c3 requires the template-resolver module page to match the code. Its Interpreting bullet on Variable still ends 'then filters run on the string form'. The same page's Filters section and the contract say filters receive and return values, and the collection filters get lists. A reader changing filters is told the old string-only behavior."
+      },
+      "rubric": "c3: the template-resolver module page matches the code",
+      "reproduction": "1. Read docs/living/architecture/modules/template-resolver.md, Interpreting, the Variable bullet: '... then the `??` default replaces a value that fails `isTruthy`, then filters run on the string form'. 2. Read the language contract, Values: 'A filter receives the resolved value and returns a value'. 3. Render ${{xs | length}} with xs = [\"a\",\"b\"]: the output 2 shows the filter got a list, not the string form. Smallest fix: make the bullet say filters run on the resolved value.",
+      "evidence": [
+        "doc:docs/living/architecture/modules/template-resolver.md",
+        "doc:docs/living/architecture/language-contract.md"
+      ],
+      "location": "docs/living/architecture/modules/template-resolver.md:124"
+    },
+    {
+      "title": "ADR 0007 is edited outside the card's manifest and files_scope, with no scope exception logged",
+      "class": "drift",
+      "serves": {
+        "target": "c4",
+        "scenario": "c4 needs ADR 0007 written, but docs/living/decisions/adr/ is outside files_scope (only docs/living/architecture is listed) and outside the manifest. A scope check flags the edit, or a later reader cannot trace why the card touched the file."
+      },
+      "rubric": "the card scope is respected",
+      "reproduction": "Compare the manifest and files_scope in section 1 with the diff path docs/living/decisions/adr/0007-statement-tags-without-a-body.md. The path is not covered, and the scope exceptions log is empty.",
+      "evidence": [
+        "diff:docs/living/decisions/adr/0007-statement-tags-without-a-body.md"
+      ],
+      "location": "docs/living/decisions/adr/0007-statement-tags-without-a-body.md:1"
+    },
+    {
+      "title": "The lexer keyword table in the surfaces test is hand-written, so a keyword the lexer gains without a spec() entry passes",
+      "class": "drift",
+      "serves": {
+        "target": "card-goal",
+        "scenario": "The card goal is a test that keeps spec() in step with the lexer. BLOCK_PAIRS is a fixed list checked against the lexer, so removing a keyword is caught. If a later card adds a keyword such as MESSAGE to the lexer but not to spec(), every test still passes. The filter half derives its list from FILTER_REGISTRY and has no such gap."
+      },
+      "rubric": "c1: every lexer keyword appears in spec()",
+      "reproduction": "Add a new keyword to the lexer's accepted list without adding it to spec.ts or BLOCK_PAIRS, then run tests/language/surfaces.test.ts: it stays green. The test file is frozen, so this is a note for the lead, not a fix request.",
+      "evidence": [
+        "test:ld-spec blocks: spec().blocks has no name outside the keyword table"
+      ],
+      "location": "tests/language/surfaces.test.ts:579"
+    },
+    {
+      "title": "Q9 is marked answered but stays in Open questions, and Interpreting still tags it open",
+      "class": "drift",
+      "serves": {
+        "target": "c3",
+        "scenario": "The module page lists Q9 under Open questions as 'Answered: ...' instead of moving it to Answered, and the Interpreting bullet still carries '[open: Q9]'. A reader cannot tell whether the question is settled."
+      },
+      "rubric": "polish: documents are coherent",
+      "reproduction": "Read docs/living/architecture/modules/template-resolver.md: Q9 is under Open questions, and the Variable bullet under Interpreting ends '[open: Q9]'.",
+      "evidence": [
+        "diff:docs/living/architecture/modules/template-resolver.md"
+      ],
+      "location": "docs/living/architecture/modules/template-resolver.md:187"
+    }
+  ],
+  "responses": [],
+  "reviewer": {
+    "kind": "fallback",
+    "label": "opus fallback (same model family as the builder; has repository access)"
+  },
+  "at": "2026-10-15T05:37:16.404Z",
+  "card": "261015-language3911-a9-document-the-language-so-far",
+  "tier": "product",
+  "packet_sha256": "2037c017aa022da3f792dba63e6568cf69669b27511c28f1125029936d92381e",
+  "diff_sha256": "4671e991b653963f51cc71073649b1d45e79744406bea0ad092bb3d63aa458b3",
+  "dropped": []
+}
