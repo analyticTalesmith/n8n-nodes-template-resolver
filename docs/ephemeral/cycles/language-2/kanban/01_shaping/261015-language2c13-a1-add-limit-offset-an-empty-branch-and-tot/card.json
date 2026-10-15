@@ -14,9 +14,6 @@
     "core/src/analyze.ts",
     "core/src/spec.ts",
     "core/src/expressions.ts",
-    "get",
-    "has",
-    "resolveValue",
     "core/src/scope.ts",
     "tests/language/for-window.test.ts",
     "tests/golden/render-cases/lang-for-window/template.md",
@@ -40,10 +37,7 @@
       "core/src/interpreter.ts",
       "core/src/analyze.ts",
       "core/src/spec.ts",
-      "core/src/expressions.ts",
-      "get",
-      "has",
-      "resolveValue"
+      "core/src/expressions.ts"
     ],
     "frozen": false
   },

@@ -71,9 +71,6 @@ See the plan section for this card in docs/ephemeral/research/language-2-plan.md
 | `core/src/parser.ts` | edit | template-resolver |
 | `core/src/spec.ts` | edit | template-resolver |
 | `core/src/types.ts` | edit | template-resolver |
-| `get` | edit | template-resolver |
-| `has` | edit | template-resolver |
-| `resolveValue` | edit | template-resolver |
 
-Files scope: `core/src/analyze.ts`, `core/src/expressions.ts`, `core/src/interpreter.ts`, `core/src/parser.ts`, `core/src/scope.ts`, `core/src/spec.ts`, `core/src/types.ts`, `get`, `has`, `resolveValue`, `tests/golden/render-cases/lang-for-window/data.json`, `tests/golden/render-cases/lang-for-window/expected.md`, `tests/golden/render-cases/lang-for-window/options.json`, `tests/golden/render-cases/lang-for-window/template.md`, `tests/language/for-window.test.ts`
+Files scope: `core/src/analyze.ts`, `core/src/expressions.ts`, `core/src/interpreter.ts`, `core/src/parser.ts`, `core/src/scope.ts`, `core/src/spec.ts`, `core/src/types.ts`, `tests/golden/render-cases/lang-for-window/data.json`, `tests/golden/render-cases/lang-for-window/expected.md`, `tests/golden/render-cases/lang-for-window/options.json`, `tests/golden/render-cases/lang-for-window/template.md`, `tests/language/for-window.test.ts`
 <!-- end generated scope -->
