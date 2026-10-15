@@ -24,3 +24,5 @@ Working memory for this ticket, next to card.md. The lead updates it in small ed
 
 | Date | Path | Kind | Reason | Approved by |
 | --- | --- | --- | --- | --- |
+| 2026-10-15 | docs/ephemeral/cycles/language/deltas/text-filters-contract.md | add | delta for the living contract this card changes (docs_impact) | build lead, authorized by the project lead's brief |
+| 2026-10-15 | docs/ephemeral/cycles/language/deltas/text-filters-module-page.md | add | delta for the living module page this card changes (docs_impact) | build lead, authorized by the project lead's brief |
