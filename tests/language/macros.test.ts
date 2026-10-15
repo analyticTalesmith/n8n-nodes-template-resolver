@@ -979,6 +979,7 @@ describe("mc-depth: one runtime counter, bounded by maxDepth and by 256", () => 
     check(() => analyze(tpl, { limits: RAISED }), "analyze throws a TemplateError").toThrow(TemplateError);
   });
   // a stack overflow inside the interpreter or the analyzer (a condition nested far deeper than any block) passes through locateError unchanged
+  // the rows below build 25000-deep nested conditions: they assume the default stack size of the node process; raise the depth if a machine overflows later
   const PARENS = [
     { name: "an IF condition with 25000 nested parentheses", cond: rep("(", 25000) + "a" + rep(")", 25000) },
   ];
@@ -1780,5 +1781,244 @@ describe("mc-compat: old templates keep their output", () => {
   });
   it.each(ENTRIES)("mc-compat: [%s] a data name read after a FOR with the same item name is the data again", (entry) => {
     check(run(entry, "{{FOR items AS a}}\${{a.n}}{{END_FOR}}[\${{a}}]", DATA).output, "xy then A").toBe("xy[A]");
+  });
+});
+
+// =====================================================================================
+// review fixes: where a DEFINE may stand, what a trimming body counts, and finished list lines and table cells
+// =====================================================================================
+
+// ---- mc-define: a DEFINE that is not a direct child of the template is a syntax-error at the DEFINE ----
+
+/** [label, text before the DEFINE, text after it]: containers that a ROW, a HEADER or a LIST_ITEM opens */
+const PLACE_CONTAINERS: Array<[string, string, string]> = [
+  ["a ROW at the top level", "{{ROW}}", "{{END_ROW}}"],
+  ["a HEADER at the top level", "{{HEADER}}", "{{END_HEADER}}"],
+  ["a ROW cell after other cells at the top level", "{{ROW}}a|", "{{END_ROW}}"],
+  ["a ROW inside a TABLE", "{{TABLE}}{{ROW}}", "{{END_ROW}}{{END_TABLE}}"],
+  ["a HEADER inside a TABLE", "{{TABLE}}{{HEADER}}", "{{END_HEADER}}{{END_TABLE}}"],
+  ["a ROW cell after other cells inside a TABLE", "{{TABLE}}{{ROW}}a|", "{{END_ROW}}{{END_TABLE}}"],
+  ["a ROW in a FOR inside a TABLE", "{{TABLE}}{{FOR xs AS x}}{{ROW}}", "{{END_ROW}}{{END_FOR}}{{END_TABLE}}"],
+  ["a LIST_ITEM inside a LIST", "{{LIST}}{{LIST_ITEM}}", "{{END_LIST_ITEM}}{{END_LIST}}"],
+  ["a LIST_ITEM at the top level", "{{LIST_ITEM}}", "{{END_LIST_ITEM}}"],
+];
+const PLACE_ROWS: Row[] = PLACE_CONTAINERS.flatMap(([label, before, after]) =>
+  [
+    ["", ""],
+    [" and a CALL after it", "{{CALL a()}}"],
+  ].map(([suffixLabel, suffix]): Row => {
+    const m = marked(`${before}§${def("a", "", "x")}${after}${suffix}`);
+    return { name: `a DEFINE in ${label}${suffixLabel} is a syntax-error at the DEFINE, not an unknown macro`, tpl: m.tpl, data: DATA, want: ERR("syntax-error", m.line, m.col, undefined, "Unknown macro") };
+  }),
+);
+
+describe("mc-define: a DEFINE in a ROW, a HEADER or a LIST_ITEM is a syntax-error at the DEFINE", () => {
+  it.each(expand(PLACE_ROWS))("mc-define: [$entry] $name", ({ entry, r }) => verify(entry, r, "mc-define"));
+  const statics = PLACE_ROWS.flatMap((r) => (["validate", "analyze"] as const).map((kind) => ({ kind, r, name: r.name })));
+  it.each(statics)("mc-define: [$kind] $name", ({ kind, r }) => {
+    const want = r.want as Extract<Want, { err: string }>;
+    verifyOutcome(runStatic(kind, r.tpl), ERR(want.err, want.line, want.col, undefined, want.lacks), `mc-define [${kind}] ${r.name}`);
+  });
+  it.each(ENTRIES)("mc-define: [%s] a top-level DEFINE after a top-level TABLE and between texts still works", (entry) => {
+    const tpl = `a{{TABLE}}{{ROW}}1|2{{END_ROW}}{{END_TABLE}}b${def("a", "", "x")}c{{CALL a()}}{{LIST}}{{LIST_ITEM}}{{CALL a()}}{{END_LIST_ITEM}}{{END_LIST}}`;
+    check(run(entry, tpl, DATA).output, `[${entry}] the table, the texts, the macro in text and in a LIST_ITEM`).toBe("a| 1 | 2 |bcx1. x");
+  });
+});
+
+// ---- mc-compat and mc-output: the running output check counts only what a trimming body keeps ----
+
+interface Sc {
+  name: string;
+  tpl: string;
+  data: Record<string, any>;
+  limits?: Partial<Limits>;
+}
+const V = "${{v}}";
+const NL_TEXT = "x" + rep("\n", 30);
+const BLANK_TEXT = rep(" ", 30);
+const SPACE_TEXT = "x" + rep(" ", 30);
+const PADDED_TEXT = rep(" ", 15) + "x" + rep(" ", 15);
+const LINES_TEXT = rep("\n", 30) + "x";
+const L20 = { maxOutputChars: 20 };
+/** Where a variable sits inside a trimming body: [label, a function from the variable tag to the body] */
+const TRIM_CTXS: Array<[string, (b: string) => string]> = [
+  ["the body itself", (b) => b],
+  ["an IF", (b) => `{{IF t}}${b}{{END_IF}}`],
+  ["a CASE clause", (b) => `{{CASE b}}{{WHEN 2}}${b}{{END_CASE}}`],
+  ["a FOR with one item", (b) => `{{FOR one AS i}}${b}{{END_FOR}}`],
+  ["an IF in an IF", (b) => `{{IF t}}{{IF t}}${b}{{END_IF}}{{END_IF}}`],
+];
+const TRIM_SCENARIOS: Sc[] = TRIM_CTXS.flatMap(([label, w]): Sc[] => {
+  const sc = (name: string, tpl: string, v: string, limits: Partial<Limits> = L20): Sc => ({ name: `${name} in ${label}`, tpl, data: { ...DATA, v }, limits });
+  const section = (attrs = "") => `{{SECTION "T"${attrs}}}${w(V)}{{END_SECTION}}`;
+  return [
+    sc("a SECTION body with 30 trailing newlines, limit 20", section(), NL_TEXT),
+    sc("a SECTION body of 30 blanks, limit 20", section(), BLANK_TEXT),
+    sc("a SECTION body of 30 blanks with skip_empty=true, limit 20", section(" skip_empty=true"), BLANK_TEXT),
+    sc("a SECTION body of 30 blanks with skip_empty=false, limit 20", section(" skip_empty=false"), BLANK_TEXT),
+    sc("a LIST_ITEM with 30 trailing blanks, limit 20", `{{LIST}}{{LIST_ITEM}}${w(V)}{{END_LIST_ITEM}}{{END_LIST}}`, SPACE_TEXT),
+    sc("a LIST_ITEM padded on both sides, limit 20", `{{LIST}}{{LIST_ITEM}}${w(V)}{{END_LIST_ITEM}}{{END_LIST}}`, PADDED_TEXT),
+    sc("a ROW cell with 30 trailing blanks, limit 20", `{{TABLE}}{{ROW}}${w(V)}|b{{END_ROW}}{{END_TABLE}}`, SPACE_TEXT),
+    sc("a ROW cell with 30 leading line breaks, limit 20", `{{TABLE}}{{ROW}}${w(V)}|b{{END_ROW}}{{END_TABLE}}`, LINES_TEXT),
+    sc("a HEADER cell with 30 trailing blanks, limit 20", `{{TABLE}}{{HEADER}}${w(V)}{{END_HEADER}}{{END_TABLE}}`, SPACE_TEXT),
+  ];
+});
+/** A trimmed body exactly at the limit renders and one more character does not */
+const PAD_NL = rep("\n", 30) + rep("y", 10) + rep("\n", 30);
+const PAD_SP = rep(" ", 30) + rep("y", 10) + rep(" ", 30);
+const TRIM_EDGES: Sc[] = [
+  { name: "a SECTION whose kept text fills the limit exactly", tpl: `{{SECTION "T"}}${V}{{END_SECTION}}`, data: { ...DATA, v: PAD_NL }, limits: { maxOutputChars: 17 } },
+  { name: "a SECTION whose kept text is one character over the limit", tpl: `{{SECTION "T"}}${V}{{END_SECTION}}`, data: { ...DATA, v: PAD_NL }, limits: { maxOutputChars: 16 } },
+  { name: "a LIST_ITEM whose kept text fills the limit exactly", tpl: `{{LIST}}{{LIST_ITEM}}${V}{{END_LIST_ITEM}}{{END_LIST}}`, data: { ...DATA, v: PAD_SP }, limits: { maxOutputChars: 13 } },
+  { name: "a LIST_ITEM whose kept text is one character over the limit", tpl: `{{LIST}}{{LIST_ITEM}}${V}{{END_LIST_ITEM}}{{END_LIST}}`, data: { ...DATA, v: PAD_SP }, limits: { maxOutputChars: 12 } },
+  { name: "a ROW cell whose kept text fills the limit exactly", tpl: `{{TABLE}}{{ROW}}${V}{{END_ROW}}{{END_TABLE}}`, data: { ...DATA, v: PAD_SP }, limits: { maxOutputChars: 14 } },
+  { name: "a ROW cell whose kept text is one character over the limit", tpl: `{{TABLE}}{{ROW}}${V}{{END_ROW}}{{END_TABLE}}`, data: { ...DATA, v: PAD_SP }, limits: { maxOutputChars: 13 } },
+];
+/** The base output of each scenario above, in the guard notation (one text when the four entries agree) */
+const TRIM_WANT: Record<string, string | string[]> = {
+  "a SECTION body with 30 trailing newlines, limit 20 in the body itself": "## T\n\nx\n",
+  "a SECTION body of 30 blanks, limit 20 in the body itself": "",
+  "a SECTION body of 30 blanks with skip_empty=true, limit 20 in the body itself": "",
+  "a SECTION body of 30 blanks with skip_empty=false, limit 20 in the body itself": "## T\n",
+  "a LIST_ITEM with 30 trailing blanks, limit 20 in the body itself": "1. x",
+  "a LIST_ITEM padded on both sides, limit 20 in the body itself": "1. x",
+  "a ROW cell with 30 trailing blanks, limit 20 in the body itself": "| x | b |",
+  "a ROW cell with 30 leading line breaks, limit 20 in the body itself": "| x | b |",
+  "a HEADER cell with 30 trailing blanks, limit 20 in the body itself": "| x |\n|:-----|",
+  "a SECTION body with 30 trailing newlines, limit 20 in an IF": "## T\n\nx\n",
+  "a SECTION body of 30 blanks, limit 20 in an IF": "",
+  "a SECTION body of 30 blanks with skip_empty=true, limit 20 in an IF": "",
+  "a SECTION body of 30 blanks with skip_empty=false, limit 20 in an IF": "## T\n",
+  "a LIST_ITEM with 30 trailing blanks, limit 20 in an IF": "1. x",
+  "a LIST_ITEM padded on both sides, limit 20 in an IF": "1. x",
+  "a ROW cell with 30 trailing blanks, limit 20 in an IF": "| x | b |",
+  "a ROW cell with 30 leading line breaks, limit 20 in an IF": "| x | b |",
+  "a HEADER cell with 30 trailing blanks, limit 20 in an IF": "| x |\n|:-----|",
+  "a SECTION body with 30 trailing newlines, limit 20 in a CASE clause": "## T\n\nx\n",
+  "a SECTION body of 30 blanks, limit 20 in a CASE clause": "",
+  "a SECTION body of 30 blanks with skip_empty=true, limit 20 in a CASE clause": "",
+  "a SECTION body of 30 blanks with skip_empty=false, limit 20 in a CASE clause": "## T\n",
+  "a LIST_ITEM with 30 trailing blanks, limit 20 in a CASE clause": "1. x",
+  "a LIST_ITEM padded on both sides, limit 20 in a CASE clause": "1. x",
+  "a ROW cell with 30 trailing blanks, limit 20 in a CASE clause": "| x | b |",
+  "a ROW cell with 30 leading line breaks, limit 20 in a CASE clause": "| x | b |",
+  "a HEADER cell with 30 trailing blanks, limit 20 in a CASE clause": "| x |\n|:-----|",
+  "a SECTION body with 30 trailing newlines, limit 20 in a FOR with one item": "!limit-output@1:16",
+  "a SECTION body of 30 blanks, limit 20 in a FOR with one item": "!limit-output@1:16",
+  "a SECTION body of 30 blanks with skip_empty=true, limit 20 in a FOR with one item": "!limit-output@1:32",
+  "a SECTION body of 30 blanks with skip_empty=false, limit 20 in a FOR with one item": "!limit-output@1:33",
+  "a LIST_ITEM with 30 trailing blanks, limit 20 in a FOR with one item": "!limit-output@1:22",
+  "a LIST_ITEM padded on both sides, limit 20 in a FOR with one item": "!limit-output@1:22",
+  "a ROW cell with 30 trailing blanks, limit 20 in a FOR with one item": "!limit-output@1:17",
+  "a ROW cell with 30 leading line breaks, limit 20 in a FOR with one item": "!limit-output@1:17",
+  "a HEADER cell with 30 trailing blanks, limit 20 in a FOR with one item": "!limit-output@1:20",
+  "a SECTION body with 30 trailing newlines, limit 20 in an IF in an IF": "## T\n\nx\n",
+  "a SECTION body of 30 blanks, limit 20 in an IF in an IF": "",
+  "a SECTION body of 30 blanks with skip_empty=true, limit 20 in an IF in an IF": "",
+  "a SECTION body of 30 blanks with skip_empty=false, limit 20 in an IF in an IF": "## T\n",
+  "a LIST_ITEM with 30 trailing blanks, limit 20 in an IF in an IF": "1. x",
+  "a LIST_ITEM padded on both sides, limit 20 in an IF in an IF": "1. x",
+  "a ROW cell with 30 trailing blanks, limit 20 in an IF in an IF": "| x | b |",
+  "a ROW cell with 30 leading line breaks, limit 20 in an IF in an IF": "| x | b |",
+  "a HEADER cell with 30 trailing blanks, limit 20 in an IF in an IF": "| x |\n|:-----|",
+  "a SECTION whose kept text fills the limit exactly": "## T\n\nyyyyyyyyyy\n",
+  "a SECTION whose kept text is one character over the limit": "!limit-output@1:1",
+  "a LIST_ITEM whose kept text fills the limit exactly": "1. yyyyyyyyyy",
+  "a LIST_ITEM whose kept text is one character over the limit": "!limit-output@1:1",
+  "a ROW cell whose kept text fills the limit exactly": "| yyyyyyyyyy |",
+  "a ROW cell whose kept text is one character over the limit": "!limit-output@1:1",
+};
+
+// ---- mc-output: a finished LIST line and a finished TABLE cell or row count as soon as it finishes ----
+
+const HUNDRED = Array.from({ length: 100 }, (_, i) => i);
+const LI = (n: number): string => rep("{{LIST_ITEM}}{{CALL a()}}{{END_LIST_ITEM}}", n);
+/** Bodies that hold 100 calls of the 100-character macro a: [label, template part] */
+const FANOUTS: Array<[string, string]> = [
+  ["100 LIST_ITEMs", `{{LIST}}${LI(100)}{{END_LIST}}`],
+  ["100 LIST_ITEMs in a LIST in a LIST_ITEM", `{{LIST}}{{LIST_ITEM}}top{{LIST}}${LI(100)}{{END_LIST}}{{END_LIST_ITEM}}{{END_LIST}}`],
+  ["LIST_ITEMs built by a FOR", "{{LIST}}{{FOR hundred AS i}}{{LIST_ITEM}}{{CALL a()}}{{END_LIST_ITEM}}{{END_FOR}}{{END_LIST}}"],
+  ["LIST_ITEMs built by a FOR in an IF", "{{LIST}}{{IF t}}{{FOR hundred AS i}}{{LIST_ITEM}}{{CALL a()}}{{END_LIST_ITEM}}{{END_FOR}}{{END_IF}}{{END_LIST}}"],
+  ["one ROW of 100 cells", `{{TABLE}}{{ROW}}${rep("{{CALL a()}}|", 100)}{{END_ROW}}{{END_TABLE}}`],
+  ["100 ROWs", `{{TABLE}}${rep("{{ROW}}{{CALL a()}}|b{{END_ROW}}", 100)}{{END_TABLE}}`],
+  ["a HEADER of 100 cells", `{{TABLE}}{{HEADER}}${rep("{{CALL a()}}|", 100)}{{END_HEADER}}{{ROW}}1{{END_ROW}}{{END_TABLE}}`],
+  ["ROWs built by a FOR", "{{TABLE}}{{FOR hundred AS i}}{{ROW}}{{CALL a()}}|b{{END_ROW}}{{END_FOR}}{{END_TABLE}}"],
+  ["ROWs built by a FOR in an IF", "{{TABLE}}{{IF t}}{{FOR hundred AS i}}{{ROW}}{{CALL a()}}|b{{END_ROW}}{{END_FOR}}{{END_IF}}{{END_TABLE}}"],
+  ["rows written as text in a FOR of a TABLE", "{{TABLE}}{{FOR hundred AS i}}{{CALL a()}}|1\n{{END_FOR}}{{END_TABLE}}"],
+  ["100 calls in one cell", `{{TABLE}}{{ROW}}${calls("a", 100)}|b{{END_ROW}}{{END_TABLE}}`],
+];
+const FANOUT_WRAPS: Array<[string, (c: string) => string]> = [
+  ["the top level", (c) => c],
+  ["an IF body", (c) => `{{IF t}}${c}{{END_IF}}`],
+];
+const FANOUT_ROWS = FANOUTS.flatMap(([label, part]) =>
+  FANOUT_WRAPS.flatMap(([where, wrap]) => ENTRIES.map((entry) => ({ entry, name: `${label} at ${where}`, tpl: ADEF + wrap(part) }))),
+);
+const EXACT_LIST = Array.from({ length: 9 }, (_, i) => `${i + 1}. ${X100}`).join("\n");
+const EXACT_TABLE = rep(`| ${X100} | b |\n`, 5).trimEnd();
+const EXACT_ROWS = [
+  { name: "9 LIST_ITEMs of 100 characters", tpl: ADEF + `{{LIST}}${LI(9)}{{END_LIST}}`, out: EXACT_LIST },
+  { name: "5 ROWs with a cell of 100 characters", tpl: ADEF + "{{TABLE}}" + rep("{{ROW}}{{CALL a()}}|b{{END_ROW}}", 5) + "{{END_TABLE}}", out: EXACT_TABLE },
+].flatMap((r) => ENTRIES.map((entry) => ({ ...r, entry })));
+
+/** a 1,100,000-character leaf and nine levels that each call the one below twice: the text of the top call is over any string the engine can hold */
+const HUGE_LEAF = rep("y", 1100000);
+const HUGE_CHAIN =
+  `{{DEFINE m0()}}${HUGE_LEAF}{{END_DEFINE}}` +
+  Array.from({ length: 9 }, (_, i) => `{{DEFINE m${i + 1}()}}{{CALL m${i}()}}{{CALL m${i}()}}{{END_DEFINE}}`).join("") +
+  "{{CALL m9()}}";
+
+describe("mc-compat: a trimming body keeps the output it had before macros", () => {
+  const all = [...TRIM_SCENARIOS, ...TRIM_EDGES];
+  const cases = all.flatMap((sc) => ENTRIES.map((entry, i) => ({ entry, i, sc, name: sc.name })));
+  it.each(cases)("mc-compat: [$entry] $name", ({ entry, i, sc }) => {
+    const w = TRIM_WANT[sc.name];
+    check(w !== undefined, `the base output of ${sc.name} is recorded`).toBe(true);
+    guardCheck(run(entry, sc.tpl, sc.data, sc.limits), Array.isArray(w) ? w[i] : (w as string), `mc-compat [${entry}] ${sc.name}`);
+  });
+});
+
+describe("mc-output: a trimming body still counts what a CALL printed", () => {
+  const SPACES_MACRO = def("s", "", rep(" ", 100));
+  const NEWLINES_MACRO = def("m", "", "x" + rep("\n", 30));
+  const wraps: Array<[string, (c: string) => string]> = [
+    ["a SECTION", (c) => `{{SECTION "T"}}${c}{{END_SECTION}}`],
+    ["an IF in a SECTION", (c) => `{{SECTION "T"}}{{IF t}}${c}{{END_IF}}{{END_SECTION}}`],
+    ["a CASE in a SECTION", (c) => `{{SECTION "T"}}{{CASE b}}{{WHEN 2}}${c}{{END_CASE}}{{END_SECTION}}`],
+    ["a LIST_ITEM", (c) => `{{LIST}}{{LIST_ITEM}}${c}{{END_LIST_ITEM}}{{END_LIST}}`],
+  ];
+  const fan = wraps.flatMap(([label, wrap]) => ENTRIES.map((entry) => ({ entry, label, tpl: SPACES_MACRO + wrap(calls("s", 100)) })));
+  it.each(fan)("mc-output: [$entry] 100 calls of a macro that prints 100 blanks in $label end in limit-output after about 11 calls", ({ entry, tpl }) => {
+    const o = run(entry, tpl, DATA, OUT_LIMITS);
+    check(o.code, `[${entry}] limit-output (got ${o.code} ${o.message ?? ""})`).toBe("limit-output");
+    if (entry.startsWith("render")) check(o.iterations, `[${entry}] stats.iterations ${o.iterations} <= 22`).toBeLessThanOrEqual(22);
+  });
+  const trail = wraps.flatMap(([label, wrap]) => ENTRIES.map((entry) => ({ entry, label, tpl: NEWLINES_MACRO + wrap("{{CALL m()}}") })));
+  it.each(trail)("mc-output: [$entry] a macro that prints 30 trailing line breaks in $label counts them in full: limit 20 is limit-output", ({ entry, tpl }) => {
+    const o = run(entry, tpl, DATA, L20);
+    check(o.code, `[${entry}] the call's whole text counts (got ${o.code} ${o.message ?? ""})`).toBe("limit-output");
+  });
+});
+
+describe("mc-output: a finished list line, table cell and table row counts as it finishes", () => {
+  it.each(FANOUT_ROWS)("mc-output: [$entry] $name end in limit-output after about 11 calls", ({ entry, tpl }) => {
+    const o = run(entry, tpl, { ...DATA, hundred: HUNDRED }, OUT_LIMITS);
+    check(o.code, `[${entry}] limit-output (got ${o.code} ${o.message ?? ""})`).toBe("limit-output");
+    if (entry.startsWith("render")) check(o.iterations, `[${entry}] stats.iterations ${o.iterations} <= 22: the calls stop when the held text passes the limit`).toBeLessThanOrEqual(22);
+  });
+  it.each(EXACT_ROWS)("mc-output: [$entry] $name fill a limit exactly and render", ({ entry, tpl, out }) => {
+    const o = run(entry, tpl, DATA, { maxOutputChars: out.length });
+    check(o.code, `[${entry}] renders at the limit (got ${o.code} ${o.message ?? ""})`).toBe("ok");
+    check(o.output, `[${entry}] the whole text`).toBe(out);
+  });
+  it.each(EXACT_ROWS)("mc-output: [$entry] $name are limit-output with a limit one under", ({ entry, tpl, out }) => {
+    const o = run(entry, tpl, DATA, { maxOutputChars: out.length - 1 });
+    check(o.code, `[${entry}] one character over the limit (got ${o.code} ${o.message ?? ""})`).toBe("limit-output");
+  });
+  it.each(RENDER)("mc-output: [%s] a text grown past what the engine can hold is limit-output, not limit-depth and not a thrown error", (entry) => {
+    const r = render(HUGE_CHAIN, DATA, { strictMode: entry.endsWith("strict"), limits: { maxOutputChars: Number.MAX_SAFE_INTEGER } });
+    check(r.ok, `[${entry}] render fails`).toBe(false);
+    check(r.diagnostics[0]?.code, `[${entry}] a string past the engine maximum is limit-output (got ${r.diagnostics[0]?.code}: ${r.diagnostics[0]?.message})`).toBe("limit-output");
+    check(r.output, `[${entry}] no output`).toBe("");
   });
 });
