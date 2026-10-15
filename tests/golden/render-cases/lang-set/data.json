@@ -1,0 +1,8 @@
+{
+  "people": ["Cy", "Ann", "Bo"],
+  "base": 0.1,
+  "extra": 0.2,
+  "name": "world",
+  "label": "L",
+  "show": true
+}

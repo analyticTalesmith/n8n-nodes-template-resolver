@@ -2,7 +2,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { FILTER_REGISTRY } from "../../core/src/filters";
-import { Lexer } from "../../core/src/lexer";
+import { KEYWORDS, Lexer } from "../../core/src/lexer";
 import { render } from "../../core/src/render";
 import { spec } from "../../core/src/spec";
 
@@ -28,23 +28,10 @@ function lexerAccepts(keyword: string): boolean {
 
 // ---- ld-spec: blocks ----
 
-const BLOCK_PAIRS: [string, string | undefined][] = [
-  ["IF", "END_IF"],
-  ["ELSEIF", undefined],
-  ["ELSE", undefined],
-  ["CASE", "END_CASE"],
-  ["WHEN", "END_WHEN"],
-  ["DEFAULT", "END_DEFAULT"],
-  ["FOR", "END_FOR"],
-  ["LIST", "END_LIST"],
-  ["LIST_ITEM", "END_LIST_ITEM"],
-  ["TABLE", "END_TABLE"],
-  ["HEADER", "END_HEADER"],
-  ["ROW", "END_ROW"],
-  ["SECTION", "END_SECTION"],
-  ["FENCE", "END_FENCE"],
-  ["RAW", "END_RAW"],
-];
+/** Every keyword that does not start with END_ is an opener; its closer is END_<keyword> when the table has it. */
+const BLOCK_PAIRS: [string, string | undefined][] = Object.keys(KEYWORDS)
+  .filter((k) => !k.startsWith("END_"))
+  .map((k): [string, string | undefined] => [k, Object.prototype.hasOwnProperty.call(KEYWORDS, `END_${k}`) ? `END_${k}` : undefined]);
 
 describe("surfaces", () => {
   it("ld-spec lexer probe: a made-up tag is not accepted", () => {

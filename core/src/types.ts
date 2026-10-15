@@ -17,6 +17,15 @@ export type TemplateValue =
 export type VariableMap = Map<string, TemplateValue>;
 
 /**
+ * Read-only variable lookup; a Map satisfies it, and so does a loop frame
+ * over a parent lookup
+ */
+export interface VariableLookup {
+  has(name: string): boolean;
+  get(name: string): TemplateValue | undefined;
+}
+
+/**
  * Filter call structure
  */
 export interface FilterCall {
@@ -58,6 +67,10 @@ export enum TokenType {
   END_SECTION = "END_SECTION",
   FENCE = "FENCE",
   END_FENCE = "END_FENCE",
+  SET = "SET",
+  DEFINE = "DEFINE",
+  END_DEFINE = "END_DEFINE",
+  CALL = "CALL",
   COMMENT = "COMMENT",
   EOF = "EOF",
 }
@@ -110,13 +123,59 @@ export interface TextNode extends ASTNode {
 }
 
 /**
- * Variable substitution node
+ * What the one value evaluator reads: a path (or a literal first term, only
+ * in SET), an optional default and a filter chain
  */
-export interface VariableNode extends ASTNode {
-  type: "Variable";
+export interface ValueExpr {
   path: string[];
   defaultValue?: string;
   filters?: FilterCall[];
+  /** A literal first term; the path is then empty */
+  literal?: { value: TemplateValue };
+}
+
+/**
+ * Variable substitution node
+ */
+export interface VariableNode extends ASTNode, ValueExpr {
+  type: "Variable";
+}
+
+/**
+ * SET: binds a local for the rest of its block
+ */
+export interface SetNode extends ASTNode {
+  type: "Set";
+  name: string;
+  value: ValueExpr;
+}
+
+/**
+ * DEFINE: a reusable text block, hoisted from the top level of the template.
+ * Its body sees its parameters and the data, nothing of the caller.
+ */
+export interface DefineNode extends ASTNode {
+  type: "Define";
+  name: string;
+  params: string[];
+  body: ASTNode[];
+}
+
+/**
+ * One argument of a CALL: a variable path read in the caller's scope, or a
+ * literal value
+ */
+export type CallArg =
+  | { kind: "path"; path: string[] }
+  | { kind: "literal"; value: TemplateValue };
+
+/**
+ * CALL: prints the output of a macro body for the given arguments
+ */
+export interface CallNode extends ASTNode {
+  type: "Call";
+  name: string;
+  args: CallArg[];
 }
 
 /**
@@ -196,7 +255,20 @@ export interface ForNode extends ASTNode {
   iterable: string[];
   itemName: string;
   body: ASTNode[];
+  /** limit= argument, set only when written */
+  limit?: ForWindowArg;
+  /** offset= argument, set only when written */
+  offset?: ForWindowArg;
+  /** Body of the {{ELSE}} branch, set only when written */
+  elseBody?: ASTNode[];
 }
+
+/**
+ * A FOR window argument: a number written in the tag or a variable path
+ */
+export type ForWindowArg =
+  | { kind: "literal"; value: number }
+  | { kind: "path"; path: string[] };
 
 /**
  * SECTION title: a quoted string or a variable path
@@ -239,8 +311,14 @@ export interface FenceNode extends ASTNode {
  */
 export interface ListNode extends ASTNode {
   type: "List";
-  items: ListItemNode[];
+  items: ListChild[];
 }
+
+/**
+ * A child of a LIST: an item, or a FOR or IF whose bodies hold more children
+ * of the same kind
+ */
+export type ListChild = ListItemNode | ForNode | IfNode;
 
 /**
  * List item node
@@ -258,10 +336,15 @@ export interface ListItemNode extends ASTNode {
 export interface TableNode extends ASTNode {
   type: "Table";
   header: TableHeaderNode | null;
-  rows: TableRowNode[];
+  rows: TableChild[];
   hasHeader: boolean;
   alignment?: string[];
 }
+
+/**
+ * A child of a TABLE: a row, or a FOR or IF that builds rows
+ */
+export type TableChild = TableRowNode | ForNode | IfNode;
 
 /**
  * Table header node

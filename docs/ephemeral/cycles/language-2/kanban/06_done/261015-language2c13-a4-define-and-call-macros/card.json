@@ -1,0 +1,329 @@
+{
+  "id": "261015-language2c13-a4-define-and-call-macros",
+  "title": "Define and call macros",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [
+    "261015-language2c13-a3-bind-block-scoped-locals-with-set"
+  ],
+  "origin": "language-2",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "core/src/analyze.ts",
+    "core/src/errors.ts",
+    "core/src/interpreter.ts",
+    "core/src/lexer.ts",
+    "core/src/macros.ts",
+    "core/src/parser.ts",
+    "core/src/render.ts",
+    "core/src/scope.ts",
+    "core/src/spec.ts",
+    "core/src/types.ts",
+    "core/src/whitespace.ts",
+    "tests/golden/render-cases/lang-macro/data.json",
+    "tests/golden/render-cases/lang-macro/expected.md",
+    "tests/golden/render-cases/lang-macro/options.json",
+    "tests/golden/render-cases/lang-macro/template.md",
+    "tests/language/macros.test.ts",
+    "tests/language/set.test.ts"
+  ],
+  "manifest": {
+    "add": [
+      "core/src/macros.ts",
+      "tests/language/macros.test.ts"
+    ],
+    "remove": [],
+    "edit": [
+      "core/src/analyze.ts",
+      "core/src/errors.ts",
+      "core/src/interpreter.ts",
+      "core/src/lexer.ts",
+      "core/src/parser.ts",
+      "core/src/render.ts",
+      "core/src/spec.ts",
+      "core/src/types.ts",
+      "core/src/whitespace.ts",
+      "tests/language/set.test.ts"
+    ],
+    "frozen": true
+  },
+  "criteria": [
+    {
+      "text": "mc-define: hoisted: a CALL before the DEFINE works; the DEFINE renders nothing; a DEFINE inside any block is a `syntax-error` at it; a name defined twice is a `syntax-error` at the second; a duplicate or invalid parameter is a `syntax-error`.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/macros.test.ts#mc-define"
+      ]
+    },
+    {
+      "text": "mc-call: positional arguments bind to parameters; paths and literals both work; a missing path argument is `missing-variable` at the CALL in strict mode and `null` in lenient mode.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/macros.test.ts#mc-call"
+      ]
+    },
+    {
+      "text": "mc-link: an unknown macro or a wrong argument count is a `syntax-error` at the CALL in every mode, found before output and even in a branch that never renders; in `validate` and `analyze` an unknown name is a diagnostic that `validate` reports as `analysis-warning` (partials may supply it at render, L5), while a wrong count for a known name is thrown like a parse error by `analyze` and is an error in `validate`.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/macros.test.ts#mc-link"
+      ]
+    },
+    {
+      "text": "mc-scope: the body cannot read the caller's SET locals, loop names or `@` metadata (the `@parent` case is `fo-scope` in L6); a name in the body that is not a parameter reads the data; parameters shadow data; SET inside the body is local to the body and a call, and a SET of a parameter name is a `syntax-error`; the caller's scope is intact afterwards.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/macros.test.ts#mc-scope"
+      ]
+    },
+    {
+      "text": "mc-depth: one runtime depth counter rises on every block entered and every CALL, and is bounded by `maxDepth` and, when a caller raises `maxDepth`, by an internal cap of 256 (question 6): an infinite recursion, and 32 chained calls each with a body nested 31 blocks deep, at default limits, and recursion through a nested-block body at a raised `maxDepth`, give a located `limit-depth` (or succeed), never a RangeError and never a `type-error`; `render`, `validate` and `analyze` turn a stray RangeError into a `limit-depth` diagnostic instead of rethrowing it or letting `locateError` retype it.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/macros.test.ts#mc-depth"
+      ]
+    },
+    {
+      "text": "mc-iterations: every CALL counts one toward `maxIterations`: a fan-out of two per level over 14 levels ends in `limit-iterations`; the count appears in `stats.iterations`.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/macros.test.ts#mc-iterations"
+      ]
+    },
+    {
+      "text": "mc-output: `maxOutputChars` is enforced across and inside macro bodies and `IF`/`CASE` bodies under a CALL: a macro whose body is larger than the limit divided by the call count, called from an IF body, ends in `limit-output` before the work holds much more than twice the limit.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/macros.test.ts#mc-output"
+      ]
+    },
+    {
+      "text": "mc-locate: an error raised inside a body is located at the failing body node and its message names the macro and the CALL's line and column (and the partial, when the body came from one, L5); it is never moved to the CALL.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/macros.test.ts#mc-locate"
+      ]
+    },
+    {
+      "text": "mc-names: macro names `__proto__`, `constructor`, `toString` and `hasOwnProperty` define and call like any name, and an unknown one is \"unknown macro\", never an inherited member (the table is a Map).",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/macros.test.ts#mc-names"
+      ]
+    },
+    {
+      "text": "mc-ws: DEFINE and END_DEFINE join the standalone set; CALL does not (it outputs, like a variable); trim markers work on all three.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/macros.test.ts#mc-ws"
+      ]
+    },
+    {
+      "text": "mc-analyze: analyze and validate walk each DEFINE body exactly once and never follow a CALL, so a fan-out or mutually recursive set of macros costs time linear in the template (rows run through `validate` and `analyze`, not only `render`); parameters are locals in the body; CALL argument paths are usage kind `call`; `blocks` counts DEFINE; unresolved names are warnings in validate; analyze lists the macros it saw in an optional `macros` field present only when DEFINEs exist (a required field would break the hand-built analysis literals in `tests/promptaware/section.test.ts` and `api/routes.ts`).",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/macros.test.ts#mc-analyze"
+      ]
+    },
+    {
+      "text": "mc-spec: `spec().blocks` lists DEFINE (closes END_DEFINE) and CALL (no closes); the derived surfaces test passes without edits.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/macros.test.ts#mc-spec"
+      ]
+    },
+    {
+      "text": "mc-compat: the full suite passes; no existing test file changes.",
+      "verify": "tool",
+      "evidence": null,
+      "status": "pending"
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/language/macros.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": "2026-10-15T16:14:02.274Z",
+  "ended": "2026-10-15T17:02:32.916Z",
+  "review_rounds": 2,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver"
+  ],
+  "test_levels": [
+    "unit"
+  ],
+  "test_amendments": [
+    {
+      "path": "tests/language/set.test.ts",
+      "reason": "the st-keywords row that pins the exact keyword table of the SET card must list DEFINE and CALL once they are keywords; two pairs added to the expected table, no row removed, no assertion weakened",
+      "approved_by": "project lead"
+    },
+    {
+      "path": "tests/language/macros.test.ts",
+      "reason": "review round 1: a block of new rows appended at the end of the file for the three findings (a DEFINE inside a ROW or HEADER, trimming bodies under the running output check, LIST and TABLE output under it); no existing row changed",
+      "approved_by": "project lead"
+    },
+    {
+      "path": "tests/language/macros.test.ts",
+      "reason": "review round 2: a second block of rows appended at the end of the file for the legacy TABLE-FOR text-row output check; no existing row changed",
+      "approved_by": "project lead"
+    }
+  ],
+  "freeze": {
+    "at": "2026-10-15T16:25:41.100Z",
+    "brief_sha256": "96f3db9b4049616891df62e5154baa4d66c207a35c90aea92d5d80f31d4c49a1",
+    "brief_core_sha256": "556e24b4da7db95adf23a9950efcfd7a2bec6f17f2cb22c7234ae0979fe596fd",
+    "manifest_sha256": "52089c79eaa31347060767230037db291f408dd746f7640fdb13df1eb7120888",
+    "criteria_sha256": "affcf76db5dad610fff7b8d2b8e783ea23a7b286d8015f797f0c1a290668926d",
+    "scope_sha256": "93702e9aa34f792104c3aa05c2677206f6d577f6896428218d265f9c66dad4c7",
+    "scope_parts": {
+      "files_scope": "1f3a099f9253ff64c7f0f886eb1161ab80e1ac864e14060252432f9541e5e00c",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "f48b23450ca29f3aedc2dff00f71578ceda0673638b8f8c56ceefe732d61472d"
+    }
+  },
+  "base_commit": "c96d1a74c954729614be4395dc582c4deecf58ea",
+  "manifest_amendments": [
+    {
+      "at": "2026-10-15T16:23:34.486Z",
+      "by": "lead",
+      "reason": "golden case files were committed with the tests before the base, and the scope file needed no change",
+      "from": {
+        "manifest": {
+          "add": [
+            "core/src/macros.ts",
+            "tests/golden/render-cases/lang-macro/data.json",
+            "tests/golden/render-cases/lang-macro/expected.md",
+            "tests/golden/render-cases/lang-macro/options.json",
+            "tests/golden/render-cases/lang-macro/template.md",
+            "tests/language/macros.test.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/errors.ts",
+            "core/src/interpreter.ts",
+            "core/src/lexer.ts",
+            "core/src/parser.ts",
+            "core/src/render.ts",
+            "core/src/scope.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts",
+            "core/src/whitespace.ts",
+            "tests/language/set.test.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/analyze.ts",
+          "core/src/errors.ts",
+          "core/src/interpreter.ts",
+          "core/src/lexer.ts",
+          "core/src/macros.ts",
+          "core/src/parser.ts",
+          "core/src/render.ts",
+          "core/src/scope.ts",
+          "core/src/spec.ts",
+          "core/src/types.ts",
+          "core/src/whitespace.ts",
+          "tests/golden/render-cases/lang-macro/data.json",
+          "tests/golden/render-cases/lang-macro/expected.md",
+          "tests/golden/render-cases/lang-macro/options.json",
+          "tests/golden/render-cases/lang-macro/template.md",
+          "tests/language/macros.test.ts",
+          "tests/language/set.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [
+            "core/src/macros.ts",
+            "tests/language/macros.test.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/errors.ts",
+            "core/src/interpreter.ts",
+            "core/src/lexer.ts",
+            "core/src/parser.ts",
+            "core/src/render.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts",
+            "core/src/whitespace.ts",
+            "tests/language/set.test.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/analyze.ts",
+          "core/src/errors.ts",
+          "core/src/interpreter.ts",
+          "core/src/lexer.ts",
+          "core/src/macros.ts",
+          "core/src/parser.ts",
+          "core/src/render.ts",
+          "core/src/scope.ts",
+          "core/src/spec.ts",
+          "core/src/types.ts",
+          "core/src/whitespace.ts",
+          "tests/golden/render-cases/lang-macro/data.json",
+          "tests/golden/render-cases/lang-macro/expected.md",
+          "tests/golden/render-cases/lang-macro/options.json",
+          "tests/golden/render-cases/lang-macro/template.md",
+          "tests/language/macros.test.ts",
+          "tests/language/set.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      }
+    }
+  ]
+}

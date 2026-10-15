@@ -1,0 +1,143 @@
+{
+  "id": "261015-language2c13-a8-document-the-language-and-prove-the-show",
+  "title": "Document the language and prove the showcase",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [
+    "261015-language2c13-a1-add-limit-offset-an-empty-branch-and-tot",
+    "261015-language2c13-a2-build-list-items-and-table-rows-with-for",
+    "261015-language2c13-a3-bind-block-scoped-locals-with-set",
+    "261015-language2c13-a4-define-and-call-macros",
+    "261015-language2c13-a5-pass-partials-in-the-render-options-and"
+  ],
+  "origin": "language-2",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "README.md",
+    "changelog.md",
+    "api/openapi.json",
+    "core/src/spec.ts",
+    "spec().version",
+    "ld2-spec",
+    "tests/language/surfaces-language-2.test.ts",
+    "tests/golden/render-cases/lang-seo-brief/template.md",
+    "tests/golden/render-cases/lang-seo-brief/data.json",
+    "tests/golden/render-cases/lang-seo-brief/options.json",
+    "tests/golden/render-cases/lang-seo-brief/expected.md"
+  ],
+  "manifest": {
+    "add": [
+      "tests/language/surfaces-language-2.test.ts",
+      "tests/golden/render-cases/lang-seo-brief/template.md",
+      "tests/golden/render-cases/lang-seo-brief/data.json",
+      "tests/golden/render-cases/lang-seo-brief/options.json",
+      "tests/golden/render-cases/lang-seo-brief/expected.md"
+    ],
+    "remove": [],
+    "edit": [
+      "README.md",
+      "changelog.md",
+      "api/openapi.json",
+      "core/src/spec.ts",
+      "spec().version",
+      "ld2-spec"
+    ],
+    "frozen": false
+  },
+  "criteria": [
+    {
+      "text": "ld2-spec: the derived surfaces test covers every lexer keyword; every new construct and option has a spec() entry and a README mention.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/surfaces-language-2.test.ts#ld2-spec"
+      ]
+    },
+    {
+      "text": "ld2-readme: the README has one section per new construct (FOR window and ELSE, pairs and `@parent`, LIST and TABLE children, SET, INPUT, DEFINE/CALL, partials, `--partials`, `options.partials`) with examples whose templates the test renders and compares verbatim, as the filters showcase does.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/surfaces-language-2.test.ts#ld2-readme"
+      ]
+    },
+    {
+      "text": "ld2-showcase: the golden case `lang-seo-brief` (template, data, options with partials, expected) renders identically through `render`, the CLI (`--partials` file written by the test) and the API; CRLF checkout safe.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "integration",
+      "traces": [
+        "tests/language/surfaces-language-2.test.ts#ld2-showcase"
+      ]
+    },
+    {
+      "text": "ld2-changelog: the changelog lists the constructs and the three behaviour changes (FOR arguments, table-cell pipes after an even backslash run, inherited path members).",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/surfaces-language-2.test.ts#ld2-changelog"
+      ]
+    },
+    {
+      "text": "ld2-openapi: the OpenAPI document's analysis schema describes the usage kinds, the `macros` field and `declared`/`typeHint`, its block-name and standalone-lines descriptions name DEFINE, SET, INPUT and CALL, and its `usedIn` description names every kind of the `UsageKind` union (a test compares them).",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/surfaces-language-2.test.ts#ld2-openapi"
+      ]
+    },
+    {
+      "text": "ld2-docs: the language contract, the template-resolver, api and cli module pages, the headless contract and ADR 0007 match the code; each new rule of section C appears in the contract with its error behaviour.",
+      "verify": "review",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "ld2-compat: the full suite passes, `tests/promptaware/docs.test.ts` included.",
+      "verify": "tool",
+      "evidence": null,
+      "status": "pending"
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/language/surfaces-language-2.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": [
+    "docs/living/architecture/language-contract.md",
+    "docs/living/architecture/modules/template-resolver.md",
+    "docs/living/architecture/modules/api.md",
+    "docs/living/architecture/modules/cli.md",
+    "docs/living/architecture/headless-contract.md",
+    "docs/living/decisions/adr/0007-statement-tags-without-a-body.md"
+  ],
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver",
+    "api",
+    "cli"
+  ],
+  "test_levels": [
+    "unit",
+    "integration"
+  ],
+  "docs_deferred": true
+}

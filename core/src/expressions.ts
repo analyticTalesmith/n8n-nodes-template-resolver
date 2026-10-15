@@ -1,5 +1,5 @@
 import {
-  VariableMap,
+  VariableLookup,
   TemplateValue,
   WhenItem,
   WhenMatch,
@@ -14,6 +14,7 @@ import {
   tryCoerceToBoolean,
   tryCoerceToString,
 } from "./coercion";
+import { readOwn } from "./scope";
 
 /**
  * Evaluate truthiness of a value
@@ -76,7 +77,7 @@ export function isTruthy(value: any): boolean {
  */
 export function evaluateCondition(
   condition: string,
-  variables: VariableMap
+  variables: VariableLookup
 ): boolean {
   for (const operand of conditionOperands(condition)) {
     readableOperand(operand, variables);
@@ -86,7 +87,7 @@ export function evaluateCondition(
 
 function evaluateConditionText(
   condition: string,
-  variables: VariableMap
+  variables: VariableLookup
 ): boolean {
   const trimmed = condition.trim();
 
@@ -179,7 +180,7 @@ export interface Operand {
  * Read one operand: a literal or a variable path. Text that is neither, is
  * not a variable key and holds a bare space is not a condition we can read.
  */
-function readOperand(expr: string, variables: VariableMap): Operand {
+function readOperand(expr: string, variables: VariableLookup): Operand {
   const text = expr.trim();
   if (text === "") return { value: null, quoted: false };
 
@@ -195,7 +196,7 @@ function readOperand(expr: string, variables: VariableMap): Operand {
  * Throw the Unrecognized condition error for an operand that is not a
  * literal, not a variable key and holds a bare space
  */
-function readableOperand(text: string, variables: VariableMap): void {
+function readableOperand(text: string, variables: VariableLookup): void {
   if (
     text !== "" &&
     parseLiteral(text) === null &&
@@ -324,7 +325,7 @@ export function splitLogical(
  */
 function tryEvaluateLogical(
   expr: string,
-  variables: VariableMap
+  variables: VariableLookup
 ): boolean | null {
   const split = splitLogical(expr);
   if (split === null) return null;
@@ -429,7 +430,7 @@ export function splitComparison(
  */
 function tryEvaluateComparison(
   expr: string,
-  variables: VariableMap
+  variables: VariableLookup
 ): boolean | null {
   const split = splitComparison(expr);
   if (split === null) return null;
@@ -749,7 +750,7 @@ function isScalar(value: TemplateValue): boolean {
  */
 function tryEvaluateMembership(
   expr: string,
-  variables: VariableMap
+  variables: VariableLookup
 ): boolean | null {
   const split = splitMembership(expr);
   if (split === null) return null;
@@ -814,7 +815,7 @@ function isMember(
  */
 function tryEvaluateBetween(
   expr: string,
-  variables: VariableMap
+  variables: VariableLookup
 ): boolean | null {
   const split = splitBetween(expr);
   if (split === null) return null;
@@ -879,7 +880,7 @@ export function splitStringOp(
  */
 function tryEvaluateStringOp(
   expr: string,
-  variables: VariableMap
+  variables: VariableLookup
 ): boolean | null {
   const split = splitStringOp(expr);
   if (split === null) return null;
@@ -934,7 +935,7 @@ export function splitTypeCheck(
  */
 function tryEvaluateTypeCheck(
   expr: string,
-  variables: VariableMap
+  variables: VariableLookup
 ): boolean | null {
   const split = splitTypeCheck(expr);
   if (split === null) return null;
@@ -1149,7 +1150,7 @@ export function mathVariableNames(expr: string): string[] {
 /**
  * Resolve variable value (supports dot notation)
  */
-function resolveValue(expr: string, variables: VariableMap): TemplateValue {
+function resolveValue(expr: string, variables: VariableLookup): TemplateValue {
   if (!expr) return null;
 
   // Normalize whitespace everywhere
@@ -1194,7 +1195,7 @@ function resolveValue(expr: string, variables: VariableMap): TemplateValue {
       current !== null &&
       !Array.isArray(current)
     ) {
-      current = current[path[i]];
+      current = readOwn(current, path[i]);
     } else if (Array.isArray(current)) {
       const index = Number(path[i]);
       current = current[index];
@@ -1211,7 +1212,7 @@ function resolveValue(expr: string, variables: VariableMap): TemplateValue {
  */
 export function evaluateExpression(
   expression: string,
-  variables: VariableMap
+  variables: VariableLookup
 ): boolean {
   return evaluateCondition(expression, variables);
 }
@@ -1224,7 +1225,7 @@ export function evaluateExpression(
  */
 export function evaluateMathExpression(
   expression: string,
-  variables: VariableMap,
+  variables: VariableLookup,
   options?: { zeroIsError?: boolean }
 ): number {
   // Shape first, with every name standing in as a number and no variable read
@@ -1271,7 +1272,7 @@ function endsOperand(tokens: (number | string)[]): boolean {
  */
 function tokenizeMath(
   expr: string,
-  variables: VariableMap | null
+  variables: VariableLookup | null
 ): (number | string)[] {
   const tokens: (number | string)[] = [];
   let i = 0;

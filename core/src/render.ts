@@ -4,7 +4,7 @@ import {
   WhitespaceOptions,
   withDefaultLimits,
 } from "./types";
-import { DiagnosticCode, TemplateError } from "./errors";
+import { DiagnosticCode, LimitError, TemplateError } from "./errors";
 import { Lexer } from "./lexer";
 import { Parser } from "./parser";
 import { Interpreter } from "./interpreter";
@@ -79,6 +79,15 @@ export function render(
     }).parse();
     output = interpreter.interpret(ast);
   } catch (error) {
+    // a stack overflow inside a very deep template is a depth error, not a
+    // crash; any other RangeError is a string grown past what the engine holds
+    if (error instanceof RangeError) {
+      const overflow = error.message.includes("Maximum call stack size exceeded");
+      return failure(
+        toDiagnostic(overflow ? tooDeep() : tooLong()),
+        interpreter.iterationCount
+      );
+    }
     if (!(error instanceof TemplateError)) throw error;
     return failure(toDiagnostic(error), interpreter.iterationCount);
   }
@@ -132,6 +141,28 @@ function failure(diagnostic: Diagnostic, iterations: number): RenderResult {
     stats: { chars: 0, estTokens: 0, sectionsOmitted: 0, iterations },
     diagnostics: [diagnostic],
   };
+}
+
+/** The error for a template that overflowed the stack; no position is known */
+function tooDeep(): TemplateError {
+  return new LimitError(
+    "limit-depth",
+    "The template nests too deeply to run",
+    1,
+    1,
+    "Flatten the nested blocks or lower limits.maxDepth"
+  );
+}
+
+/** The error for text grown past the engine's string size; no position is known */
+function tooLong(): TemplateError {
+  return new LimitError(
+    "limit-output",
+    "Output is longer than the engine can hold",
+    1,
+    1,
+    "Render less content or lower limits.maxOutputChars"
+  );
 }
 
 function toDiagnostic(error: TemplateError): Diagnostic {

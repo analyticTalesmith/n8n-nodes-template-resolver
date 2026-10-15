@@ -1,0 +1,253 @@
+{
+  "id": "261015-language2c13-a2-build-list-items-and-table-rows-with-for",
+  "title": "Build LIST items and TABLE rows with FOR and IF",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [
+    "261015-language2c13-a1-add-limit-offset-an-empty-branch-and-tot"
+  ],
+  "origin": "language-2",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "core/src/analyze.ts",
+    "core/src/interpreter.ts",
+    "core/src/parser.ts",
+    "core/src/spec.ts",
+    "core/src/types.ts",
+    "tests/golden/render-cases/lang-list-for/data.json",
+    "tests/golden/render-cases/lang-list-for/expected.md",
+    "tests/golden/render-cases/lang-list-for/options.json",
+    "tests/golden/render-cases/lang-list-for/template.md",
+    "tests/golden/render-cases/lang-table-if/data.json",
+    "tests/golden/render-cases/lang-table-if/expected.md",
+    "tests/golden/render-cases/lang-table-if/options.json",
+    "tests/golden/render-cases/lang-table-if/template.md",
+    "tests/language/list-table-children.test.ts"
+  ],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [
+      "core/src/analyze.ts",
+      "core/src/interpreter.ts",
+      "core/src/parser.ts",
+      "core/src/spec.ts",
+      "core/src/types.ts",
+      "tests/language/list-table-children.test.ts"
+    ],
+    "frozen": true
+  },
+  "criteria": [
+    {
+      "text": "lc-list: FOR and IF/ELSEIF/ELSE (nested to any allowed depth) inside LIST yield LIST_ITEMs, numbered without gaps across mixed static and generated items; items skipped by their own condition or fallback keep today's numbering rule.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/list-table-children.test.ts#lc-list"
+      ]
+    },
+    {
+      "text": "lc-table: IF/ELSEIF/ELSE inside TABLE, and a FOR or IF inside either, yield ROWs; rows are padded to the widest row as before; the header rule is unchanged.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/list-table-children.test.ts#lc-table"
+      ]
+    },
+    {
+      "text": "lc-close: a LIST_ITEM without END_LIST_ITEM ends at the next item, END_LIST, and now also at END_FOR, ELSE, ELSEIF or END_IF of the enclosing child block; a ROW without END_ROW does the same inside an IF or FOR that builds rows; an unclosed item followed by a FOR or IF is that item's content (no new guess), and a LIST_ITEM found inside such content is a `syntax-error` whose suggestion says to close the item with END_LIST_ITEM.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/list-table-children.test.ts#lc-close"
+      ]
+    },
+    {
+      "text": "lc-errors: any other tag or non-whitespace text inside a FOR or IF that builds LIST items, or an IF that builds TABLE rows, is a `syntax-error` at its own position, in every mode; comments and whitespace are always allowed. A FOR placed directly in a TABLE keeps today's text-row fallback (a body that is not a ROW is rendered and split on `|` into a row), so no existing table template changes (question 4).",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/list-table-children.test.ts#lc-errors"
+      ]
+    },
+    {
+      "text": "lc-limits: FOR and IF in LIST and TABLE count toward maxNodes, maxDepth (parse) and maxIterations (run) exactly as elsewhere.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/list-table-children.test.ts#lc-limits"
+      ]
+    },
+    {
+      "text": "lc-ws: the standalone rule and trim markers apply to the FOR, IF, ELSE and END tags in LIST and TABLE as elsewhere; LIST, TABLE and their parts keep their own spacing.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/list-table-children.test.ts#lc-ws"
+      ]
+    },
+    {
+      "text": "lc-analyze: analyze visits generated items and rows; FOR names inside are scoped; kinds are `list_item` and `table` as today.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/list-table-children.test.ts#lc-analyze"
+      ]
+    },
+    {
+      "text": "lc-pipes: in a table cell a pipe after an even run of backslashes is escaped, after an odd run is left as written. This changes the output of a previously valid template (a cell holding two backslashes and a pipe): named in question 5 and the changelog.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/list-table-children.test.ts#lc-pipes"
+      ]
+    },
+    {
+      "text": "lc-compat: the full suite passes; no existing test file changes.",
+      "verify": "tool",
+      "evidence": null,
+      "status": "pending"
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/language/list-table-children.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": "2026-10-15T14:18:40.520Z",
+  "ended": "2026-10-15T14:38:07.664Z",
+  "review_rounds": 1,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver"
+  ],
+  "test_levels": [
+    "unit"
+  ],
+  "freeze": {
+    "at": "2026-10-15T14:18:33.401Z",
+    "brief_sha256": "d8f241740e535b78261402e11e163f56581a3d3a5a9e5b3569c477b41bd0c6a8",
+    "brief_core_sha256": "94bac7bf8c28050fd459f313677071caf9691e8ab8b96668de206c6389a79658",
+    "manifest_sha256": "cecee4ec2f6e9bea0dc21b8cd130470904ad81c9f6e8c1a58230ceda6b5928b4",
+    "criteria_sha256": "dbf6b581274021a00477a78f085c83446aefcadb68b9aefaa9f490a34c4f9083",
+    "scope_sha256": "2ca27d4f2adc38ce5894c651961d76f53fa5475d14215a647d17052e21bc8a77",
+    "scope_parts": {
+      "files_scope": "42b763b1c171754324a7e4bb86ed356b161af43355b32b5059a34c7a0961cfaf",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "a1f7b9c53a64abe032ab531d3bc396051f006f544d6cb2cb7b6dae100ea698d7"
+    }
+  },
+  "base_commit": "fa60d52418cc6f548d16224e48977851f998a1b6",
+  "test_amendments": [
+    {
+      "path": "tests/language/list-table-children.test.ts",
+      "reason": "one compat row pinned a syntax error for an unclosed ROW before END_FOR in a FOR directly in a TABLE; criterion lc-close makes the ROW end there, so the row now expects the three rows",
+      "approved_by": "build lead (criterion lc-close; flagged to the project lead)"
+    },
+    {
+      "path": "tests/language/list-table-children.test.ts",
+      "reason": "test defects: the golden helper returned no-result for a passing case, and three header rows expected a 5-hyphen separator for a 6-character cell (the unchanged rule gives 6)",
+      "approved_by": "project lead"
+    },
+    {
+      "path": "tests/language/list-table-children.test.ts",
+      "reason": "review round one finding f1: a new block of 44 tests at the end pins a FOR without a ROW inside an IF that builds rows; no existing row changed",
+      "approved_by": "project lead"
+    }
+  ],
+  "manifest_amendments": [
+    {
+      "at": "2026-10-15T14:27:08.585Z",
+      "by": "build-lead",
+      "reason": "test writer committed the test and golden files before the base; two approved test corrections edit the test file",
+      "from": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/interpreter.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/analyze.ts",
+          "core/src/interpreter.ts",
+          "core/src/parser.ts",
+          "core/src/spec.ts",
+          "core/src/types.ts",
+          "tests/golden/render-cases/lang-list-for/data.json",
+          "tests/golden/render-cases/lang-list-for/expected.md",
+          "tests/golden/render-cases/lang-list-for/options.json",
+          "tests/golden/render-cases/lang-list-for/template.md",
+          "tests/golden/render-cases/lang-table-if/data.json",
+          "tests/golden/render-cases/lang-table-if/expected.md",
+          "tests/golden/render-cases/lang-table-if/options.json",
+          "tests/golden/render-cases/lang-table-if/template.md",
+          "tests/language/list-table-children.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/interpreter.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts",
+            "tests/language/list-table-children.test.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/analyze.ts",
+          "core/src/interpreter.ts",
+          "core/src/parser.ts",
+          "core/src/spec.ts",
+          "core/src/types.ts",
+          "tests/golden/render-cases/lang-list-for/data.json",
+          "tests/golden/render-cases/lang-list-for/expected.md",
+          "tests/golden/render-cases/lang-list-for/options.json",
+          "tests/golden/render-cases/lang-list-for/template.md",
+          "tests/golden/render-cases/lang-table-if/data.json",
+          "tests/golden/render-cases/lang-table-if/expected.md",
+          "tests/golden/render-cases/lang-table-if/options.json",
+          "tests/golden/render-cases/lang-table-if/template.md",
+          "tests/language/list-table-children.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      }
+    }
+  ]
+}

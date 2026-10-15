@@ -1,0 +1,3651 @@
+{
+ "plain/strict": {
+  "render": {
+   "ok": true,
+   "out": "A"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "A"
+  }
+ },
+ "plain/lenient": {
+  "render": {
+   "ok": true,
+   "out": "A"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "A"
+  }
+ },
+ "plain/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "A"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "A"
+  }
+ },
+ "plain/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "A"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "A"
+  }
+ },
+ "defMissing/strict": {
+  "render": {
+   "ok": true,
+   "out": "d"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "d"
+  }
+ },
+ "defMissing/lenient": {
+  "render": {
+   "ok": true,
+   "out": "d"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "d"
+  }
+ },
+ "defMissing/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "d"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "d"
+  }
+ },
+ "defMissing/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "d"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "d"
+  }
+ },
+ "defEmpty/strict": {
+  "render": {
+   "ok": true,
+   "out": "d"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "d"
+  }
+ },
+ "defEmpty/lenient": {
+  "render": {
+   "ok": true,
+   "out": "d"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "d"
+  }
+ },
+ "defEmpty/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "d"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "d"
+  }
+ },
+ "defEmpty/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "d"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "d"
+  }
+ },
+ "defZero/strict": {
+  "render": {
+   "ok": true,
+   "out": "d"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "d"
+  }
+ },
+ "defZero/lenient": {
+  "render": {
+   "ok": true,
+   "out": "d"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "d"
+  }
+ },
+ "defZero/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "d"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "d"
+  }
+ },
+ "defZero/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "d"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "d"
+  }
+ },
+ "defFalse/strict": {
+  "render": {
+   "ok": true,
+   "out": "d"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "d"
+  }
+ },
+ "defFalse/lenient": {
+  "render": {
+   "ok": true,
+   "out": "d"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "d"
+  }
+ },
+ "defFalse/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "d"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "d"
+  }
+ },
+ "defFalse/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "d"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "d"
+  }
+ },
+ "defNull/strict": {
+  "render": {
+   "ok": true,
+   "out": "d"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "d"
+  }
+ },
+ "defNull/lenient": {
+  "render": {
+   "ok": true,
+   "out": "d"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "d"
+  }
+ },
+ "defNull/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "d"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "d"
+  }
+ },
+ "defNull/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "d"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "d"
+  }
+ },
+ "missing/strict": {
+  "render": {
+   "code": "missing-variable",
+   "line": 1,
+   "column": 1,
+   "msg": "Variable 'missing' not found"
+  },
+  "resolve": {
+   "code": "missing-variable",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Variable 'missing' not found\n   Suggestion: Available variables: a, b, n, zero, f, nul, empty, s, xs, o, cyc, big, long, price, q, items, js\nCheck variable name or enable Lenient Mode"
+  }
+ },
+ "missing/lenient": {
+  "render": {
+   "ok": true,
+   "out": ""
+  },
+  "resolve": {
+   "ok": true,
+   "out": ""
+  }
+ },
+ "missing/lim20/strict": {
+  "render": {
+   "code": "missing-variable",
+   "line": 1,
+   "column": 1,
+   "msg": "Variable 'missing' not found"
+  },
+  "resolve": {
+   "code": "missing-variable",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Variable 'missing' not found\n   Suggestion: Available variables: a, b, n, zero, f, nul, empty, s, xs, o, cyc, big, long, price, q, items, js\nCheck variable name or enable Lenient Mode"
+  }
+ },
+ "missing/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": ""
+  },
+  "resolve": {
+   "ok": true,
+   "out": ""
+  }
+ },
+ "missingFilter/strict": {
+  "render": {
+   "code": "missing-variable",
+   "line": 1,
+   "column": 1,
+   "msg": "Variable 'missing' not found"
+  },
+  "resolve": {
+   "code": "missing-variable",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Variable 'missing' not found\n   Suggestion: Available variables: a, b, n, zero, f, nul, empty, s, xs, o, cyc, big, long, price, q, items, js\nCheck variable name or enable Lenient Mode"
+  }
+ },
+ "missingFilter/lenient": {
+  "render": {
+   "ok": true,
+   "out": ""
+  },
+  "resolve": {
+   "ok": true,
+   "out": ""
+  }
+ },
+ "missingFilter/lim20/strict": {
+  "render": {
+   "code": "missing-variable",
+   "line": 1,
+   "column": 1,
+   "msg": "Variable 'missing' not found"
+  },
+  "resolve": {
+   "code": "missing-variable",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Variable 'missing' not found\n   Suggestion: Available variables: a, b, n, zero, f, nul, empty, s, xs, o, cyc, big, long, price, q, items, js\nCheck variable name or enable Lenient Mode"
+  }
+ },
+ "missingFilter/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": ""
+  },
+  "resolve": {
+   "ok": true,
+   "out": ""
+  }
+ },
+ "nested/strict": {
+  "render": {
+   "ok": true,
+   "out": "v 1 a"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "v 1 a"
+  }
+ },
+ "nested/lenient": {
+  "render": {
+   "ok": true,
+   "out": "v 1 a"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "v 1 a"
+  }
+ },
+ "nested/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "v 1 a"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "v 1 a"
+  }
+ },
+ "nested/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "v 1 a"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "v 1 a"
+  }
+ },
+ "math/strict": {
+  "render": {
+   "ok": true,
+   "out": "7"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "7"
+  }
+ },
+ "math/lenient": {
+  "render": {
+   "ok": true,
+   "out": "7"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "7"
+  }
+ },
+ "math/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "7"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "7"
+  }
+ },
+ "math/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "7"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "7"
+  }
+ },
+ "mathFloat/strict": {
+  "render": {
+   "ok": true,
+   "out": "0.3"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "0.30000000000000004"
+  }
+ },
+ "mathFloat/lenient": {
+  "render": {
+   "ok": true,
+   "out": "0.3"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "0.30000000000000004"
+  }
+ },
+ "mathFloat/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "0.3"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "0.30000000000000004"
+  }
+ },
+ "mathFloat/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "0.3"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "0.30000000000000004"
+  }
+ },
+ "mathLit/strict": {
+  "render": {
+   "ok": true,
+   "out": "0.3"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "0.30000000000000004"
+  }
+ },
+ "mathLit/lenient": {
+  "render": {
+   "ok": true,
+   "out": "0.3"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "0.30000000000000004"
+  }
+ },
+ "mathLit/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "0.3"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "0.30000000000000004"
+  }
+ },
+ "mathLit/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "0.3"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "0.30000000000000004"
+  }
+ },
+ "mathDiv/strict": {
+  "render": {
+   "ok": true,
+   "out": "2.5"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "2.5"
+  }
+ },
+ "mathDiv/lenient": {
+  "render": {
+   "ok": true,
+   "out": "2.5"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "2.5"
+  }
+ },
+ "mathDiv/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "2.5"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "2.5"
+  }
+ },
+ "mathDiv/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "2.5"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "2.5"
+  }
+ },
+ "mathDivZero/strict": {
+  "render": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Cannot divide by zero in math expression"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "Infinity"
+  }
+ },
+ "mathDivZero/lenient": {
+  "render": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Cannot divide by zero in math expression"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "Infinity"
+  }
+ },
+ "mathDivZero/lim20/strict": {
+  "render": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Cannot divide by zero in math expression"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "Infinity"
+  }
+ },
+ "mathDivZero/lim20/lenient": {
+  "render": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Cannot divide by zero in math expression"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "Infinity"
+  }
+ },
+ "mathMod0/strict": {
+  "render": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Cannot take a remainder by zero in math expression"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "NaN"
+  }
+ },
+ "mathMod0/lenient": {
+  "render": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Cannot take a remainder by zero in math expression"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "NaN"
+  }
+ },
+ "mathMod0/lim20/strict": {
+  "render": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Cannot take a remainder by zero in math expression"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "NaN"
+  }
+ },
+ "mathMod0/lim20/lenient": {
+  "render": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Cannot take a remainder by zero in math expression"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "NaN"
+  }
+ },
+ "mathFilter/strict": {
+  "render": {
+   "ok": true,
+   "out": "0.3"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "0.30000000000000004"
+  }
+ },
+ "mathFilter/lenient": {
+  "render": {
+   "ok": true,
+   "out": "0.3"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "0.30000000000000004"
+  }
+ },
+ "mathFilter/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "0.3"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "0.30000000000000004"
+  }
+ },
+ "mathFilter/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "0.3"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "0.30000000000000004"
+  }
+ },
+ "mathDefault/strict": {
+  "render": {
+   "ok": true,
+   "out": "0.3"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "0.30000000000000004"
+  }
+ },
+ "mathDefault/lenient": {
+  "render": {
+   "ok": true,
+   "out": "0.3"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "0.30000000000000004"
+  }
+ },
+ "mathDefault/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "0.3"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "0.30000000000000004"
+  }
+ },
+ "mathDefault/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "0.3"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "0.30000000000000004"
+  }
+ },
+ "mathMissing/strict": {
+  "render": {
+   "code": "missing-variable",
+   "line": 1,
+   "column": 1,
+   "msg": "Variable 'missing + 1' not found"
+  },
+  "resolve": {
+   "code": "missing-variable",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Variable 'missing + 1' not found\n   Suggestion: Available variables: a, b, n, zero, f, nul, empty, s, xs, o, cyc, big, long, price, q, items, js\nCheck variable name or enable Lenient Mode"
+  }
+ },
+ "mathMissing/lenient": {
+  "render": {
+   "ok": true,
+   "out": ""
+  },
+  "resolve": {
+   "ok": true,
+   "out": ""
+  }
+ },
+ "mathMissing/lim20/strict": {
+  "render": {
+   "code": "missing-variable",
+   "line": 1,
+   "column": 1,
+   "msg": "Variable 'missing + 1' not found"
+  },
+  "resolve": {
+   "code": "missing-variable",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Variable 'missing + 1' not found\n   Suggestion: Available variables: a, b, n, zero, f, nul, empty, s, xs, o, cyc, big, long, price, q, items, js\nCheck variable name or enable Lenient Mode"
+  }
+ },
+ "mathMissing/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": ""
+  },
+  "resolve": {
+   "ok": true,
+   "out": ""
+  }
+ },
+ "mathBad/strict": {
+  "render": {
+   "code": "missing-variable",
+   "line": 1,
+   "column": 1,
+   "msg": "Variable 'a + 1' not found"
+  },
+  "resolve": {
+   "code": "missing-variable",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Variable 'a + 1' not found\n   Suggestion: Available variables: a, b, n, zero, f, nul, empty, s, xs, o, cyc, big, long, price, q, items, js\nCheck variable name or enable Lenient Mode"
+  }
+ },
+ "mathBad/lenient": {
+  "render": {
+   "ok": true,
+   "out": ""
+  },
+  "resolve": {
+   "ok": true,
+   "out": ""
+  }
+ },
+ "mathBad/lim20/strict": {
+  "render": {
+   "code": "missing-variable",
+   "line": 1,
+   "column": 1,
+   "msg": "Variable 'a + 1' not found"
+  },
+  "resolve": {
+   "code": "missing-variable",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Variable 'a + 1' not found\n   Suggestion: Available variables: a, b, n, zero, f, nul, empty, s, xs, o, cyc, big, long, price, q, items, js\nCheck variable name or enable Lenient Mode"
+  }
+ },
+ "mathBad/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": ""
+  },
+  "resolve": {
+   "ok": true,
+   "out": ""
+  }
+ },
+ "upper/strict": {
+  "render": {
+   "ok": true,
+   "out": "HELLO WORLD"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "HELLO WORLD"
+  }
+ },
+ "upper/lenient": {
+  "render": {
+   "ok": true,
+   "out": "HELLO WORLD"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "HELLO WORLD"
+  }
+ },
+ "upper/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "HELLO WORLD"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "HELLO WORLD"
+  }
+ },
+ "upper/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "HELLO WORLD"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "HELLO WORLD"
+  }
+ },
+ "chain/strict": {
+  "render": {
+   "ok": true,
+   "out": "HELLO"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "HELLO"
+  }
+ },
+ "chain/lenient": {
+  "render": {
+   "ok": true,
+   "out": "HELLO"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "HELLO"
+  }
+ },
+ "chain/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "HELLO"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "HELLO"
+  }
+ },
+ "chain/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "HELLO"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "HELLO"
+  }
+ },
+ "join/strict": {
+  "render": {
+   "ok": true,
+   "out": "b, a, b"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "b, a, b"
+  }
+ },
+ "join/lenient": {
+  "render": {
+   "ok": true,
+   "out": "b, a, b"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "b, a, b"
+  }
+ },
+ "join/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "b, a, b"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "b, a, b"
+  }
+ },
+ "join/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "b, a, b"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "b, a, b"
+  }
+ },
+ "uniqueJoin/strict": {
+  "render": {
+   "ok": true,
+   "out": "b-a"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "b-a"
+  }
+ },
+ "uniqueJoin/lenient": {
+  "render": {
+   "ok": true,
+   "out": "b-a"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "b-a"
+  }
+ },
+ "uniqueJoin/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "b-a"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "b-a"
+  }
+ },
+ "uniqueJoin/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "b-a"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "b-a"
+  }
+ },
+ "json/strict": {
+  "render": {
+   "ok": true,
+   "out": "{\"k\":\"v\",\"n\":{\"d\":1}}"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "{\"k\":\"v\",\"n\":{\"d\":1}}"
+  }
+ },
+ "json/lenient": {
+  "render": {
+   "ok": true,
+   "out": "{\"k\":\"v\",\"n\":{\"d\":1}}"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "{\"k\":\"v\",\"n\":{\"d\":1}}"
+  }
+ },
+ "json/lim20/strict": {
+  "render": {
+   "code": "limit-output",
+   "line": 1,
+   "column": 1,
+   "msg": "Output is longer than 20 characters"
+  },
+  "resolve": {
+   "code": "limit-output",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Output is longer than 20 characters\n   Suggestion: Render less content or raise limits.maxOutputChars"
+  }
+ },
+ "json/lim20/lenient": {
+  "render": {
+   "code": "limit-output",
+   "line": 1,
+   "column": 1,
+   "msg": "Output is longer than 20 characters"
+  },
+  "resolve": {
+   "code": "limit-output",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Output is longer than 20 characters\n   Suggestion: Render less content or raise limits.maxOutputChars"
+  }
+ },
+ "jsonStr/strict": {
+  "render": {
+   "ok": true,
+   "out": "\"hello world\""
+  },
+  "resolve": {
+   "ok": true,
+   "out": "\"hello world\""
+  }
+ },
+ "jsonStr/lenient": {
+  "render": {
+   "ok": true,
+   "out": "\"hello world\""
+  },
+  "resolve": {
+   "ok": true,
+   "out": "\"hello world\""
+  }
+ },
+ "jsonStr/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "\"hello world\""
+  },
+  "resolve": {
+   "ok": true,
+   "out": "\"hello world\""
+  }
+ },
+ "jsonStr/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "\"hello world\""
+  },
+  "resolve": {
+   "ok": true,
+   "out": "\"hello world\""
+  }
+ },
+ "length/strict": {
+  "render": {
+   "ok": true,
+   "out": "3"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "3"
+  }
+ },
+ "length/lenient": {
+  "render": {
+   "ok": true,
+   "out": "3"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "3"
+  }
+ },
+ "length/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "3"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "3"
+  }
+ },
+ "length/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "3"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "3"
+  }
+ },
+ "len2/strict": {
+  "render": {
+   "ok": true,
+   "out": "3"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "3"
+  }
+ },
+ "len2/lenient": {
+  "render": {
+   "ok": true,
+   "out": "3"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "3"
+  }
+ },
+ "len2/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "3"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "3"
+  }
+ },
+ "len2/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "3"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "3"
+  }
+ },
+ "proto/strict": {
+  "render": {
+   "code": "missing-variable",
+   "line": 1,
+   "column": 1,
+   "msg": "Variable '__proto__' not found"
+  },
+  "resolve": {
+   "code": "missing-variable",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Variable '__proto__' not found\n   Suggestion: Available variables: a, b, n, zero, f, nul, empty, s, xs, o, cyc, big, long, price, q, items, js\nCheck variable name or enable Lenient Mode"
+  }
+ },
+ "proto/lenient": {
+  "render": {
+   "ok": true,
+   "out": ""
+  },
+  "resolve": {
+   "ok": true,
+   "out": ""
+  }
+ },
+ "proto/lim20/strict": {
+  "render": {
+   "code": "missing-variable",
+   "line": 1,
+   "column": 1,
+   "msg": "Variable '__proto__' not found"
+  },
+  "resolve": {
+   "code": "missing-variable",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Variable '__proto__' not found\n   Suggestion: Available variables: a, b, n, zero, f, nul, empty, s, xs, o, cyc, big, long, price, q, items, js\nCheck variable name or enable Lenient Mode"
+  }
+ },
+ "proto/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": ""
+  },
+  "resolve": {
+   "ok": true,
+   "out": ""
+  }
+ },
+ "ctor/strict": {
+  "render": {
+   "code": "missing-variable",
+   "line": 1,
+   "column": 1,
+   "msg": "Variable 'constructor' not found"
+  },
+  "resolve": {
+   "code": "missing-variable",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Variable 'constructor' not found\n   Suggestion: Available variables: a, b, n, zero, f, nul, empty, s, xs, o, cyc, big, long, price, q, items, js\nCheck variable name or enable Lenient Mode"
+  }
+ },
+ "ctor/lenient": {
+  "render": {
+   "ok": true,
+   "out": ""
+  },
+  "resolve": {
+   "ok": true,
+   "out": ""
+  }
+ },
+ "ctor/lim20/strict": {
+  "render": {
+   "code": "missing-variable",
+   "line": 1,
+   "column": 1,
+   "msg": "Variable 'constructor' not found"
+  },
+  "resolve": {
+   "code": "missing-variable",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Variable 'constructor' not found\n   Suggestion: Available variables: a, b, n, zero, f, nul, empty, s, xs, o, cyc, big, long, price, q, items, js\nCheck variable name or enable Lenient Mode"
+  }
+ },
+ "ctor/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": ""
+  },
+  "resolve": {
+   "ok": true,
+   "out": ""
+  }
+ },
+ "oCtor/strict": {
+  "render": {
+   "ok": true,
+   "out": ""
+  },
+  "resolve": {
+   "ok": true,
+   "out": ""
+  }
+ },
+ "oCtor/lenient": {
+  "render": {
+   "ok": true,
+   "out": ""
+  },
+  "resolve": {
+   "ok": true,
+   "out": ""
+  }
+ },
+ "oCtor/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": ""
+  },
+  "resolve": {
+   "ok": true,
+   "out": ""
+  }
+ },
+ "oCtor/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": ""
+  },
+  "resolve": {
+   "ok": true,
+   "out": ""
+  }
+ },
+ "oProto/strict": {
+  "render": {
+   "ok": true,
+   "out": ""
+  },
+  "resolve": {
+   "ok": true,
+   "out": ""
+  }
+ },
+ "oProto/lenient": {
+  "render": {
+   "ok": true,
+   "out": ""
+  },
+  "resolve": {
+   "ok": true,
+   "out": ""
+  }
+ },
+ "oProto/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": ""
+  },
+  "resolve": {
+   "ok": true,
+   "out": ""
+  }
+ },
+ "oProto/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": ""
+  },
+  "resolve": {
+   "ok": true,
+   "out": ""
+  }
+ },
+ "toStr/strict": {
+  "render": {
+   "ok": true,
+   "out": ""
+  },
+  "resolve": {
+   "ok": true,
+   "out": ""
+  }
+ },
+ "toStr/lenient": {
+  "render": {
+   "ok": true,
+   "out": ""
+  },
+  "resolve": {
+   "ok": true,
+   "out": ""
+  }
+ },
+ "toStr/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": ""
+  },
+  "resolve": {
+   "ok": true,
+   "out": ""
+  }
+ },
+ "toStr/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": ""
+  },
+  "resolve": {
+   "ok": true,
+   "out": ""
+  }
+ },
+ "cyclic/strict": {
+  "render": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Cannot print a value with no text form (a cyclic structure or a BigInt)"
+  },
+  "resolve": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Cannot print a value with no text form (a cyclic structure or a BigInt)\n   Suggestion: Map the variable to text, a number or plain data without cycles"
+  }
+ },
+ "cyclic/lenient": {
+  "render": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Cannot print a value with no text form (a cyclic structure or a BigInt)"
+  },
+  "resolve": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Cannot print a value with no text form (a cyclic structure or a BigInt)\n   Suggestion: Map the variable to text, a number or plain data without cycles"
+  }
+ },
+ "cyclic/lim20/strict": {
+  "render": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Cannot print a value with no text form (a cyclic structure or a BigInt)"
+  },
+  "resolve": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Cannot print a value with no text form (a cyclic structure or a BigInt)\n   Suggestion: Map the variable to text, a number or plain data without cycles"
+  }
+ },
+ "cyclic/lim20/lenient": {
+  "render": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Cannot print a value with no text form (a cyclic structure or a BigInt)"
+  },
+  "resolve": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Cannot print a value with no text form (a cyclic structure or a BigInt)\n   Suggestion: Map the variable to text, a number or plain data without cycles"
+  }
+ },
+ "cyclicJson/strict": {
+  "render": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Cannot serialize a cyclic value"
+  },
+  "resolve": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Cannot serialize a cyclic value"
+  }
+ },
+ "cyclicJson/lenient": {
+  "render": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Cannot serialize a cyclic value"
+  },
+  "resolve": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Cannot serialize a cyclic value"
+  }
+ },
+ "cyclicJson/lim20/strict": {
+  "render": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Cannot serialize a cyclic value"
+  },
+  "resolve": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Cannot serialize a cyclic value"
+  }
+ },
+ "cyclicJson/lim20/lenient": {
+  "render": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Cannot serialize a cyclic value"
+  },
+  "resolve": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Cannot serialize a cyclic value"
+  }
+ },
+ "bigint/strict": {
+  "render": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Cannot print a value with no text form (a cyclic structure or a BigInt)"
+  },
+  "resolve": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Cannot print a value with no text form (a cyclic structure or a BigInt)\n   Suggestion: Map the variable to text, a number or plain data without cycles"
+  }
+ },
+ "bigint/lenient": {
+  "render": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Cannot print a value with no text form (a cyclic structure or a BigInt)"
+  },
+  "resolve": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Cannot print a value with no text form (a cyclic structure or a BigInt)\n   Suggestion: Map the variable to text, a number or plain data without cycles"
+  }
+ },
+ "bigint/lim20/strict": {
+  "render": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Cannot print a value with no text form (a cyclic structure or a BigInt)"
+  },
+  "resolve": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Cannot print a value with no text form (a cyclic structure or a BigInt)\n   Suggestion: Map the variable to text, a number or plain data without cycles"
+  }
+ },
+ "bigint/lim20/lenient": {
+  "render": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Cannot print a value with no text form (a cyclic structure or a BigInt)"
+  },
+  "resolve": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Cannot print a value with no text form (a cyclic structure or a BigInt)\n   Suggestion: Map the variable to text, a number or plain data without cycles"
+  }
+ },
+ "bigintLen/strict": {
+  "render": {
+   "ok": true,
+   "out": "1"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "1"
+  }
+ },
+ "bigintLen/lenient": {
+  "render": {
+   "ok": true,
+   "out": "1"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "1"
+  }
+ },
+ "bigintLen/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "1"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "1"
+  }
+ },
+ "bigintLen/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "1"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "1"
+  }
+ },
+ "nullPrint/strict": {
+  "render": {
+   "ok": true,
+   "out": "[]"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "[]"
+  }
+ },
+ "nullPrint/lenient": {
+  "render": {
+   "ok": true,
+   "out": "[]"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "[]"
+  }
+ },
+ "nullPrint/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "[]"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "[]"
+  }
+ },
+ "nullPrint/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "[]"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "[]"
+  }
+ },
+ "objPrint/strict": {
+  "render": {
+   "ok": true,
+   "out": "{\"k\":\"v\",\"n\":{\"d\":1}}"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "{\"k\":\"v\",\"n\":{\"d\":1}}"
+  }
+ },
+ "objPrint/lenient": {
+  "render": {
+   "ok": true,
+   "out": "{\"k\":\"v\",\"n\":{\"d\":1}}"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "{\"k\":\"v\",\"n\":{\"d\":1}}"
+  }
+ },
+ "objPrint/lim20/strict": {
+  "render": {
+   "code": "limit-output",
+   "line": 1,
+   "column": 1,
+   "msg": "Output is longer than 20 characters"
+  },
+  "resolve": {
+   "code": "limit-output",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Output is longer than 20 characters\n   Suggestion: Render less content or raise limits.maxOutputChars"
+  }
+ },
+ "objPrint/lim20/lenient": {
+  "render": {
+   "code": "limit-output",
+   "line": 1,
+   "column": 1,
+   "msg": "Output is longer than 20 characters"
+  },
+  "resolve": {
+   "code": "limit-output",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Output is longer than 20 characters\n   Suggestion: Render less content or raise limits.maxOutputChars"
+  }
+ },
+ "arrPrint/strict": {
+  "render": {
+   "ok": true,
+   "out": "[\"b\",\"a\",\"b\"]"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "[\"b\",\"a\",\"b\"]"
+  }
+ },
+ "arrPrint/lenient": {
+  "render": {
+   "ok": true,
+   "out": "[\"b\",\"a\",\"b\"]"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "[\"b\",\"a\",\"b\"]"
+  }
+ },
+ "arrPrint/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "[\"b\",\"a\",\"b\"]"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "[\"b\",\"a\",\"b\"]"
+  }
+ },
+ "arrPrint/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "[\"b\",\"a\",\"b\"]"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "[\"b\",\"a\",\"b\"]"
+  }
+ },
+ "boolPrint/strict": {
+  "render": {
+   "ok": true,
+   "out": "false"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "false"
+  }
+ },
+ "boolPrint/lenient": {
+  "render": {
+   "ok": true,
+   "out": "false"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "false"
+  }
+ },
+ "boolPrint/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "false"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "false"
+  }
+ },
+ "boolPrint/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "false"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "false"
+  }
+ },
+ "forVar/strict": {
+  "render": {
+   "ok": true,
+   "out": "x1 y2 "
+  },
+  "resolve": {
+   "ok": true,
+   "out": "x1 y2 "
+  }
+ },
+ "forVar/lenient": {
+  "render": {
+   "ok": true,
+   "out": "x1 y2 "
+  },
+  "resolve": {
+   "ok": true,
+   "out": "x1 y2 "
+  }
+ },
+ "forVar/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "x1 y2 "
+  },
+  "resolve": {
+   "ok": true,
+   "out": "x1 y2 "
+  }
+ },
+ "forVar/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "x1 y2 "
+  },
+  "resolve": {
+   "ok": true,
+   "out": "x1 y2 "
+  }
+ },
+ "forMissingMeta/strict": {
+  "render": {
+   "code": "missing-variable",
+   "line": 1,
+   "column": 1,
+   "msg": "Variable '@index0' not found"
+  },
+  "resolve": {
+   "code": "missing-variable",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Variable '@index0' not found\n   Suggestion: Available variables: a, b, n, zero, f, nul, empty, s, xs, o, cyc, big, long, price, q, items, js\nCheck variable name or enable Lenient Mode"
+  }
+ },
+ "forMissingMeta/lenient": {
+  "render": {
+   "ok": true,
+   "out": ""
+  },
+  "resolve": {
+   "ok": true,
+   "out": ""
+  }
+ },
+ "forMissingMeta/lim20/strict": {
+  "render": {
+   "code": "missing-variable",
+   "line": 1,
+   "column": 1,
+   "msg": "Variable '@index0' not found"
+  },
+  "resolve": {
+   "code": "missing-variable",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Variable '@index0' not found\n   Suggestion: Available variables: a, b, n, zero, f, nul, empty, s, xs, o, cyc, big, long, price, q, items, js\nCheck variable name or enable Lenient Mode"
+  }
+ },
+ "forMissingMeta/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": ""
+  },
+  "resolve": {
+   "ok": true,
+   "out": ""
+  }
+ },
+ "forShadow/strict": {
+  "render": {
+   "ok": true,
+   "out": "xyA"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "xyA"
+  }
+ },
+ "forShadow/lenient": {
+  "render": {
+   "ok": true,
+   "out": "xyA"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "xyA"
+  }
+ },
+ "forShadow/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "xyA"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "xyA"
+  }
+ },
+ "forShadow/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "xyA"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "xyA"
+  }
+ },
+ "ifCond/strict": {
+  "render": {
+   "ok": true,
+   "out": "y"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "y"
+  }
+ },
+ "ifCond/lenient": {
+  "render": {
+   "ok": true,
+   "out": "y"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "y"
+  }
+ },
+ "ifCond/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "y"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "y"
+  }
+ },
+ "ifCond/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "y"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "y"
+  }
+ },
+ "ifFloat/strict": {
+  "render": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unrecognized condition: price + q"
+  },
+  "resolve": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unrecognized condition: price + q\n   Suggestion: Use a supported operator: ==, !=, >, <, >=, <=, contains, startsWith, endsWith, in, not in, between, AND, OR, NOT"
+  }
+ },
+ "ifFloat/lenient": {
+  "render": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unrecognized condition: price + q"
+  },
+  "resolve": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unrecognized condition: price + q\n   Suggestion: Use a supported operator: ==, !=, >, <, >=, <=, contains, startsWith, endsWith, in, not in, between, AND, OR, NOT"
+  }
+ },
+ "ifFloat/lim20/strict": {
+  "render": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unrecognized condition: price + q"
+  },
+  "resolve": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unrecognized condition: price + q\n   Suggestion: Use a supported operator: ==, !=, >, <, >=, <=, contains, startsWith, endsWith, in, not in, between, AND, OR, NOT"
+  }
+ },
+ "ifFloat/lim20/lenient": {
+  "render": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unrecognized condition: price + q"
+  },
+  "resolve": {
+   "code": "type-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unrecognized condition: price + q\n   Suggestion: Use a supported operator: ==, !=, >, <, >=, <=, contains, startsWith, endsWith, in, not in, between, AND, OR, NOT"
+  }
+ },
+ "tagSet/strict": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unknown template tag: {{SET}}"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unknown template tag: {{SET}}\n   Suggestion: Check syntax - valid tags: IF, CASE, FOR, TABLE, LIST, etc."
+  }
+ },
+ "tagSet/lenient": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unknown template tag: {{SET}}"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unknown template tag: {{SET}}\n   Suggestion: Check syntax - valid tags: IF, CASE, FOR, TABLE, LIST, etc."
+  }
+ },
+ "tagSet/lim20/strict": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unknown template tag: {{SET}}"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unknown template tag: {{SET}}\n   Suggestion: Check syntax - valid tags: IF, CASE, FOR, TABLE, LIST, etc."
+  }
+ },
+ "tagSet/lim20/lenient": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unknown template tag: {{SET}}"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unknown template tag: {{SET}}\n   Suggestion: Check syntax - valid tags: IF, CASE, FOR, TABLE, LIST, etc."
+  }
+ },
+ "tagSetBare/strict": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unknown template tag: {{SET}}"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unknown template tag: {{SET}}\n   Suggestion: Check syntax - valid tags: IF, CASE, FOR, TABLE, LIST, etc."
+  }
+ },
+ "tagSetBare/lenient": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unknown template tag: {{SET}}"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unknown template tag: {{SET}}\n   Suggestion: Check syntax - valid tags: IF, CASE, FOR, TABLE, LIST, etc."
+  }
+ },
+ "tagSetBare/lim20/strict": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unknown template tag: {{SET}}"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unknown template tag: {{SET}}\n   Suggestion: Check syntax - valid tags: IF, CASE, FOR, TABLE, LIST, etc."
+  }
+ },
+ "tagSetBare/lim20/lenient": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unknown template tag: {{SET}}"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unknown template tag: {{SET}}\n   Suggestion: Check syntax - valid tags: IF, CASE, FOR, TABLE, LIST, etc."
+  }
+ },
+ "tagEndSet/strict": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unknown template tag: {{END_SET}}"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unknown template tag: {{END_SET}}\n   Suggestion: Check syntax - valid tags: IF, CASE, FOR, TABLE, LIST, etc."
+  }
+ },
+ "tagEndSet/lenient": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unknown template tag: {{END_SET}}"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unknown template tag: {{END_SET}}\n   Suggestion: Check syntax - valid tags: IF, CASE, FOR, TABLE, LIST, etc."
+  }
+ },
+ "tagEndSet/lim20/strict": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unknown template tag: {{END_SET}}"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unknown template tag: {{END_SET}}\n   Suggestion: Check syntax - valid tags: IF, CASE, FOR, TABLE, LIST, etc."
+  }
+ },
+ "tagEndSet/lim20/lenient": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unknown template tag: {{END_SET}}"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unknown template tag: {{END_SET}}\n   Suggestion: Check syntax - valid tags: IF, CASE, FOR, TABLE, LIST, etc."
+  }
+ },
+ "tagCtor/strict": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unexpected token: function Object() { [native code] }"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unexpected token: function Object() { [native code] }\n   Suggestion: Check template syntax"
+  }
+ },
+ "tagCtor/lenient": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unexpected token: function Object() { [native code] }"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unexpected token: function Object() { [native code] }\n   Suggestion: Check template syntax"
+  }
+ },
+ "tagCtor/lim20/strict": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unexpected token: function Object() { [native code] }"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unexpected token: function Object() { [native code] }\n   Suggestion: Check template syntax"
+  }
+ },
+ "tagCtor/lim20/lenient": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unexpected token: function Object() { [native code] }"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unexpected token: function Object() { [native code] }\n   Suggestion: Check template syntax"
+  }
+ },
+ "tagProto/strict": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unknown template tag: {{__}}"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unknown template tag: {{__}}\n   Suggestion: Check syntax - valid tags: IF, CASE, FOR, TABLE, LIST, etc."
+  }
+ },
+ "tagProto/lenient": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unknown template tag: {{__}}"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unknown template tag: {{__}}\n   Suggestion: Check syntax - valid tags: IF, CASE, FOR, TABLE, LIST, etc."
+  }
+ },
+ "tagProto/lim20/strict": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unknown template tag: {{__}}"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unknown template tag: {{__}}\n   Suggestion: Check syntax - valid tags: IF, CASE, FOR, TABLE, LIST, etc."
+  }
+ },
+ "tagProto/lim20/lenient": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unknown template tag: {{__}}"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unknown template tag: {{__}}\n   Suggestion: Check syntax - valid tags: IF, CASE, FOR, TABLE, LIST, etc."
+  }
+ },
+ "tagToStr/strict": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unexpected token: function toString() { [native code] }"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unexpected token: function toString() { [native code] }\n   Suggestion: Check template syntax"
+  }
+ },
+ "tagToStr/lenient": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unexpected token: function toString() { [native code] }"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unexpected token: function toString() { [native code] }\n   Suggestion: Check template syntax"
+  }
+ },
+ "tagToStr/lim20/strict": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unexpected token: function toString() { [native code] }"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unexpected token: function toString() { [native code] }\n   Suggestion: Check template syntax"
+  }
+ },
+ "tagToStr/lim20/lenient": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unexpected token: function toString() { [native code] }"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unexpected token: function toString() { [native code] }\n   Suggestion: Check template syntax"
+  }
+ },
+ "tagHas/strict": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unexpected token: function hasOwnProperty() { [native code] }"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unexpected token: function hasOwnProperty() { [native code] }\n   Suggestion: Check template syntax"
+  }
+ },
+ "tagHas/lenient": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unexpected token: function hasOwnProperty() { [native code] }"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unexpected token: function hasOwnProperty() { [native code] }\n   Suggestion: Check template syntax"
+  }
+ },
+ "tagHas/lim20/strict": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unexpected token: function hasOwnProperty() { [native code] }"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unexpected token: function hasOwnProperty() { [native code] }\n   Suggestion: Check template syntax"
+  }
+ },
+ "tagHas/lim20/lenient": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unexpected token: function hasOwnProperty() { [native code] }"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unexpected token: function hasOwnProperty() { [native code] }\n   Suggestion: Check template syntax"
+  }
+ },
+ "tagLower/strict": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unknown template tag: {{set x = 1}}"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unknown template tag: {{set x = 1}}\n   Suggestion: Check syntax - valid tags: IF, CASE, FOR, TABLE, LIST, etc."
+  }
+ },
+ "tagLower/lenient": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unknown template tag: {{set x = 1}}"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unknown template tag: {{set x = 1}}\n   Suggestion: Check syntax - valid tags: IF, CASE, FOR, TABLE, LIST, etc."
+  }
+ },
+ "tagLower/lim20/strict": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unknown template tag: {{set x = 1}}"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unknown template tag: {{set x = 1}}\n   Suggestion: Check syntax - valid tags: IF, CASE, FOR, TABLE, LIST, etc."
+  }
+ },
+ "tagLower/lim20/lenient": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Unknown template tag: {{set x = 1}}"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unknown template tag: {{set x = 1}}\n   Suggestion: Check syntax - valid tags: IF, CASE, FOR, TABLE, LIST, etc."
+  }
+ },
+ "setWord/strict": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 15,
+   "msg": "Unknown template tag: {{a}}"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 15,
+   "msg": "Template Error (line 1, col 15):\n   Unknown template tag: {{a}}\n   Suggestion: Check syntax - valid tags: IF, CASE, FOR, TABLE, LIST, etc."
+  }
+ },
+ "setWord/lenient": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 15,
+   "msg": "Unknown template tag: {{a}}"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 15,
+   "msg": "Template Error (line 1, col 15):\n   Unknown template tag: {{a}}\n   Suggestion: Check syntax - valid tags: IF, CASE, FOR, TABLE, LIST, etc."
+  }
+ },
+ "setWord/lim20/strict": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 15,
+   "msg": "Unknown template tag: {{a}}"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 15,
+   "msg": "Template Error (line 1, col 15):\n   Unknown template tag: {{a}}\n   Suggestion: Check syntax - valid tags: IF, CASE, FOR, TABLE, LIST, etc."
+  }
+ },
+ "setWord/lim20/lenient": {
+  "render": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 15,
+   "msg": "Unknown template tag: {{a}}"
+  },
+  "resolve": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 15,
+   "msg": "Template Error (line 1, col 15):\n   Unknown template tag: {{a}}\n   Suggestion: Check syntax - valid tags: IF, CASE, FOR, TABLE, LIST, etc."
+  }
+ },
+ "setInText/strict": {
+  "render": {
+   "ok": true,
+   "out": "SET x = 1"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "SET x = 1"
+  }
+ },
+ "setInText/lenient": {
+  "render": {
+   "ok": true,
+   "out": "SET x = 1"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "SET x = 1"
+  }
+ },
+ "setInText/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "SET x = 1"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "SET x = 1"
+  }
+ },
+ "setInText/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "SET x = 1"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "SET x = 1"
+  }
+ },
+ "longFilterTail/strict": {
+  "render": {
+   "ok": true,
+   "out": "\"xx"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "\"xx"
+  }
+ },
+ "longFilterTail/lenient": {
+  "render": {
+   "ok": true,
+   "out": "\"xx"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "\"xx"
+  }
+ },
+ "longFilterTail/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "\"xx"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "\"xx"
+  }
+ },
+ "longFilterTail/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "\"xx"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "\"xx"
+  }
+ },
+ "longFilterEnd/strict": {
+  "render": {
+   "ok": true,
+   "out": "\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\""
+  },
+  "resolve": {
+   "ok": true,
+   "out": "\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\""
+  }
+ },
+ "longFilterEnd/lenient": {
+  "render": {
+   "ok": true,
+   "out": "\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\""
+  },
+  "resolve": {
+   "ok": true,
+   "out": "\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\""
+  }
+ },
+ "longFilterEnd/lim20/strict": {
+  "render": {
+   "code": "limit-output",
+   "line": 1,
+   "column": 1,
+   "msg": "Output is longer than 20 characters"
+  },
+  "resolve": {
+   "code": "limit-output",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Output is longer than 20 characters\n   Suggestion: Render less content or raise limits.maxOutputChars"
+  }
+ },
+ "longFilterEnd/lim20/lenient": {
+  "render": {
+   "code": "limit-output",
+   "line": 1,
+   "column": 1,
+   "msg": "Output is longer than 20 characters"
+  },
+  "resolve": {
+   "code": "limit-output",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Output is longer than 20 characters\n   Suggestion: Render less content or raise limits.maxOutputChars"
+  }
+ },
+ "longThenShrink/strict": {
+  "render": {
+   "ok": true,
+   "out": "XXXX"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "XXXX"
+  }
+ },
+ "longThenShrink/lenient": {
+  "render": {
+   "ok": true,
+   "out": "XXXX"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "XXXX"
+  }
+ },
+ "longThenShrink/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "XXXX"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "XXXX"
+  }
+ },
+ "longThenShrink/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "XXXX"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "XXXX"
+  }
+ },
+ "longPlain/strict": {
+  "render": {
+   "ok": true,
+   "out": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  }
+ },
+ "longPlain/lenient": {
+  "render": {
+   "ok": true,
+   "out": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  }
+ },
+ "longPlain/lim20/strict": {
+  "render": {
+   "code": "limit-output",
+   "line": 1,
+   "column": 1,
+   "msg": "Output is longer than 20 characters"
+  },
+  "resolve": {
+   "code": "limit-output",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Output is longer than 20 characters\n   Suggestion: Render less content or raise limits.maxOutputChars"
+  }
+ },
+ "longPlain/lim20/lenient": {
+  "render": {
+   "code": "limit-output",
+   "line": 1,
+   "column": 1,
+   "msg": "Output is longer than 20 characters"
+  },
+  "resolve": {
+   "code": "limit-output",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Output is longer than 20 characters\n   Suggestion: Render less content or raise limits.maxOutputChars"
+  }
+ },
+ "longJoin/strict": {
+  "render": {
+   "ok": true,
+   "out": "b+a+b \"\\\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\\\"\""
+  },
+  "resolve": {
+   "ok": true,
+   "out": "b+a+b \"\\\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\\\"\""
+  }
+ },
+ "longJoin/lenient": {
+  "render": {
+   "ok": true,
+   "out": "b+a+b \"\\\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\\\"\""
+  },
+  "resolve": {
+   "ok": true,
+   "out": "b+a+b \"\\\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\\\"\""
+  }
+ },
+ "longJoin/lim20/strict": {
+  "render": {
+   "code": "limit-output",
+   "line": 1,
+   "column": 20,
+   "msg": "Output is longer than 20 characters"
+  },
+  "resolve": {
+   "code": "limit-output",
+   "line": 1,
+   "column": 20,
+   "msg": "Template Error (line 1, col 20):\n   Output is longer than 20 characters\n   Suggestion: Render less content or raise limits.maxOutputChars"
+  }
+ },
+ "longJoin/lim20/lenient": {
+  "render": {
+   "code": "limit-output",
+   "line": 1,
+   "column": 20,
+   "msg": "Output is longer than 20 characters"
+  },
+  "resolve": {
+   "code": "limit-output",
+   "line": 1,
+   "column": 20,
+   "msg": "Template Error (line 1, col 20):\n   Output is longer than 20 characters\n   Suggestion: Render less content or raise limits.maxOutputChars"
+  }
+ },
+ "nestedVarInFor/strict": {
+  "render": {
+   "ok": true,
+   "out": "BAB"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "BAB"
+  }
+ },
+ "nestedVarInFor/lenient": {
+  "render": {
+   "ok": true,
+   "out": "BAB"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "BAB"
+  }
+ },
+ "nestedVarInFor/lim20/strict": {
+  "render": {
+   "ok": true,
+   "out": "BAB"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "BAB"
+  }
+ },
+ "nestedVarInFor/lim20/lenient": {
+  "render": {
+   "ok": true,
+   "out": "BAB"
+  },
+  "resolve": {
+   "ok": true,
+   "out": "BAB"
+  }
+ },
+ "__analyze": {
+  "plain": {
+   "vars": [
+    [
+     "a",
+     [
+      "a"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "defMissing": {
+   "vars": [
+    [
+     "missing",
+     [
+      "missing"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "defEmpty": {
+   "vars": [
+    [
+     "empty",
+     [
+      "empty"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "defZero": {
+   "vars": [
+    [
+     "zero",
+     [
+      "zero"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "defFalse": {
+   "vars": [
+    [
+     "f",
+     [
+      "f"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "defNull": {
+   "vars": [
+    [
+     "nul",
+     [
+      "nul"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "missing": {
+   "vars": [
+    [
+     "missing",
+     [
+      "missing"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "missingFilter": {
+   "vars": [
+    [
+     "missing",
+     [
+      "missing"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "nested": {
+   "vars": [
+    [
+     "o",
+     [
+      "o.k",
+      "o.n.d"
+     ],
+     [
+      "output"
+     ]
+    ],
+    [
+     "xs",
+     [
+      "xs.1"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "math": {
+   "vars": [
+    [
+     "b",
+     [
+      "b"
+     ],
+     [
+      "output"
+     ]
+    ],
+    [
+     "n",
+     [
+      "n"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "mathFloat": {
+   "vars": [
+    [
+     "price",
+     [
+      "price"
+     ],
+     [
+      "output"
+     ]
+    ],
+    [
+     "q",
+     [
+      "q"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "mathLit": {
+   "vars": [],
+   "blocks": {},
+   "diags": []
+  },
+  "mathDiv": {
+   "vars": [
+    [
+     "n",
+     [
+      "n"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "mathDivZero": {
+   "vars": [
+    [
+     "n",
+     [
+      "n"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "mathMod0": {
+   "vars": [
+    [
+     "n",
+     [
+      "n"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "mathFilter": {
+   "vars": [
+    [
+     "price",
+     [
+      "price"
+     ],
+     [
+      "output"
+     ]
+    ],
+    [
+     "q",
+     [
+      "q"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "mathDefault": {
+   "vars": [
+    [
+     "price",
+     [
+      "price"
+     ],
+     [
+      "output"
+     ]
+    ],
+    [
+     "q",
+     [
+      "q"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "mathMissing": {
+   "vars": [
+    [
+     "missing",
+     [
+      "missing"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "mathBad": {
+   "vars": [
+    [
+     "a",
+     [
+      "a"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "upper": {
+   "vars": [
+    [
+     "s",
+     [
+      "s"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "chain": {
+   "vars": [
+    [
+     "s",
+     [
+      "s"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "join": {
+   "vars": [
+    [
+     "xs",
+     [
+      "xs"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "uniqueJoin": {
+   "vars": [
+    [
+     "xs",
+     [
+      "xs"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "json": {
+   "vars": [
+    [
+     "o",
+     [
+      "o"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "jsonStr": {
+   "vars": [
+    [
+     "s",
+     [
+      "s"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "length": {
+   "vars": [
+    [
+     "xs",
+     [
+      "xs"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "len2": {
+   "vars": [
+    [
+     "xs",
+     [
+      "xs.length"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "proto": {
+   "vars": [
+    [
+     "__proto__",
+     [
+      "__proto__"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "ctor": {
+   "vars": [
+    [
+     "constructor",
+     [
+      "constructor"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "oCtor": {
+   "vars": [
+    [
+     "o",
+     [
+      "o.constructor"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "oProto": {
+   "vars": [
+    [
+     "o",
+     [
+      "o.__proto__"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "toStr": {
+   "vars": [
+    [
+     "o",
+     [
+      "o.toString"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "cyclic": {
+   "vars": [
+    [
+     "cyc",
+     [
+      "cyc"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "cyclicJson": {
+   "vars": [
+    [
+     "cyc",
+     [
+      "cyc"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "bigint": {
+   "vars": [
+    [
+     "big",
+     [
+      "big"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "bigintLen": {
+   "vars": [
+    [
+     "big",
+     [
+      "big"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "nullPrint": {
+   "vars": [
+    [
+     "nul",
+     [
+      "nul"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "objPrint": {
+   "vars": [
+    [
+     "o",
+     [
+      "o"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "arrPrint": {
+   "vars": [
+    [
+     "xs",
+     [
+      "xs"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "boolPrint": {
+   "vars": [
+    [
+     "f",
+     [
+      "f"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "forVar": {
+   "vars": [
+    [
+     "items",
+     [
+      "items"
+     ],
+     [
+      "for"
+     ]
+    ]
+   ],
+   "blocks": {
+    "FOR": 1
+   },
+   "diags": []
+  },
+  "forMissingMeta": {
+   "vars": [],
+   "blocks": {},
+   "diags": []
+  },
+  "forShadow": {
+   "vars": [
+    [
+     "items",
+     [
+      "items"
+     ],
+     [
+      "for"
+     ]
+    ],
+    [
+     "a",
+     [
+      "a"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {
+    "FOR": 1
+   },
+   "diags": []
+  },
+  "ifCond": {
+   "vars": [
+    [
+     "b",
+     [
+      "b"
+     ],
+     [
+      "if"
+     ]
+    ]
+   ],
+   "blocks": {
+    "IF": 1
+   },
+   "diags": []
+  },
+  "ifFloat": {
+   "vars": [],
+   "blocks": {
+    "IF": 1
+   },
+   "diags": [
+    "unrecognized-condition"
+   ]
+  },
+  "tagSet": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unknown template tag: {{SET}}\n   Suggestion: Check syntax - valid tags: IF, CASE, FOR, TABLE, LIST, etc."
+  },
+  "tagSetBare": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unknown template tag: {{SET}}\n   Suggestion: Check syntax - valid tags: IF, CASE, FOR, TABLE, LIST, etc."
+  },
+  "tagEndSet": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unknown template tag: {{END_SET}}\n   Suggestion: Check syntax - valid tags: IF, CASE, FOR, TABLE, LIST, etc."
+  },
+  "tagCtor": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unexpected token: function Object() { [native code] }\n   Suggestion: Check template syntax"
+  },
+  "tagProto": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unknown template tag: {{__}}\n   Suggestion: Check syntax - valid tags: IF, CASE, FOR, TABLE, LIST, etc."
+  },
+  "tagToStr": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unexpected token: function toString() { [native code] }\n   Suggestion: Check template syntax"
+  },
+  "tagHas": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unexpected token: function hasOwnProperty() { [native code] }\n   Suggestion: Check template syntax"
+  },
+  "tagLower": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 1,
+   "msg": "Template Error (line 1, col 1):\n   Unknown template tag: {{set x = 1}}\n   Suggestion: Check syntax - valid tags: IF, CASE, FOR, TABLE, LIST, etc."
+  },
+  "setWord": {
+   "code": "syntax-error",
+   "line": 1,
+   "column": 15,
+   "msg": "Template Error (line 1, col 15):\n   Unknown template tag: {{a}}\n   Suggestion: Check syntax - valid tags: IF, CASE, FOR, TABLE, LIST, etc."
+  },
+  "setInText": {
+   "vars": [],
+   "blocks": {},
+   "diags": []
+  },
+  "longFilterTail": {
+   "vars": [
+    [
+     "long",
+     [
+      "long"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "longFilterEnd": {
+   "vars": [
+    [
+     "long",
+     [
+      "long"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "longThenShrink": {
+   "vars": [
+    [
+     "long",
+     [
+      "long"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "longPlain": {
+   "vars": [
+    [
+     "long",
+     [
+      "long"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "longJoin": {
+   "vars": [
+    [
+     "xs",
+     [
+      "xs"
+     ],
+     [
+      "output"
+     ]
+    ],
+    [
+     "long",
+     [
+      "long"
+     ],
+     [
+      "output"
+     ]
+    ]
+   ],
+   "blocks": {},
+   "diags": []
+  },
+  "nestedVarInFor": {
+   "vars": [
+    [
+     "xs",
+     [
+      "xs"
+     ],
+     [
+      "for"
+     ]
+    ]
+   ],
+   "blocks": {
+    "FOR": 1
+   },
+   "diags": []
+  }
+ },
+ "__specBlocks": [
+  "IF",
+  "ELSEIF",
+  "ELSE",
+  "CASE",
+  "WHEN",
+  "DEFAULT",
+  "FOR",
+  "LIST",
+  "LIST_ITEM",
+  "TABLE",
+  "HEADER",
+  "ROW",
+  "SECTION",
+  "FENCE",
+  "RAW"
+ ]
+}

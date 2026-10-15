@@ -4,6 +4,42 @@ import { applyWhitespace } from "./whitespace";
 
 const RAW_CLOSER = /\{\{-?[ \t]*END_RAW[ \t]*-?\}\}/y;
 
+/** The tag keywords the lexer knows, each with its token type */
+export const KEYWORDS: Readonly<Record<string, TokenType>> = {
+  IF: TokenType.IF,
+  ELSEIF: TokenType.ELSEIF,
+  ELSE: TokenType.ELSE,
+  END_IF: TokenType.END_IF,
+  CASE: TokenType.CASE,
+  WHEN: TokenType.WHEN,
+  DEFAULT: TokenType.DEFAULT,
+  END_WHEN: TokenType.END_WHEN,
+  END_DEFAULT: TokenType.END_DEFAULT,
+  END_CASE: TokenType.END_CASE,
+  FOR: TokenType.FOR,
+  END_FOR: TokenType.END_FOR,
+  LIST: TokenType.LIST,
+  LIST_ITEM: TokenType.LIST_ITEM,
+  END_LIST_ITEM: TokenType.END_LIST_ITEM,
+  END_LIST: TokenType.END_LIST,
+  TABLE: TokenType.TABLE,
+  HEADER: TokenType.HEADER,
+  END_HEADER: TokenType.END_HEADER,
+  ROW: TokenType.ROW,
+  END_ROW: TokenType.END_ROW,
+  END_TABLE: TokenType.END_TABLE,
+  RAW: TokenType.RAW,
+  END_RAW: TokenType.END_RAW,
+  SECTION: TokenType.SECTION,
+  END_SECTION: TokenType.END_SECTION,
+  FENCE: TokenType.FENCE,
+  END_FENCE: TokenType.END_FENCE,
+  SET: TokenType.SET,
+  DEFINE: TokenType.DEFINE,
+  END_DEFINE: TokenType.END_DEFINE,
+  CALL: TokenType.CALL,
+};
+
 /** Block closers checked for balance, each with the opener it closes */
 const CLOSERS: Partial<Record<TokenType, TokenType>> = {
   [TokenType.END_IF]: TokenType.IF,
@@ -13,6 +49,7 @@ const CLOSERS: Partial<Record<TokenType, TokenType>> = {
   [TokenType.END_LIST]: TokenType.LIST,
   [TokenType.END_SECTION]: TokenType.SECTION,
   [TokenType.END_FENCE]: TokenType.FENCE,
+  [TokenType.END_DEFINE]: TokenType.DEFINE,
 };
 const OPENERS = new Set(Object.values(CLOSERS));
 
@@ -28,6 +65,8 @@ const OPENERS = new Set(Object.values(CLOSERS));
  * - Lists: {{LIST}}, {{LIST_ITEM}}, {{END_LIST}}
  * - Sections: {{SECTION "Title" level=2}}, {{END_SECTION}}
  * - Code fences: {{FENCE lang="md"}}, {{END_FENCE}}
+ * - Locals: {{SET name = expression}}
+ * - Macros: {{DEFINE name(params)}}...{{END_DEFINE}}, {{CALL name(args)}}
  * - Ternary: {{condition ? "true" : "false"}}
  * - Comments: {{# comment #}}
  * - Literal blocks: {{RAW}}...{{END_RAW}}; \{{ is a literal brace pair
@@ -442,38 +481,10 @@ export class Lexer {
    * Map keyword to TokenType
    */
   private getTokenType(keyword: string): TokenType | null {
-    const mapping: Record<string, TokenType> = {
-      IF: TokenType.IF,
-      ELSEIF: TokenType.ELSEIF,
-      ELSE: TokenType.ELSE,
-      END_IF: TokenType.END_IF,
-      CASE: TokenType.CASE,
-      WHEN: TokenType.WHEN,
-      DEFAULT: TokenType.DEFAULT,
-      END_WHEN: TokenType.END_WHEN,
-      END_DEFAULT: TokenType.END_DEFAULT,
-      END_CASE: TokenType.END_CASE,
-      FOR: TokenType.FOR,
-      END_FOR: TokenType.END_FOR,
-      LIST: TokenType.LIST,
-      LIST_ITEM: TokenType.LIST_ITEM,
-      END_LIST_ITEM: TokenType.END_LIST_ITEM,
-      END_LIST: TokenType.END_LIST,
-      TABLE: TokenType.TABLE,
-      HEADER: TokenType.HEADER,
-      END_HEADER: TokenType.END_HEADER,
-      ROW: TokenType.ROW,
-      END_ROW: TokenType.END_ROW,
-      END_TABLE: TokenType.END_TABLE,
-      RAW: TokenType.RAW,
-      END_RAW: TokenType.END_RAW,
-      SECTION: TokenType.SECTION,
-      END_SECTION: TokenType.END_SECTION,
-      FENCE: TokenType.FENCE,
-      END_FENCE: TokenType.END_FENCE,
-    };
-
-    return mapping[keyword] || null;
+    // Own property only: a word such as "constructor" is not a keyword
+    return Object.prototype.hasOwnProperty.call(KEYWORDS, keyword)
+      ? KEYWORDS[keyword]
+      : null;
   }
 
   /**

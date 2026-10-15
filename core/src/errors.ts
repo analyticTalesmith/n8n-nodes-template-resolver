@@ -15,8 +15,11 @@ export type DiagnosticCode =
  * Base template error with rich context
  */
 export class TemplateError extends Error {
+  /** True once a macro call has said where the error came from */
+  private noted = false;
+
   constructor(
-    public readonly detail: string,
+    public detail: string,
     public line: number,
     public column: number,
     public readonly suggestion: string | undefined,
@@ -37,6 +40,24 @@ export class TemplateError extends Error {
       this.detail,
       line,
       column,
+      this.suggestion
+    );
+    return this;
+  }
+
+  /**
+   * Append a note to the detail (where a macro body was called from). Only
+   * the first note sticks: the innermost call knows best, and the calls
+   * around it pass the error on unchanged.
+   */
+  addNote(note: string): this {
+    if (this.noted) return this;
+    this.noted = true;
+    this.detail += note;
+    this.message = TemplateError.formatMessage(
+      this.detail,
+      this.line,
+      this.column,
       this.suggestion
     );
     return this;
@@ -163,7 +184,9 @@ export class LimitError extends TemplateError {
 
 /**
  * The error located at the node that evaluated it. A plain Error (bad filter
- * parameters, failed math) becomes a type error there.
+ * parameters, failed math) becomes a type error there. A RangeError (a stack
+ * overflow in a deeply nested template) is left as it is: it is no fault of
+ * the node it passes, and render turns it into a depth error.
  */
 export function locateError(
   error: unknown,
@@ -171,6 +194,7 @@ export function locateError(
   column: number
 ): unknown {
   if (error instanceof TemplateError) return error.locate(line, column);
+  if (error instanceof RangeError) return error;
   if (error instanceof Error) return new TypeError(error.message, line, column);
   return error;
 }

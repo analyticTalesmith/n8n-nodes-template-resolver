@@ -1,0 +1,264 @@
+{
+  "id": "261015-language2c13-a1-add-limit-offset-an-empty-branch-and-tot",
+  "title": "Add limit, offset, an empty branch and @total to FOR on one loop runner and a scope stack",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [],
+  "origin": "language-2",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "core/src/analyze.ts",
+    "core/src/expressions.ts",
+    "core/src/interpreter.ts",
+    "core/src/parser.ts",
+    "core/src/scope.ts",
+    "core/src/spec.ts",
+    "core/src/types.ts",
+    "tests/golden/render-cases/lang-for-window/data.json",
+    "tests/golden/render-cases/lang-for-window/expected.md",
+    "tests/golden/render-cases/lang-for-window/options.json",
+    "tests/golden/render-cases/lang-for-window/template.md",
+    "tests/language/for-window.test.ts"
+  ],
+  "manifest": {
+    "add": [
+      "core/src/scope.ts",
+      "tests/language/for-window.test.ts"
+    ],
+    "remove": [],
+    "edit": [
+      "core/src/analyze.ts",
+      "core/src/expressions.ts",
+      "core/src/interpreter.ts",
+      "core/src/parser.ts",
+      "core/src/spec.ts",
+      "core/src/types.ts"
+    ],
+    "frozen": true
+  },
+  "criteria": [
+    {
+      "text": "fw-window: a literal or a path gives the window; a negative, non-integer, non-numeric or unsafe-integer value is a `type-error` located at the FOR in every mode; a missing path is `missing-variable` in strict mode and an ignored argument in lenient mode; the paths are read in the scope outside the loop.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/for-window.test.ts#fw-window"
+      ]
+    },
+    {
+      "text": "fw-meta: `@index0 @index1 @first @last @notFirst @notLast` describe the position in the rendered window; `@total` is the number of items the loop renders after offset and limit, the same on every iteration; outside a loop `@total` is a missing variable.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/for-window.test.ts#fw-meta"
+      ]
+    },
+    {
+      "text": "fw-else: the empty branch renders exactly when zero items render: an empty array, offset past the end, `limit=0`, a missing or non-iterable value in lenient mode; it does not render when one item renders; a strict non-iterable keeps today's located `type-error`; the loop name and the `@` names are not bound inside the ELSE body; a second ELSE in one FOR is a `syntax-error` at it; an IF's own ELSE and a FOR inside an IF branch are not confused; ELSE after ELSEIF or outside IF and FOR keeps today's \"Unexpected token\".",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/for-window.test.ts#fw-else"
+      ]
+    },
+    {
+      "text": "fw-args: an unknown argument (`max=3`), a repeated argument, trailing words and a missing item name are a `syntax-error` at the FOR tag in every mode, even in a branch that never renders (question 5).",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/for-window.test.ts#fw-args"
+      ]
+    },
+    {
+      "text": "fw-table: TABLE rows built by FOR use the same runner and get window, ELSE (its body holds ROWs) and `@total`; the legacy rule \"a non-iterable renders no rows, even in strict mode\" is kept (question 4) and in that case the ELSE rows render, without an error;",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/for-window.test.ts#fw-table"
+      ]
+    },
+    {
+      "text": "fw-limits: each rendered item counts toward `maxIterations` (skipped offset items do not); the running output check applies inside the loop and the ELSE body; `stats.iterations` counts rendered items.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/for-window.test.ts#fw-limits"
+      ]
+    },
+    {
+      "text": "fw-scope: loop names and metadata live on a stack frame that is gone after END_FOR; an outer loop's name and metadata are visible again after an inner loop; an inner name shadows an outer or data name only inside; frames carry a parent link so L6 adds `@parent` without reworking the stack.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/for-window.test.ts#fw-scope"
+      ]
+    },
+    {
+      "text": "fw-no-copy: conditions, math and filters read variables through the scope chain; `resolveTemplate` over a loop with an IF, with the data given as a Map subclass that counts `Symbol.iterator`, `entries`, `keys` and `forEach` calls, makes zero copies of the data map during the run (red today: `getAllVariables` copies per condition). The test calls `resolveTemplate` because `render` builds its own Map.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/for-window.test.ts#fw-no-copy"
+      ]
+    },
+    {
+      "text": "fw-own: a non-root path segment reads own properties only, in output, conditions and math (`x.constructor`, `x.__proto__`, `x.toString` and `@parent.constructor` are missing, not inherited engine objects); an own key with those names still works.",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit",
+      "traces": [
+        "tests/language/for-window.test.ts#fw-own"
+      ]
+    },
+    {
+      "text": "fw-compat: the full suite passes, including `tests/regressions/nested-for.test.ts` and the TABLE tests of `tests/TemplateResolver.node.test.ts`; no existing test file changes.",
+      "verify": "tool",
+      "evidence": null,
+      "status": "pending"
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/language/for-window.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": "2026-10-15T13:32:10.371Z",
+  "ended": "2026-10-15T13:52:21.127Z",
+  "review_rounds": 1,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver"
+  ],
+  "test_levels": [
+    "unit"
+  ],
+  "freeze": {
+    "at": "2026-10-15T13:31:19.806Z",
+    "brief_sha256": "22e05a16d69e41d05511ad3a5fbf346c644c82a2446fb7eaa243914825fe8586",
+    "brief_core_sha256": "a200c593ce73f8514aba55abe17464eaade34834ad0c15400c7361725a6a5a2e",
+    "manifest_sha256": "88e020bad183ccbfd77268a2705e3dbf7d1d55dcc7210b7cff5a68b604413f32",
+    "criteria_sha256": "202a441410c0a6939b89df15f2e2c72e925923feda945d7fccb4ebb3ed16f410",
+    "scope_sha256": "cfbf8a64b217ae51e84c69370f64696f29a064c39d66fa99813cec47423a0f58",
+    "scope_parts": {
+      "files_scope": "51182586be483a59b7e517383f8bc36513525b885e0221a4b7d7a379f6f54f83",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "0fbbbc5534e300f3b1fe6e1974ef3a55f9247f52c7bca8716a45d389f35ff2cc"
+    }
+  },
+  "base_commit": "292601da41a656de89e170feed03457d5e955f90",
+  "test_amendments": [
+    {
+      "path": "tests/language/for-window.test.ts",
+      "reason": "56 strict-mode entries expected missing-variable for a missing non-root segment or a missing name in an IF condition, which strict mode never raised; they now expect the lenient outcome (the card own test file, corrected before review)",
+      "approved_by": "project lead"
+    },
+    {
+      "path": "tests/language/for-window.test.ts",
+      "reason": "review round 1 findings f2 and f3: 15 new rows pin table rows per block node and a FOR iterable that holds a space; no existing row changed",
+      "approved_by": "project lead (round 1 fix instruction)"
+    }
+  ],
+  "manifest_amendments": [
+    {
+      "at": "2026-10-15T13:40:32.113Z",
+      "by": "lead",
+      "reason": "test writer committed the golden case before the base, so these paths are not adds",
+      "from": {
+        "manifest": {
+          "add": [
+            "core/src/scope.ts",
+            "tests/golden/render-cases/lang-for-window/data.json",
+            "tests/golden/render-cases/lang-for-window/expected.md",
+            "tests/golden/render-cases/lang-for-window/options.json",
+            "tests/golden/render-cases/lang-for-window/template.md",
+            "tests/language/for-window.test.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/expressions.ts",
+            "core/src/interpreter.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/analyze.ts",
+          "core/src/expressions.ts",
+          "core/src/interpreter.ts",
+          "core/src/parser.ts",
+          "core/src/scope.ts",
+          "core/src/spec.ts",
+          "core/src/types.ts",
+          "tests/golden/render-cases/lang-for-window/data.json",
+          "tests/golden/render-cases/lang-for-window/expected.md",
+          "tests/golden/render-cases/lang-for-window/options.json",
+          "tests/golden/render-cases/lang-for-window/template.md",
+          "tests/language/for-window.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [
+            "core/src/scope.ts",
+            "tests/language/for-window.test.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/expressions.ts",
+            "core/src/interpreter.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/analyze.ts",
+          "core/src/expressions.ts",
+          "core/src/interpreter.ts",
+          "core/src/parser.ts",
+          "core/src/scope.ts",
+          "core/src/spec.ts",
+          "core/src/types.ts",
+          "tests/golden/render-cases/lang-for-window/data.json",
+          "tests/golden/render-cases/lang-for-window/expected.md",
+          "tests/golden/render-cases/lang-for-window/options.json",
+          "tests/golden/render-cases/lang-for-window/template.md",
+          "tests/language/for-window.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      }
+    }
+  ]
+}
