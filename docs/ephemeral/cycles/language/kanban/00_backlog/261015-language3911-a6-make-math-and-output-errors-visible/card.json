@@ -1,0 +1,83 @@
+{
+  "id": "261015-language3911-a6-make-math-and-output-errors-visible",
+  "title": "Make math and output errors visible",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [
+    "261015-language3911-a5-bound-the-total-node-count-of-a-template"
+  ],
+  "origin": "language",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "core/src/expressions.ts",
+    "core/src/interpreter.ts",
+    "core/src/render.ts",
+    "tests/language/math.test.ts"
+  ],
+  "manifest": {
+    "add": [
+      "tests/language/math.test.ts"
+    ],
+    "remove": [],
+    "edit": [
+      "core/src/expressions.ts",
+      "core/src/interpreter.ts",
+      "core/src/render.ts"
+    ],
+    "frozen": false
+  },
+  "criteria": [
+    {
+      "text": "mt-zero: /0 and %0 are a type-error located at the variable in render (resolveTemplate keeps printing Infinity as before)",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "mt-float: arithmetic results print with at most 15 significant digits (0.1+0.2 prints 0.3; 1/3 keeps its digits; integers and negative numbers print unchanged)",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "mt-hyphen: a hyphen with a letter on both sides is part of one name, a - b and n-1 stay arithmetic, and a missing hyphenated name suggests the spaced form",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "mt-lenient: a malformed math expression fails render in lenient mode too, with a located diagnostic instead of empty output",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "mt-cyclic: a cyclic or unprintable value used as output is a type-error located at the variable instead of ok true with empty text",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/language/math.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": [
+    "docs/living/architecture/modules/template-resolver.md",
+    "docs/living/architecture/language-contract.md"
+  ],
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver"
+  ],
+  "docs_deferred": true
+}

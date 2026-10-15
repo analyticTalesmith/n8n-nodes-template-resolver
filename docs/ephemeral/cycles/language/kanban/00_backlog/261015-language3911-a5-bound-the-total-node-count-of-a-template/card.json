@@ -1,0 +1,102 @@
+{
+  "id": "261015-language3911-a5-bound-the-total-node-count-of-a-template",
+  "title": "Bound the total node count of a template",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [
+    "261015-language3911-a1-dispatch-filters-from-one-registry-with"
+  ],
+  "origin": "language",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "core/src/types.ts",
+    "core/src/parser.ts",
+    "core/src/errors.ts",
+    "core/src/render.ts",
+    "core/src/resolve.ts",
+    "core/src/analyze.ts",
+    "cli/main.ts",
+    "api/openapi.json",
+    "tests/language/limits-nodes.test.ts",
+    "tests/headless/spec.test.ts"
+  ],
+  "manifest": {
+    "add": [
+      "tests/language/limits-nodes.test.ts"
+    ],
+    "remove": [],
+    "edit": [
+      "core/src/types.ts",
+      "core/src/parser.ts",
+      "core/src/errors.ts",
+      "core/src/render.ts",
+      "core/src/resolve.ts",
+      "core/src/analyze.ts",
+      "cli/main.ts",
+      "api/openapi.json",
+      "tests/headless/spec.test.ts"
+    ],
+    "frozen": false
+  },
+  "criteria": [
+    {
+      "text": "ln-limit: limits.maxNodes (default 20000) is counted at parse; exceeding it is a limit-nodes diagnostic located at the node that crossed it, in render, validate and analyze",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit"
+    },
+    {
+      "text": "ln-elseif: an ELSEIF chain of 20000 branches gives limit-nodes, not a RangeError, and no stack overflow occurs for deep or long input in any mode",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit"
+    },
+    {
+      "text": "ln-surfaces: the API accepts and lowers options.limits.maxNodes, the CLI takes --max-nodes, and the OpenAPI Limits schema lists it",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "integration"
+    },
+    {
+      "text": "ln-analyze: analyze applies the caller limits, else the defaults, and no longer throws limit-depth for nesting beyond 32 when the caller did not ask for that limit",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending",
+      "level": "unit"
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/language/limits-nodes.test.ts",
+    "tests/headless/spec.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": [
+    "docs/living/architecture/modules/template-resolver.md",
+    "docs/living/architecture/modules/api.md",
+    "docs/living/architecture/modules/cli.md",
+    "docs/living/architecture/headless-contract.md"
+  ],
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver",
+    "api",
+    "cli"
+  ],
+  "docs_deferred": true,
+  "test_levels": [
+    "unit",
+    "integration"
+  ]
+}

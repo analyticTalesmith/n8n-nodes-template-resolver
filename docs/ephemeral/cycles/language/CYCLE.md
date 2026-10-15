@@ -41,7 +41,7 @@ Shape: kind feature; intent add; purpose ship; compatibility additive; uncertain
 
 <!-- Who this cycle is for, and why the work matters now. -->
 
-Audience: the repository owner, people who clone the portfolio repo, and authors of multi-agent prompts (the 28-agent SEO pipeline). Why now: slice C of the feature spec; the prompt-aware blocks of slice D are only useful once the core language can join, count, choose and reuse. Contract: docs/living/architecture/language-contract.md (planned). This is a trial: only the first card (the filter registry) is built under this cycle for now.
+Audience: the repository owner, people who clone the portfolio repo, and authors of multi-agent prompts (the 28-agent SEO pipeline). Why now: slice C of the feature spec; the prompt-aware blocks of slice D are only useful once the core language can join, count, choose and reuse. Contract: docs/living/architecture/language-contract.md (planned). This cycle holds the first half of slice C: filters, limits, math, operators and CASE; FOR upgrades, LIST and TABLE children, SET, INPUT, macros and partials follow in the cycle language-2.
 
 ## Stories
 
@@ -58,22 +58,18 @@ none: the spec names no personas or stories and none are invented; spec section 
 - `contract` `lang-math` Division or modulo by zero, a cyclic or unprintable value and a malformed math expression end render with a located error in every mode; arithmetic results print without binary float noise; a hyphen between two letters is part of a name.
 - `contract` `lang-operators` Conditions support `in`, `not in`, `between [a, b]` and `.length`; equality compares numerically only when neither side is a quoted literal.
 - `contract` `lang-case` WHEN accepts several values, a variable and a comparison.
-- `contract` `lang-for` FOR accepts limit and offset, an ELSE empty branch, key and value pairs, @total and @parent metadata; unknown FOR arguments are errors; TABLE rows use the same loop.
-- `contract` `lang-children` FOR and IF may produce LIST items and TABLE rows, with gap-free numbering.
-- `contract` `lang-set` SET binds a block-scoped local from a variable expression.
-- `contract` `lang-inputs` INPUT declares a variable's type and whether it is required; analyze, validate, strict mode and the n8n node use the declaration.
-- `contract` `lang-macros` DEFINE and CALL give parameterised fragments with isolated scope and bounded depth; partials passed in render options supply more DEFINEs.
 - `contract` `lang-limits` maxNodes bounds the parsed size of a template and its partials and is reported as a located diagnostic.
-- `contract` `lang-surfaces` spec(), the API, the CLI, the OpenAPI document, the README and the changelog describe every new construct, filter, operator, limit and option.
+- `contract` `lang-surfaces` spec(), the API, the CLI, the OpenAPI document, the README and the changelog describe every filter, operator, limit and WHEN form this cycle adds, and a test keeps spec() in step with the lexer and the registry.
 - `constraint` `lang-compat` must: every existing test passes; the only amended existing tests are those the plan names, each logged in test_amendments; resolveTemplate keeps its outputs.
 - `constraint` `lang-no-deps` must: add no runtime dependency.
 - `constraint` `lang-no-eval` must-not: evaluate template text as code or compile a template-supplied regular expression.
-- `constraint` `lang-style` human-decides: statement tags without a body (SET, INPUT, CALL) are recorded as an ADR beside ADR 0001. Decided by the human in chat on 2026-10-14: yes.
+- `constraint` `lang-style` human-decides: statement tags without a body (SET, INPUT, CALL) are recorded as an ADR beside ADR 0001. Decided by the human in chat on 2026-10-14: yes; the ADR is written in this cycle, the tags are built in the next.
 
 ## Won't-haves
 
 <!-- What this cycle leaves out on purpose, so nobody builds it by accident. -->
 
+- FOR upgrades, LIST and TABLE children, SET, INPUT, DEFINE, CALL and partials (cycle language-2).
 - Tier 2 constructs not yet built (TREE, TAG, UNTRUSTED, table upgrades, `as`, BLOCK budgets, MESSAGE, CACHE_BREAK).
 - The `matches /re/` operator (deferred).
 - Filesystem includes, template inheritance, custom JS helpers, a partials UI in the n8n node.
@@ -106,7 +102,7 @@ none: the spec names no personas or stories and none are invented; spec section 
 
 <!-- How a person judges the cycle done. The close command does not check this text. -->
 
-A person judges the cycle done when the SEO-brief showcase template (SET, FOR with ELSE and limit, CASE with several values, a LIST built by FOR, join and upper filters, a macro from a partial) renders the expected file through render, the CLI and the API, the README documents each construct, and CI is green.
+A person judges the cycle done when the README documents every filter, operator, node limit and WHEN form, a golden case renders a template that uses join, upper, in, between and a multi-value WHEN, the full suite passes and CI is green on both operating systems.
 
 <!-- An approved design document may live in this folder under docs/ephemeral/ when design-approval.md lists it; the reviewer then sees it as approved design. List docs/x.md#Heading to approve only that section. -->
 

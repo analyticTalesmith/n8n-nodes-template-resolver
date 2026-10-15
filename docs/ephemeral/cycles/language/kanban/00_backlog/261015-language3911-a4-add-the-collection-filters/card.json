@@ -1,0 +1,67 @@
+{
+  "id": "261015-language3911-a4-add-the-collection-filters",
+  "title": "Add the collection filters",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [
+    "261015-language3911-a1-dispatch-filters-from-one-registry-with"
+  ],
+  "origin": "language",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "core/src/filters-collection.ts",
+    "tests/language/filters-collection.test.ts"
+  ],
+  "manifest": {
+    "add": [
+      "tests/language/filters-collection.test.ts"
+    ],
+    "remove": [],
+    "edit": [
+      "core/src/filters-collection.ts"
+    ],
+    "frozen": false
+  },
+  "criteria": [
+    {
+      "text": "fc-collection: a table per filter over arrays, string inputs coerced exactly as FOR coerces them, objects and empty or missing input: join (join=\", \"), length (items of a list, characters of a text, keys of an object), first, last, slice (slice:start=1,end=3), lines (split text on line breaks, CRLF included) and unique",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "fc-order: sort is stable and deterministic: numbers numeric, strings by code unit, sort=key orders objects by that key, a mixed list sorts numbers before strings; unique keeps the first occurrence of each value",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "fc-json: json prints a compact JSON text of the value with stable key order; a cyclic value is a type-error located at the variable; a wrong or undeclared parameter on any collection filter is a type-error located at the variable",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/language/filters-collection.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": [
+    "docs/living/architecture/modules/template-resolver.md",
+    "docs/living/architecture/language-contract.md"
+  ],
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver"
+  ],
+  "docs_deferred": true
+}

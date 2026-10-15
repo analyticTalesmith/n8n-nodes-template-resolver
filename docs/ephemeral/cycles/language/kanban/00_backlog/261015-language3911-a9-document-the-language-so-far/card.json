@@ -1,0 +1,82 @@
+{
+  "id": "261015-language3911-a9-document-the-language-so-far",
+  "title": "Document the language so far",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [
+    "261015-language3911-a3-add-the-text-filters",
+    "261015-language3911-a4-add-the-collection-filters",
+    "261015-language3911-a5-bound-the-total-node-count-of-a-template",
+    "261015-language3911-a6-make-math-and-output-errors-visible",
+    "261015-language3911-a7-add-in-not-in-between-and-length-to-cond",
+    "261015-language3911-a8-let-when-match-several-values-a-variable"
+  ],
+  "origin": "language",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "README.md",
+    "changelog.md",
+    "tests/language/surfaces.test.ts",
+    "tests/golden/render-cases/lang-filters-showcase/template.md"
+  ],
+  "manifest": {
+    "add": [
+      "tests/language/surfaces.test.ts",
+      "tests/golden/render-cases/lang-filters-showcase/template.md"
+    ],
+    "remove": [],
+    "edit": [
+      "README.md",
+      "changelog.md"
+    ],
+    "frozen": false
+  },
+  "criteria": [
+    {
+      "text": "ld-spec: a test proves every lexer keyword and every registry filter appears in spec(), and every operator the evaluator supports appears in spec().operators",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "ld-readme: the README documents each filter, operator, limit option and WHEN form of this cycle with an example that renders as shown (a golden case renders the README example)",
+      "verify": "review",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "ld-contract: the language contract, the template-resolver module page, the api and cli module pages and the headless contract match the code",
+      "verify": "review",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "ld-adr: ADR 0007 (statement tags without a body: SET, INPUT and CALL are single tags like ELSE, recorded beside ADR 0001) exists with the options considered",
+      "verify": "review",
+      "evidence": null,
+      "status": "pending"
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/language/surfaces.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": [
+    "docs/living/architecture/language-contract.md",
+    "docs/living/decisions/adr/0007-statement-tags-without-a-body.md"
+  ],
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver"
+  ],
+  "docs_deferred": true
+}

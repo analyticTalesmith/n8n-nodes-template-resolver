@@ -1,0 +1,91 @@
+{
+  "id": "261015-language3911-a7-add-in-not-in-between-and-length-to-cond",
+  "title": "Add in, not in, between and length to conditions",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [
+    "261015-language3911-a6-make-math-and-output-errors-visible"
+  ],
+  "origin": "language",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "core/src/expressions.ts",
+    "core/src/interpreter.ts",
+    "core/src/analyze.ts",
+    "core/src/spec.ts",
+    "tests/language/operators.test.ts"
+  ],
+  "manifest": {
+    "add": [
+      "tests/language/operators.test.ts"
+    ],
+    "remove": [],
+    "edit": [
+      "core/src/expressions.ts",
+      "core/src/interpreter.ts",
+      "core/src/analyze.ts",
+      "core/src/spec.ts"
+    ],
+    "frozen": false
+  },
+  "criteria": [
+    {
+      "text": "op-in: x in [\"a\",\"b\"], x in list_var and x in \"text\" (substring) and the not in forms evaluate as written, with a located type-error for an operand that cannot be tested",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "op-between: x between [1, 10] is inclusive at both ends; a non-numeric operand is a type-error located at the condition",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "op-length: .length works on arrays and strings in conditions and in output; an object key named length wins over the built-in",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "op-equality: a side written as a quoted literal compares as text (z == \"01234\" is false for 1234); an unquoted number on the right of contains keeps its written text",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "op-unknown: an unrecognized word next to an operator is an error in every mode (ADR 0003), not only in strict mode",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "op-spec: spec() and analyze list the new operators, and analyze records the variables read by in, between and length",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/language/operators.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": [
+    "docs/living/architecture/modules/template-resolver.md",
+    "docs/living/architecture/language-contract.md"
+  ],
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver"
+  ],
+  "docs_deferred": true
+}

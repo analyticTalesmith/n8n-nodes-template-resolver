@@ -22,27 +22,43 @@ Status: planned.
 | t-fr-03 | lang-filters | quote-aware arguments parsed at parse time; an undeclared parameter is a located type-error |
 | t-fr-04 | lang-filters | an unterminated quote in a default never swallows later filters |
 | t-fr-05 | lang-filters | the text and collection filter groups exist and are included in the registry |
-| t-later-math | lang-math | tests of a later card of the cycle plan, not written in this trial; rows are placeholders so the plan covers every contract line |
-| t-later-operators | lang-operators | tests of a later card of the cycle plan, not written in this trial; rows are placeholders so the plan covers every contract line |
-| t-later-case | lang-case | tests of a later card of the cycle plan, not written in this trial; rows are placeholders so the plan covers every contract line |
-| t-later-for | lang-for | tests of a later card of the cycle plan, not written in this trial; rows are placeholders so the plan covers every contract line |
-| t-later-children | lang-children | tests of a later card of the cycle plan, not written in this trial; rows are placeholders so the plan covers every contract line |
-| t-later-set | lang-set | tests of a later card of the cycle plan, not written in this trial; rows are placeholders so the plan covers every contract line |
-| t-later-inputs | lang-inputs | tests of a later card of the cycle plan, not written in this trial; rows are placeholders so the plan covers every contract line |
-| t-later-macros | lang-macros | tests of a later card of the cycle plan, not written in this trial; rows are placeholders so the plan covers every contract line |
-| t-later-limits | lang-limits | tests of a later card of the cycle plan, not written in this trial; rows are placeholders so the plan covers every contract line |
-| t-later-surfaces | lang-surfaces | tests of a later card of the cycle plan, not written in this trial; rows are placeholders so the plan covers every contract line |
+| t-ft-text | lang-filters | each text filter gives the expected output over a table of inputs |
+| t-ft-params | lang-filters | a missing or undeclared parameter of a text filter is a located type-error |
+| t-ft-default | lang-filters | default replaces any value that is not truthy |
+| t-fc-collection | lang-filters | join, length, first, last, slice, lines and unique over lists, texts, objects and empty input |
+| t-fc-order | lang-filters | sort is stable and deterministic; unique keeps first occurrences |
+| t-fc-json | lang-filters | json is stable and a cyclic value is a located type-error |
+| t-ln-limit | lang-limits | maxNodes is counted at parse and reported as a located limit-nodes diagnostic |
+| t-ln-elseif | lang-limits | a very long ELSEIF chain gives limit-nodes, not a RangeError |
+| t-ln-analyze | lang-limits | analyze applies the caller limits or the defaults |
+| t-mt-zero | lang-math | division or modulo by zero is a located type-error in render |
+| t-mt-float | lang-math | arithmetic results print without binary float noise |
+| t-mt-hyphen | lang-math | a hyphen between two letters is part of a name; spaced or numeric hyphens stay arithmetic |
+| t-mt-lenient | lang-math | a malformed math expression fails in lenient mode too |
+| t-mt-cyclic | lang-math | a cyclic value in output is a located type-error |
+| t-op-in | lang-operators | in and not in over lists, variables and text |
+| t-op-between | lang-operators | between is inclusive and rejects non-numeric operands |
+| t-op-length | lang-operators | .length on arrays and strings, an object key named length wins |
+| t-op-equality | lang-operators | a quoted literal side compares as text; a number after contains keeps its written text |
+| t-op-unknown | lang-operators | an unrecognized word next to an operator is an error in every mode |
+| t-op-spec | lang-operators | spec and analyze list the new operators |
+| t-cs-values | lang-case | WHEN matches several values |
+| t-cs-var | lang-case | WHEN compares with a variable under strict-mode rules |
+| t-cs-compare | lang-case | WHEN accepts a comparison operator with a number |
+| t-cs-errors | lang-case | an empty WHEN or a mixed list and comparison is a located syntax-error |
+| t-cs-analyze | lang-case | analyze records WHEN variables as case usage |
+| t-ld-spec | lang-surfaces | every lexer keyword, registry filter and operator is in spec() |
 
 ## Integration
 
 Pairs with: software design.
 Depth: product default.
 Approval: auto.
-Status: waived.
-Reason: the filter registry card changes one module (template-resolver) and no boundary; the API and CLI suites run unchanged as regression.
+Status: planned.
 
 | Test | Covers | What it proves |
 |---|---|---|
+| t-ln-surfaces | lang-limits | the API lowers options.limits.maxNodes, the CLI takes --max-nodes and the OpenAPI Limits schema lists it |
 
 ## System
 

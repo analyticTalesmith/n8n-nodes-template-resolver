@@ -1,0 +1,89 @@
+{
+  "id": "261015-language3911-a8-let-when-match-several-values-a-variable",
+  "title": "Let WHEN match several values, a variable or a comparison",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [
+    "261015-language3911-a7-add-in-not-in-between-and-length-to-cond"
+  ],
+  "origin": "language",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [
+    "core/src/types.ts",
+    "core/src/parser.ts",
+    "core/src/interpreter.ts",
+    "core/src/analyze.ts",
+    "core/src/spec.ts",
+    "tests/language/case.test.ts",
+    "tests/golden/render-cases/lang-case/template.md"
+  ],
+  "manifest": {
+    "add": [
+      "tests/language/case.test.ts",
+      "tests/golden/render-cases/lang-case/template.md"
+    ],
+    "remove": [],
+    "edit": [
+      "core/src/types.ts",
+      "core/src/parser.ts",
+      "core/src/interpreter.ts",
+      "core/src/analyze.ts",
+      "core/src/spec.ts"
+    ],
+    "frozen": false
+  },
+  "criteria": [
+    {
+      "text": "cs-values: {{WHEN \"a\", \"b\"}} matches either value",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "cs-var: {{WHEN other}} compares with the variable value under strict-mode rules for a missing variable",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "cs-compare: {{WHEN >= 10}} works with == != > < >= <=, using the equality of the operators card",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "cs-errors: an empty WHEN, or a comparison mixed with a list of values, is a syntax-error located at the tag",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    },
+    {
+      "text": "cs-analyze: analyze records WHEN variables as case usage",
+      "verify": "test",
+      "evidence": null,
+      "status": "pending"
+    }
+  ],
+  "gate": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/language/case.test.ts",
+    "--json"
+  ],
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": [
+    "docs/living/architecture/modules/template-resolver.md",
+    "docs/living/architecture/language-contract.md"
+  ],
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1,
+  "blast_radius": [
+    "template-resolver"
+  ],
+  "docs_deferred": true
+}
