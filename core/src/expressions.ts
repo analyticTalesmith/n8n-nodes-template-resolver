@@ -545,12 +545,36 @@ const NAME_CHAR = /[a-zA-Z0-9_@.]/;
  * both sides of it (first-name), so a-b is one name while a - b, n-1 and
  * x1-y are subtractions
  */
-function joinsName(expr: string, i: number): boolean {
+export function joinsName(expr: string, i: number): boolean {
   return (
     expr[i] === "-" &&
     ASCII_LETTER.test(expr[i - 1] ?? "") &&
     ASCII_LETTER.test(expr[i + 1] ?? "")
   );
+}
+
+/**
+ * True when the text holds a character no name or operator uses and also a
+ * standalone number ("2 $ 3"), so it can only be a malformed math expression;
+ * without a number ("a:b", "Order #") it is a plain name
+ */
+export function hasStrayCharacter(text: string): boolean {
+  return (
+    /[^\p{L}\p{N}_@.\s-]/u.test(text) && /(?<![\p{L}\p{N}_@.])\d/u.test(text)
+  );
+}
+
+/**
+ * How to write a missing hyphenated name as subtraction, when the name reads
+ * like one (letter-hyphen-letter, no whitespace)
+ */
+export function subtractionHint(name: string): string | undefined {
+  if (/\s/.test(name)) return undefined;
+  const spaced = [...name]
+    .map((char, i) => (joinsName(name, i) ? " - " : char))
+    .join("");
+  if (spaced === name) return undefined;
+  return `If you meant subtraction, write '${spaced}'`;
 }
 
 /**
@@ -685,11 +709,12 @@ export class DivisionByZeroError extends TypeError {
 }
 
 /**
- * A math result as text with at most 15 significant digits, so binary float
- * noise (0.1 + 0.2) does not print
+ * A math result as text: integers print unchanged, other numbers with at most
+ * 15 significant digits, so binary float noise (0.1 + 0.2) does not print
  */
 export function formatNumber(n: number): string {
-  return Number.isFinite(n) ? String(Number(n.toPrecision(15))) : String(n);
+  if (!Number.isFinite(n) || Number.isInteger(n)) return String(n);
+  return String(Number(n.toPrecision(15)));
 }
 
 /**

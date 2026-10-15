@@ -106,6 +106,18 @@ describe("mt-float: arithmetic prints with at most 15 significant digits in rend
     check(o.output, `${c.entry}: no binary float noise`).toBe(c.out);
   });
 
+  const bigRows = [
+    { expr: "1234567890123456 + 0", data: {}, out: "1234567890123456" },
+    { expr: "x * 1", data: { x: 9007199254740991 }, out: "9007199254740991" },
+    { expr: "x * 1", data: { x: -9007199254740991 }, out: "-9007199254740991" },
+    { expr: "0.1 + 0.2", data: {}, out: "0.3" },
+  ];
+  it.each(RENDERS.flatMap((entry) => bigRows.map((r) => ({ entry, ...r }))))("mt-float: [$entry] large integer ${{$expr}} prints $out unchanged", (c) => {
+    const o = run(c.entry, "${{" + c.expr + "}}", c.data);
+    check(o.code, `${c.entry}: ok`).toBe("ok");
+    check(o.output, `${c.entry}: integers print unchanged`).toBe(c.out);
+  });
+
   const keep = [
     { expr: "0.1 + 0.2", data: {}, out: String(0.1 + 0.2) },
     { expr: "x * 3", data: { x: 1.1 }, out: String(1.1 * 3) },
@@ -180,6 +192,38 @@ describe("mt-lenient: a malformed math expression is a located error in lenient 
   });
 });
 
+describe("mt-keys: a key that exists is never a math error, a missing plain name stays a plain name", () => {
+  it.each(ENTRIES)("mt-keys: [%s] key a:b with value null prints empty", (entry) => {
+    const o = run(entry, "${{a:b}}", { "a:b": null });
+    check(o.code, `${entry}: ok`).toBe("ok");
+    check(o.output, `${entry}: empty`).toBe("");
+  });
+
+  it.each(ENTRIES)("mt-keys: [%s] key a:b with value 7 prints 7", (entry) => {
+    const o = run(entry, "${{a:b}}", { "a:b": 7 });
+    check(o.code, `${entry}: ok`).toBe("ok");
+    check(o.output, `${entry}: the value`).toBe("7");
+  });
+
+  it.each(ENTRIES)("mt-keys: [%s] key Order # with value null prints empty", (entry) => {
+    const o = run(entry, "${{Order #}}", { "Order #": null });
+    check(o.code, `${entry}: ok`).toBe("ok");
+    check(o.output, `${entry}: empty`).toBe("");
+  });
+
+  const names = ["a:b", "Order #"];
+  it.each(["render-strict", "resolve-strict"].flatMap((entry) => names.map((name) => ({ entry: entry as Entry, name }))))("mt-keys: [$entry] a missing $name is missing-variable", (c) => {
+    const o = run(c.entry, "${{" + c.name + "}}", {});
+    check(o.code, `${c.entry}: missing-variable`).toBe("missing-variable");
+  });
+
+  it.each(["render-lenient", "resolve-lenient"].flatMap((entry) => names.map((name) => ({ entry: entry as Entry, name }))))("mt-keys: [$entry] a missing $name prints empty", (c) => {
+    const o = run(c.entry, "${{" + c.name + "}}", {});
+    check(o.code, `${c.entry}: ok`).toBe("ok");
+    check(o.output, `${c.entry}: empty`).toBe("");
+  });
+});
+
 describe("mt-cyclic: a value with no text form is a located error as output", () => {
   const cyclicObject: any = {};
   cyclicObject.self = cyclicObject;
@@ -223,6 +267,47 @@ describe("mt-cyclic: a value with no text form is a located error as output", ()
     const o = run(c.entry, "${{c}}", { c: c.value });
     check(o.code, `${c.entry}: ${c.name} is ok`).toBe("ok");
     if (c.out !== undefined) check(o.output, `${c.entry}: ${c.name} prints ${JSON.stringify(c.out)}`).toBe(c.out);
+  });
+
+  const selfList: any[] = [];
+  selfList.push(selfList);
+  const lengthRows = [
+    { name: "a list that contains itself", xs: selfList, out: "1" },
+    { name: "a list of BigInts", xs: [BigInt(1), BigInt(2)], out: "2" },
+  ];
+  it.each(ENTRIES.flatMap((entry) => lengthRows.map((r) => ({ entry, ...r }))))("mt-cyclic: [$entry] length of $name still prints $out", (c) => {
+    const o = run(c.entry, "${{xs | length}}", { xs: c.xs });
+    check(o.code, `${c.entry}: ok`).toBe("ok");
+    check(o.output, `${c.entry}: the count prints`).toBe(c.out);
+  });
+
+  it.each(ENTRIES)("mt-cyclic: [%s] first of a BigInt list is a type-error because the result is a BigInt", (entry) => {
+    expectLocatedTypeError(entry, run(entry, at("${{xs | first}}"), { xs: [BigInt(1)] }), "first of [1n]");
+  });
+
+  it.each(ENTRIES)("mt-cyclic: [%s] json of a cyclic object is the json filter's own cyclic type-error", (entry) => {
+    const strictMode = entry.endsWith("strict");
+    let message = "";
+    let code = "";
+    let line: number | undefined;
+    if (entry.startsWith("render")) {
+      const r = render(at("${{c | json}}"), { c: cyclicObject }, { strictMode });
+      code = r.diagnostics[0]?.code ?? "ok";
+      message = r.diagnostics[0]?.message ?? "";
+      line = r.diagnostics[0]?.line;
+    } else {
+      try {
+        resolveTemplate(at("${{c | json}}"), new Map([["c", cyclicObject]]), { strictMode });
+        code = "ok";
+      } catch (e) {
+        code = (e as any).code;
+        message = (e as Error).message;
+        line = (e as any).line;
+      }
+    }
+    check(code, `${entry}: type-error`).toBe("type-error");
+    check(line, `${entry}: located on line 2`).toBe(2);
+    check(message.toLowerCase(), `${entry}: the json filter's own error`).toContain("cyclic");
   });
 
   it("mt-cyclic: a cyclic value in render returns ok false and a diagnostic, not an exception", () => {

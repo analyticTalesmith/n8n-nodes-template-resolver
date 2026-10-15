@@ -35,10 +35,19 @@ import {
   evaluateCondition,
   evaluateMathExpression,
   formatNumber,
+  hasStrayCharacter,
   isMathExpression,
   isTruthy,
+  subtractionHint,
 } from "./expressions";
-import { applyFilters, fenced, checkFenceLang } from "./filters";
+import { applyFilters, fenced, checkFenceLang, valueToText } from "./filters";
+import { COLLECTION_FILTERS } from "./filters-collection";
+
+/** Filters that take any value as it is, so they run before the unprintable check */
+const KEEPS_RAW_INPUT = new Set([
+  ...COLLECTION_FILTERS.map((filter) => filter.name),
+  "default",
+]);
 
 /**
  * Interpreter: Walks AST and produces output string
@@ -214,7 +223,10 @@ export class Interpreter {
     } catch (error) {
       lookupError = error;
     }
-    if (isUnparseableMath(mathError, value, lookupError)) throw mathError;
+    // A malformed math text is an error only when no variable has that name
+    if (mathError instanceof MathSyntaxError && !this.hasRootKey(node.path[0])) {
+      throw mathError;
+    }
     if (lookupError !== null) throw lookupError;
 
     // Apply default operator if value is falsy
@@ -224,8 +236,11 @@ export class Interpreter {
 
     // Apply filters
     if (node.filters && node.filters.length > 0) {
-      this.valueToString(value); // text filters would turn an unprintable value into ""
-      value = applyFilters(value, node.filters) as TemplateValue;
+      for (const filter of node.filters) {
+        // text filters would turn an unprintable value into ""
+        if (!KEEPS_RAW_INPUT.has(filter.name)) this.valueToString(value);
+        value = applyFilters(value, [filter]) as TemplateValue;
+      }
     }
 
     return this.valueToString(value);
@@ -630,7 +645,7 @@ export class Interpreter {
     const rootKey = path[0];
 
     let current: TemplateValue;
-    const hasKey = this.loopContext.has(rootKey) || this.variables.has(rootKey);
+    const hasKey = this.hasRootKey(rootKey);
 
     // Determine correct root value
     if (this.loopContext.has(rootKey)) {
@@ -684,12 +699,18 @@ export class Interpreter {
   }
 
   /**
+   * True when a variable or loop value holds this name, whatever its value
+   */
+  private hasRootKey(rootKey: string): boolean {
+    return this.loopContext.has(rootKey) || this.variables.has(rootKey);
+  }
+
+  /**
    * Convert value to string for output
    */
   private valueToString(value: TemplateValue): string {
     if (value == null) return "";
-    const text = tryCoerceToString(value);
-    if (text === null) {
+    if (tryCoerceToString(value) === null) {
       throw new TypeError(
         "Cannot print a value with no text form (a cyclic structure or a BigInt)",
         1,
@@ -697,7 +718,7 @@ export class Interpreter {
         "Map the variable to text, a number or plain data without cycles"
       );
     }
-    return text;
+    return valueToText(value);
   }
 
   /**
@@ -710,40 +731,6 @@ export class Interpreter {
     }
     return combined;
   }
-}
-
-/**
- * True when a variable's text failed as math with a syntax error and nothing
- * else reads it: the lookup found no value or a missing variable
- */
-function isUnparseableMath(
-  mathError: unknown,
-  value: TemplateValue,
-  lookupError: unknown
-): boolean {
-  return (
-    mathError instanceof MathSyntaxError &&
-    value == null &&
-    (lookupError === null || lookupError instanceof MissingVariableError)
-  );
-}
-
-/**
- * True when the text holds a character no name or operator uses ("2 $ 3"),
- * so it can only be a malformed math expression
- */
-function hasStrayCharacter(text: string): boolean {
-  return /[^\p{L}\p{N}_@.\s-]/u.test(text);
-}
-
-/**
- * How to write a missing hyphenated name as subtraction, when the name reads
- * like one (letter-hyphen-letter, no whitespace)
- */
-function subtractionHint(name: string): string | undefined {
-  if (/\s/.test(name) || !/[a-zA-Z]-[a-zA-Z]/.test(name)) return undefined;
-  const spaced = name.replace(/([a-zA-Z])-(?=[a-zA-Z])/g, "$1 - ");
-  return `If you meant subtraction, write '${spaced}'`;
 }
 
 /**
