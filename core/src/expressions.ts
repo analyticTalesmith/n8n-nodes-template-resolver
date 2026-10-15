@@ -531,10 +531,11 @@ export function conditionOperands(condition: string): string[] {
  * True when the text is an arithmetic expression rather than a plain path
  */
 export function isMathExpression(expr: string): boolean {
-  return (
-    /[+*/%()]/.test(expr) ||
-    [...expr].some((char, i) => char === "-" && !joinsName(expr, i))
-  );
+  if (/[+*/%()]/.test(expr)) return true;
+  for (let i = 0; i < expr.length; i++) {
+    if (expr[i] === "-" && !joinsName(expr, i)) return true;
+  }
+  return false;
 }
 
 const ASCII_LETTER = /[a-zA-Z]/;
@@ -570,9 +571,10 @@ export function hasStrayCharacter(text: string): boolean {
  */
 export function subtractionHint(name: string): string | undefined {
   if (/\s/.test(name)) return undefined;
-  const spaced = [...name]
-    .map((char, i) => (joinsName(name, i) ? " - " : char))
-    .join("");
+  let spaced = "";
+  for (let i = 0; i < name.length; i++) {
+    spaced += joinsName(name, i) ? " - " : name[i];
+  }
   if (spaced === name) return undefined;
   return `If you meant subtraction, write '${spaced}'`;
 }
@@ -688,6 +690,8 @@ export function evaluateMathExpression(
   variables: VariableMap,
   options?: { zeroIsError?: boolean }
 ): number {
+  // Shape first, with every name standing in as a number and no variable read
+  evaluateMathTokens(tokenizeMath(expression, null), false);
   const tokens = tokenizeMath(expression, variables);
   return evaluateMathTokens(tokens, options?.zeroIsError ?? false);
 }
@@ -730,7 +734,7 @@ function endsOperand(tokens: (number | string)[]): boolean {
  */
 function tokenizeMath(
   expr: string,
-  variables: VariableMap
+  variables: VariableMap | null
 ): (number | string)[] {
   const tokens: (number | string)[] = [];
   let i = 0;
@@ -776,6 +780,11 @@ function tokenizeMath(
         1,
         1
       );
+    }
+
+    if (variables === null) {
+      tokens.push(1);
+      continue;
     }
 
     const value = resolveValue(varName, variables);

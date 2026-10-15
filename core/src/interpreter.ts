@@ -45,7 +45,9 @@ import { COLLECTION_FILTERS } from "./filters-collection";
 
 /** Filters that take any value as it is, so they run before the unprintable check */
 const KEEPS_RAW_INPUT = new Set([
-  ...COLLECTION_FILTERS.map((filter) => filter.name),
+  ...COLLECTION_FILTERS.map((filter) => filter.name).filter(
+    (name) => name !== "lines" && name !== "join"
+  ),
   "default",
 ]);
 

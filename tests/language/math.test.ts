@@ -316,3 +316,65 @@ describe("mt-cyclic: a value with no text form is a located error as output", ()
     check(r.diagnostics[0]?.code, "the first diagnostic is a type-error").toBe("type-error");
   });
 });
+
+describe("mt-text-filters: lines and join refuse an unprintable input", () => {
+  const cyc: any = {};
+  cyc.self = cyc;
+  const errorRows = [
+    { name: "lines of a cyclic object", tag: "${{c | lines}}", data: { c: cyc } },
+    { name: "join of a list holding a cyclic object", tag: '${{xs | join=","}}', data: { xs: [cyc] } },
+    { name: "join of a list holding a BigInt", tag: '${{xs | join=","}}', data: { xs: [BigInt(1)] } },
+  ];
+  it.each(ENTRIES.flatMap((entry) => errorRows.map((r) => ({ entry, ...r }))))("mt-text-filters: [$entry] $name is a located type-error", (c) => {
+    expectLocatedTypeError(c.entry, run(c.entry, at(c.tag), c.data), c.name);
+  });
+
+  const okRows = [
+    { name: "join of [1, 2]", tag: '${{xs | join=","}}', data: { xs: [1, 2] }, out: "1,2" },
+    { name: "lines of a two-line text", tag: "${{t | lines}}", data: { t: "a\nb" }, out: '["a","b"]' },
+  ];
+  it.each(ENTRIES.flatMap((entry) => okRows.map((r) => ({ entry, ...r }))))("mt-text-filters: [$entry] $name still prints $out", (c) => {
+    const o = run(c.entry, c.tag, c.data);
+    check(o.code, `${c.entry}: ok`).toBe("ok");
+    check(o.output, `${c.entry}: output`).toBe(c.out);
+  });
+});
+
+describe("mt-shape: a malformed math shape is a syntax error before any variable is read", () => {
+  const badRows = [
+    { name: "a missing operand with no data", tag: "${{total * }}", data: {} },
+    { name: "a missing operand with the variable present", tag: "${{total * }}", data: { total: 2 } },
+    { name: "an unclosed parenthesis with no data", tag: "${{(a + b}}", data: {} },
+    { name: "a stray character with no data", tag: "${{qty $ 3}}", data: {} },
+  ];
+  it.each(ENTRIES.flatMap((entry) => badRows.map((r) => ({ entry, ...r }))))("mt-shape: [$entry] $name is a located type-error", (c) => {
+    expectLocatedTypeError(c.entry, run(c.entry, at(c.tag), c.data), c.name);
+  });
+
+  it.each(["render-lenient", "resolve-lenient"] as Entry[])("mt-shape: [%s] a well-formed expression with a missing variable stays empty", (entry) => {
+    const o = run(entry, "${{total * 2}}", {});
+    check(o.code, `${entry}: ok`).toBe("ok");
+    check(o.output, `${entry}: empty`).toBe("");
+  });
+  it.each(["render-strict", "resolve-strict"] as Entry[])("mt-shape: [%s] a well-formed expression with a missing variable is missing-variable", (entry) => {
+    check(run(entry, "${{total * 2}}", {}).code, `${entry}: missing-variable`).toBe("missing-variable");
+  });
+});
+
+describe("mt-emoji: a name with an emoji before letter-hyphen-letter is read by string index", () => {
+  it.each(ENTRIES)("mt-emoji: [%s] the key 🔥hot-take with value 5 prints 5", (entry) => {
+    const o = run(entry, "${{🔥hot-take}}", { "🔥hot-take": 5 });
+    check(o.code, `${entry}: ok`).toBe("ok");
+    check(o.output, `${entry}: the value`).toBe("5");
+  });
+  it.each(["render-lenient", "resolve-lenient"] as Entry[])("mt-emoji: [%s] a missing 🔥hot-take is empty", (entry) => {
+    const o = run(entry, "${{🔥hot-take}}", {});
+    check(o.code, `${entry}: ok`).toBe("ok");
+    check(o.output, `${entry}: empty`).toBe("");
+  });
+  it.each(["render-strict", "resolve-strict"] as Entry[])("mt-emoji: [%s] a missing 🔥hot-take is missing-variable with a subtraction hint", (entry) => {
+    const o = run(entry, "${{🔥hot-take}}", {});
+    check(o.code, `${entry}: missing-variable`).toBe("missing-variable");
+    check(o.suggestion, `${entry}: hint`).toContain("hot - take");
+  });
+});
