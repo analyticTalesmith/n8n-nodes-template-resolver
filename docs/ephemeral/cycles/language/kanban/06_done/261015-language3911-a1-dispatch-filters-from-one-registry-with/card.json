@@ -98,21 +98,14 @@
     "tests/language/filter-registry.test.ts",
     "--json"
   ],
-  "claim": {
-    "owner": "build:implementer",
-    "heartbeat": "2026-10-15T02:27:39.946Z",
-    "built": {
-      "commit": "641bf0d0d46992a70c82718a947966c1d85fd4cc",
-      "at": "2026-10-15T02:27:39.946Z"
-    }
-  },
+  "claim": null,
   "blocked_on": null,
   "docs_impact": [
     "docs/living/architecture/modules/template-resolver.md",
     "docs/living/architecture/language-contract.md"
   ],
   "started": "2026-10-15T02:18:33.454Z",
-  "ended": null,
+  "ended": "2026-10-15T02:29:01.599Z",
   "review_rounds": 2,
   "schema_version": 1,
   "blast_radius": [

@@ -2,7 +2,7 @@
 summary: "Filters section: one registry of definitions feeds render, spec and analyze; arguments parsed at parse time, quote-aware; undeclared parameter is a type-error"
 op: modify
 target: docs/living/architecture/modules/template-resolver.md
-status: open
+status: applied
 ---
 
 # Proposed change

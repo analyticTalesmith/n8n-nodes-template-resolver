@@ -2,7 +2,7 @@
 summary: "New language contract: filter registry and argument syntax first; later cards append their constructs"
 op: add
 target: docs/living/architecture/language-contract.md
-status: open
+status: applied
 ---
 
 # Proposed change

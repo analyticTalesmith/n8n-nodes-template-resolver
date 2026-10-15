@@ -1,6 +1,6 @@
 ---
 summary: "New language contract: filter registry and argument syntax first; later cards append their constructs"
-state: planned
+state: built
 ---
 
 # Language contract
