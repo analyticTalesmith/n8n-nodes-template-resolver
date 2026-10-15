@@ -2,7 +2,7 @@
 summary: "Collection filters: join, length, first, last, sort, unique, slice, lines and json, with coercion, ordering and error rules"
 op: modify
 target: docs/living/architecture/language-contract.md
-status: open
+status: applied
 ---
 
 # Proposed change

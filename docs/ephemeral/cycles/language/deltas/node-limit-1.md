@@ -2,7 +2,7 @@
 summary: "limits.maxNodes (default 20000), the limit-nodes code, iterative ELSEIF chains and analyze limits"
 op: modify
 target: docs/living/architecture/modules/template-resolver.md
-status: open
+status: applied
 ---
 
 # Proposed change

@@ -4,7 +4,7 @@ type: adr
 domain: language
 status: accepted
 date: 2026-10-14
-state: planned
+state: built
 ---
 
 # 0007 statement tags without a body

@@ -2,7 +2,7 @@
 summary: Filters section lists the collection filter group and its behavior
 op: modify
 target: docs/living/architecture/modules/template-resolver.md
-status: open
+status: applied
 ---
 
 # Proposed change

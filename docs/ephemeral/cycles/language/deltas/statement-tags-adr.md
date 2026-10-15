@@ -2,7 +2,7 @@
 summary: "ADR: SET, INPUT and CALL are single tags without an END, like ELSE"
 op: add
 target: docs/living/decisions/adr/0007-statement-tags-without-a-body.md
-status: open
+status: applied
 ---
 
 # Proposed change

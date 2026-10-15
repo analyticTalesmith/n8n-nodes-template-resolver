@@ -2,7 +2,7 @@
 summary: Name the text filter group in the filters section
 op: modify
 target: docs/living/architecture/modules/template-resolver.md
-status: open
+status: applied
 ---
 
 # Proposed change

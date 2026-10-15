@@ -2,7 +2,7 @@
 summary: "Add the text filters section: upper, lower, title, replace, indent, quote, round and default"
 op: modify
 target: docs/living/architecture/language-contract.md
-status: open
+status: applied
 ---
 
 # Proposed change
