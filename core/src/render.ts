@@ -73,7 +73,10 @@ export function render(
     const tokens = new Lexer(template, {
       standaloneLines: options?.standaloneLines ?? true,
     }).tokenize();
-    const ast = new Parser(tokens, { maxDepth: limits.maxDepth }).parse();
+    const ast = new Parser(tokens, {
+      maxDepth: limits.maxDepth,
+      maxNodes: limits.maxNodes,
+    }).parse();
     output = interpreter.interpret(ast);
   } catch (error) {
     if (!(error instanceof TemplateError)) throw error;

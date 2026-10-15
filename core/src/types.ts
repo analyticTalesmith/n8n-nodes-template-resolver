@@ -303,7 +303,7 @@ export const DEFAULT_LIMITS: Limits = {
   maxIterations: 10000,
   maxOutputChars: 1000000,
   maxDepth: 32,
-  maxNodes: 0,
+  maxNodes: 20000,
 };
 
 /**

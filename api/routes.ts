@@ -64,13 +64,13 @@ function renderRoute(body: Record<string, unknown>, context: RouteContext): unkn
 }
 
 function validateRoute(body: Record<string, unknown>, context: RouteContext): unknown {
-  return validate(requireTemplate(body), { limits: { maxDepth: context.limits.maxDepth } });
+  return validate(requireTemplate(body), { limits: context.limits });
 }
 
 function analyzeRoute(body: Record<string, unknown>, context: RouteContext): TemplateAnalysis {
   const template = requireTemplate(body);
   try {
-    return analyze(template, { limits: { maxDepth: context.limits.maxDepth } });
+    return analyze(template, { limits: context.limits });
   } catch (error) {
     if (!(error instanceof TemplateError)) throw error;
     return {

@@ -15,7 +15,8 @@ const USAGE = `Usage: template-resolver <command> [options]
 Commands:
   render <template-file|-> [--data <file|->] [--strict | --no-strict]
          [--standalone-lines | --no-standalone-lines]
-         [--max-iterations n] [--max-output-chars n] [--max-depth n] [--json]
+         [--max-iterations n] [--max-output-chars n] [--max-depth n]
+         [--max-nodes n] [--json]
       Render a template and print the output. A line holding only block tags
       is removed by default; --no-standalone-lines keeps it.
   validate <template-file|->   Check a template; prints {ok, diagnostics} as JSON.
@@ -46,6 +47,7 @@ const COMMAND_OPTIONS: Record<string, Options> = {
     "max-iterations": { type: "string" },
     "max-output-chars": { type: "string" },
     "max-depth": { type: "string" },
+    "max-nodes": { type: "string" },
     json: { type: "boolean" },
   },
   validate: {},
@@ -96,11 +98,28 @@ export async function main(argv: string[], io: CliIo): Promise<number> {
 
 function parseCommand(args: string[], options: Options): { values: Values; positionals: string[] } {
   try {
-    const { values, positionals } = parseArgs({ args, options, allowPositionals: true, strict: true });
+    const { values, positionals } = parseArgs({
+      args: joinNegativeValues(args, options),
+      options,
+      allowPositionals: true,
+      strict: true,
+    });
     return { values: values as Values, positionals };
   } catch (error) {
     throw new UsageError(error.message);
   }
+}
+
+/** parseArgs rejects "--flag -1" as ambiguous; "--flag=-1" lets parseCount name the flag. */
+function joinNegativeValues(args: string[], options: Options): string[] {
+  const joined: string[] = [];
+  for (const arg of args) {
+    const previous = joined[joined.length - 1];
+    const flag = previous?.startsWith("--") ? options?.[previous.slice(2)] : undefined;
+    if (flag?.type === "string" && /^-\d/.test(arg)) joined[joined.length - 1] = `${previous}=${arg}`;
+    else joined.push(arg);
+  }
+  return joined;
 }
 
 function oneInput(positionals: string[]): string {
@@ -191,6 +210,7 @@ function parseLimits(values: Values): Partial<Limits> {
     ["max-iterations", "maxIterations"],
     ["max-output-chars", "maxOutputChars"],
     ["max-depth", "maxDepth"],
+    ["max-nodes", "maxNodes"],
   ];
   const limits: Partial<Limits> = {};
   for (const [flag, key] of flags) {
