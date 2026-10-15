@@ -1,8 +1,17 @@
-import { FilterCall, FilterDefinition } from "./types";
+import { FilterCall, FilterDefinition, TemplateValue } from "./types";
 import { UnknownFilterError } from "./errors";
+import { tryCoerceToString } from "./coercion";
+import { TEXT_FILTERS } from "./filters-text";
+import { COLLECTION_FILTERS } from "./filters-collection";
 
-/** Signature-only stub: the registry of every filter definition. */
-export const FILTER_REGISTRY: FilterDefinition[] = [];
+/**
+ * A value as the output step prints it: nothing for null, JSON for arrays and
+ * objects, the plain form for the rest
+ */
+export function valueToText(value: TemplateValue): string {
+  if (value == null) return "";
+  return tryCoerceToString(value) || "";
+}
 
 /**
  * Parse filter string into FilterCall object
@@ -14,23 +23,29 @@ export const FILTER_REGISTRY: FilterDefinition[] = [];
  */
 export function parseFilter(filterString: string): FilterCall {
   const trimmed = filterString.trim();
+  const eqIdx = trimmed.indexOf("=");
+  const colonIdx = trimmed.indexOf(":");
 
   // Simple filter (no params)
-  if (!trimmed.includes("=") && !trimmed.includes(":")) {
+  if (eqIdx === -1 && colonIdx === -1) {
     return { name: trimmed, params: {} };
   }
 
-  // Shorthand single param: head=100
-  if (trimmed.includes("=") && !trimmed.includes(":")) {
-    const [name, value] = trimmed.split("=").map((s) => s.trim());
+  // Shorthand single param: head=100. Whichever of "=" and ":" comes first
+  // ends the name, so a quoted value may hold either.
+  if (colonIdx === -1 || (eqIdx !== -1 && eqIdx < colonIdx)) {
     return {
-      name,
-      params: { value: value.replace(/^["']|["']$/g, "") },
+      name: trimmed.slice(0, eqIdx).trim(),
+      params: {
+        value: trimmed
+          .slice(eqIdx + 1)
+          .trim()
+          .replace(/^["']|["']$/g, ""),
+      },
     };
   }
 
   // Named params: replace:find="old",with="new"
-  const colonIdx = trimmed.indexOf(":");
   const name = trimmed.slice(0, colonIdx).trim();
   const paramsStr = trimmed.slice(colonIdx + 1);
 
@@ -88,72 +103,118 @@ function parseParam(param: string, params: Record<string, string>): void {
 }
 
 /**
- * Every filter applyFilter accepts
+ * A built-in filter: its input is coerced to text first, exactly as the
+ * output step would print it
  */
-export const FILTERS: { name: string; params: string; description: string }[] =
-  [
-    {
-      name: "head",
-      params: "head=N",
-      description:
-        "First N characters; a negative N drops the last |N| characters",
-    },
-    {
-      name: "tail",
-      params: "tail=N",
-      description:
-        "Last N characters; a negative N drops the first |N| characters",
-    },
-    {
-      name: "trim",
-      params: "",
-      description: "Leading and trailing whitespace removed",
-    },
-    {
-      name: "escape_md",
-      params: "escape_md[=inline|block]",
-      description:
-        "Markdown special characters escaped with a backslash (inline, the default); block also escapes line starts that would read as structure: headings, quotes, list markers, tables, rules and fences",
-    },
-    {
-      name: "fence",
-      params: "fence[=lang]",
-      description:
-        "The value in a code fence of at least three backticks, longer than any backtick run inside it, with the optional language; one leading and one trailing line break of the value are removed",
-    },
-    {
-      name: "heading_offset",
-      params: "heading_offset=N",
-      description:
-        "Markdown ATX headings shifted by N levels (negative N shifts up), clamped to 1-6; headings inside fenced code are untouched",
-    },
-  ];
+function textFilter(
+  name: string,
+  params: string,
+  description: string,
+  paramNames: string[],
+  apply: (text: string, params: Record<string, string>) => string
+): FilterDefinition {
+  return {
+    name,
+    params,
+    description,
+    paramNames,
+    apply: (input, given) => apply(valueToText(input as TemplateValue), given),
+  };
+}
 
 /**
- * Apply single filter to text
+ * Every filter render, spec and analyze accept. A plain mutable array: a
+ * definition added to it is seen by all three, so nothing reads it once at
+ * load.
  */
-export function applyFilter(text: string, filter: FilterCall): string {
-  switch (filter.name) {
-    case "head":
-      return applyHeadFilter(text, filter.params);
-    case "tail":
-      return applyTailFilter(text, filter.params);
-    case "trim":
-      return text.trim();
-    case "escape_md":
-      return applyEscapeMdFilter(text, filter.params);
-    case "fence":
-      return fenced(text, filter.params.value ?? "");
-    case "heading_offset":
-      return applyHeadingOffsetFilter(text, filter.params);
-    default:
-      throw new UnknownFilterError(
-        filter.name,
-        1,
-        1,
-        FILTERS.map((f) => f.name)
-      );
+export const FILTER_REGISTRY: FilterDefinition[] = [
+  textFilter(
+    "head",
+    "head=N",
+    "First N characters; a negative N drops the last |N| characters",
+    ["value"],
+    applyHeadFilter
+  ),
+  textFilter(
+    "tail",
+    "tail=N",
+    "Last N characters; a negative N drops the first |N| characters",
+    ["value"],
+    applyTailFilter
+  ),
+  textFilter(
+    "trim",
+    "",
+    "Leading and trailing whitespace removed",
+    [],
+    (text) => text.trim()
+  ),
+  textFilter(
+    "escape_md",
+    "escape_md[=inline|block]",
+    "Markdown special characters escaped with a backslash (inline, the default); block also escapes line starts that would read as structure: headings, quotes, list markers, tables, rules and fences",
+    ["value"],
+    applyEscapeMdFilter
+  ),
+  textFilter(
+    "fence",
+    "fence[=lang]",
+    "The value in a code fence of at least three backticks, longer than any backtick run inside it, with the optional language; one leading and one trailing line break of the value are removed",
+    ["value"],
+    (text, params) => fenced(text, params.value ?? "")
+  ),
+  textFilter(
+    "heading_offset",
+    "heading_offset=N",
+    "Markdown ATX headings shifted by N levels (negative N shifts up), clamped to 1-6; headings inside fenced code are untouched",
+    ["value"],
+    applyHeadingOffsetFilter
+  ),
+  ...TEXT_FILTERS,
+  ...COLLECTION_FILTERS,
+];
+
+/**
+ * Name, parameter form and description of every filter registered now
+ */
+export function listFilters(): FilterSummary[] {
+  return FILTER_REGISTRY.map(({ name, params, description }) => ({
+    name,
+    params,
+    description,
+  }));
+}
+
+type FilterSummary = { name: string; params: string; description: string };
+
+/**
+ * The built-in and group filters as they were registered at load; spec() and
+ * analyze read the registry itself, so they also see a later addition
+ */
+export const FILTERS: FilterSummary[] = listFilters();
+
+/**
+ * Apply single filter to a value: an unknown name or a parameter the filter
+ * does not declare is an error
+ */
+export function applyFilter(value: unknown, filter: FilterCall): unknown {
+  const definition = FILTER_REGISTRY.find((f) => f.name === filter.name);
+  if (!definition) {
+    throw new UnknownFilterError(
+      filter.name,
+      1,
+      1,
+      FILTER_REGISTRY.map((f) => f.name)
+    );
   }
+  for (const key of Object.keys(filter.params)) {
+    if (!definition.paramNames.includes(key)) {
+      throw new Error(
+        `Filter ${filter.name} has no parameter '${key}' (accepts: ${definition.paramNames.join(", ") || "none"})`
+      );
+    }
+  }
+  return definition.apply(value, filter.params);
 }
 
 /**
@@ -339,14 +400,8 @@ function escapeInline(text: string): string {
 }
 
 /**
- * Apply chain of filters to text (left to right)
+ * Apply chain of filters to a value (left to right)
  */
-export function applyFilters(text: string, filters: FilterCall[]): string {
-  let result = text;
-
-  for (const filter of filters) {
-    result = applyFilter(result, filter);
-  }
-
-  return result;
+export function applyFilters(value: unknown, filters: FilterCall[]): unknown {
+  return filters.reduce(applyFilter, value);
 }

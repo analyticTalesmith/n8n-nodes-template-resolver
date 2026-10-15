@@ -28,19 +28,13 @@ import {
 import {
   tryCoerceToArray,
   tryCoerceStringForPathSegment,
-  tryCoerceToString,
 } from "./coercion";
 import {
   evaluateCondition,
   evaluateMathExpression,
   isTruthy,
 } from "./expressions";
-import {
-  parseFilter,
-  applyFilters,
-  fenced,
-  checkFenceLang,
-} from "./filters";
+import { applyFilters, fenced, checkFenceLang, valueToText } from "./filters";
 
 /**
  * Interpreter: Walks AST and produces output string
@@ -221,9 +215,7 @@ export class Interpreter {
 
     // Apply filters
     if (node.filters && node.filters.length > 0) {
-      const text = this.valueToString(value);
-      const filters = node.filters.map((f) => parseFilter(f.name));
-      value = applyFilters(text, filters);
+      value = applyFilters(value, node.filters) as TemplateValue;
     }
 
     return this.valueToString(value);
@@ -697,10 +689,7 @@ export class Interpreter {
    * Convert value to string for output
    */
   private valueToString(value: TemplateValue): string {
-    if (value == null) return "";
-
-    const str = tryCoerceToString(value);
-    return str || "";
+    return valueToText(value);
   }
 
   /**

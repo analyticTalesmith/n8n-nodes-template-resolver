@@ -1,5 +1,5 @@
 import { DEFAULT_LIMITS, Limits } from "./types";
-import { FILTERS } from "./filters";
+import { listFilters } from "./filters";
 
 export interface Spec {
   version: string;
@@ -147,7 +147,7 @@ export function spec(): Spec {
   return {
     version: LANGUAGE_VERSION,
     blocks: BLOCKS.map((b) => ({ ...b })),
-    filters: FILTERS.map((f) => ({ ...f })),
+    filters: listFilters(),
     operators: [...OPERATORS],
     limits: { ...DEFAULT_LIMITS },
     options: OPTIONS.map((o) => ({ ...o })),

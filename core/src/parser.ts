@@ -24,6 +24,7 @@ import {
   DEFAULT_LIMITS,
 } from "./types";
 import { SyntaxError, TypeError, LimitError } from "./errors";
+import { parseFilter } from "./filters";
 
 const BLOCK_ARGUMENT = /(\w+)=("[^"]*"|'[^']*'|\S*)|"[^"]*"|'[^']*'|\S+/g;
 const VARIABLE_PATH = /^[A-Za-z_@][\w@]*(\.[\w@]+)*$/;
@@ -188,7 +189,7 @@ export class Parser {
       defaultValue = core
         .slice(defaultIdx + 2)
         .trim()
-        .replace(/^["']|["']$/g, "");
+        .replace(/^(["'])(.*)\1$/s, "$2");
     }
 
     // --- 3. Parse path ---
@@ -197,10 +198,7 @@ export class Parser {
     // --- 4. Parse filters ---
     const filters: FilterCall[] =
       filterExprs.length > 0
-        ? filterExprs.map((f) => ({
-            name: f,
-            params: {},
-          }))
+        ? filterExprs.map(parseFilter)
         : [];
 
     return {
@@ -213,11 +211,17 @@ export class Parser {
   /**
    * Split on a separator character, ignoring separators inside quotes.
    * A quote only opens at the start of a value, so an apostrophe inside a
-   * word is plain text.
+   * word is plain text, and so is a quote that never closes: the split is
+   * redone with that quote left out.
    */
-  private splitOutsideQuotes(text: string, separator: string): string[] {
+  private splitOutsideQuotes(
+    text: string,
+    separator: string,
+    plainQuotes: ReadonlySet<number> = new Set()
+  ): string[] {
     const parts: string[] = [];
     let quote: string | null = null;
+    let quoteAt = -1;
     let start = 0;
 
     for (let i = 0; i < text.length; i++) {
@@ -226,13 +230,22 @@ export class Parser {
         if (ch === quote) quote = null;
       } else if (
         (ch === '"' || ch === "'") &&
+        !plainQuotes.has(i) &&
         /(^|\?\?|=)\s*$/.test(text.slice(start, i))
       ) {
         quote = ch;
+        quoteAt = i;
       } else if (ch === separator) {
         parts.push(text.slice(start, i));
         start = i + 1;
       }
+    }
+    if (quote) {
+      return this.splitOutsideQuotes(
+        text,
+        separator,
+        new Set(plainQuotes).add(quoteAt)
+      );
     }
     parts.push(text.slice(start));
     return parts;

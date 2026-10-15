@@ -1,6 +1,6 @@
 import { Lexer } from "./lexer";
 import { Parser } from "./parser";
-import { FILTERS, parseFilter } from "./filters";
+import { FILTER_REGISTRY } from "./filters";
 import {
   conditionOperands,
   hasBareWhitespace,
@@ -74,8 +74,6 @@ export interface TemplateAnalysis {
   blocks: Partial<Record<BlockKind, number>>;
   diagnostics: AnalysisDiagnostic[];
 }
-
-const KNOWN_FILTERS = new Set(FILTERS.map((f) => f.name));
 
 /**
  * Report the variables a template reads and the filters it applies, derived
@@ -176,9 +174,9 @@ class Walker {
     }
 
     for (const filter of node.filters ?? []) {
-      const { name } = parseFilter(filter.name);
+      const { name } = filter;
       this.filterCounts.set(name, (this.filterCounts.get(name) ?? 0) + 1);
-      if (!KNOWN_FILTERS.has(name)) {
+      if (!FILTER_REGISTRY.some((f) => f.name === name)) {
         this.diagnostics.push({
           code: "unknown-filter",
           message: `Unknown filter: ${name}`,
