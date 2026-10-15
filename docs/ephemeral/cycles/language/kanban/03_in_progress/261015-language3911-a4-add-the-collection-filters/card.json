@@ -69,7 +69,7 @@
   ],
   "started": "2026-10-15T03:36:10.514Z",
   "ended": null,
-  "review_rounds": 0,
+  "review_rounds": 1,
   "schema_version": 1,
   "blast_radius": [
     "template-resolver"
@@ -139,8 +139,8 @@
   "test_amendments": [
     {
       "path": "tests/language/filters-collection.test.ts",
-      "reason": "one row rendered a missing variable with strict mode on by default; it now passes strictMode false as its name says",
-      "approved_by": "build lead under the card brief; project lead to confirm"
+      "reason": "the lenient missing-variable row rendered with strict mode on by default; it now passes strictMode false as its name says (named amendment)",
+      "approved_by": "project lead"
     }
   ]
 }
