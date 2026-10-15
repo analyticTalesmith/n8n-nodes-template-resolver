@@ -85,7 +85,7 @@
       "location": "core/src/interpreter.ts:628",
       "label": "f2",
       "raised_in": 1,
-      "status": "fixed",
+      "status": "verified",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [
@@ -119,7 +119,7 @@
       "location": "core/src/parser.ts:550",
       "label": "f3",
       "raised_in": 1,
-      "status": "fixed",
+      "status": "verified",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [
@@ -158,6 +158,36 @@
       "replies": [],
       "rulings": [],
       "ticket": "261015-language2c13-a9-follow-up-the-error-path-still-lists-eve"
+    }
+  ],
+  "closures": [
+    {
+      "finding": "f2",
+      "by": "project lead",
+      "at": "2026-10-15T13:49:35.145Z",
+      "gate_commit": "5b2c0232d30d5b6edfc18b2f20b24c64f5a60f98",
+      "test": "tests/language/for-window.test.ts",
+      "files": [
+        "core/src/interpreter.ts",
+        "core/src/parser.ts",
+        "docs/ephemeral/work/261015-language2c13-a1-add-limit-offset-an-empty-branch-and-tot/spec.md",
+        "docs/ephemeral/work/261015-language2c13-a1-add-limit-offset-an-empty-branch-and-tot/gate-run.json"
+      ],
+      "diff_sha256": "c378c2063ff77d80d57fee16dfb0a96a13cf2bdc1985539efdce743f149b9303"
+    },
+    {
+      "finding": "f3",
+      "by": "project lead",
+      "at": "2026-10-15T13:49:35.145Z",
+      "gate_commit": "5b2c0232d30d5b6edfc18b2f20b24c64f5a60f98",
+      "test": "tests/language/for-window.test.ts",
+      "files": [
+        "core/src/interpreter.ts",
+        "core/src/parser.ts",
+        "docs/ephemeral/work/261015-language2c13-a1-add-limit-offset-an-empty-branch-and-tot/spec.md",
+        "docs/ephemeral/work/261015-language2c13-a1-add-limit-offset-an-empty-branch-and-tot/gate-run.json"
+      ],
+      "diff_sha256": "c378c2063ff77d80d57fee16dfb0a96a13cf2bdc1985539efdce743f149b9303"
     }
   ]
 }
