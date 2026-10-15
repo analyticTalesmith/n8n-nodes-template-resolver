@@ -14,6 +14,7 @@
     "core/src/parser.ts",
     "core/src/interpreter.ts",
     "core/src/analyze.ts",
+    "core/src/expressions.ts",
     "core/src/spec.ts",
     "tests/language/case.test.ts",
     "tests/golden/render-cases/lang-case/template.md"
@@ -29,7 +30,8 @@
       "core/src/parser.ts",
       "core/src/interpreter.ts",
       "core/src/analyze.ts",
-      "core/src/spec.ts"
+      "core/src/spec.ts",
+      "core/src/expressions.ts"
     ],
     "frozen": false
   },

@@ -53,10 +53,11 @@ No new keyword. The CASE node gains a list of WHEN matchers (values, variable or
 | `tests/golden/render-cases/lang-case/template.md` | add | template-resolver |
 | `tests/language/case.test.ts` | add | template-resolver |
 | `core/src/analyze.ts` | edit | template-resolver |
+| `core/src/expressions.ts` | edit | template-resolver |
 | `core/src/interpreter.ts` | edit | template-resolver |
 | `core/src/parser.ts` | edit | template-resolver |
 | `core/src/spec.ts` | edit | template-resolver |
 | `core/src/types.ts` | edit | template-resolver |
 
-Files scope: `core/src/analyze.ts`, `core/src/interpreter.ts`, `core/src/parser.ts`, `core/src/spec.ts`, `core/src/types.ts`, `tests/golden/render-cases/lang-case/template.md`, `tests/language/case.test.ts`
+Files scope: `core/src/analyze.ts`, `core/src/expressions.ts`, `core/src/interpreter.ts`, `core/src/parser.ts`, `core/src/spec.ts`, `core/src/types.ts`, `tests/golden/render-cases/lang-case/template.md`, `tests/language/case.test.ts`
 <!-- end generated scope -->
