@@ -47,7 +47,7 @@
       "api/openapi.json",
       "tests/language/surfaces.test.ts"
     ],
-    "frozen": false
+    "frozen": true
   },
   "criteria": [
     {
@@ -195,5 +195,19 @@
       "reason": "the hand-written BLOCK_PAIRS table is derived from the lexer keyword table; no row removed, no assertion weakened",
       "approved_by": "project lead"
     }
-  ]
+  ],
+  "freeze": {
+    "at": "2026-10-15T15:01:01.552Z",
+    "brief_sha256": "e1cfd3463bff914c161c5d3346e0614e61679ddda08709d369d46be1a83bbf19",
+    "brief_core_sha256": "b41d85b3f0d6d5b721b867ad7ef63921b86acdbc0fc6cbf5b7c91b93bae937cd",
+    "manifest_sha256": "318b271e27c08bf9ddc572c38655ab3d2ec775472c653c155e2ae57ca1c27f2f",
+    "criteria_sha256": "e8944c662ae9d1980dffe7aaded92c5f6a4fa3e617fb2f71824f74a4e4db0177",
+    "scope_sha256": "22ed70a0944edd151ab579186cdd5ee063c35149a8671c2bbacfbed1e685b23c",
+    "scope_parts": {
+      "files_scope": "25bcbd4c3e5e82a9031b3aa220297660387e505041f306feb7dae7920b22b65a",
+      "docs_impact": "30a0924a3360be687d1df9fcbbfdff62c01bc0fd14036ab9076cf7f451568666",
+      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "gate": "7125bcd75f05272c325089472215ac80ef370fa49bce0572379008353f1adbde"
+    }
+  }
 }

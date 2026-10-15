@@ -4,7 +4,20 @@ Source: `docs/ephemeral/research/language-2-plan.md` section L3 (criteria are fr
 
 ## Acceptance criteria
 
-Verbatim from `card.json`: st-set, st-math, st-scope, st-null, st-names, st-single, st-ws, st-analyze, st-keywords, st-size, st-openapi, st-compat. Read them there.
+Verbatim from `card.json`; they are the contract.
+
+- st-set: literals, paths, arithmetic, `??` and filter chains bind the value (an array stays an array and `FOR` over it works); the same evaluator as `${{ }}` is used (one function, so `??`, math and filter errors are identical).
+- st-math: in `render`, arithmetic stores the same number the output would print (`SET t = 0.1 + 0.2` then `${{t}}` and `{{IF t == 0.3}}` agree); `resolveTemplate` keeps its plain number.
+- st-scope: visible from the tag to the end of the enclosing block (an IF branch, a CASE clause, a FOR body, a LIST item, a SECTION, a FENCE) and the top level; fresh each FOR iteration; shadows data of the same name; read before the tag it is data; rebinding a SET name in the same or an inner block is allowed and ends with its block.
+- st-null: in lenient mode a missing value binds `null` (reading it later is not a missing-variable error and prints empty); in strict mode a missing variable in the expression is a located `missing-variable` at the SET.
+- st-names: a name starting with `@`, a live loop name or an invalid identifier is a `syntax-error` at the tag (L4 adds the macro parameter case); `SET __proto__ = 1`, `constructor` and `toString` are ordinary names (scopes are Maps).
+- st-single: `{{SET}}`, `{{SET x}}`, `{{SET = 1}}` are a `syntax-error`; `{{END_SET}}` is an unknown tag (ADR 0003, ADR 0007).
+- st-ws: SET joins the standalone set (a line holding only SET tags vanishes) and takes trim markers; it outputs nothing.
+- st-analyze: the SET name is a local from the tag on, never an input; variables read in the expression are usage kind `set`; a read of the same name before the SET is an input.
+- st-keywords: lexer keywords are looked up by own property only (`{{constructor}}` is "Unknown template tag"); the lexer exports its keyword table and `tests/language/surfaces.test.ts` derives its block list and `closes` entries from it (an `END_<K>` entry means `K` closes with it), so a keyword added later without a spec() entry fails; `spec().blocks` lists SET with no `closes`.
+- st-size: in the one shared value evaluator, a filter result or SET value whose text is longer than `maxOutputChars` is a located `limit-output` at the variable or SET, so a chain such as `SET a = a | json` repeated cannot double a value without bound; applies to `${{ }}` too.
+- st-openapi: the OpenAPI `usedIn` list stops being a closed enum (it names the kinds in a description), so `set`, `call` and `input` need no schema edit in later cards.
+- st-compat: full suite passes; the only existing test file changed is `tests/language/surfaces.test.ts` (logged amendment: hand-written `BLOCK_PAIRS` replaced by a table derived from the lexer; no row removed).
 
 ## Syntax settled
 
