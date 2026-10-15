@@ -604,7 +604,7 @@ export function splitCommas(
 
 const WHEN_HINT =
   'Write {{WHEN "a", "b"}}, {{WHEN variable}} or {{WHEN >= 10}}';
-const WHEN_PATH = /^[A-Za-z_@][\w@-]*(\.[\w@-]+)*$/;
+const WHEN_PATH = /^[\p{L}_@][\p{L}\p{N}_@-]*(\.[\p{L}\p{N}_@-]+)*$/u;
 const WHEN_OPERATOR = /^(==|!=|>=|<=|>|<)/;
 
 function whenItem(text: string, fail: (message: string) => never): WhenItem {
