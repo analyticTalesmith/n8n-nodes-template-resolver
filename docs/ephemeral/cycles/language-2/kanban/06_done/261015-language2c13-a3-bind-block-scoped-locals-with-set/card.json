@@ -168,19 +168,11 @@
     "tests/language/set.test.ts",
     "--json"
   ],
-  "claim": {
-    "owner": "build:implementer",
-    "heartbeat": "2026-10-15T15:11:18.154Z",
-    "agent": "a",
-    "built": {
-      "commit": "e04f4c669636608a449bd31fb6a601eab0fdc7b4",
-      "at": "2026-10-15T15:11:18.154Z"
-    }
-  },
+  "claim": null,
   "blocked_on": null,
   "docs_impact": "none",
   "started": "2026-10-15T15:01:10.422Z",
-  "ended": null,
+  "ended": "2026-10-15T15:19:26.764Z",
   "review_rounds": 1,
   "schema_version": 1,
   "blast_radius": [
