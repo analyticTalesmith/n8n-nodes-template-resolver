@@ -17,11 +17,12 @@ Restatement: The card adds nine list-shaping filters (join, length, first, last,
 ### f1: The builder edited the frozen test file without a logged scope exception or a named amendment
 
 - Class: defect
-- Status: open
+- Status: fixed
 - Serves: m1: The frozen test is the plan's red test, and the builder changed its render options from RAW (strict by default) to strictMode:false. The edit makes the test match its name, but the builder changed a plan-owned test unilaterally, no scope exception is logged, and the card's 'named amendment' clause names none. If the original strict-default call was intended, the test now asserts different behavior from what was frozen.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: Diff the test file between base f4e552a and head 010500d. Line ~188 changes render('${{ v | join="," }}|${{ v | length }}', {}, RAW) to render(..., {}, { ...RAW, strictMode: false }). Section 'Scope exceptions log' reads 'No scope exceptions are logged.' Smallest fix: log the change as a named test amendment or scope exception that the test owner accepts, or revert it and let the test owner amend it.
 - Evidence: diff:tests/language/filters-collection.test.ts, test:fc-collection: a missing variable renders the same as an empty list in lenient mode, doc:docs/ephemeral/cycles/language/deltas
+- Reply after round 1 (fixed): restate: The strictMode:false edit to the frozen lenient row had no logged amendment.; verify: card.json test_amendments names tests/language/filters-collection.test.ts, approved_by project lead.; evidence: diff:tests/language/filters-collection.test.ts, doc:docs/ephemeral/cycles/language/kanban/03_in_progress/261015-language3911-a4-add-the-collection-filters/card.json
 
 ### f2: Living documents edited directly outside files_scope, while the two deltas the manifest adds are empty templates
 
@@ -36,20 +37,22 @@ Restatement: The card adds nine list-shaping filters (join, length, first, last,
 ### f3: An object passed as JSON text (the n8n mapping form) silently becomes an empty list in every mode, unlike FOR
 
 - Class: goal-risk
-- Status: open
+- Status: fixed
 - Serves: c1: n8n mapping values reach the core as strings, so an object mapped into a variable arrives as text such as '{"a":1}'. tryCoerceToArray returns null for a string starting with '{'. toList throws only when typeof input === 'object', so for this string it returns []. join prints '', first and last print nothing, and sort, unique and slice give [], with ok true even in strict mode. FOR raises TypeError in strict mode for the same non-coercible value, so this is not 'coerced exactly as FOR coerces', and the author's mistake passes silently.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: render('${{ v | join="," }}', { v: '{"a":1}' }, { standaloneLines: false, strictMode: true }) returns ok true and output ''. Reading: toList calls tryCoerceToArray, which returns null for a '{'-prefixed string (module page, Coercion), and the object check fails because typeof is 'string', so it falls through to return []. Compare FOR over the same value in strict mode, which throws TypeError (module page, Interpreting/FOR). Smallest fix: in toList, treat any non-null, non-undefined input that tryCoerceToArray rejects as the 'needs a list' error, and add a test row for a JSON-object string.
 - Evidence: code:core/src/filters-collection.ts:13, doc:docs/living/architecture/modules/template-resolver.md, test:fc-collection: %s rejects an object input as a type-error saying a list is needed
+- Reply after round 1 (fixed): restate: A JSON-object text given to a list filter became an empty list silently, unlike FOR.; verify: toList empties only null, undefined and blank text; other rejected input throws a located type-error; rows added.; evidence: code:core/src/filters-collection.ts:13, test:fc-collection: %s over the object text %j is a located type-error (strict %s)
 
 ### f4: sort's numeric comparator is inconsistent for NaN and for equal infinities, so the order becomes engine-defined
 
 - Class: goal-risk
-- Status: open
+- Status: fixed
 - Serves: c2: compare returns (a - b) for every number. NaN - x is NaN, which Array.prototype.sort treats as 0, so NaN counts as equal to every number while those numbers still order among themselves. That breaks transitivity, and the resulting order is implementation-defined, so a headless-core caller passing [3, NaN, 1] can get different output on different engines or versions. Infinity - Infinity also yields NaN. The project requires sort to be deterministic.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: COLLECTION_FILTERS.find(f => f.name === 'sort').apply([3, NaN, 1, 2], {}): the comparator calls compare(3, NaN) = NaN (treated as 0) and compare(3, 1) = 2, which is inconsistent, so ECMAScript leaves the result order implementation-defined. Smallest fix: give NaN a fixed place (for example, rank it with the 'other' values or after all numbers) and compare with < and > instead of subtraction, plus a test row containing NaN.
 - Evidence: code:core/src/filters-collection.ts:94, test:fc-order: sort, numbers ascending
+- Reply after round 1 (fixed): restate: sort compared numbers by subtraction, so NaN and equal infinities made the order engine-defined.; verify: NaN ranks with the other values, numbers compare with < and >; NaN and infinity rows added.; evidence: code:core/src/filters-collection.ts:94, test:fc-order: NaN sorts after the numbers
 
 ### f5: textOf copies the output step's text rule instead of reusing it
 
