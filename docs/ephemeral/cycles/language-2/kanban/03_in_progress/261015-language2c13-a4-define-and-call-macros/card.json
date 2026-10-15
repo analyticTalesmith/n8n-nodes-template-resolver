@@ -183,7 +183,10 @@
     "tests/language/macros.test.ts",
     "--json"
   ],
-  "claim": null,
+  "claim": {
+    "owner": "build:implementer",
+    "heartbeat": "2026-10-15T16:25:41.266Z"
+  },
   "blocked_on": null,
   "docs_impact": "none",
   "started": "2026-10-15T16:14:02.274Z",
@@ -204,8 +207,8 @@
     }
   ],
   "freeze": {
-    "at": "2026-10-15T16:13:57.291Z",
-    "brief_sha256": "250f1267579d1047626412691c7be31564216a50ad7ed9fa31d3cc7ebee6d9c5",
+    "at": "2026-10-15T16:25:41.100Z",
+    "brief_sha256": "96f3db9b4049616891df62e5154baa4d66c207a35c90aea92d5d80f31d4c49a1",
     "brief_core_sha256": "556e24b4da7db95adf23a9950efcfd7a2bec6f17f2cb22c7234ae0979fe596fd",
     "manifest_sha256": "52089c79eaa31347060767230037db291f408dd746f7640fdb13df1eb7120888",
     "criteria_sha256": "affcf76db5dad610fff7b8d2b8e783ea23a7b286d8015f797f0c1a290668926d",
@@ -315,8 +318,5 @@
         ]
       }
     }
-  ],
-  "resume_claim": {
-    "owner": "build:implementer"
-  }
+  ]
 }
