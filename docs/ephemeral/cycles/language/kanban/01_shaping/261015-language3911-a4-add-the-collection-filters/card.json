@@ -21,7 +21,7 @@
     "edit": [
       "core/src/filters-collection.ts"
     ],
-    "frozen": false
+    "frozen": true
   },
   "criteria": [
     {
@@ -63,5 +63,19 @@
   "blast_radius": [
     "template-resolver"
   ],
-  "docs_deferred": true
+  "docs_deferred": true,
+  "freeze": {
+    "at": "2026-10-15T02:51:58.261Z",
+    "brief_sha256": "2e466b9d9813faa13daa678b64f2ff36ace8a2e69b63d5de8384b2920a0df4ae",
+    "brief_core_sha256": "8d9b1e6fbc229d0835a4cf6fd4260005877ee7c0a27dba5428431ba4227bf017",
+    "manifest_sha256": "b964f8bf5561222375b10bf2b275fe766ae9da01e2cb0a01ab5189be204ebfc2",
+    "criteria_sha256": "3b928fd3dc090262a7bcb295862ee34705bd79b09035be23ce32ba74addba5d9",
+    "scope_sha256": "acbfe7302606c576cee2c620600a3428474dbcf4f81d5ae854220ed61a74bafa",
+    "scope_parts": {
+      "files_scope": "88060e99ba7569cfcacb26defd60258837e3de2408fe9a8ccdd1017020643b5e",
+      "docs_impact": "734a983468bce1e95b3ea76d75d42c73287af7532427891c8225fc0f0e1f04dd",
+      "docs_deferred": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+      "gate": "6190ce463b5551754425979a8781c16ce3af6e9f332368300cd53b3037a3adbb"
+    }
+  }
 }
