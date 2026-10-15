@@ -962,9 +962,10 @@ export class Interpreter {
     let run: ASTNode[] = [];
     const flush = (): void => {
       if (run.length === 1) {
-        addText(this.visit(run[0]), run[0]);
+        // a row text is trimmed, so its nodes count trimmed as they finish
+        addText(this.trimming(true, () => this.renderChildren(run)), run[0]);
       } else if (run.length > 1) {
-        const text = run.map((node) => this.visit(node)).join("");
+        const text = this.trimming(true, () => this.renderChildren(run));
         for (const line of text.split(/\r?\n/)) addText(line, run[0]);
       }
       run = [];
