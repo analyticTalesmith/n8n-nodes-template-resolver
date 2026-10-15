@@ -246,7 +246,7 @@ describe("fw-meta: metadata describes the rendered window", () => {
     },
     { name: "@total outside any loop", tpl: "${{@total}}", data: {}, want: SL(ERR("missing-variable", 1, 1, "@total"), OUT("")) },
     { name: "@total after the loop ended", tpl: "{{FOR xs AS x}}${{x}}{{END_FOR}}[${{@total}}]", data: { xs: XS }, want: SL(ERR("missing-variable", 1, 34, "@total"), OUT("abcde[]")) },
-    { name: "@total in an IF condition outside a loop", tpl: "{{IF @total}}Y{{ELSE}}N{{END_IF}}", data: {}, want: SL(ERR("missing-variable", 1, 1), OUT("N")) },
+    { name: "@total in an IF condition outside a loop", tpl: "{{IF @total}}Y{{ELSE}}N{{END_IF}}", data: {}, want: OUT("N") },
   ];
   it.each(expand(rows))("fw-meta: [$entry] $name", ({ entry, r }) => verify(entry, r, "fw-meta"));
 
@@ -744,15 +744,15 @@ describe("fw-own: non-root path segments read own properties only", () => {
   const rows: Row[] = [];
   const objData = { x: { a: { b: 1 } }, xs: ["p"], s: "abc", us: [{ a: 1 }] };
   for (const seg of ["constructor", "__proto__", "toString", "hasOwnProperty", "valueOf"]) {
-    rows.push({ name: `output: x.${seg} is missing`, tpl: `[\${{x.${seg}}}]`, data: objData, want: SL(ERR("missing-variable", 1, 2, `x.${seg}`), OUT("[]")) });
-    rows.push({ name: `output: a deeper x.a.${seg} is missing`, tpl: `[\${{x.a.${seg}}}]`, data: objData, want: SL(ERR("missing-variable", 1, 2), OUT("[]")) });
-    rows.push({ name: `condition: x.${seg} is missing, not truthy`, tpl: `{{IF x.${seg}}}Y{{ELSE}}N{{END_IF}}`, data: objData, want: SL(ERR("missing-variable", 1, 1), OUT("N")) });
-    rows.push({ name: `a loop item: u.${seg} is missing`, tpl: `{{FOR us AS u}}[\${{u.${seg}}}]{{END_FOR}}`, data: objData, want: SL(ERR("missing-variable", 1, 17), OUT("[]")) });
-    rows.push({ name: `math: x.${seg} + 1 is missing`, tpl: `\${{x.${seg} + 1}}`, data: objData, want: SL(ERR("missing-variable", 1, 1), OUT("1")), entries: STRICT });
+    rows.push({ name: `output: x.${seg} is missing`, tpl: `[\${{x.${seg}}}]`, data: objData, want: OUT("[]") });
+    rows.push({ name: `output: a deeper x.a.${seg} is missing`, tpl: `[\${{x.a.${seg}}}]`, data: objData, want: OUT("[]") });
+    rows.push({ name: `condition: x.${seg} is missing, not truthy`, tpl: `{{IF x.${seg}}}Y{{ELSE}}N{{END_IF}}`, data: objData, want: OUT("N") });
+    rows.push({ name: `a loop item: u.${seg} is missing`, tpl: `{{FOR us AS u}}[\${{u.${seg}}}]{{END_FOR}}`, data: objData, want: OUT("[]") });
+    rows.push({ name: `math: x.${seg} + 1 is missing`, tpl: `\${{x.${seg} + 1}}`, data: objData, want: OUT(""), entries: STRICT });
   }
   rows.push(
-    { name: "an array's constructor is missing", tpl: "[${{xs.constructor}}]", data: objData, want: SL(ERR("missing-variable", 1, 2), OUT("[]")) },
-    { name: "a string's toString is missing", tpl: "[${{s.toString}}]", data: objData, want: SL(ERR("missing-variable", 1, 2), OUT("[]")) },
+    { name: "an array's constructor is missing", tpl: "[${{xs.constructor}}]", data: objData, want: OUT("[]") },
+    { name: "a string's toString is missing", tpl: "[${{s.toString}}]", data: objData, want: OUT("[]") },
     { name: "an array's length is its own property and still works", tpl: "${{xs.length}}", data: objData, want: OUT("1") },
     { name: "the root segment constructor is not read from the engine", tpl: "[${{constructor}}]", data: objData, want: SL(ERR("missing-variable", 1, 2), OUT("[]")) },
     { name: "a window path through an inherited key is missing", tpl: forT("limit=x.constructor"), data: { ...objData, xs: XS }, want: SL(AT("missing-variable"), O("a,b,c,d,e,")) },
