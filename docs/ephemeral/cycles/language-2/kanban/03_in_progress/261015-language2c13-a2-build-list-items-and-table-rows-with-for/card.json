@@ -178,7 +178,7 @@
     {
       "path": "tests/language/list-table-children.test.ts",
       "reason": "test defects: the golden helper returned no-result for a passing case, and three header rows expected a 5-hyphen separator for a 6-character cell (the unchanged rule gives 6)",
-      "approved_by": "build lead (flagged to the project lead)"
+      "approved_by": "project lead"
     }
   ],
   "manifest_amendments": [
