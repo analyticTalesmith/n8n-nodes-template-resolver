@@ -73,22 +73,14 @@
     "tests/language/case.test.ts",
     "--json"
   ],
-  "claim": {
-    "owner": "build:implementer",
-    "heartbeat": "2026-10-15T05:12:13.415Z",
-    "agent": "a",
-    "built": {
-      "commit": "62c72ea022b9e556f302eac41d3b0970e03bce3a",
-      "at": "2026-10-15T05:12:13.415Z"
-    }
-  },
+  "claim": null,
   "blocked_on": null,
   "docs_impact": [
     "docs/living/architecture/modules/template-resolver.md",
     "docs/living/architecture/language-contract.md"
   ],
   "started": "2026-10-15T04:58:09.052Z",
-  "ended": null,
+  "ended": "2026-10-15T05:13:11.122Z",
   "review_rounds": 1,
   "schema_version": 1,
   "blast_radius": [

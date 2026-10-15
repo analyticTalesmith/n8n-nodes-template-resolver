@@ -12,6 +12,11 @@ Generated from review-rounds.json by core/scripts/rounds.mjs; edits here are ove
 
 Restatement: A CASE branch has to accept more than one quoted value. A WHEN can hold a comma-separated list of literals and variable paths, one variable, or one comparison (== != > < >= <=). Equality uses the operators card rule (valuesEqual): quoted text compares as text, unquoted numbers compare as numbers. The ordered operators use evaluateNumericComparison, and a non-numeric side is a type-error located at the WHEN. A missing variable follows strict mode. A malformed WHEN is a syntax-error at the tag, raised at parse time in render, validate and analyze. analyze records WHEN paths as case usage. render and resolveTemplate behave the same. Existing CASE behavior stays. The work must not change existing test expectations, add a dependency, evaluate template text or compile template regexes, or let unknown names pass in lenient mode.
 
+## Gate-verified closures
+
+- f3: verified by project lead at 2026-10-15T05:13:00.195Z; gate run at commit 00a3d58a3a5e; test tests/language/case.test.ts; files core/src/expressions.ts, docs/living/architecture/language-contract.md, docs/living/architecture/modules/template-resolver.md
+- f4: verified by project lead at 2026-10-15T05:13:00.195Z; gate run at commit 00a3d58a3a5e; test tests/language/case.test.ts; files core/src/expressions.ts, docs/living/architecture/language-contract.md, docs/living/architecture/modules/template-resolver.md
+
 ## Findings
 
 ### f1: The builder changed the frozen case test: one expectation flipped, one assertion loosened, lowercase cases deleted
@@ -37,7 +42,7 @@ Restatement: A CASE branch has to accept more than one quoted value. A WHEN can 
 ### f3: WHEN_PATH accepts names the language does not treat as names, such as n-1, a-, a--b and @ inside a name
 
 - Class: goal-risk
-- Status: fixed
+- Status: verified
 - Serves: m4: The language contract says a hyphen joins a name only between two ASCII letters; n-1, x1-y and 1-a are arithmetic. The new WHEN_PATH regex /^[\p{L}_@][\p{L}\p{N}_@-]*(\.[\p{L}\p{N}_@-]+)*$/u accepts limit-1, a-, a--b and a@b as variable paths. It is a second name rule, separate from the parser's VARIABLE_PATH. An author who writes {{WHEN limit-1}} gets no syntax-error at parse. In lenient mode the item reads as a missing variable, which is empty text, so the CASE silently takes the wrong branch. analyze also reports a required variable 'limit-1'. Under ADR 0003 an item that is neither a literal nor a variable path must be an error in every mode.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: render('{{CASE x}}{{WHEN limit-1}}Y{{DEFAULT}}N{{END_CASE}}', {x:'', limit:5}, {strictMode:false}). Expected per the contract: a syntax-error at 1:11. Observed by reading the code: ok, output 'Y', because limit-1 is read as an empty missing variable and equals the empty subject. analyze on the same template lists 'limit-1'.
@@ -47,7 +52,7 @@ Restatement: A CASE branch has to accept more than one quoted value. A WHEN can 
 ### f4: A quoted WHEN value ending in a backslash, which worked before, is now an unclosed-quote syntax-error
 
 - Class: goal-risk
-- Status: fixed
+- Status: verified
 - Serves: card-goal: The spec says the old single form keeps matching text exactly as before and that a quoted text is not unescaped. splitCommas treats a quote preceded by a backslash as still open (text[i-1] !== '\\'). At the base, {{WHEN 'C:\'}} matched the text C:\ through the old regex. At head it fails with 'Unclosed quote in {{WHEN}}', so a template that used to render now stops with an error. The scanner thereby treats a backslash before a quote as an escape, which contradicts the spec's no-unescape rule for WHEN.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: render("{{CASE p}}{{WHEN 'C:\\'}}Y{{DEFAULT}}N{{END_CASE}}", {p:'C:\\'}). At base f140e131 the output is 'Y'. At head the result is a syntax-error at the WHEN. No test covers a trailing backslash inside quotes.
