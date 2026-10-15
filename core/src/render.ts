@@ -65,7 +65,7 @@ export function render(
   const limits = withDefaultLimits(options?.limits);
   const interpreter = new Interpreter(
     new Map(Object.entries(data)) as Map<string, TemplateValue>,
-    { strictMode: options?.strictMode, limits }
+    { strictMode: options?.strictMode, limits, render: true }
   );
 
   let output: string;

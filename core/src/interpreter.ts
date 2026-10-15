@@ -27,14 +27,18 @@ import {
 } from "./errors";
 import {
   tryCoerceToArray,
+  tryCoerceToString,
   tryCoerceStringForPathSegment,
 } from "./coercion";
 import {
+  DivisionByZeroError,
   evaluateCondition,
   evaluateMathExpression,
+  formatNumber,
+  isMathExpression,
   isTruthy,
 } from "./expressions";
-import { applyFilters, fenced, checkFenceLang, valueToText } from "./filters";
+import { applyFilters, fenced, checkFenceLang } from "./filters";
 
 /**
  * Interpreter: Walks AST and produces output string
@@ -55,15 +59,17 @@ import { applyFilters, fenced, checkFenceLang, valueToText } from "./filters";
 export class Interpreter {
   private strictMode: boolean;
   private limits: Limits;
+  private render: boolean;
   private iterations = 0;
   private omittedSections = 0;
   private loopContext: Map<string, TemplateValue> = new Map();
 
   constructor(
     private variables: VariableMap,
-    options?: { strictMode?: boolean; limits?: Partial<Limits> }
+    options?: { strictMode?: boolean; limits?: Partial<Limits>; render?: boolean }
   ) {
     this.strictMode = options?.strictMode ?? true;
+    this.render = options?.render ?? false;
     this.limits = withDefaultLimits(options?.limits);
   }
 
@@ -187,26 +193,29 @@ export class Interpreter {
     // Check if this is a math expression (contains operators)
     const pathStr = node.path.join(".");
     let mathError: unknown = null;
-    if (this.isMathExpression(pathStr)) {
+    if (isMathExpression(pathStr) || hasStrayCharacter(pathStr)) {
       try {
-        const result = evaluateMathExpression(pathStr, this.getAllVariables());
-        return String(result);
+        const result = evaluateMathExpression(pathStr, this.getAllVariables(), {
+          zeroIsError: this.render,
+        });
+        return this.render ? formatNumber(result) : String(result);
       } catch (error) {
+        if (error instanceof DivisionByZeroError) throw error;
         // Not a valid math expression, continue with normal resolution
         mathError = error;
       }
     }
 
     const allowUndefined = node.defaultValue !== undefined;
-    let value: TemplateValue;
+    let value: TemplateValue = null;
+    let lookupError: unknown = null;
     try {
       value = this.resolveNestedPath(node.path, allowUndefined);
     } catch (error) {
-      const unparseableMath =
-        error instanceof MissingVariableError &&
-        mathError instanceof MathSyntaxError;
-      throw unparseableMath ? mathError : error;
+      lookupError = error;
     }
+    if (isUnparseableMath(mathError, value, lookupError)) throw mathError;
+    if (lookupError !== null) throw lookupError;
 
     // Apply default operator if value is falsy
     if (node.defaultValue !== undefined && !isTruthy(value)) {
@@ -215,20 +224,11 @@ export class Interpreter {
 
     // Apply filters
     if (node.filters && node.filters.length > 0) {
+      this.valueToString(value); // text filters would turn an unprintable value into ""
       value = applyFilters(value, node.filters) as TemplateValue;
     }
 
     return this.valueToString(value);
-  }
-
-  /**
-   * Check if expression is a math expression
-   */
-  private isMathExpression(expr: string): boolean {
-    // Contains math operators but isn't just a path
-    const hasMathOp = /[+\-*/%]/.test(expr);
-    const hasParens = /[()]/.test(expr);
-    return hasMathOp || hasParens;
   }
 
   /**
@@ -258,10 +258,9 @@ export class Interpreter {
    * Visit CASE node
    */
   private visitCase(node: CaseNode): string {
-    const value = this.at(node, () =>
-      this.resolveNestedPath(node.expression.split("."))
+    const valueStr = this.at(node, () =>
+      this.valueToString(this.resolveNestedPath(node.expression.split(".")))
     );
-    const valueStr = this.valueToString(value);
 
     // Check WHEN clauses
     for (const whenNode of node.cases) {
@@ -647,7 +646,8 @@ export class Interpreter {
           rootKey,
           1,
           1,
-          Array.from(this.variables.keys())
+          Array.from(this.variables.keys()),
+          subtractionHint(rootKey)
         );
       }
       return null;
@@ -687,7 +687,17 @@ export class Interpreter {
    * Convert value to string for output
    */
   private valueToString(value: TemplateValue): string {
-    return valueToText(value);
+    if (value == null) return "";
+    const text = tryCoerceToString(value);
+    if (text === null) {
+      throw new TypeError(
+        "Cannot print a value with no text form (a cyclic structure or a BigInt)",
+        1,
+        1,
+        "Map the variable to text, a number or plain data without cycles"
+      );
+    }
+    return text;
   }
 
   /**
@@ -700,6 +710,40 @@ export class Interpreter {
     }
     return combined;
   }
+}
+
+/**
+ * True when a variable's text failed as math with a syntax error and nothing
+ * else reads it: the lookup found no value or a missing variable
+ */
+function isUnparseableMath(
+  mathError: unknown,
+  value: TemplateValue,
+  lookupError: unknown
+): boolean {
+  return (
+    mathError instanceof MathSyntaxError &&
+    value == null &&
+    (lookupError === null || lookupError instanceof MissingVariableError)
+  );
+}
+
+/**
+ * True when the text holds a character no name or operator uses ("2 $ 3"),
+ * so it can only be a malformed math expression
+ */
+function hasStrayCharacter(text: string): boolean {
+  return /[^\p{L}\p{N}_@.\s-]/u.test(text);
+}
+
+/**
+ * How to write a missing hyphenated name as subtraction, when the name reads
+ * like one (letter-hyphen-letter, no whitespace)
+ */
+function subtractionHint(name: string): string | undefined {
+  if (/\s/.test(name) || !/[a-zA-Z]-[a-zA-Z]/.test(name)) return undefined;
+  const spaced = name.replace(/([a-zA-Z])-(?=[a-zA-Z])/g, "$1 - ");
+  return `If you meant subtraction, write '${spaced}'`;
 }
 
 /**

@@ -107,13 +107,15 @@ export class MissingVariableError extends TemplateError {
     variableName: string,
     line: number,
     column: number,
-    availableVariables: string[]
+    availableVariables: string[],
+    hint?: string
   ) {
     const message = `Variable '${variableName}' not found`;
-    const suggestion =
+    const base =
       availableVariables.length > 0
         ? `Available variables: ${availableVariables.join(", ")}\nCheck variable name or enable Lenient Mode`
         : "No variables defined. Check variable mappings.";
+    const suggestion = hint === undefined ? base : `${base}\n${hint}`;
     super(message, line, column, suggestion, "missing-variable");
     this.name = "MissingVariableError";
     Object.setPrototypeOf(this, MissingVariableError.prototype);
