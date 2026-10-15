@@ -17,12 +17,13 @@ Restatement: Add a node-count limit to the template language. limits.maxNodes de
 ### f1: IF/ELSEIF condition parsing moved after the body, so a malformed template can now report a different first error
 
 - Class: goal-risk
-- Status: rebutted
+- Status: withdrawn
 - Serves: m2: Base parseIf and parseElseIf called extractCondition(token.value) right after consuming the tag, before parsing the body. The new parseIfBranch calls it inside the returned object literal, after the whole consequent is parsed. Suppose a template's IF or ELSEIF condition is rejected by extractCondition and its body also holds a parse-time error, or enough nodes to cross maxNodes. Base reports the condition error at the IF tag. Head reports the later body error (syntax-error, type-error or limit-nodes) at a different position. For an existing malformed template, render now returns a different diagnostic and location, and resolveTemplate throws a different error.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: Take a template whose IF tag content is something extractCondition rejects, for example an empty condition '{{IF }}', with an invalid FOR inside the body: '{{IF }}{{FOR bad}}{{END_FOR}}{{END_IF}}'. At base f4e552a, render(...).diagnostics[0] gives the condition error located at the IF tag (1:1). At head bde4503, the FOR syntax error comes first, located at the FOR tag. The smallest fix is to compute the condition from token.value right after this.open(type) in parseIfBranch, before the consequent loop, as the base code did.
 - Evidence: diff:core/src/parser.ts, code:core/src/parser.ts:276, code:core/src/parser.ts:301
 - Reply after round 1 (rebut, evidence): restate: Condition parsing moved after the body in parseIfBranch, so a bad IF condition plus a body error now reports the body error first.; verify: extractCondition is a pure replace and trim with no error path at base f4e552a and at head; render of {{IF }}{{FOR bad}}{{END_FOR}}{{END_IF}} gives the FOR syntax-error first at base too.; evidence: code:core/src/parser.ts:1014, code:f4e552a:core/src/parser.ts:1112
+- Review lead ruling after round 1: withdraw: Not reproduced: extractCondition is pure (no throw), same at base f4e552a and head. Ran render on '{{IF }}{{FOR bad}}{{END_FOR}}{{END_IF}}' at both: identical diagnostics.
 
 ### f2: Living architecture documents edited directly, outside files_scope, with no scope exception logged
 
@@ -37,11 +38,12 @@ Restatement: Add a node-count limit to the template language. limits.maxNodes de
 ### f3: The four node-limit delta documents are empty placeholders: the Proposed change body is only the template comment
 
 - Class: drift
-- Status: open
+- Status: withdrawn
 - Serves: card-goal: The deltas are the card's recorded change to the durable facts (maxNodes, limit-nodes, iterative ELSEIF, analyze's 256 ceiling). Each one has only a frontmatter summary and the unfilled template comment. The apply step therefore has no stated change to check the living documents against, and the analyze 256-ceiling decision lives only in the directly edited template-resolver.md text.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: Open docs/ephemeral/cycles/language/deltas/node-limit-1.md through node-limit-4.md in the diff. Under '# Proposed change' each holds only the HTML template comment.
 - Evidence: diff:docs/ephemeral/cycles/language/deltas/node-limit-1.md, diff:docs/ephemeral/cycles/language/deltas/node-limit-4.md
+- Review lead ruling after round 1: withdraw: The four node-limit delta files were empty placeholders at review time and have since been filled (commit 10902f8 docs(language): fill the node limit delta summaries); the finding no longer holds.
 
 ### f4: A caller-raised maxDepth still lets deep nesting overflow the stack in render and analyze
 

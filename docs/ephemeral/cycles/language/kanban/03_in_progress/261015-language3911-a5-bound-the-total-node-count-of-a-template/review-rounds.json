@@ -57,7 +57,7 @@
       "location": "core/src/parser.ts:301",
       "label": "f1",
       "raised_in": 1,
-      "status": "rebutted",
+      "status": "withdrawn",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [
@@ -73,7 +73,13 @@
           ]
         }
       ],
-      "rulings": []
+      "rulings": [
+        {
+          "after_round": 1,
+          "ruling": "withdraw",
+          "note": "Not reproduced: extractCondition is pure (no throw), same at base f4e552a and head. Ran render on '{{IF }}{{FOR bad}}{{END_FOR}}{{END_IF}}' at both: identical diagnostics."
+        }
+      ]
     },
     {
       "title": "Living architecture documents edited directly, outside files_scope, with no scope exception logged",
@@ -122,11 +128,17 @@
       "location": "docs/ephemeral/cycles/language/deltas/node-limit-1.md:9",
       "label": "f3",
       "raised_in": 1,
-      "status": "open",
+      "status": "withdrawn",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [],
-      "rulings": []
+      "rulings": [
+        {
+          "after_round": 1,
+          "ruling": "withdraw",
+          "note": "The four node-limit delta files were empty placeholders at review time and have since been filled (commit 10902f8 docs(language): fill the node limit delta summaries); the finding no longer holds."
+        }
+      ]
     },
     {
       "title": "A caller-raised maxDepth still lets deep nesting overflow the stack in render and analyze",
