@@ -21,7 +21,9 @@
     "tests/language/limits-nodes.test.ts",
     "tests/headless/spec.test.ts",
     "core/src/interpreter.ts",
-    "api/routes.ts"
+    "api/routes.ts",
+    "tests/headless/limits.test.ts",
+    "tests/headless/api.test.ts"
   ],
   "manifest": {
     "add": [
@@ -39,9 +41,11 @@
       "api/openapi.json",
       "tests/headless/spec.test.ts",
       "core/src/interpreter.ts",
-      "api/routes.ts"
+      "api/routes.ts",
+      "tests/headless/limits.test.ts",
+      "tests/headless/api.test.ts"
     ],
-    "frozen": false
+    "frozen": true
   },
   "criteria": [
     {
@@ -90,7 +94,6 @@
     "node_modules/jest/bin/jest.js",
     "--runTestsByPath",
     "tests/language/limits-nodes.test.ts",
-    "tests/headless/spec.test.ts",
     "--json"
   ],
   "claim": null,
@@ -114,5 +117,19 @@
   "test_levels": [
     "unit",
     "integration"
-  ]
+  ],
+  "freeze": {
+    "at": "2026-10-15T02:54:52.266Z",
+    "brief_sha256": "af657247650903bd788ed4119535864dcd3dce3db945023063242e849e7c9b6a",
+    "brief_core_sha256": "eb93db9e5b3eba7a78c71754547a117276c357a3d50e3f27d9cd438af3788c49",
+    "manifest_sha256": "2c4f53d9333b510e79a8f169b0061f9371ec54547dc81d1fac1465c070c4b8b5",
+    "criteria_sha256": "9ef6068d08ecf5affc66afba545ad0fbb5f17d9ed261f488b456aa01b444c0ce",
+    "scope_sha256": "2ef41c4594f6c2bea387f4f3690eb62deec9cfd40abe9f7c1af251362710b4d3",
+    "scope_parts": {
+      "files_scope": "b3fd317948d2984c4595c667505925976d029f970ceba7fa24ae409b166e97d1",
+      "docs_impact": "0cafeb8cd4f6238555f9b2fbf3c4692094602eb73762b08fe5fc7df30eed347d",
+      "docs_deferred": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+      "gate": "2d59cbb9ef1c2aa40b38846c68a941c73b45a3c394ac5a8fda108819e1166559"
+    }
+  }
 }

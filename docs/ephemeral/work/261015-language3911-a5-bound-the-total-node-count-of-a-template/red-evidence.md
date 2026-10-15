@@ -1,8 +1,8 @@
 ---
-summary: Red evidence for 261015-language3911-a5-bound-the-total-node-count-of-a-template: 104 failing tests across 4 criteria.
-command: ["node","node_modules/jest/bin/jest.js","--runTestsByPath","tests/language/limits-nodes.test.ts","tests/headless/spec.test.ts","--json"]
+summary: Red evidence for 261015-language3911-a5-bound-the-total-node-count-of-a-template: 103 failing tests across 4 criteria.
+command: ["node","node_modules/jest/bin/jest.js","--runTestsByPath","tests/language/limits-nodes.test.ts","--json"]
 exit_status: 1
-tests_sha256: 0876db754e41
+tests_sha256: a2c7abfb51dd
 ---
 
 # Red evidence for 261015-language3911-a5-bound-the-total-node-count-of-a-template
@@ -11,7 +11,6 @@ Written by `node .process/core/scripts/red-evidence.mjs` from the first run of t
 
 | Test | Criterion | Reason |
 | --- | --- | --- |
-| rr-spec: the language spec rr-spec: limits equal the default limits | none | assertion failed: Error: expect(received).toEqual(expected) // deep equality |
 | ln-limit: maxNodes is counted at parse and the crossing node is located ln-limit: [render-lenient] 2 adjacent variables cross 1 at column 7 | ln-limit | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
 | ln-limit: maxNodes is counted at parse and the crossing node is located ln-limit: [render-lenient] 6 adjacent variables cross 5 at column 31 | ln-limit | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
 | ln-limit: maxNodes is counted at parse and the crossing node is located ln-limit: [render-lenient] 21 adjacent variables cross 20 at column 121 | ln-limit | assertion failed: Error: expect(received).toBe(expected) // Object.is equality |
