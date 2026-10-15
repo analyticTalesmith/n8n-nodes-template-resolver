@@ -67,22 +67,14 @@
     "tests/language/surfaces.test.ts",
     "--json"
   ],
-  "claim": {
-    "owner": "build:implementer",
-    "heartbeat": "2026-10-15T05:41:11.521Z",
-    "agent": "a",
-    "built": {
-      "commit": "5910db7be73c2916da7a7b78c72dafc347ab43d8",
-      "at": "2026-10-15T05:41:11.521Z"
-    }
-  },
+  "claim": null,
   "blocked_on": null,
   "docs_impact": [
     "docs/living/architecture/language-contract.md",
     "docs/living/decisions/adr/0007-statement-tags-without-a-body.md"
   ],
   "started": "2026-10-15T05:21:05.167Z",
-  "ended": null,
+  "ended": "2026-10-15T05:42:15.271Z",
   "review_rounds": 1,
   "schema_version": 1,
   "blast_radius": [
