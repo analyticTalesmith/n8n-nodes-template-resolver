@@ -112,6 +112,11 @@
       "path": "tests/language/case.test.ts",
       "reason": "remove the two lowercase tag word rows (the lexer only knows upper case tags, so the rows pinned a false claim; trim-marker coverage kept with upper case WHEN); the analyze exact-set assertion ignores the CASE subject and FOR iterable the analyzer always records; the lenient missing-variable row expects D not 2",
       "approved_by": "project lead"
+    },
+    {
+      "path": "tests/language/case.test.ts",
+      "reason": "add rows for a WHEN variable with a non-ASCII letter in its name (the CASE subject and output accept such names); found by the build lead before review",
+      "approved_by": "build lead, for the project lead to confirm"
     }
   ]
 }
