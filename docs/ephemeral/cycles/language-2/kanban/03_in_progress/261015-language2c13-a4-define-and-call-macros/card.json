@@ -10,45 +10,40 @@
   "tier": null,
   "claimed_in": null,
   "files_scope": [
-    "core/src/lexer.ts",
-    "core/src/types.ts",
-    "core/src/parser.ts",
-    "core/src/interpreter.ts",
     "core/src/analyze.ts",
-    "core/src/whitespace.ts",
-    "core/src/spec.ts",
-    "core/src/scope.ts",
     "core/src/errors.ts",
-    "core/src/render.ts",
+    "core/src/interpreter.ts",
+    "core/src/lexer.ts",
     "core/src/macros.ts",
-    "tests/language/macros.test.ts",
-    "tests/golden/render-cases/lang-macro/template.md",
+    "core/src/parser.ts",
+    "core/src/render.ts",
+    "core/src/scope.ts",
+    "core/src/spec.ts",
+    "core/src/types.ts",
+    "core/src/whitespace.ts",
     "tests/golden/render-cases/lang-macro/data.json",
-    "tests/golden/render-cases/lang-macro/options.json",
     "tests/golden/render-cases/lang-macro/expected.md",
+    "tests/golden/render-cases/lang-macro/options.json",
+    "tests/golden/render-cases/lang-macro/template.md",
+    "tests/language/macros.test.ts",
     "tests/language/set.test.ts"
   ],
   "manifest": {
     "add": [
       "core/src/macros.ts",
-      "tests/language/macros.test.ts",
-      "tests/golden/render-cases/lang-macro/template.md",
-      "tests/golden/render-cases/lang-macro/data.json",
-      "tests/golden/render-cases/lang-macro/options.json",
-      "tests/golden/render-cases/lang-macro/expected.md"
+      "tests/language/macros.test.ts"
     ],
     "remove": [],
     "edit": [
-      "core/src/lexer.ts",
-      "core/src/types.ts",
-      "core/src/parser.ts",
-      "core/src/interpreter.ts",
       "core/src/analyze.ts",
-      "core/src/whitespace.ts",
-      "core/src/spec.ts",
-      "core/src/scope.ts",
       "core/src/errors.ts",
+      "core/src/interpreter.ts",
+      "core/src/lexer.ts",
+      "core/src/parser.ts",
       "core/src/render.ts",
+      "core/src/spec.ts",
+      "core/src/types.ts",
+      "core/src/whitespace.ts",
       "tests/language/set.test.ts"
     ],
     "frozen": true
@@ -216,7 +211,7 @@
     "at": "2026-10-15T16:13:57.291Z",
     "brief_sha256": "250f1267579d1047626412691c7be31564216a50ad7ed9fa31d3cc7ebee6d9c5",
     "brief_core_sha256": "556e24b4da7db95adf23a9950efcfd7a2bec6f17f2cb22c7234ae0979fe596fd",
-    "manifest_sha256": "b3b7b218442ccbcf8161e4ae1db83bbb97a7e9b87e32deba6513e61d7ac5cdae",
+    "manifest_sha256": "52089c79eaa31347060767230037db291f408dd746f7640fdb13df1eb7120888",
     "criteria_sha256": "affcf76db5dad610fff7b8d2b8e783ea23a7b286d8015f797f0c1a290668926d",
     "scope_sha256": "93702e9aa34f792104c3aa05c2677206f6d577f6896428218d265f9c66dad4c7",
     "scope_parts": {
@@ -226,5 +221,103 @@
       "gate": "f48b23450ca29f3aedc2dff00f71578ceda0673638b8f8c56ceefe732d61472d"
     }
   },
-  "base_commit": "c96d1a74c954729614be4395dc582c4deecf58ea"
+  "base_commit": "c96d1a74c954729614be4395dc582c4deecf58ea",
+  "manifest_amendments": [
+    {
+      "at": "2026-10-15T16:23:34.486Z",
+      "by": "lead",
+      "reason": "golden case files were committed with the tests before the base, and the scope file needed no change",
+      "from": {
+        "manifest": {
+          "add": [
+            "core/src/macros.ts",
+            "tests/golden/render-cases/lang-macro/data.json",
+            "tests/golden/render-cases/lang-macro/expected.md",
+            "tests/golden/render-cases/lang-macro/options.json",
+            "tests/golden/render-cases/lang-macro/template.md",
+            "tests/language/macros.test.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/errors.ts",
+            "core/src/interpreter.ts",
+            "core/src/lexer.ts",
+            "core/src/parser.ts",
+            "core/src/render.ts",
+            "core/src/scope.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts",
+            "core/src/whitespace.ts",
+            "tests/language/set.test.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/analyze.ts",
+          "core/src/errors.ts",
+          "core/src/interpreter.ts",
+          "core/src/lexer.ts",
+          "core/src/macros.ts",
+          "core/src/parser.ts",
+          "core/src/render.ts",
+          "core/src/scope.ts",
+          "core/src/spec.ts",
+          "core/src/types.ts",
+          "core/src/whitespace.ts",
+          "tests/golden/render-cases/lang-macro/data.json",
+          "tests/golden/render-cases/lang-macro/expected.md",
+          "tests/golden/render-cases/lang-macro/options.json",
+          "tests/golden/render-cases/lang-macro/template.md",
+          "tests/language/macros.test.ts",
+          "tests/language/set.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [
+            "core/src/macros.ts",
+            "tests/language/macros.test.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/errors.ts",
+            "core/src/interpreter.ts",
+            "core/src/lexer.ts",
+            "core/src/parser.ts",
+            "core/src/render.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts",
+            "core/src/whitespace.ts",
+            "tests/language/set.test.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/analyze.ts",
+          "core/src/errors.ts",
+          "core/src/interpreter.ts",
+          "core/src/lexer.ts",
+          "core/src/macros.ts",
+          "core/src/parser.ts",
+          "core/src/render.ts",
+          "core/src/scope.ts",
+          "core/src/spec.ts",
+          "core/src/types.ts",
+          "core/src/whitespace.ts",
+          "tests/golden/render-cases/lang-macro/data.json",
+          "tests/golden/render-cases/lang-macro/expected.md",
+          "tests/golden/render-cases/lang-macro/options.json",
+          "tests/golden/render-cases/lang-macro/template.md",
+          "tests/language/macros.test.ts",
+          "tests/language/set.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      }
+    }
+  ]
 }

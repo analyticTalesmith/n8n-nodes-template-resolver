@@ -66,10 +66,6 @@ See the plan section for this card in docs/ephemeral/research/language-2-plan.md
 | Path | Permission (add, edit, remove) | Blast radius |
 | --- | --- | --- |
 | `core/src/macros.ts` | add | template-resolver |
-| `tests/golden/render-cases/lang-macro/data.json` | add | template-resolver |
-| `tests/golden/render-cases/lang-macro/expected.md` | add | template-resolver |
-| `tests/golden/render-cases/lang-macro/options.json` | add | template-resolver |
-| `tests/golden/render-cases/lang-macro/template.md` | add | template-resolver |
 | `tests/language/macros.test.ts` | add | template-resolver |
 | `core/src/analyze.ts` | edit | template-resolver |
 | `core/src/errors.ts` | edit | template-resolver |
@@ -77,7 +73,6 @@ See the plan section for this card in docs/ephemeral/research/language-2-plan.md
 | `core/src/lexer.ts` | edit | template-resolver |
 | `core/src/parser.ts` | edit | template-resolver |
 | `core/src/render.ts` | edit | template-resolver |
-| `core/src/scope.ts` | edit | template-resolver |
 | `core/src/spec.ts` | edit | template-resolver |
 | `core/src/types.ts` | edit | template-resolver |
 | `core/src/whitespace.ts` | edit | template-resolver |
