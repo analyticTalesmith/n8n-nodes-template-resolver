@@ -183,18 +183,11 @@
     "tests/language/macros.test.ts",
     "--json"
   ],
-  "claim": {
-    "owner": "build:implementer",
-    "heartbeat": "2026-10-15T16:58:52.729Z",
-    "built": {
-      "commit": "bfa664732f739a7249c02d47bd493027daa5871c",
-      "at": "2026-10-15T16:58:52.729Z"
-    }
-  },
+  "claim": null,
   "blocked_on": null,
   "docs_impact": "none",
   "started": "2026-10-15T16:14:02.274Z",
-  "ended": null,
+  "ended": "2026-10-15T17:02:32.916Z",
   "review_rounds": 2,
   "schema_version": 1,
   "blast_radius": [
