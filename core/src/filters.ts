@@ -1,5 +1,8 @@
-import { FilterCall } from "./types";
+import { FilterCall, FilterDefinition } from "./types";
 import { UnknownFilterError } from "./errors";
+
+/** Signature-only stub: the registry of every filter definition. */
+export const FILTER_REGISTRY: FilterDefinition[] = [];
 
 /**
  * Parse filter string into FilterCall object

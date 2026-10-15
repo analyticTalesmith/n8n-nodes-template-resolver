@@ -314,3 +314,14 @@ export function withDefaultLimits(limits?: Partial<Limits>): Limits {
     maxDepth: limits?.maxDepth ?? DEFAULT_LIMITS.maxDepth,
   };
 }
+
+/**
+ * One filter in the registry that render, spec and analyze all read.
+ */
+export interface FilterDefinition {
+  name: string;
+  params: string;
+  description: string;
+  paramNames: string[];
+  apply(input: unknown, params: Record<string, string>): unknown;
+}

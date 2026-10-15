@@ -44,37 +44,55 @@
       "text": "fr-registry: render, spec() and analyze use one table of filter definitions {name, params, description, paramNames, apply}: a definition added to the table is accepted by render, listed by spec() and accepted by analyze and validate with no other change, and spec() exposes only name, params and description (no function)",
       "verify": "test",
       "evidence": null,
-      "status": "pending"
+      "status": "pending",
+      "traces": [
+        "tests/language/filter-registry.test.ts#fr-registry"
+      ]
     },
     {
       "text": "fr-values: filters receive and return values; the six existing filters coerce their input to text first exactly as the output step does, so every existing template renders the same output as before",
       "verify": "test",
       "evidence": null,
-      "status": "pending"
+      "status": "pending",
+      "traces": [
+        "tests/language/filter-registry.test.ts#fr-values"
+      ]
     },
     {
       "text": "fr-args: filter calls are parsed once at parse time, quote-aware: fence=\"a=b\" and fence=\"a:b\" keep the whole language text; a named parameter the filter does not declare (escape_md:mode=block) is a type-error located at the variable instead of a silent fallback; parseFilter and the strings it parsed before still give the same results",
       "verify": "test",
       "evidence": null,
-      "status": "pending"
+      "status": "pending",
+      "traces": [
+        "tests/language/filter-registry.test.ts#fr-args"
+      ]
     },
     {
       "text": "fr-default-quote: an unterminated quote in a ?? default (an apostrophe or a double quote that never closes) no longer swallows the filters after it, and a closed quoted default still keeps a pipe inside it",
       "verify": "test",
       "evidence": null,
-      "status": "pending"
+      "status": "pending",
+      "traces": [
+        "tests/language/filter-registry.test.ts#fr-default-quote"
+      ]
     },
     {
       "text": "fr-groups: core/src/filters-text.ts and core/src/filters-collection.ts exist, each exporting an empty list of filter definitions that the registry includes, so later cards add rows there without touching the dispatch",
       "verify": "test",
       "evidence": null,
-      "status": "pending"
+      "status": "pending",
+      "traces": [
+        "tests/language/filter-registry.test.ts#fr-groups"
+      ]
     },
     {
       "text": "fr-compat: the full existing suite passes; the only existing test file changed is tests/headless/spec.test.ts, whose fixed six-name list becomes a check that spec lists exactly the registry",
       "verify": "tool",
       "evidence": null,
-      "status": "pending"
+      "status": "pending",
+      "traces": [
+        "tests/headless/spec.test.ts#rr-spec"
+      ]
     }
   ],
   "gate": [

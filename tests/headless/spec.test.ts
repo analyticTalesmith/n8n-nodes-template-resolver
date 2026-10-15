@@ -1,7 +1,9 @@
-import { spec } from "../../core/src";
+import { FILTER_REGISTRY, spec } from "../../core/src";
 
-// Fixture list read from the applyFilter switch in core/src/filters.ts.
-const ENGINE_FILTERS = ["head", "tail", "trim", "escape_md", "fence", "heading_offset"];
+// The registry is the source of the engine filters; a later filter card adds a row, not an edit here.
+// An empty registry yields one blank name so the per-filter test fails by assertion, not by an empty table.
+const REGISTRY_NAMES = FILTER_REGISTRY.map((f) => f.name);
+const ENGINE_FILTERS = REGISTRY_NAMES.length > 0 ? REGISTRY_NAMES : [""];
 const BLOCKS = ["IF", "FOR", "CASE", "LIST", "TABLE"];
 const OPERATORS = [
   "==",
@@ -34,8 +36,9 @@ describe("rr-spec: the language spec", () => {
   );
 
   it("rr-spec: lists exactly the engine's filters", () => {
+    expect(REGISTRY_NAMES.length).toBeGreaterThan(0);
     expect(s.filters.map((f) => f.name).sort()).toEqual(
-      [...ENGINE_FILTERS].sort()
+      [...REGISTRY_NAMES].sort()
     );
   });
 
