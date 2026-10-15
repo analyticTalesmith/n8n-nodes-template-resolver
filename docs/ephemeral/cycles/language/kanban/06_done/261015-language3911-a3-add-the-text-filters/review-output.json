@@ -1,0 +1,80 @@
+{
+  "restatement": "Template authors should be able to reshape a value inside the deterministic, no-eval template language using eight new filters: upper, lower, title, replace, indent, quote, round and default. Each must be one row in the text group of the single filter registry. Every filter except default coerces its input to the printed text first. replace works on literal text only. indent and round take bounded integer parameters. default replaces any value that is not truthy. A missing, malformed or undeclared parameter must be a type-error located at the variable in every mode. Existing filters, ?? and existing tests must not change, no dependency may be added, and no pattern may be compiled from template text.",
+  "brief_mismatch": "The card's must-not list differs from the packet's. It leaves out m2 (change what any existing filter outputs, or what ?? does) and qualifies m1 with 'other than the one named amendment (if any)', but no amendment is named anywhere. The card's interface contract also names the shorthands as 'spaces', 'places' and 'replacement text', while the spec and the frozen test require paramNames ['value']. That is consistent only through the language-contract rule that a shorthand is the parameter 'value'. I reviewed against the packet's five must-nots and the spec.",
+  "verification_plan": [
+    "Confirm TEXT_FILTERS in core/src/filters-text.ts lists exactly the eight rows in order, with paramNames [], [], [], [find,with], [value], [], [value], [value], and that no second filter list, dispatch change or parser change appears in the diff.",
+    "For each text filter except default, confirm the input is coerced with the same function the output step uses, so numbers, booleans, null, missing, arrays and objects print as before and are then transformed.",
+    "replace: confirm the match is literal (split/join or indexOf, not a RegExp built from find), that every non-overlapping occurrence is replaced, that with has no $-patterns, that with defaults to empty text, and that an empty or missing find throws.",
+    "indent: confirm the default is 2, the range is an integer from 0 to 100, empty lines (including CRLF-empty lines) gain no spaces, and line breaks are kept.",
+    "round: confirm the default is 0, the range is an integer from 0 to 20, rounding is decimal and half away from zero (1.005 gives 1.01 at 2 places), the output has exactly N decimals, -0 prints as 0, and input that is not a finite number passes through unchanged, including edge text such as exponents, Infinity and NaN.",
+    "quote: confirm it uses JSON.stringify of the coerced text.",
+    "default: confirm it reads the raw value with the interpreter's isTruthy, that a missing value parameter throws, and that ?? code is untouched.",
+    "Confirm every thrown parameter error reaches the interpreter as a located type-error in lenient and strict mode (m5), and that validate and analyze catch undeclared parameters through the registry.",
+    "Confirm no runtime dependency is added and no regular expression is built from template text (m3, m4).",
+    "Confirm the changed paths are only core/src/filters-text.ts and tests/language/filters-text.test.ts, plus logged scope exceptions, and that the frozen test file is unchanged."
+  ],
+  "findings": [
+    {
+      "title": "round expands exponent text that is not a finite number instead of passing it through, and allocates without bound on a large exponent",
+      "class": "defect",
+      "serves": {
+        "target": "c1",
+        "scenario": "The settled spec says round passes through input that is not a finite number. roundDecimal accepts any digit string with an exponent and pads the digits to the exponent's length. The text '1e400' (Number gives Infinity) therefore renders as '1' followed by 400 zeros instead of '1e400'. Text such as '1e300000000' or '1e-999999999' makes padEnd or repeat build a string of hundreds of megabytes, or throw RangeError 'Invalid string length'. That error surfaces as a type-error instead of a pass-through, and a single data value sent through the api module can stall or exhaust memory before the maxOutputChars limit applies, which defeats deterministic, bounded rendering."
+      },
+      "rubric": "each criterion is met by the diff and its test (ft-text round: 'input that is not a finite number passes through unchanged')",
+      "reproduction": "1. render('${{ v | round }}', { v: '1e400' }, { strictMode: false }). Expected per spec: output '1e400'. Actual per code: a 401-character integer. 2. render('${{ v | round }}', { v: '1e-999999999' }, { strictMode: false }). Expected: output '1e-999999999'. Actual: '0'.repeat(999999999) throws RangeError, and the result is ok:false with a type-error. Smallest restoring change: return null from roundDecimal (so the text passes through) when Number(text) is not finite, or bound the exponent, before any padding.",
+      "evidence": [
+        "diff:core/src/filters-text.ts",
+        "code:core/src/filters-text.ts:80",
+        "code:core/src/filters-text.ts:85",
+        "code:core/src/filters-text.ts:86",
+        "doc:spec.md (Behavior settled: round, input that is not a finite number passes through unchanged)",
+        "test:ft-text: round (round), Infinity is not finite (covers only the literal 'Infinity', not exponent overflow)"
+      ],
+      "location": "core/src/filters-text.ts:80"
+    },
+    {
+      "title": "Living documents edited directly, outside files_scope and outside the logged scope exceptions",
+      "class": "drift",
+      "serves": {
+        "target": "card-goal",
+        "scenario": "The card's write scope is core/src/filters-text.ts and tests/language/filters-text.test.ts. The scope-exception log approves only two delta files under docs/ephemeral/cycles/language/deltas/. The diff also edits docs/living/architecture/language-contract.md and docs/living/architecture/modules/template-resolver.md in place, and both are already marked 'state: built'. Living facts then change before the cycle's work merges and outside the delta/apply path, and are duplicated by the deltas, so applying those deltas could double-apply or conflict."
+      },
+      "rubric": "no change outside the card scope",
+      "reproduction": "Compare the diff's changed paths with files_scope and the scope-exceptions table. docs/living/architecture/language-contract.md (new 'Text filters' section) and docs/living/architecture/modules/template-resolver.md (Filters paragraph) appear in the diff but in neither list.",
+      "evidence": [
+        "diff:docs/living/architecture/language-contract.md",
+        "diff:docs/living/architecture/modules/template-resolver.md",
+        "doc:card.md (Scope table)"
+      ],
+      "location": "docs/living/architecture/language-contract.md:25"
+    },
+    {
+      "title": "default's author-facing description and contract row omit the text values isTruthy also treats as falsy",
+      "class": "drift",
+      "serves": {
+        "target": "card-goal",
+        "scenario": "default uses isTruthy, which also treats the text values '0', 'false', 'no' and whitespace-only text as falsy, and the frozen tests confirm this for '0' and 'false'. The description shown by spec() and the contract table list only 'missing, empty, 0, false, an empty list or an empty object'. An author who writes ${{ answer | default=\"n/a\" }} over a yes/no field gets 'n/a' for 'no' and cannot predict that from the documentation."
+      },
+      "rubric": "each criterion is met by the diff and its test",
+      "reproduction": "render('${{ v | default=\"n/a\" }}', { v: 'no' }, { strictMode: false }) gives 'n/a' by isTruthy. spec().filters entry 'default' and the language-contract table do not mention text values.",
+      "evidence": [
+        "code:core/src/filters-text.ts:146",
+        "diff:docs/living/architecture/language-contract.md",
+        "doc:docs/living/architecture/modules/template-resolver.md (isTruthy: strings trimmed and lowercased, false for '', 'false', '0', 'no')"
+      ],
+      "location": "core/src/filters-text.ts:146"
+    }
+  ],
+  "responses": [],
+  "reviewer": {
+    "kind": "fallback",
+    "label": "opus fallback (same model family as the builder; has repository access)"
+  },
+  "at": "2026-10-15T03:42:07.450Z",
+  "card": "261015-language3911-a3-add-the-text-filters",
+  "tier": "product",
+  "packet_sha256": "d632ff99dbd6c1e7c208942e3238efba346adbc785d8f3ef322759577e941887",
+  "diff_sha256": "b9d0296759bc70b81774ff9b8906e397846481f8e2d0369ee90aaebceb7e4145",
+  "dropped": []
+}

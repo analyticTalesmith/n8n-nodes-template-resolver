@@ -14,4 +14,6 @@ Contents of docs/ephemeral/cycles/language/deltas.
 - [node-limit-3.md](node-limit-3.md) — limits.maxNodes (default 20000), the limit-nodes code, iterative ELSEIF chains and analyze limits
 - [node-limit-4.md](node-limit-4.md) — limits.maxNodes (default 20000), the limit-nodes code, iterative ELSEIF chains and analyze limits
 - [statement-tags-adr.md](statement-tags-adr.md) — ADR: SET, INPUT and CALL are single tags without an END, like ELSE
+- [text-filters-contract.md](text-filters-contract.md) — Add the text filters section: upper, lower, title, replace, indent, quote, round and default
+- [text-filters-module-page.md](text-filters-module-page.md) — Name the text filter group in the filters section
 <!-- end generated index -->

@@ -275,6 +275,11 @@ describe("ft-text: round", () => {
     ["object is not a number", OBJ, '{"a":1,"b":"x"}'],
     ["Infinity is not finite", "Infinity", "Infinity"],
     ["NaN is not finite", "NaN", "NaN"],
+    ["1e400 overflows and passes through", "1e400", "1e400"],
+    ["-1e400 overflows and passes through", "-1e400", "-1e400"],
+    ["1e300000000 passes through", "1e300000000", "1e300000000"],
+    ["1e-999999999 passes through", "1e-999999999", "1e-999999999"],
+    ["finite exponent still rounds", "1.5e2", "150"],
   ]);
 
   tableTests("round", "round=2", [

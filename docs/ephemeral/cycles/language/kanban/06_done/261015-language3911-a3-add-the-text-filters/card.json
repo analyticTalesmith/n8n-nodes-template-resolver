@@ -59,19 +59,15 @@
     "tests/language/filters-text.test.ts",
     "--json"
   ],
-  "claim": {
-    "owner": "build:implementer",
-    "heartbeat": "2026-10-15T03:36:09.967Z",
-    "agent": "a"
-  },
+  "claim": null,
   "blocked_on": null,
   "docs_impact": [
     "docs/living/architecture/modules/template-resolver.md",
     "docs/living/architecture/language-contract.md"
   ],
   "started": "2026-10-15T03:36:10.134Z",
-  "ended": null,
-  "review_rounds": 0,
+  "ended": "2026-10-15T03:46:34.611Z",
+  "review_rounds": 1,
   "schema_version": 1,
   "blast_radius": [
     "template-resolver"
@@ -91,5 +87,12 @@
       "gate": "86e65c53831c9bc5a24084075fbf5ad2600622a2648b9bb50cbf2c8eb4b26b31"
     }
   },
-  "base_commit": "f4e552a71ebe770925d1bd5eb5a33fdaf91c1974"
+  "base_commit": "f4e552a71ebe770925d1bd5eb5a33fdaf91c1974",
+  "test_amendments": [
+    {
+      "path": "tests/language/filters-text.test.ts",
+      "reason": "review round 1 finding f1: five round rows for exponent text that is not a finite number",
+      "approved_by": "project lead (round 1 fix instruction)"
+    }
+  ]
 }
