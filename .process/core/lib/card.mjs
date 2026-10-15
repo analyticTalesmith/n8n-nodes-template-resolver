@@ -1,17 +1,17 @@
 /** @typedef {import('../scripts/validate.mjs').Finding} Finding */
 
+import { isAgentCode, isCardId } from './card-id.mjs';
 import { CONCERNS } from './concerns.mjs';
 import { TIERS } from './layout.mjs';
 import { TEST_LEVELS } from './levels.mjs';
+import { isPlainObject } from './types.mjs';
+import { isIsoTimestamp } from './time.mjs';
 
 export const CARD_TYPES = Object.freeze(['task', 'bug', 'security', 'idea', 'improvement', 'decision']);
 export const VERIFY_TYPES = Object.freeze(['test', 'tool', 'review', 'manual']);
 export const CARD_SCHEMA_VERSION = 1;
 
-/** Pattern every card id must match: four digits, a hyphen, then a kebab-case slug. */
-export const CARD_ID = /^\d{4}-[a-z0-9]+(-[a-z0-9]+)*$/;
 export const MODULE_NAME = /^(?=.{1,64}$)(?:frontend\/)?[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const ISO_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
 
 /**
  * @typedef {{ text: string, verify: string, evidence: string | null, status: 'pending' | 'passing' | 'failing', class?: 'goal-critical' | 'polish', level?: string, traces?: string[] }} Criterion
@@ -19,7 +19,7 @@ const ISO_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:
  *   id: string, title: string, type: string, parent: string | null, depends_on: string[], origin?: string | null, tier: string | null,
  *   claimed_in?: string | null, user_visible?: boolean, user_docs?: string[], user_docs_waiver?: string, files_scope: string[], blast_radius?: string[], test_levels?: string[], session_instructions?: string[],
  *   manifest: { add: string[], remove: string[], edit: string[], frozen: boolean },
- *   criteria: Criterion[], gate: string[] | null, claim: { owner: string, heartbeat: string } | null,
+ *   criteria: Criterion[], gate: string[] | null, claim: { owner: string, heartbeat: string, agent?: string, built?: { commit: string | null, at: string } } | null,
  *   blocked_on: string | null, docs_impact: string[] | 'none', started: string | null, ended: string | null,
  *   review_rounds: number, schema_version: number
  * }} Card
@@ -54,7 +54,6 @@ export function newCard({ id, title, type }) {
   };
 }
 
-const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const isString = (v) => typeof v === 'string';
 const isStringArray = (v) => Array.isArray(v) && v.every(isString);
 const isNullableString = (v) => v === null || isString(v);
@@ -105,7 +104,7 @@ export function validateCard(card) {
       path,
     });
 
-  if (!isObject(card)) {
+  if (!isPlainObject(card)) {
     missing('card', 'an object');
     return findings;
   }
@@ -123,6 +122,18 @@ export function validateCard(card) {
         ? '; convert a string gate to an argv array such as ["npm","test"]. On Windows the program must be a real executable or `node <script>`, not a .cmd launcher'
         : '';
     missing('gate', `null or an argv array (program, then arguments; no shell)${hint}`);
+  }
+  if (c.blast_radius_reason !== undefined && !(typeof c.blast_radius_reason === 'string' && c.blast_radius_reason.trim() !== '' && c.blast_radius_reason.length <= 200 && !/[\r\n]/.test(c.blast_radius_reason))) {
+    missing('blast_radius_reason', 'one non-empty line of at most 200 characters');
+  }
+  if (c.gates !== undefined) {
+    if (!Array.isArray(c.gates)) missing('gates', 'a list of { level, argv } entries');
+    else c.gates.forEach((entry, index) => {
+      const at = `gates[${index}]`;
+      if (!isPlainObject(entry)) missing(at, 'an object with a level and an argv');
+      else if (!TEST_LEVELS.includes(entry.level)) missing(`${at}.level`, `one of ${TEST_LEVELS.join(', ')} (got ${JSON.stringify(entry.level)})`);
+      else if (!isStringArray(entry.argv) || entry.argv.length === 0 || entry.argv.some((part) => part === '')) missing(`${at}.argv`, 'a non-empty argv array of non-empty strings');
+    });
   }
   for (const field of ['tier', 'origin', 'claimed_in']) {
     if (c[field] !== undefined && !isNullableString(c[field])) missing(field, 'a string or null');
@@ -148,7 +159,7 @@ export function validateCard(card) {
       message: `Unknown test level ${JSON.stringify(level)}. Use one of: ${TEST_LEVELS.join(', ')}.`,
     });
   });
-  if (!isObject(c.manifest)) {
+  if (!isPlainObject(c.manifest)) {
     missing('manifest', 'an object with add, remove, edit arrays and a frozen boolean');
   } else {
     for (const field of ['add', 'remove', 'edit']) {
@@ -158,8 +169,12 @@ export function validateCard(card) {
   }
   if (!Array.isArray(c.criteria)) missing('criteria', 'an array');
   if (c.claim !== null) {
-    if (!isObject(c.claim) || !isString(c.claim.owner) || !isString(c.claim.heartbeat)) {
+    if (!isPlainObject(c.claim) || !isString(c.claim.owner) || !isString(c.claim.heartbeat)) {
       missing('claim', 'null or an object with string owner and heartbeat');
+    } else if (c.claim.agent !== undefined && !isAgentCode(c.claim.agent)) {
+      missing('claim.agent', 'absent or one or two lowercase letters');
+    } else if (c.claim.built !== undefined && !(isPlainObject(c.claim.built) && isNullableString(c.claim.built.commit) && isString(c.claim.built.at))) {
+      missing('claim.built', 'an object with a commit string or null and an at string');
     }
   }
   if (!(c.docs_impact === 'none' || isStringArray(c.docs_impact))) {
@@ -179,7 +194,7 @@ export function validateCard(card) {
     });
   }
   if (c.concerns !== undefined) {
-    if (!isObject(c.concerns)) missing('concerns', 'an object of concern to tier');
+    if (!isPlainObject(c.concerns)) missing('concerns', 'an object of concern to tier');
     else for (const [concern, value] of Object.entries(c.concerns)) {
       if (!CONCERNS.includes(concern) || !TIERS.includes(value)) findings.push({
         rule: 'card-concern-unknown', path: `concerns.${concern}`,
@@ -194,14 +209,14 @@ export function validateCard(card) {
       path: 'tier',
     });
   }
-  if (isString(c.id) && !CARD_ID.test(c.id)) {
+  if (isString(c.id) && !isCardId(c.id)) {
     findings.push({
       rule: 'card-id-format',
       message: `Card id "${c.id}" must be four digits, a hyphen, then a kebab-case slug, for example 0001-parse-config.`,
       path: 'id',
     });
   }
-  if (isString(c.parent) && !CARD_ID.test(c.parent)) {
+  if (isString(c.parent) && !isCardId(c.parent)) {
     findings.push({
       rule: 'card-link-format',
       message: `parent "${c.parent}" is not a card id like 0001-parse-config. Correct it in card.json.`,
@@ -210,7 +225,7 @@ export function validateCard(card) {
   }
   if (isStringArray(c.depends_on)) {
     c.depends_on.forEach((dep, i) => {
-      if (!CARD_ID.test(dep)) {
+      if (!isCardId(dep)) {
         findings.push({
           rule: 'card-link-format',
           message: `depends_on[${i}] "${dep}" is not a card id like 0001-parse-config. Correct or remove it in card.json.`,
@@ -230,7 +245,7 @@ export function validateCard(card) {
   if (Array.isArray(c.criteria)) {
     c.criteria.forEach((criterion, i) => {
       const at = `criteria[${i}]`;
-      if (!isObject(criterion)) {
+      if (!isPlainObject(criterion)) {
         missing(at, 'an object with text, verify, evidence and status');
         return;
       }
@@ -279,10 +294,10 @@ export function validateCard(card) {
   const timestamps = [
     ['started', c.started],
     ['ended', c.ended],
-    ['claim.heartbeat', isObject(c.claim) ? c.claim.heartbeat : null],
+    ['claim.heartbeat', isPlainObject(c.claim) ? c.claim.heartbeat : null],
   ];
   for (const [path, value] of timestamps) {
-    if (isString(value) && !(ISO_TIMESTAMP.test(value) && !Number.isNaN(Date.parse(value)))) {
+    if (isString(value) && !(isIsoTimestamp(value) && !Number.isNaN(Date.parse(value)))) {
       findings.push({
         rule: 'card-dates-invalid',
         message: `${path} "${value}" is not an ISO 8601 timestamp such as 2026-10-06T12:00:00.000Z. Correct it.`,

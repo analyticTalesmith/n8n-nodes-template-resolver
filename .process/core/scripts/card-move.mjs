@@ -1,12 +1,13 @@
 import { readFileSync, realpathSync, renameSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { BoardError, cardFolder, cardPath, isCardId, readCard, writeCard } from '../lib/board.mjs';
+import { BoardError, cardFolder, cardPath, findCardId, isCardId, isCardQuery, readCard, writeCard } from '../lib/board.mjs';
 import { ConfigError } from '../lib/config.mjs';
-import { COLUMNS, TIERS } from '../lib/layout.mjs';
+import { COLUMNS, STAGE, TIERS, humanColumn } from '../lib/layout.mjs';
 import { registerGateChecks } from '../lib/gate.mjs';
-import { GitError, headCommit } from '../lib/git.mjs';
-import { checkMove, humanColumn } from '../lib/moves.mjs';
+import { GitError, headCommit, shortSha } from '../lib/git.mjs';
+import { writeIndexes } from '../lib/index-docs.mjs';
+import { checkMove } from '../lib/moves.mjs';
 import { effectiveConcerns, effectiveTier } from '../lib/tier.mjs';
 import { localDocsHashes, localLivingHashes } from '../lib/local-docs-attestation.mjs';
 import { localCharterHashes } from '../lib/local-charters.mjs';
@@ -105,7 +106,7 @@ export function moveCard(projectDir, id, to, options = {}) {
   const stamp = (options.now ?? new Date()).toISOString();
   const { rename = renameSync, writeFile = writeFileSync } = options.io ?? {};
   const updated = { ...card, ...extra };
-  if (card.type === 'bug' && from === '00_backlog' && to === '02_ready' && card.freeze === undefined) {
+  if (card.type === 'bug' && from === STAGE.backlog && to === STAGE.ready && card.freeze === undefined) {
     const docs = localDocsHashes(projectDir, Array.isArray(card.docs_impact) ? card.docs_impact : []);
     if (docs !== null) {
       updated.local_baseline = {
@@ -116,14 +117,14 @@ export function moveCard(projectDir, id, to, options = {}) {
       };
     }
   }
-  if (to === '03_in_progress' && updated.started === null) updated.started = stamp;
-  if (to === '06_done') updated.ended = stamp;
-  if (to === '01_shaping' || to === '06_done') updated.claim = null;
-  if (to === '01_shaping' && card.claim) updated.resume_claim = { owner: card.claim.owner };
+  if (to === STAGE.inProgress && updated.started === null) updated.started = stamp;
+  if (to === STAGE.done) updated.ended = stamp;
+  if (to === STAGE.shaping || to === STAGE.done) updated.claim = null;
+  if (to === STAGE.shaping && card.claim) updated.resume_claim = { owner: card.claim.owner };
   const resuming = options.resume === true;
   const resumedOwner = resuming ? (card.resume_claim?.owner ?? null) : null;
   if (resuming && resumedOwner !== null) updated.claim = { owner: resumedOwner, heartbeat: stamp };
-  if (resuming || to === '03_in_progress' || to === '06_done') delete updated.resume_claim;
+  if (resuming || to === STAGE.inProgress || to === STAGE.done) delete updated.resume_claim;
   const changed =
     updated.started !== card.started ||
     updated.ended !== card.ended ||
@@ -205,14 +206,15 @@ if (isMain) {
       positional.push(args[i]);
     }
   }
-  const [projectDir, id, column] = positional;
+  const [projectDir, query, column] = positional;
   if (positional.length !== 3) usage('Expected a project directory, a card id and a column.');
-  if (!isCardId(id)) usage(`"${id}" is not a card id (like 0001-some-title).`);
+  if (!isCardQuery(query)) usage(`"${query}" is not a card id or prefix (lowercase letters, digits and hyphens).`);
   if (rebaseBase && !resume) usage('--rebase-base goes with --resume only.');
   const to = parseColumn(column);
   if (!to) usage(`Unknown column "${column}". Use one of: ${COLUMNS.map(humanColumn).join(', ')}.`);
   const root = resolve(projectDir);
   try {
+    const id = findCardId(root, query);
     registerGateChecks({
       base,
       onSkipped: (list) => list.forEach((s) => console.error(`skipped ${s.check}: ${s.reason}`)),
@@ -220,8 +222,8 @@ if (isMain) {
     });
     const current = cardPath(root, id) ? readCard(root, id) : null;
     const starting =
-      cardPath(root, id)?.column === '02_ready' &&
-      to === '03_in_progress' &&
+      cardPath(root, id)?.column === STAGE.ready &&
+      to === STAGE.inProgress &&
       !(typeof current.base_commit === 'string' && current.base_commit !== '');
     let head = null;
     let notRecorded = null;
@@ -233,16 +235,18 @@ if (isMain) {
         notRecorded = err.message.replace(/\s+/g, ' ');
       }
     }
+    // A refused move to done may leave the regenerated indexes behind; they are derived, so that is harmless.
+    if (to === STAGE.done) writeIndexes(root);
     const { from, to: moved, resumed } = moveCard(root, id, to, { ...options, resume, ...(head === null ? {} : { set: { base_commit: head } }) });
     console.log(`${id}: ${humanColumn(from)} -> ${humanColumn(moved)}`);
     if (resumed !== undefined) {
       console.log(
         resumed.claim === null
-          ? `resumed: the card had no claim to restore; claim it before work goes on. Red evidence reused (red-evidence-recorded-earlier); ${head === null ? 'base commit unchanged' : `base commit moved to ${head.slice(0, 12)}`}.`
-          : `resumed: claim restored for ${resumed.claim}. Red evidence reused (red-evidence-recorded-earlier); ${head === null ? 'base commit unchanged (add --rebase-base to move it to HEAD)' : `base commit moved to ${head.slice(0, 12)}`}.`,
+          ? `resumed: the card had no claim to restore; claim it before work goes on. Red evidence reused (red-evidence-recorded-earlier); ${head === null ? 'base commit unchanged' : `base commit moved to ${shortSha(head)}`}.`
+          : `resumed: claim restored for ${resumed.claim}. Red evidence reused (red-evidence-recorded-earlier); ${head === null ? 'base commit unchanged (add --rebase-base to move it to HEAD)' : `base commit moved to ${shortSha(head)}`}.`,
       );
     } else if (starting && head !== null) {
-      console.log(`base commit ${head.slice(0, 12)}: other cards' kanban folders are not counted in this card's diff, so several cards can be readied and committed together.`);
+      console.log(`base commit ${shortSha(head)}: other cards' kanban folders are not counted in this card's diff, so several cards can be readied and committed together.`);
     }
     if (notRecorded !== null) console.error(`warning: base commit not recorded (${notRecorded}); pass --base <ref> at review`);
   } catch (err) {

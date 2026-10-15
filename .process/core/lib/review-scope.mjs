@@ -1,4 +1,5 @@
 import { frozenTestPaths } from './packet-parts.mjs';
+import { isPlainObject } from './types.mjs';
 
 /**
  * The project-relative paths a card owns for review: its manifest (add, remove, edit), files_scope, docs_impact (when a list),
@@ -22,7 +23,7 @@ export function reviewOwnPaths(card) {
 
 const oneLine = (text) => String(text).replace(/\s+/g, ' ').trim();
 const strings = (value) => (Array.isArray(value) ? value.filter((item) => typeof item === 'string') : []);
-const objectOf = (value) => (value !== null && typeof value === 'object' && !Array.isArray(value) ? value : {});
+const objectOf = (value) => (isPlainObject(value) ? value : {});
 
 /** What one logged manifest amendment changed, as "edit +src/x.mjs, scope -lib" (nothing recorded reads as "no list changed"). */
 function describeChange(entry) {

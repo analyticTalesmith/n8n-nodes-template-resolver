@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { CARD_FILES, cardFile } from '../card-files.mjs';
-import { SCOPE_PARTS, changedFreezeFields, changedScopeParts, freezeHashes, validateFreeze } from '../freeze.mjs';
+import { FREEZE_FIELDS, SCOPE_PARTS, changedFreezeFields, changedScopeParts, freezeHashes, validateFreeze } from '../freeze.mjs';
 import { localDocsHashes, validLocalDocsHashes } from '../local-docs-attestation.mjs';
 import { scriptCommand } from '../script-command.mjs';
 
@@ -49,10 +49,10 @@ export function checkFrozen({ projectDir, card }) {
   const changed = changedFreezeFields(freeze, current);
   /** @type {Finding[]} */
   const findings = [];
-  if (freeze.scope_sha256 === undefined) {
+  if (freeze[FREEZE_FIELDS.scope] === undefined) {
     findings.push({
       rule: 'freeze-stale',
-      message: `The freeze record has no scope_sha256, so it predates locking ${SCOPE_PARTS.join(', ')}. Re-freeze in shaping: take the card back through review to shaping and run ${scriptCommand(projectDir, 'freeze.mjs')} <projectDir> ${card.id}.`,
+      message: `The freeze record has no ${FREEZE_FIELDS.scope}, so it predates locking ${SCOPE_PARTS.join(', ')}. Re-freeze in shaping: take the card back through review to shaping and run ${scriptCommand(projectDir, 'freeze.mjs')} <projectDir> ${card.id}.`,
       path: 'freeze',
     });
   }

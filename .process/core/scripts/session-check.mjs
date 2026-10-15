@@ -24,9 +24,6 @@ try {
   loadError = cause;
 }
 
-// A handoff records a short or full sha; anything else is not a commit this script will pass to git.
-const SHA = /^[0-9a-f]{4,40}$/;
-
 /** Both sides of a rename, so a living document moved away still counts as changed. */
 const paths = (changes) => changes.flatMap((c) => (c.from === undefined ? [c.path] : [c.from, c.path]));
 
@@ -49,7 +46,7 @@ export function sessionFacts(projectDir, { run = lib.git.runGit, decisions = [] 
   let missingBase = null;
   if (recorded !== null) {
     try {
-      if (!SHA.test(recorded)) throw new GitError(`"${recorded}" is not a commit sha.`);
+      if (!lib.git.isCommitId(recorded)) throw new GitError(`"${recorded}" is not a commit sha.`);
       run(root, ['rev-parse', '--verify', '--quiet', `${recorded}^{commit}`]);
       base = recorded;
     } catch (err) {

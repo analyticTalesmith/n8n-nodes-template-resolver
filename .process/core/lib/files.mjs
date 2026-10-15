@@ -156,6 +156,26 @@ export function listTree(dir) {
   return files.sort();
 }
 
+/** A sha256 digest as hex: 64 lowercase characters. */
+export const SHA256_HEX = /^[0-9a-f]{64}$/;
+
+/** @param {unknown} value */
+export const isSha256 = (value) => typeof value === 'string' && SHA256_HEX.test(value);
+
+/**
+ * sha256 hex of the raw bytes, never line-ending normalised.
+ * @param {Uint8Array} bytes
+ * @returns {string}
+ */
+export const sha256Bytes = (bytes) => createHash('sha256').update(bytes).digest('hex');
+
+/**
+ * sha256 hex of the text as UTF-8 with CRLF read as LF first, so a checkout setting does not change it.
+ * @param {string} text
+ * @returns {string}
+ */
+export const sha256Text = (text) => sha256Bytes(Buffer.from(text.replaceAll('\r\n', '\n'), 'utf8'));
+
 /** @param {Buffer} bytes */
 export const isText = (bytes) => !bytes.subarray(0, TEXT_PROBE_BYTES).includes(0);
 
@@ -166,7 +186,7 @@ export const isText = (bytes) => !bytes.subarray(0, TEXT_PROBE_BYTES).includes(0
  */
 export function hashBytes(bytes) {
   const data = isText(bytes) ? Buffer.from(bytes.toString('latin1').replaceAll('\r\n', '\n'), 'latin1') : bytes;
-  return createHash('sha256').update(data).digest('hex');
+  return sha256Bytes(data);
 }
 
 /**
@@ -221,3 +241,36 @@ export function writeFileAtomic(path, data, io = {}) {
 export function writeJsonAtomic(path, value, io) {
   writeFileAtomic(path, JSON.stringify(value, null, 2) + '\n', io);
 }
+
+/**
+ * Backslashes to forward slashes. Each option is off by default, so a caller names exactly the
+ * clean-up it needs; they run in this order: trim, slashes, leading `./`, trailing `/`.
+ * @param {string} path
+ * @param {{ stripDotSlash?: boolean, trim?: boolean, stripTrailingSlash?: boolean }} [options]
+ * @returns {string}
+ */
+export function toPosix(path, { stripDotSlash = false, trim = false, stripTrailingSlash = false } = {}) {
+  let out = (trim ? path.trim() : path).replaceAll('\\', '/');
+  if (stripDotSlash) out = out.replace(/^(\.\/)+/, '');
+  if (stripTrailingSlash) out = out.replace(/\/+$/, '');
+  return out;
+}
+
+/**
+ * CRLF reads as LF. A lone CR is left alone, as every copy this replaced did, so text hashed after this call keeps its hash.
+ * @param {string} text
+ * @returns {string}
+ */
+export const toLf = (text) => text.replace(/\r\n/g, '\n');
+
+/**
+ * @param {string} text
+ * @returns {string} the text without a leading byte order mark
+ */
+export const stripBom = (text) => (text.startsWith('\uFEFF') ? text.slice(1) : text);
+
+/**
+ * @param {string} text
+ * @returns {'\r\n' | '\n'} CRLF only when the text contains a CRLF
+ */
+export const detectEol = (text) => (text.includes('\r\n') ? '\r\n' : '\n');

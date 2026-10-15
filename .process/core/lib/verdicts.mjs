@@ -1,4 +1,5 @@
 import { sectionBody } from './contract.mjs';
+import { PROCESS_CORE } from './layout.mjs';
 
 /** @typedef {import('../scripts/validate.mjs').Finding} Finding */
 
@@ -55,7 +56,7 @@ export function stateFindings({ data, text, path }) {
   const findings = [];
   const field = (key) => (typeof data[key] === 'string' ? data[key].trim() : '');
   const accepted = field('verdict') === 'accept';
-  const fix = 'Write the record from .process/core/templates/verification.md; below product tier the older shape is still accepted.';
+  const fix = `Write the record from ${PROCESS_CORE}/templates/verification.md; below product tier the older shape is still accepted.`;
 
   const absent = STATE_SECTIONS.filter(({ field: key, allowed }) => !allowed.includes(field(key)));
   if (absent.length) {

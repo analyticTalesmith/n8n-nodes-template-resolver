@@ -1,7 +1,8 @@
+import { toLf, toPosix } from './files.mjs';
 import { lstatSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileAtCommit, runGit } from './git.mjs';
 import { checkDocFrontmatter, readFrontmatter } from './frontmatter.mjs';
-import { CYCLES_DIR } from './layout.mjs';
+import { CYCLES_DIR, LIVING_DIR, PROCESS_CORE } from './layout.mjs';
 import { resolveProjectPath, resolveProjectRoots } from './project-roots.mjs';
 
 /** @typedef {import('../scripts/validate.mjs').Finding} Finding */
@@ -10,7 +11,7 @@ import { resolveProjectPath, resolveProjectRoots } from './project-roots.mjs';
 /** @typedef {import('./git.mjs').GitRunner} GitRunner */
 
 /** The folders whose directories each describe themselves in an index file. */
-export const INDEX_ROOTS = Object.freeze(['docs/living', CYCLES_DIR]);
+export const INDEX_ROOTS = Object.freeze([LIVING_DIR, CYCLES_DIR]);
 export const START_MARKER = '<!-- generated index: replace everything between this line and the end marker -->';
 export const END_MARKER = '<!-- end generated index -->';
 /** A markdown file larger than this is worth splitting; it is a warning, never a failure. */
@@ -19,7 +20,7 @@ export const SIZE_FLAG_BYTES = 30720;
 const INDEX_FILE = 'INDEX.md';
 const CYCLE_FILE = 'CYCLE.md';
 const SKIPPED_FOLDER = 'kanban';
-const SCRIPT_COMMAND = 'node .process/core/scripts/index.mjs <projectDir>';
+const SCRIPT_COMMAND = `node ${PROCESS_CORE}/scripts/index.mjs <projectDir>`;
 const SUMMARY_FIELDS = new Set(['summary', 'frontmatter']);
 
 /**
@@ -35,7 +36,6 @@ export function indexFileFor(dirRel, names) {
 }
 
 const byName = (a, b) => a.name.localeCompare(b.name, 'en') || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
-const toLf = (text) => text.replace(/\r\n/g, '\n');
 
 /** Why a document has no usable summary: what the frontmatter check says about its summary or its frontmatter block. */
 const summaryReason = (text) => checkDocFrontmatter(text).find(({ field }) => SUMMARY_FIELDS.has(field))?.message ?? 'its summary cannot be read';
@@ -233,7 +233,7 @@ export function generatedIndexChanges(projectDir, changes, base, run = runGit, o
   const why = new Map();
   const candidates = changes
     .filter(({ status }) => status === 'A' || status === 'M')
-    .map(({ status, path }) => ({ status, path: String(path).replaceAll('\\', '/') }))
+    .map(({ status, path }) => ({ status, path: toPosix(String(path)) }))
     .filter(({ path }) => path.endsWith(`/${INDEX_FILE}`) || path.endsWith(`/${CYCLE_FILE}`));
   if (candidates.length === 0) return { exempt, why };
   let plans;

@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs';
+import { PROCESS_DIR, TOKENS_DIR } from '../layout.mjs';
 import { resolveProjectPath, resolveProjectRoots } from '../project-roots.mjs';
+import { isPlainObject } from '../types.mjs';
 
 /** @typedef {import('../../scripts/validate.mjs').Finding} Finding */
 /** @typedef {[number, number, number]} Rgb sRGB channels in 0..1 */
@@ -7,12 +9,11 @@ import { resolveProjectPath, resolveProjectRoots } from '../project-roots.mjs';
 
 /** WCAG 2.2 success criteria 1.4.3 (text, large text) and 1.4.11 (non-text); AA is the floor. */
 export const CONTRAST_MINIMUMS = Object.freeze({ text: 4.5, 'large-text': 3, ui: 3 });
-export const DEFAULT_TOKENS_PATH = 'docs/living/ux/tokens/design-tokens.json';
-export const DEFAULT_PAIRS_PATH = 'docs/living/ux/tokens/contrast-pairs.json';
+export const DEFAULT_TOKENS_PATH = `${TOKENS_DIR}/design-tokens.json`;
+export const DEFAULT_PAIRS_PATH = `${TOKENS_DIR}/contrast-pairs.json`;
 export const CONTRAST_RULES = Object.freeze(['contrast-tokens-unreadable', 'contrast-pairs-missing', 'contrast-token-invalid', 'contrast-too-low']);
 
 const MAX_ALIAS_DEPTH = 10;
-const isPlainObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 const isNonEmptyString = (value) => typeof value === 'string' && value !== '';
 
 const linear = (channel) => (channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4);
@@ -129,7 +130,7 @@ export function checkContrast({ projectDir, settings }) {
   const problems = [];
   for (const key of ['tokens', 'contrast_pairs']) {
     if (settings[key] !== undefined && !isNonEmptyString(settings[key])) {
-      problems.push({ rule: 'front-end-config-invalid', message: `gate.front_end.${key} must be a non-empty path string. Fix it in .process/aperture.json.` });
+      problems.push({ rule: 'front-end-config-invalid', message: `gate.front_end.${key} must be a non-empty path string. Fix it in ${PROCESS_DIR}/aperture.json.` });
     }
   }
   if (problems.length > 0) return problems;

@@ -1,14 +1,14 @@
 import { lstatSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { readConfig } from './config.mjs';
-import { TIERS } from './layout.mjs';
+import { CONFIG_PATH, readConfig } from './config.mjs';
+import { PROCESS_TIERS, STAGE, TIERS, edgeKey } from './layout.mjs';
 import { CYCLE_LEVELS, REGRESSION_MODES, requiredAt, SWEEP_LENSES, TEST_LEVELS } from './levels.mjs';
-import { addedLines, assertTopLevel, changedFiles, commitAddedLines, commitsInRange, effectiveBase, fileAtCommit, GitError } from './git.mjs';
+import { addedLines, assertTopLevel, changedFiles, commitAddedLines, commitsInRange, effectiveBase, fileAtCommit, GitError, runGit } from './git.mjs';
 import { registerGuard } from './moves.mjs';
 import { readScopeExceptions } from './contract.mjs';
 import { checkBoundary } from './checks/boundary.mjs';
 import { checkCardContract } from './checks/card-contract.mjs';
-import { checkCardGate } from './checks/card-gate.mjs';
+import { checkCardGate, redProofArgv } from './checks/card-gate.mjs';
 import { checkCycleShapeRecorded } from './checks/cycle-shape-recorded.mjs';
 import { checkRedEvidence, RED_RECORDED_EARLIER } from './checks/red-evidence.mjs';
 import { checkRootCause } from './checks/root-cause.mjs';
@@ -33,6 +33,7 @@ import { checkLivingState } from './checks/living-state.mjs';
 import { checkLivingViaDelta } from './checks/living-via-delta.mjs';
 import { checkManifest, MANIFEST_ADD_AT_BASE } from './checks/manifest.mjs';
 import { generatedIndexChanges } from './index-docs.mjs';
+import { checkBuilderDone, BUILDER_COMMIT_UNKNOWN_WARNING, BUILDER_NOT_SIGNALLED_WARNING } from './checks/builder-done.mjs';
 import { checkReviewClear, checkReviewRecorded } from './checks/review-clear.mjs';
 import { checkNoIds } from './checks/no-ids.mjs';
 import { checkOwnership, readCharters, removedCharterTeams } from './checks/ownership.mjs';
@@ -43,17 +44,52 @@ import { checkSpec } from './checks/spec-markers.mjs';
 import { VERIFICATION_RECORD, checkVerificationRecorded } from './checks/verification-recorded.mjs';
 import { cardPath } from './board.mjs';
 import { readCycle } from './cycle.mjs';
+import { effectiveTier } from './tier.mjs';
 import { localLivingChanges, LocalDocsAttestationError } from './local-docs-attestation.mjs';
 import { frozenLocalCharters, LocalCharterError } from './local-charters.mjs';
 import { resolveProjectRoots } from './project-roots.mjs';
-import { readDeltaRecords } from './delta.mjs';
+import { applyReminder, openDeltaCount, readDeltaRecords } from './delta.mjs';
 import { CHECK_CONCERN, TIER_BOUND_CHECKS } from './concerns.mjs';
+import { isPlainObject } from './types.mjs';
 
 /** @typedef {import('../scripts/validate.mjs').Finding} Finding */
 /** @typedef {import('./moves.mjs').MoveContext} MoveContext */
 /** @typedef {import('./git.mjs').GitRunner} GitRunner */
 /** @typedef {import('./checks/boundary.mjs').CommandRunner} CommandRunner */
-/** @typedef {'spec' | 'reviewer-brief' | 'design-approved' | 'frozen' | 'manifest' | 'card-contract' | 'test-levels' | 'no-ids' | 'docs-impact' | 'boundary' | 'secrets' | 'review-recorded' | 'review-clear' | 'ownership' | 'tests-fail-first' | 'card-gate' | 'test-amendments' | 'front-end-css' | 'front-end-contrast' | 'front-end-tools' | 'baselines' | 'index-fresh' | 'living-state' | 'living-via-delta' | 'verification-recorded' | 'evidence-cited' | 'claim-checked' | 'stance-hardened' | 'efv-orphans' | 'rule-has-test' | 'actor-has-action' | 'interface-has-contract-test' | 'boundary-covered' | 'atom-size' | 'deliverable-cites' | 'deliverable-fresh' | 'user-docs-updated' | 'cycle-shape-recorded'} GateCheckId */
+/**
+ * The test levels a card is held to: the tier's, the card's own and the verification levels of its cycle.
+ * @param {string} projectDir
+ * @param {{ id: string }} card
+ * @param {TierData} tierData
+ * @param {string} tier
+ * @returns {string[]}
+ */
+function selectedGateLevels(projectDir, card, tierData, tier) {
+  let verificationLevels = [];
+  try {
+    const name = cardPath(projectDir, card.id)?.cycle;
+    if (name !== null && name !== undefined) verificationLevels = readCycle(projectDir, name).verification_levels;
+  } catch {
+    verificationLevels = [];
+  }
+  const { levels } = resolveDepth({ tierData, tier, source: 'cycle', verificationLevels, card });
+  return TEST_LEVELS.filter((level) => levels[level].selected);
+}
+
+/**
+ * The test levels a card is held to outside a move (the red-evidence script has no move): the same selection the gate
+ * makes, at the card's own test-depth tier. Undefined when the tier data cannot be read, so the first gates entry is used.
+ * @param {string} projectDir
+ * @param {{ id: string }} card
+ * @returns {string[] | undefined}
+ */
+export function selectedLevelsFor(projectDir, card) {
+  const tierData = readTierData(projectDir);
+  if (tierData.findings.length > 0) return undefined;
+  return selectedGateLevels(projectDir, card, tierData.data, effectiveTier(projectDir, /** @type {any} */ (card), 'test-depth').tier);
+}
+
+/** @typedef {'spec' | 'reviewer-brief' | 'design-approved' | 'frozen' | 'manifest' | 'card-contract' | 'test-levels' | 'no-ids' | 'docs-impact' | 'boundary' | 'secrets' | 'builder-done' | 'review-recorded' | 'review-clear' | 'ownership' | 'tests-fail-first' | 'card-gate' | 'test-amendments' | 'front-end-css' | 'front-end-contrast' | 'front-end-tools' | 'baselines' | 'index-fresh' | 'living-state' | 'living-via-delta' | 'verification-recorded' | 'evidence-cited' | 'claim-checked' | 'stance-hardened' | 'efv-orphans' | 'rule-has-test' | 'actor-has-action' | 'interface-has-contract-test' | 'boundary-covered' | 'atom-size' | 'deliverable-cites' | 'deliverable-fresh' | 'user-docs-updated' | 'cycle-shape-recorded'} GateCheckId */
 /** @typedef {{ base?: string, run?: GitRunner, runCommand?: CommandRunner }} GateOptions */
 /** @typedef {{ check: GateCheckId, reason: string }} Skipped */
 /** @typedef {{ checks: Readonly<Record<GateCheckId, string | null>>, boundary_required: string | null, test_levels: Readonly<Record<string, string | null>>, sweeps: Readonly<Record<string, string | null>>, regression: Readonly<Record<string, string | null>>, signoff_required: string | null }} TierData */
@@ -78,6 +114,7 @@ export const GATE_CHECK_MIN_TIER = Object.freeze({
   'docs-impact': 'product',
   boundary: 'product',
   secrets: 'product',
+  'builder-done': 'prototype',
   'review-recorded': 'prototype',
   'review-clear': 'product',
   ownership: 'product',
@@ -109,23 +146,23 @@ export const GATE_CHECK_MIN_TIER = Object.freeze({
 
 /** Which checks run on each edge, keyed '<from>><to>' with column folder names. */
 export const GATE_EDGES = Object.freeze({
-  '00_backlog>02_ready': Object.freeze(['tests-fail-first']),
-  '01_shaping>02_ready': Object.freeze(['spec', 'reviewer-brief', 'tests-fail-first', 'design-approved', 'cycle-shape-recorded']),
-  '03_in_progress>04_review': Object.freeze(['frozen', 'manifest', 'card-contract', 'no-ids', 'docs-impact', 'boundary', 'secrets', 'ownership', 'card-gate', 'test-amendments', 'front-end-css', 'front-end-contrast', 'front-end-tools', 'living-via-delta', 'test-levels', 'evidence-cited', 'user-docs-updated', 'stance-hardened']),
-  '04_review>05_gate': Object.freeze(['review-recorded', 'review-clear', 'verification-recorded', 'claim-checked']),
-  '05_gate>06_done': Object.freeze(['docs-impact', 'baselines', 'index-fresh', 'living-state', 'evidence-cited', 'efv-orphans', 'rule-has-test', 'actor-has-action', 'interface-has-contract-test', 'boundary-covered', 'atom-size', 'deliverable-cites', 'deliverable-fresh']),
+  [edgeKey(STAGE.backlog, STAGE.ready)]: Object.freeze(['tests-fail-first']),
+  [edgeKey(STAGE.shaping, STAGE.ready)]: Object.freeze(['spec', 'reviewer-brief', 'tests-fail-first', 'design-approved', 'cycle-shape-recorded']),
+  [edgeKey(STAGE.inProgress, STAGE.review)]: Object.freeze(['frozen', 'manifest', 'card-contract', 'no-ids', 'docs-impact', 'boundary', 'secrets', 'ownership', 'card-gate', 'test-amendments', 'front-end-css', 'front-end-contrast', 'front-end-tools', 'living-via-delta', 'test-levels', 'evidence-cited', 'user-docs-updated', 'builder-done', 'stance-hardened']),
+  [edgeKey(STAGE.review, STAGE.gate)]: Object.freeze(['review-recorded', 'review-clear', 'verification-recorded', 'claim-checked']),
+  [edgeKey(STAGE.gate, STAGE.done)]: Object.freeze(['docs-impact', 'baselines', 'index-fresh', 'living-state', 'evidence-cited', 'efv-orphans', 'rule-has-test', 'actor-has-action', 'interface-has-contract-test', 'boundary-covered', 'atom-size', 'deliverable-cites', 'deliverable-fresh']),
 });
 
-const NEEDS_CHANGES = new Set(['user-docs-updated', 'stance-hardened', 'manifest', 'docs-impact', 'ownership', 'test-amendments', 'front-end-css', 'baselines', 'living-via-delta']);
+const NEEDS_CHANGES = new Set(['user-docs-updated', 'stance-hardened', 'manifest', 'docs-impact', 'ownership', 'test-amendments', 'front-end-css', 'baselines', 'living-via-delta', 'no-ids']);
 const NEEDS_LINES = new Set(['no-ids', 'secrets', 'front-end-css']);
 const NEEDS_COMMITS = new Set(['no-ids']);
 const NEEDS_HISTORY = new Set(['secrets']);
 const NEEDS_BASE = new Set([...NEEDS_CHANGES, ...NEEDS_LINES, ...NEEDS_COMMITS, ...NEEDS_HISTORY]);
 
 /** Rules reported as warnings: the gate lists them apart from findings and they never block a move. */
-export const WARNING_RULES = Object.freeze(new Set(['cycle-shape-legacy', 'scope-exception', 'ownership-exception', 'living-without-delta-warning', 'red-evidence-unparsed-output', MANIFEST_ADD_AT_BASE, RED_RECORDED_EARLIER, FROZEN_TEST_MISSING, ...DESIGN_WARNING_RULES]));
+export const WARNING_RULES = Object.freeze(new Set([BUILDER_NOT_SIGNALLED_WARNING, BUILDER_COMMIT_UNKNOWN_WARNING, 'cycle-shape-legacy', 'scope-exception', 'ownership-exception', 'living-without-delta-warning', 'delta-apply-pending', 'red-evidence-unparsed-output', MANIFEST_ADD_AT_BASE, RED_RECORDED_EARLIER, FROZEN_TEST_MISSING, ...DESIGN_WARNING_RULES]));
 
-export const TIER_DATA_FILE = '.process/tiers/rigor/tiers.json';
+export const TIER_DATA_FILE = `${PROCESS_TIERS}/tiers.json`;
 
 /** @type {Readonly<TierData>} */
 export const DEFAULT_TIER_DATA = Object.freeze({
@@ -161,7 +198,15 @@ export function selectChecks(from, to, tier, data = DEFAULT_TIER_DATA, concerns 
 }
 
 const finding = (rule, message) => ({ rule, message });
-const isPlainObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
+
+/** The checked-out branch, or null when HEAD is detached or unreadable. */
+function currentBranchName(cwd, run = runGit) {
+  try {
+    return run(cwd, ['symbolic-ref', '--short', '-q', 'HEAD']).trim() || null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Reads the installed rigor tier data. Never throws and never writes. Absent: the built-in default. Invalid: the
@@ -256,18 +301,18 @@ export function gateFindings(ctx, options = {}) {
   const at = (concern) => ctx.concerns?.[concern] ?? tier;
   if (!TIERS.includes(tier)) {
     return {
-      findings: [finding('gate-tier-unknown', `Tier "${tier}" is not one of ${TIERS.join(', ')}, so no gate checks can be chosen. Fix tier in .process/aperture.json.`)],
+      findings: [finding('gate-tier-unknown', `Tier "${tier}" is not one of ${TIERS.join(', ')}, so no gate checks can be chosen. Fix tier in ${CONFIG_PATH}.`)],
       skipped: [],
     };
   }
-  if (!Object.hasOwn(GATE_EDGES, `${from}>${to}`)) return { findings: [], skipped: [] };
+  if (!Object.hasOwn(GATE_EDGES, edgeKey(from, to))) return { findings: [], skipped: [] };
   const tierData = readTierData(projectDir);
   if (tierData.findings.length > 0) return { findings: tierData.findings, skipped: [] };
   const { data } = tierData;
   const selected = selectChecks(from, to, tier, data, ctx.concerns);
-  if (from === '00_backlog' && card.type !== 'bug') selected.run = selected.run.filter((id) => id !== 'tests-fail-first');
+  if (from === STAGE.backlog && card.type !== 'bug') selected.run = selected.run.filter((id) => id !== 'tests-fail-first');
   let verificationRequired = false;
-  if (from === '04_review' && to === '05_gate' && data.checks['verification-recorded'] !== null) {
+  if (from === STAGE.review && to === STAGE.gate && data.checks['verification-recorded'] !== null) {
     const location = cardPath(projectDir, card.id);
     const cycleName = location?.cycle;
     let selectedDepth = false;
@@ -292,8 +337,8 @@ export function gateFindings(ctx, options = {}) {
       selected.skipped = selected.skipped.filter(({ check }) => check !== 'verification-recorded');
     }
   }
-  const recheckLocalReview = from === '05_gate' && to === '06_done'
-    && selectChecks('04_review', '05_gate', tier, data, ctx.concerns).run.includes('review-recorded')
+  const recheckLocalReview = from === STAGE.gate && to === STAGE.done
+    && selectChecks(STAGE.review, STAGE.gate, tier, data, ctx.concerns).run.includes('review-recorded')
     && resolveProjectRoots(projectDir).mode === 'local';
   if (selected.run.length === 0) {
     return { findings: recheckLocalReview ? checkReviewRecorded({ projectDir, card }) : [], skipped: selected.skipped };
@@ -301,7 +346,7 @@ export function gateFindings(ctx, options = {}) {
 
   const config = /** @type {Record<string, unknown>} */ (readConfig(projectDir));
   if ('gate' in config && !isPlainObject(config.gate)) {
-    return { findings: [finding('gate-config-invalid', 'gate in .process/aperture.json must be an object (boundary, boundary_canary, front_end). Fix it there.')], skipped: [] };
+    return { findings: [finding('gate-config-invalid', `gate in ${CONFIG_PATH} must be an object (boundary, boundary_canary, front_end). Fix it there.`)], skipped: [] };
   }
   const settings = /** @type {Record<string, unknown>} */ (config.gate ?? {});
   let run = selected.run;
@@ -320,7 +365,7 @@ export function gateFindings(ctx, options = {}) {
     if (frontEnd === undefined) {
       for (const check of frontEndIds) skipped.push({ check, reason: 'gate.front_end is not configured' });
     } else {
-      findings.push(finding('front-end-config-invalid', 'gate.front_end in .process/aperture.json must be an object (token_files, tokens, contrast_pairs, motion_reset, tools, baselines). Fix it there; use {} for the defaults.'));
+      findings.push(finding('front-end-config-invalid', `gate.front_end in ${CONFIG_PATH} must be an object (token_files, tokens, contrast_pairs, motion_reset, tools, baselines). Fix it there; use {} for the defaults.`));
     }
   } else if (isPlainObject(frontEnd)) {
     const tools = /** @type {Record<string, unknown>} */ (frontEnd).tools;
@@ -330,11 +375,13 @@ export function gateFindings(ctx, options = {}) {
     if (baselinesUnset) skipped.push({ check: 'baselines', reason: 'gate.front_end.baselines is not configured' });
     run = run.filter((id) => !(id === 'front-end-tools' && toolsUnset) && !(id === 'baselines' && baselinesUnset));
   }
-  const cardGate = /** @type {{ gate: unknown, criteria: unknown }} */ (card);
+  const cardGate = /** @type {{ gate: unknown, gates?: unknown, criteria: unknown }} */ (card);
   const isBug = card.type === 'bug';
   /** What a bug card lacks for its failing test: a bug card is never skipped for it, the gap is a finding. */
   let bugMissing = null;
-  const needsGateCommand = ['tests-fail-first', 'card-gate'].filter((id) => run.includes(/** @type {GateCheckId} */ (id)) && cardGate.gate === null);
+  // Test-first is proved on the card's gate or its first selected gates entry (redProofArgv), so only a card with neither lacks a command.
+  const noProofCommand = cardGate.gate === null && redProofArgv(card) === null;
+  const needsGateCommand = ['tests-fail-first', 'card-gate'].filter((id) => run.includes(/** @type {GateCheckId} */ (id)) && noProofCommand);
   for (const id of needsGateCommand) {
     if (id === 'tests-fail-first' && isBug) bugMissing = 'gate command (set gate in card.json to the one narrow command that runs the failing regression test)';
     else skipped.push({ check: /** @type {GateCheckId} */ (id), reason: 'the card has no gate command' });
@@ -370,6 +417,8 @@ export function gateFindings(ctx, options = {}) {
   let commits;
   /** @type {any[] | undefined} */
   let history;
+  /** @type {string | null} */
+  let branch = null;
   /** @type {any[]} */
   let charters = [];
   /** @type {{ exempt: Set<string>, why: Map<string, string> }} */
@@ -393,6 +442,7 @@ export function gateFindings(ctx, options = {}) {
       if (changes !== undefined && (run.includes('manifest') || run.includes('ownership'))) indexChanges = generatedIndexChanges(projectDir, /** @type {any[]} */ (changes), diffBase, options.run);
       if (run.some((id) => NEEDS_LINES.has(id))) lines = addedLines(projectDir, diffBase, options.run);
       if (run.some((id) => NEEDS_COMMITS.has(id))) commits = commitsInRange(projectDir, diffBase, options.run);
+      if (run.includes('no-ids')) branch = currentBranchName(projectDir, options.run);
       if (run.some((id) => NEEDS_HISTORY.has(id))) history = commitAddedLines(projectDir, diffBase, options.run);
       if (run.includes('ownership')) {
         if (resolveProjectRoots(projectDir).mode === 'local') {
@@ -438,13 +488,13 @@ export function gateFindings(ctx, options = {}) {
         findings.push(...checkCardContract({ projectDir, card, tier: at('documentation') }));
         break;
       case 'test-levels':
-        findings.push(...checkTestLevels({ card, tier: at('test-depth'), tierData: data, cyclePlan: cyclePlanFor(projectDir, card, data) }).findings);
+        findings.push(...checkTestLevels({ card, tier: at('test-depth'), tierData: data, cyclePlan: cyclePlanFor(projectDir, card, data), projectDir }).findings);
         break;
       case 'no-ids':
-        findings.push(...checkNoIds({ addedLines: lines, commits }));
+        findings.push(...checkNoIds({ addedLines: lines, commits, changes, branch }));
         break;
       case 'docs-impact':
-        findings.push(...checkDocsImpact({ projectDir, card, changes: /** @type {any[]} */ (changes), allowDeferred: to !== '06_done' }));
+        findings.push(...checkDocsImpact({ projectDir, card, changes: /** @type {any[]} */ (changes), allowDeferred: to !== STAGE.done }));
         break;
       case 'boundary':
         findings.push(...checkBoundary({ projectDir, tier: at('code-hygiene'), gate: settings, run: options.runCommand, required: boundaryRequired }));
@@ -457,11 +507,11 @@ export function gateFindings(ctx, options = {}) {
         break;
       case 'tests-fail-first':
         if (bugMissing !== null) findings.push(finding('bug-no-failing-test', `A bug card needs a failing regression test before it is ready, and this card has no ${bugMissing}.`));
-        else findings.push(...checkRedEvidence({ projectDir, card, run: options.runCommand }));
+        else findings.push(...checkRedEvidence({ projectDir, card, run: options.runCommand, selectedLevels: selectedGateLevels(projectDir, card, data, at('test-depth')) }));
         findings.push(...checkRootCause({ projectDir, card }));
         break;
       case 'card-gate':
-        findings.push(...checkCardGate({ projectDir, card, expect: 'pass', run: options.runCommand }));
+        findings.push(...checkCardGate({ projectDir, card, expect: 'pass', run: options.runCommand, selectedLevels: selectedGateLevels(projectDir, card, data, at('test-depth')) }));
         break;
       case 'test-amendments':
         findings.push(...checkTestAmendments({ card, changes: /** @type {any[]} */ (changes) }));
@@ -478,6 +528,9 @@ export function gateFindings(ctx, options = {}) {
         break;
       case 'baselines':
         findings.push(...checkBaselines({ projectDir, card, changes: /** @type {any[]} */ (changes), settings: /** @type {Record<string, unknown>} */ (frontEnd) }));
+        break;
+      case 'builder-done':
+        findings.push(...checkBuilderDone({ projectDir, card, run: options.run, warn: TIERS.indexOf(at('review')) < TIERS.indexOf('product') }));
         break;
       case 'review-recorded':
         findings.push(...checkReviewRecorded({ projectDir, card }));
@@ -518,6 +571,11 @@ export function gateFindings(ctx, options = {}) {
   }
   if (recheckLocalReview) {
     findings.push(...checkReviewRecorded({ projectDir, card }));
+  }
+  if (from === STAGE.gate && to === STAGE.done) {
+    const cycleName = cardPath(projectDir, card.id)?.cycle;
+    const open = cycleName ? openDeltaCount(projectDir, cycleName) : 0;
+    if (open > 0) findings.push(finding('delta-apply-pending', applyReminder(cycleName, open)));
   }
   const warnings = findings.filter((f) => WARNING_RULES.has(f.rule));
   return { findings: findings.filter((f) => !WARNING_RULES.has(f.rule)), skipped, warnings };

@@ -1,21 +1,22 @@
+import { toLf, toPosix } from '../files.mjs';
 import { readFileSync } from 'node:fs';
 import { MODULE_NAME } from '../card.mjs';
 import { PathError } from '../files.mjs';
+import { ARCH_DIR, DECISIONS_DIR, MODULES_DIR, PROCESS_DIR } from '../layout.mjs';
 import { ProjectRootsError, resolveProjectPath, resolveProjectRoots } from '../project-roots.mjs';
 
 /** @typedef {import('../card.mjs').Card} Card */
 /** @typedef {import('../git.mjs').Change} Change */
 /** @typedef {import('../../scripts/validate.mjs').Finding} Finding */
 
-const OVERVIEW = 'docs/living/architecture/overview.md';
-const MODULES = 'docs/living/architecture/modules';
-const DECISIONS = 'docs/living/decisions/';
-const LAYER_MAP = 'docs/living/architecture/layers.json';
-const RULE_FILES = /^\.process\/profiles\/stance-[^/]+\/[^/]+\.cjs$/;
+const OVERVIEW = `${ARCH_DIR}/overview.md`;
+const DECISIONS = `${DECISIONS_DIR}/`;
+const LAYER_MAP = `${ARCH_DIR}/layers.json`;
+const RULE_FILES = new RegExp(`^${PROCESS_DIR.replaceAll('.', '\\.')}/profiles/stance-[^/]+/[^/]+\\.cjs$`);
 /** The header block every Module contract opens with, above its first heading. */
 export const CONTRACT_HEADER = Object.freeze(['Layers present', 'Public entry', 'Ports owned', 'Ports required', 'Used by']);
 
-const slashes = (path) => String(path).replaceAll('\\', '/');
+const slashes = (path) => toPosix(String(path));
 
 /** A document that exists but cannot be read; reported as a finding, never thrown out of the gate. */
 class UnreadableError extends Error {}
@@ -49,7 +50,7 @@ export function checkStanceHardened({ projectDir, card, changes }) {
     if (!(cause instanceof ProjectRootsError || cause instanceof PathError || cause instanceof UnreadableError)) throw cause;
     return [{ rule: 'stance-unverifiable', message: cause.message, path: OVERVIEW }];
   }
-  if (overview === null || !/^##\s+Stance\b/m.test(overview.replaceAll('\r\n', '\n'))) return [];
+  if (overview === null || !/^##\s+Stance\b/m.test(toLf(overview))) return [];
 
   /** @type {Finding[]} */
   const findings = [];
@@ -66,7 +67,7 @@ export function checkStanceHardened({ projectDir, card, changes }) {
 
   const blast = Array.isArray(card.blast_radius) ? [...new Set(card.blast_radius.filter((name) => typeof name === 'string' && MODULE_NAME.test(name)))] : [];
   for (const name of blast) {
-    const path = `${MODULES}/${name}.md`;
+    const path = `${MODULES_DIR}/${name}.md`;
     let text;
     try {
       text = readLogical(roots, path);
@@ -76,7 +77,7 @@ export function checkStanceHardened({ projectDir, card, changes }) {
       continue;
     }
     if (text === null) continue; // card-contract already reports a missing module document
-    const body = text.replaceAll('\r\n', '\n').replace(/^---\n[\s\S]*?\n---\n/, '');
+    const body = toLf(text).replace(/^---\n[\s\S]*?\n---\n/, '');
     const head = body.split(/^## /m)[0].toLowerCase();
     const missing = CONTRACT_HEADER.filter((field) => !head.includes(field.toLowerCase()));
     if (missing.length > 0) {

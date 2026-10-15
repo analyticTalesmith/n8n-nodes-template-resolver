@@ -1,11 +1,12 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { listCards } from './board.mjs';
+import { shortSha } from './git.mjs';
 import { userDocsOf } from './card.mjs';
 import { sectionBody } from './contract.mjs';
 import { CycleError, cycleEvidence, readCycle } from './cycle.mjs';
 import { readFrontmatter } from './frontmatter.mjs';
-import { CycleNameError, cyclePaths } from './layout.mjs';
+import { CycleNameError, STAGE, cyclePaths } from './layout.mjs';
 import { resolveProjectPath, resolveProjectRoots } from './project-roots.mjs';
 import { parseStateRows } from './verdicts.mjs';
 
@@ -16,7 +17,7 @@ export class RcPacketError extends Error {
   }
 }
 
-const DONE = '06_done';
+const DONE = STAGE.done;
 const PACKET = 'rc-packet.md';
 const NOT_RECORDS = new Set(['INDEX.md', 'close-review.md', PACKET]);
 const cell = (value) => String(value ?? '').replaceAll('|', '/').replace(/\s+/g, ' ').trim() || '-';
@@ -142,7 +143,7 @@ export function composeRcPacket(projectDir, name) {
     ...(records.length === 0
       ? ['No verification records in the cycle.']
       : table(['Record', 'Stream', 'Level or lens', 'Verdict', 'Result', 'Evidence tier', 'Ran against'], records.map((r) => [
-        r.id, r.data.stream, r.data.level || r.data.lens || '-', r.data.verdict, r.data.result, evidenceTier(r), text(r.data.ran_against).slice(0, 7),
+        r.id, r.data.stream, r.data.level || r.data.lens || '-', r.data.verdict, r.data.result, evidenceTier(r), shortSha(text(r.data.ran_against)),
       ]))),
     '',
     '## Checked ids',

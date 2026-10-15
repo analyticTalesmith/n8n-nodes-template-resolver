@@ -2,7 +2,10 @@ import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { CARD_FILES, WORK_ROOT } from '../card-files.mjs';
 import { fileAtCommit, runGit } from '../git.mjs';
+import { CONTEXT_MD, PROCESS_TEAMS } from '../layout.mjs';
 import { isFilingNoise, isOwnCycleBrief } from './manifest.mjs';
+import { isKebab } from '../names.mjs';
+import { toLf, toPosix } from '../files.mjs';
 
 /** @typedef {import('../card.mjs').Card} Card */
 /** @typedef {import('../git.mjs').Change} Change */
@@ -12,15 +15,14 @@ import { isFilingNoise, isOwnCycleBrief } from './manifest.mjs';
 /** @typedef {{ team: string, path: string, text: string }} Charter */
 
 /** Where teams install their charters; equal to the folder the add script installs teams to. */
-export const CHARTER_ROOT = '.process/teams';
+export const CHARTER_ROOT = PROCESS_TEAMS;
 export const SURFACES_HEADING = '## Write surfaces';
 
-const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const ENTRY = /^[A-Za-z0-9._-]+(\/[A-Za-z0-9._-]+)*\/?$/;
 const FENCE_OPEN = /^ {0,3}(`{3,}|~{3,})/;
 const FENCE_CLOSE = /^ {0,3}(`{3,}|~{3,})\s*$/;
 const ENTRY_CUT = 80;
-const slashes = (path) => String(path).replaceAll('\\', '/');
+const slashes = (path) => toPosix(String(path));
 /** Row-path comparison key: backslashes become slashes, leading ./ is stripped, and the result is always lowercase. */
 const rowKey = (path) => slashes(path).replace(/^(\.\/)+/, '').toLowerCase();
 
@@ -31,7 +33,7 @@ const rowKey = (path) => slashes(path).replace(/^(\.\/)+/, '').toLowerCase();
  * @returns {{ surfaces: string[], problem: null } | { surfaces: null, problem: string }}
  */
 export function parseWriteSurfaces(text) {
-  const lines = String(text).replaceAll('\r\n', '\n').split('\n');
+  const lines = toLf(String(text)).split('\n');
   const heading = lines.findIndex((line) => line.trimEnd() === SURFACES_HEADING);
   if (heading === -1) return { surfaces: null, problem: `it has no "${SURFACES_HEADING}" heading` };
   let open = -1;
@@ -83,7 +85,7 @@ export function readCharters(projectDir, commit, run = runGit, extraTeams = []) 
   }
   /** @type {Charter[]} */
   const charters = [];
-  for (const team of [...new Set([...names, ...extraTeams])].filter((name) => KEBAB.test(name)).sort()) {
+  for (const team of [...new Set([...names, ...extraTeams])].filter((name) => isKebab(name)).sort()) {
     const path = `${CHARTER_ROOT}/${team}/charter.md`;
     const text = fileAtCommit(projectDir, commit, path, run);
     if (text !== null) charters.push({ team, path, text });
@@ -197,7 +199,7 @@ export function checkOwnership({ card, charters, changes, exceptions = [], gener
       findings.push({
         rule: 'ownership-violation',
         path,
-        message: `${path} belongs to the ${item.team} team (its charter lists ${item.entry}), but this card's work is by ${actor}. Undo the change, or have the project lead log it under Scope exceptions in context.md.${generatedIndexNotes.has(path) ? ` Not accepted as a generated index change: ${generatedIndexNotes.get(path)}.` : ''}`,
+        message: `${path} belongs to the ${item.team} team (its charter lists ${item.entry}), but this card's work is by ${actor}. Undo the change, or have the project lead log it under Scope exceptions in ${CONTEXT_MD}.${generatedIndexNotes.has(path) ? ` Not accepted as a generated index change: ${generatedIndexNotes.get(path)}.` : ''}`,
       });
       continue;
     }

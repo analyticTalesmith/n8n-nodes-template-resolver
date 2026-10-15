@@ -2,6 +2,7 @@ import { realpathSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BoardError } from '../lib/board.mjs';
+import { WORK_DIR } from '../lib/layout.mjs';
 import { SlicePlanError, generateSlicePlan } from '../lib/slice-plan.mjs';
 
 export { SlicePlanError, generateSlicePlan };
@@ -15,7 +16,7 @@ const isMain = (() => {
 })();
 
 if (isMain) {
-  const USAGE = 'Usage: node slice-plan.mjs <projectDir> (<cycleName> | --parent <cardId>) [--force]  (writes docs/ephemeral/work/<slice>/slice-plan.md)';
+  const USAGE = `Usage: node slice-plan.mjs <projectDir> (<cycleName> | --parent <cardId>) [--force]  (writes ${WORK_DIR}/<slice>/slice-plan.md)`;
   const usage = (message) => {
     console.error(`${message} ${USAGE}`);
     process.exit(2);

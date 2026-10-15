@@ -8,6 +8,8 @@
  * scalar, and setFrontmatterField refuses it with a FrontmatterError.
  */
 
+import { isCommitId } from './git.mjs';
+
 const BOM = '﻿';
 const FENCE = /^---[ \t]*$/;
 const KEY_LINE = /^([A-Za-z0-9_-]+):[ \t]*(.*)$/;
@@ -189,7 +191,6 @@ export function setFrontmatterField(text, key, value) {
 /** The lifecycle states a project document can carry in its `state` key. */
 export const DOC_STATES = Object.freeze(['planned', 'built', 'validated']);
 export const PROVENANCE_RECOVERED = 'recovered';
-export const COMMIT_HASH = /^[0-9a-f]{40}(?:[0-9a-f]{24})?$/;
 
 /** Reads the recovered identity and commit without inferring either from the other. */
 export function readRecovered(data) {
@@ -233,7 +234,7 @@ export function checkDocFrontmatter(text, options = {}) {
   if (data.provenance !== undefined && data.provenance !== PROVENANCE_RECOVERED) {
     findings.push({ field: 'provenance', message: 'provenance must be recovered when present' });
   }
-  if (data.recovered_at !== undefined && data.recovered_at !== '' && (typeof data.recovered_at !== 'string' || !COMMIT_HASH.test(data.recovered_at))) {
+  if (data.recovered_at !== undefined && data.recovered_at !== '' && (typeof data.recovered_at !== 'string' || !isCommitId(data.recovered_at, { full: true }))) {
     findings.push({ field: 'recovered_at', message: 'recovered_at must be a full lowercase commit hash when present' });
   }
   return findings;

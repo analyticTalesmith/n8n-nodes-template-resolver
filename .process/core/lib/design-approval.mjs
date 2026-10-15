@@ -1,24 +1,29 @@
-import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { approverProblem, fileHash } from './approval.mjs';
 import { analyzeCycle } from './analyze.mjs';
-import { readCycle } from './cycle.mjs';
+import { CONFIG_PATH } from './config.mjs';
+import { CycleError, readCycle } from './cycle.mjs';
 import { readFrontmatter, setFrontmatterField } from './frontmatter.mjs';
+import { isSha256, sha256Bytes, sha256Text, toLf, toPosix } from './files.mjs';
 import { cyclePaths } from './layout.mjs';
 import { requiredAt } from './levels.mjs';
 import { resolveProjectPath, resolveProjectRoots } from './project-roots.mjs';
 import { readTierData } from './gate.mjs';
+import { GitError, runGit } from './git.mjs';
+import { cardPath } from './board.mjs';
+import { registerApprovedDesignPaths, registerDesignApprovalProblem } from './checks/reviewer-brief.mjs';
+import { isoDate } from './time.mjs';
 
 export const DESIGN_APPROVAL_FILE = 'design-approval.md';
-const HASH = /^[0-9a-f]{64}$/;
-const portablePath = (path) => typeof path === 'string' ? path.replaceAll('\\', '/').toLowerCase() : '';
+const portablePath = (path) => typeof path === 'string' ? toPosix(path).toLowerCase() : '';
 const DECISIONS = ['approved_by', 'approved_on', 'approves', 'cards', 'modules', 'max_iterations', 'max_spawns', 'max_cost', 'cost_unit', 'sweep_rounds'];
 
 export class DesignApprovalError extends Error {
-  constructor(message, cause) {
+  constructor(message, cause, diff) {
     super(message, cause === undefined ? undefined : { cause });
     this.name = 'DesignApprovalError';
     this.rule = 'design-approval-refused';
+    if (diff !== undefined) this.diff = diff;
   }
 }
 
@@ -47,8 +52,8 @@ function decode(parsed) {
   return {
     summary: data.summary ?? '', approved_by: data.approved_by ?? '', approved_on: data.approved_on ?? '',
     approves: list(data.approves).map((entry) => {
-      const match = /^([0-9a-f]{64}) (.+)$/.exec(entry);
-      return match ? { hash: match[1], path: match[2] } : { hash: null, path: entry };
+      const text = String(entry);
+      return isSha256(text.slice(0, 64)) && text[64] === ' ' && text.length > 65 ? { hash: text.slice(0, 64), path: text.slice(65) } : { hash: null, path: entry };
     }),
     cards: list(data.cards), modules: list(data.modules),
     max_iterations: integer(data.max_iterations), max_spawns: integer(data.max_spawns),
@@ -90,24 +95,102 @@ export function approvedCycleText(text) {
   return kept.join('');
 }
 
-/** The hash a signed approval holds for a path: the bytes of the file, except that a cycle brief is hashed as approvedCycleText. */
-function approvedHash(projectDir, path) {
-  const raw = fileHash(projectDir, path);
-  if (raw === 'missing' || !CYCLE_BRIEF_PATH.test(portablePath(path))) return raw;
-  const text = readFileSync(resolveProjectPath(resolveProjectRoots(projectDir), path), 'utf8');
-  return createHash('sha256').update(approvedCycleText(text)).digest('hex');
+/** An approves entry as its file and the heading it names, or null for the whole file. */
+export function splitApprovedPath(path) {
+  const at = path.indexOf('#');
+  return at < 0 ? [path, null] : [path.slice(0, at), path.slice(at + 1).replace(/[ 	]+#+$/, '')];
 }
+
+/** The unfenced headings of a text, one entry per line: its level and text with any closing hashes removed, or null for other lines. */
+function headingsOf(lines) {
+  let fence = null;
+  return lines.map((line) => {
+    const opener = /^ {0,3}(`{3,}|~{3,})/.exec(line);
+    if (fence !== null) {
+      if (opener && opener[1][0] === fence[0] && opener[1].length >= fence.length) fence = null;
+      return null;
+    }
+    if (opener) {
+      fence = opener[1];
+      return null;
+    }
+    const match = /^(#{1,6})[ \t]+(.+?)[ \t]*$/.exec(line.trimEnd());
+    return match ? { level: match[1].length, text: match[2].replace(/[ \t]+#+$/, '') } : null;
+  });
+}
+
+/** The 1-based line numbers of every unfenced heading with exactly this text, at any level. */
+export function headingLines(text, heading) {
+  return headingsOf(text.split(/(?<=\n)/)).flatMap((found, index) => found?.text === heading ? [index + 1] : []);
+}
+
+/**
+ * The section a heading names: its heading line and everything up to the next heading of the same or a higher level.
+ * Null when no heading has that text, and also when more than one has, since the section would then be ambiguous.
+ * @param {string} text
+ * @param {string} heading
+ * @returns {string | null}
+ */
+export function sectionText(text, heading) {
+  const lines = text.split(/(?<=\n)/);
+  const headings = headingsOf(lines);
+  const starts = headings.flatMap((found, index) => found?.text === heading ? [index] : []);
+  if (starts.length !== 1) return null;
+  const [start] = starts;
+  const level = headings[start].level;
+  let end = start + 1;
+  while (end < lines.length && !((headings[end]?.level ?? 7) <= level)) end += 1;
+  return lines.slice(start, end).join('');
+}
+
+/** The text of a file that a signed approval holds a hash of: the named section, or a cycle brief as approvedCycleText. Null when the section is missing. */
+export function approvedBody(path, text) {
+  const heading = splitApprovedPath(path)[1];
+  if (heading !== null) return sectionText(text, heading);
+  return CYCLE_BRIEF_PATH.test(portablePath(path)) ? approvedCycleText(text) : text;
+}
+
+/** The hash of a text's exact bytes, which earlier approvals were signed with. */
+const sha256 = (text) => sha256Bytes(Buffer.from(text, 'utf8'));
+/** The hash newly signed for a text: over its text with line endings as LF, so a checkout that changes them does not stale an approval. */
+const textHash = sha256Text;
+/** Both hashes a text may be recorded under: the normalised one, and the one over its exact bytes that earlier approvals were signed with. */
+const textHashes = (text) => [textHash(text), sha256(text)];
+
+/**
+ * The hash a signed approval holds for a path, and every hash that still counts as unchanged. A whole file records its exact
+ * bytes and a cycle brief its approved text as it is; a named section records its text with line endings as LF. `accepted`
+ * also holds the exact and LF-normalised hashes of the text, so an approval stays fresh when only line endings differ.
+ */
+function approvedHashes(projectDir, path) {
+  const [file] = splitApprovedPath(path);
+  const raw = fileHash(projectDir, file);
+  if (raw === 'missing') return { current: raw, accepted: [raw] };
+  const text = readFileSync(resolveProjectPath(resolveProjectRoots(projectDir), file), 'utf8');
+  const heading = splitApprovedPath(path)[1];
+  if (heading !== null && headingLines(text, heading).length > 1) return { current: 'ambiguous', accepted: ['ambiguous'] };
+  const body = approvedBody(path, text);
+  if (body === null) return { current: 'missing', accepted: ['missing'] };
+  const section = splitApprovedPath(path)[1] !== null;
+  const whole = !section && !CYCLE_BRIEF_PATH.test(portablePath(path));
+  const current = whole ? raw : section ? textHash(body) : sha256(body);
+  return { current, accepted: [...new Set([current, ...textHashes(body), ...(whole ? [raw] : [])])] };
+}
+
+const approvedHash = (projectDir, path) => approvedHashes(projectDir, path).current;
 
 function decisionHash(data, body, cycle) {
   const decision = Object.fromEntries(DECISIONS.map((key) => [key, data[key] ?? null]));
-  return createHash('sha256').update(JSON.stringify({ decision, body, cycle: {
+  return sha256Text(JSON.stringify({ decision, body, cycle: {
     tier: cycle.tier, approvals: cycle.approvals,
     verification_levels: cycle.verification_levels, review_sweeps: cycle.review_sweeps,
-  } })).digest('hex');
+  } }));
 }
 
 function validPath(path) {
-  return typeof path === 'string' && path.startsWith('docs/') && path !== 'docs/' && !path.includes('#');
+  if (typeof path !== 'string') return false;
+  const [file, heading] = splitApprovedPath(path);
+  return file.startsWith('docs/') && file !== 'docs/' && !file.includes('#') && (heading === null || heading.trim() !== '');
 }
 
 /** Selected verification records that cite an approved local document must attest its current bytes. */
@@ -120,7 +203,7 @@ function localReviewProblems(projectDir, cycle, approved) {
   const lenses = new Set([...cycle.review_sweeps, ...requiredAt(tier.data.sweeps, cycle.tier)]);
   if (!levels.size && !lenses.size) return [];
   const folder = resolveProjectPath(roots, cyclePaths(cycle.name).verification);
-  const approvedPaths = new Map(approved.map(({ path }) => [portablePath(path), path]));
+  const approvedPaths = new Map(approved.map(({ path }) => [portablePath(splitApprovedPath(path)[0]), splitApprovedPath(path)[0]]));
   const problems = [];
   for (const entry of readdirSync(folder, { withFileTypes: true })) {
     if (!entry.isFile() || !entry.name.endsWith('.md') || ['close-review.md', 'INDEX.md'].includes(entry.name)) continue;
@@ -139,7 +222,7 @@ function localReviewProblems(projectDir, cycle, approved) {
       const recorded = entries.filter((item) => typeof item === 'string' && portablePath(item.slice(0, item.indexOf('='))) === portablePath(path));
       const hash = recorded.length === 1 ? recorded[0].slice(recorded[0].indexOf('=') + 1) : null;
       const current = fileHash(projectDir, path);
-      if (!HASH.test(hash ?? '') || hash !== current) problems.push(`${record}: ${path} has no current local_docs_sha256 attestation`);
+      if (!isSha256(hash) || hash !== current) problems.push(`${record}: ${path} has no current local_docs_sha256 attestation`);
     }
   }
   return problems;
@@ -153,24 +236,175 @@ export function designApprovalState(projectDir, cycle) {
   if (!approval.approval_hash || !approval.approved_by || !approval.approved_on) return { state: 'unapproved', stale: [] };
   const stale = [];
   const approver = approverProblem(projectDir, approval.approved_by);
-  if (approver) stale.push(`.process/aperture.json (approved_by: ${approver})`);
+  if (approver) stale.push(`${CONFIG_PATH} (approved_by: ${approver})`);
   const cycleData = readCycle(projectDir, cycle);
   if (decisionHash(parsed.data, parsed.body, cycleData) !== approval.approval_hash) {
     // Distinguish cycle policy drift from edits to the approval where possible.
-    const currentPolicy = approvedHash(projectDir, cyclePaths(cycle).brief);
+    const policy = approvedHashes(projectDir, cyclePaths(cycle).brief);
     const brief = approval.approves.find((item) => item.path === cyclePaths(cycle).brief);
-    stale.push(brief && brief.hash !== currentPolicy ? 'CYCLE.md' : DESIGN_APPROVAL_FILE);
+    stale.push(brief && !policy.accepted.includes(brief.hash) ? 'CYCLE.md' : DESIGN_APPROVAL_FILE);
   }
   for (const item of approval.approves) {
-    if (!validPath(item.path) || !HASH.test(item.hash ?? '')) {
+    if (!validPath(item.path) || !isSha256(item.hash)) {
       stale.push(`${item.path || 'approved path'} (invalid)`);
       continue;
     }
-    const current = approvedHash(projectDir, item.path);
-    if (current !== item.hash) stale.push(`${item.path} (${current === 'missing' ? 'missing' : 'changed'})`);
+    const { current, accepted } = approvedHashes(projectDir, item.path);
+    if (!accepted.includes(item.hash)) stale.push(`${item.path} (${current === 'missing' ? 'missing' : current === 'ambiguous' ? `ambiguous: the heading "${splitApprovedPath(item.path)[1]}" appears more than once` : 'changed'})`);
   }
   stale.push(...localReviewProblems(projectDir, cycleData, approval.approves));
   return { state: stale.length ? 'stale' : 'fresh', stale: [...new Set(stale)] };
+}
+
+/**
+ * The documents a fresh signed approval covers, keyed by portable file path: who signed, when, and the sections named
+ * (null for the whole file). Empty when the cycle has no fresh signed approval.
+ * @param {string} projectDir
+ * @param {string} cycle
+ * `covered(text)` is the part of a file's text the approval signed, or null when a named section is not in it.
+ * @returns {Map<string, { by: string, on: string, path: string, headings: Array<string | null>, covered: (text: string) => string | null }>}
+ */
+export function approvedDesignDocs(projectDir, cycle) {
+  const docs = new Map();
+  try {
+    if (designApprovalState(projectDir, cycle).state !== 'fresh') return docs;
+  } catch {
+    return docs;
+  }
+  const { approved_by: by, approved_on: on, approves } = readDesignApproval(projectDir, cycle);
+  for (const { path } of approves) {
+    const [file, heading] = splitApprovedPath(path);
+    const key = portablePath(file);
+    const doc = docs.get(key) ?? { by, on, path: file, headings: [], covered: (text) => coveredText(doc.path, doc.headings, text) };
+    doc.headings.push(heading);
+    docs.set(key, doc);
+  }
+  return docs;
+}
+
+/**
+ * Why the cycle's approval state cannot be read, or null when it can (fresh, stale or unapproved alike).
+ * @param {string} projectDir
+ * @param {string} cycle
+ * @returns {string | null}
+ */
+export function designApprovalProblem(projectDir, cycle) {
+  try {
+    designApprovalState(projectDir, cycle);
+    return null;
+  } catch (cause) {
+    return plainCause(cause);
+  }
+}
+
+/** An already-worded error keeps its message; any other failure gets a plain word, with no path, errno text or stack. */
+function plainCause(cause) {
+  if (cause instanceof CycleError || cause instanceof DesignApprovalError) return cause.message;
+  if (cause?.code === 'ENOENT') return `${DESIGN_APPROVAL_FILE} is missing.`;
+  if (typeof cause?.code === 'string') return `${DESIGN_APPROVAL_FILE} is unreadable.`;
+  return `${DESIGN_APPROVAL_FILE} is malformed.`;
+}
+
+function coveredText(path, headings, text) {
+  const parts = headings.map((heading) => approvedBody(heading === null ? path : `${path}#${heading}`, text));
+  return parts.includes(null) ? null : parts.join('\n');
+}
+
+/**
+ * The portable, lower-cased files of the fresh signed design approval of the cycle a card belongs to; empty when it has
+ * no cycle or no such approval.
+ * @param {string} projectDir
+ * @param {string} id
+ * @returns {Set<string>}
+ */
+export function approvedDesignPaths(projectDir, id) {
+  const cycle = cardPath(projectDir, id)?.cycle ?? null;
+  return new Set(cycle === null ? [] : approvedDesignDocs(projectDir, cycle).keys());
+}
+
+/**
+ * Why the approval state of the cycle a card belongs to cannot be read, or null when it can or the card has no cycle.
+ * The one place that turns an approval-state failure into the cause every refusal of a design context path names.
+ * @param {string} projectDir
+ * @param {string} id
+ * @returns {string | null}
+ */
+export function designApprovalProblemOfCard(projectDir, id) {
+  const cycle = cardPath(projectDir, id)?.cycle ?? null;
+  return cycle === null ? null : designApprovalProblem(projectDir, cycle);
+}
+
+registerApprovedDesignPaths(approvedDesignPaths);
+registerDesignApprovalProblem(designApprovalProblemOfCard);
+
+const CONTEXT_LINES = 3;
+
+/** A unified diff of two texts, empty when they match. */
+function unifiedDiff(from, to, fromLabel, toLabel) {
+  const lines = (text) => toLf(text).replace(/\n$/, '').split('\n');
+  const a = lines(from);
+  const b = lines(to);
+  let head = 0;
+  while (head < a.length && head < b.length && a[head] === b[head]) head += 1;
+  let tail = 0;
+  while (tail < a.length - head && tail < b.length - head && a[a.length - 1 - tail] === b[b.length - 1 - tail]) tail += 1;
+  const am = a.slice(head, a.length - tail);
+  const bm = b.slice(head, b.length - tail);
+  const table = Array.from({ length: am.length + 1 }, () => new Uint32Array(bm.length + 1));
+  for (let i = am.length - 1; i >= 0; i -= 1) {
+    for (let j = bm.length - 1; j >= 0; j -= 1) table[i][j] = am[i] === bm[j] ? table[i + 1][j + 1] + 1 : Math.max(table[i + 1][j], table[i][j + 1]);
+  }
+  const ops = a.slice(0, head).map((line) => [' ', line]);
+  let i = 0;
+  let j = 0;
+  while (i < am.length || j < bm.length) {
+    if (i < am.length && j < bm.length && am[i] === bm[j]) {
+      ops.push([' ', am[i]]);
+      i += 1;
+      j += 1;
+    } else if (j < bm.length && (i === am.length || table[i][j + 1] >= table[i + 1][j])) ops.push(['+', bm[j++]]);
+    else ops.push(['-', am[i++]]);
+  }
+  ops.push(...a.slice(a.length - tail).map((line) => [' ', line]));
+  const changed = ops.flatMap(([kind], index) => (kind === ' ' ? [] : [index]));
+  const hunks = [];
+  for (const index of changed) {
+    const last = hunks.at(-1);
+    if (last && index - last.end <= 2 * CONTEXT_LINES + 1) last.end = index;
+    else hunks.push({ start: index, end: index });
+  }
+  const body = hunks.map(({ start, end }) => {
+    const first = Math.max(0, start - CONTEXT_LINES);
+    const slice = ops.slice(first, Math.min(ops.length, end + CONTEXT_LINES + 1));
+    const before = ops.slice(0, first);
+    const count = (list, skip) => list.filter(([kind]) => kind !== skip).length;
+    return [`@@ -${count(before, '+') + 1},${count(slice, '+')} +${count(before, '-') + 1},${count(slice, '-')} @@`, ...slice.map(([kind, line]) => `${kind}${line}`)].join('\n');
+  });
+  return body.length ? [`--- ${fromLabel}`, `+++ ${toLabel}`, ...body].join('\n') : '';
+}
+
+/** The text an approves entry had when it was signed, found in the git history of its file by the hash recorded then; null when no commit holds it. */
+function earlierBody(projectDir, path, hash) {
+  const [file] = splitApprovedPath(path);
+  try {
+    for (const commit of runGit(projectDir, ['log', '--format=%H', '--', file]).split('\n').filter(Boolean)) {
+      const body = approvedBody(path, runGit(projectDir, ['show', `${commit}:./${file}`]));
+      if (body !== null && textHashes(body).includes(hash)) return body;
+    }
+  } catch (cause) {
+    if (!(cause instanceof GitError)) throw cause;
+  }
+  return null;
+}
+
+/** What changed in one approved document or section since it was signed: a unified diff, or the two hashes when the old text is gone. */
+function changeDiff(projectDir, { hash, path }, current) {
+  const earlier = earlierBody(projectDir, path, hash);
+  if (earlier === null) return `${path}: no earlier text found for the approved hash ${hash}; it now hashes to ${current}.`;
+  const [file] = splitApprovedPath(path);
+  const now = approvedBody(path, readFileSync(resolveProjectPath(resolveProjectRoots(projectDir), file), 'utf8'));
+  return unifiedDiff(earlier, now, `${path} (approved)`, `${path} (now)`)
+    || `${path}: only whitespace, line endings or the final newline changed since it was approved; the approved hash ${hash} is now ${textHash(now)}.`;
 }
 
 function replaceList(text, key, entries) {
@@ -189,7 +423,7 @@ function replaceList(text, key, entries) {
 }
 
 /** The explicit human step. It changes only the approval document. */
-export function approveDesign(projectDir, cycle, { by, now = () => new Date() }) {
+export function approveDesign(projectDir, cycle, { by, now = () => new Date(), acceptChanges = false }) {
   const selected = readCycle(projectDir, cycle);
   if (selected.approvals !== 'front') throw new DesignApprovalError(`Cycle ${cycle} uses approvals ${selected.approvals}; design approval requires front placement.`);
   const problem = approverProblem(projectDir, by);
@@ -219,22 +453,37 @@ export function approveDesign(projectDir, cycle, { by, now = () => new Date() })
   if (findings.length) throw new DesignApprovalError(`Analyze ${cycle} reports: ${findings.map((finding) => `${finding.rule}: ${finding.message}`).join('; ')}. Resolve these before approval.`);
   const seen = new Set();
   const approved = approval.approves.map(({ path }) => {
-    const portable = typeof path === 'string' ? path.replaceAll('\\', '/').toLowerCase() : '';
+    const portable = typeof path === 'string' ? toPosix(path).toLowerCase() : '';
     if (!validPath(path) || seen.has(portable)) throw new DesignApprovalError(`Approved path ${String(path)} must be a unique logical docs/... file.`);
     seen.add(portable);
-    let hash;
-    try { hash = approvedHash(projectDir, path); }
+    let hashes;
+    try { hashes = approvedHashes(projectDir, path); }
     catch (cause) { throw new DesignApprovalError(`Cannot approve ${path}: ${cause.message}`, cause); }
-    if (hash === 'missing') throw new DesignApprovalError(`Approved document ${path} is missing. Restore it before approval.`);
-    return { hash, path };
+    if (hashes.current === 'ambiguous') {
+      const [file, heading] = splitApprovedPath(path);
+      const lines = headingLines(readFileSync(resolveProjectPath(resolveProjectRoots(projectDir), file), 'utf8'), heading);
+      throw new DesignApprovalError(`Approved section ${path} is ambiguous: the heading "${heading}" appears on lines ${lines.join(' and ')}. Make it unique before approval.`);
+    }
+    if (hashes.current === 'missing') throw new DesignApprovalError(`Approved ${splitApprovedPath(path)[1] === null ? 'document' : 'section (heading)'} ${path} is missing. Restore it before approval.`);
+    return { hash: hashes.current, path, accepted: hashes.accepted };
   });
+  if (approval.approval_hash && !acceptChanges) {
+    const diffs = approval.approves
+      .map((item, index) => ({ item, current: approved[index].hash, accepted: approved[index].accepted }))
+      .filter(({ item, accepted }) => isSha256(item.hash) && !accepted.includes(item.hash))
+      .map(({ item, current }) => changeDiff(projectDir, item, current));
+    if (diffs.length) {
+      const diff = diffs.join('\n\n');
+      throw new DesignApprovalError(`Approved text changed since the last approval:\n\n${diff}\n\nRun again with --accept-changes to sign these changes.`, undefined, diff);
+    }
+  }
   const reviewProblems = localReviewProblems(projectDir, selected, approved);
   if (reviewProblems.length) throw new DesignApprovalError(`Local document review attestation is stale or missing: ${reviewProblems.join('; ')}. Update the selected verification record before approval.`);
   const date = typeof now === 'function' ? now() : now;
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) throw new DesignApprovalError('The approval date must be a valid date.');
   let next = replaceList(parsed.text, 'approves', approved.map(({ hash, path }) => `${hash} ${path}`));
   next = setFrontmatterField(next, 'approved_by', by.trim());
-  next = setFrontmatterField(next, 'approved_on', date.toISOString().slice(0, 10));
+  next = setFrontmatterField(next, 'approved_on', isoDate(date));
   const data = readFrontmatter(next);
   const signed = decode({ data });
   const body = next.slice(next.indexOf('\n---', 4) + 4);

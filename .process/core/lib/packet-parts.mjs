@@ -1,13 +1,14 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { CARD_FILES, cardFile, isProcessPath } from './card-files.mjs';
-import { fileAtCommit } from './git.mjs';
+import { fileAtCommit, shortSha } from './git.mjs';
 import { readContractFile } from './contract.mjs';
 import { BACKLOG_DIR, COLUMNS, cycleColumn } from './layout.mjs';
-import { designContextPaths, designContextProblem } from './checks/reviewer-brief.mjs';
+import { designContextPaths, designContextProblem, generateBrief } from './checks/reviewer-brief.mjs';
 import { checkSecrets } from './checks/secrets.mjs';
 import { isTestPath } from './checks/test-amendments.mjs';
 import { resolveProjectPath } from './project-roots.mjs';
+import { toLf, toPosix } from './files.mjs';
 
 /**
  * The parts a review packet and an evaluator package have in common: the brief text, the design context, the frozen
@@ -20,7 +21,7 @@ import { resolveProjectPath } from './project-roots.mjs';
 export const PACKET_MAX_BYTES = 409600;
 
 export { designContextPaths };
-export const lf = (text) => String(text).replaceAll('\r\n', '\n');
+export const lf = (text) => toLf(String(text));
 
 /** A fence one backtick longer than the longest run inside the text (three at least). */
 export function fenced(text, language = '') {
@@ -30,7 +31,7 @@ export function fenced(text, language = '') {
 }
 
 /**
- * The reviewer brief of a card read with LF line ends, or '' when it does not exist. The packet and its staleness
+ * The reviewer brief of a card read with LF line ends; a card of a one-card feature with no brief written gets the one generated from the card, any other card '' when it does not exist. The packet and its staleness
  * check both hash this text.
  * @param {string} projectDir
  * @param {string} id
@@ -40,7 +41,7 @@ export function readBriefText(projectDir, id) {
   try {
     return lf(readFileSync(cardFile(projectDir, id, CARD_FILES.reviewerBrief), 'utf8'));
   } catch (cause) {
-    if (cause.code === 'ENOENT') return '';
+    if (cause.code === 'ENOENT') return generateBrief(projectDir, id) ?? '';
     throw new Error(`Cannot read the reviewer brief of ${id} (${cause.message}). Repair or replace it.`, { cause });
   }
 }
@@ -48,28 +49,43 @@ export function readBriefText(projectDir, id) {
 /**
  * The files the brief lists under Design context, read as committed at the base (or from the local store). A path that
  * is forbidden or not readable is a problem, never a throw.
- * @param {{ projectDir: string, roots: { mode: string }, briefText: string, baseSha: string, run: import('./git.mjs').GitRunner }} input
- * @returns {{ contexts: Array<{ path: string, text: string }>, problems: Finding[] }}
+ * A docs/ephemeral/ path is allowed only when the cycle's fresh signed design approval lists it; it comes back as the text
+ * the approval hashed (only the named sections), with who signed it and when.
+ * `docs` is the cycle's approvedDesignDocs and `unreadable` its designApprovalProblem; the caller passes them, since design-approval.mjs cannot be imported here.
+ * @param {{ projectDir: string, roots: { mode: string }, briefText: string, baseSha: string, run: import('./git.mjs').GitRunner, unreadable?: string | null, docs?: Map<string, { by: string, on: string, covered: (text: string) => string | null }> }} input
+ * @returns {{ contexts: Array<{ path: string, text: string, approved?: { by: string, on: string } }>, problems: Finding[] }}
  */
-export function readDesignContexts({ projectDir, roots, briefText, baseSha, run }) {
-  const shortBase = baseSha.slice(0, 7);
+export function readDesignContexts({ projectDir, roots, briefText, baseSha, run, docs = new Map(), unreadable = null }) {
+  const shortBase = shortSha(baseSha);
+  const approvedPaths = new Set(docs.keys());
   /** @type {Finding[]} */
   const problems = [];
-  /** @type {Array<{ path: string, text: string }>} */
+  /** @type {Array<{ path: string, text: string, approved?: { by: string, on: string } }>} */
   const contexts = [];
   for (const raw of designContextPaths(briefText)) {
-    const forbidden = designContextProblem(raw);
+    const forbidden = designContextProblem(raw, approvedPaths, unreadable);
     if (forbidden) {
       problems.push({ ...forbidden, rule: 'packet-context-forbidden' });
       continue;
     }
-    const path = raw.replaceAll('\\', '/').replace(/^(\.\/)+/, '');
+    const path = toPosix(raw, { stripDotSlash: true });
     const local = roots.mode === 'local' && path.startsWith('docs/');
     const text = local ? (existsSync(resolveProjectPath(/** @type {any} */ (roots), path)) ? readFileSync(resolveProjectPath(/** @type {any} */ (roots), path), 'utf8') : null) : fileAtCommit(projectDir, baseSha, path, run);
     if (text === null) {
       const where = roots.mode === 'local' ? ' Restore the local document store or fix the path.' : existsSync(join(resolve(projectDir), path)) ? ` It exists only in the working tree; commit it before the move to in progress.` : '';
       problems.push({ rule: 'packet-context-missing', message: `Design context path ${raw} is not a file ${local ? 'in the local store' : `at the base commit ${shortBase}`}.${where} Fix the path in the reviewer brief's Design context list.`, path: raw });
-    } else contexts.push({ path, text });
+      continue;
+    }
+    const doc = isProcessPath(path) ? docs.get(path.toLowerCase()) : undefined;
+    if (doc === undefined) {
+      contexts.push({ path, text });
+      continue;
+    }
+    const signed = doc.covered(text);
+    const live = doc.covered(readFileSync(resolveProjectPath(/** @type {any} */ (roots), path), 'utf8'));
+    if (signed === null || lf(signed) !== lf(live ?? '')) {
+      problems.push({ rule: 'packet-context-forbidden', message: `Design context path ${raw} at the base commit ${shortBase} is not the text its design approval signed. Commit the approved design before the move to in progress.`, path: raw });
+    } else contexts.push({ path, text: signed, approved: { by: doc.by, on: doc.on } });
   }
   return { contexts, problems };
 }
@@ -98,29 +114,30 @@ export function frozenTestPaths(card) {
   const traces = (card.criteria ?? []).flatMap((criterion) => (Array.isArray(criterion?.traces) ? criterion.traces : []).map((trace) => (typeof trace === 'string' ? trace.split('#')[0] : trace)));
   const kept = [...gate, ...traces]
     .filter((entry) => typeof entry === 'string')
-    .map((entry) => entry.replaceAll('\\', '/').replace(/^(\.\/)+/, ''))
+    .map((entry) => toPosix(entry, { stripDotSlash: true }))
     .filter((path) => isPlainRelativePath(path) && !GLOB_CHARACTERS.test(path) && !isProcessPath(path) && isTestPath(path));
   return [...new Set(kept)];
 }
 
 /**
- * The frozen tests section: each test file the card names, as committed at the base commit (never the working tree),
+ * The frozen tests section: each test file the card names, as committed at the commit given (the head the packet reads the contract at, never the working tree),
  * within one cap for the whole section. `text` is null when the card names no test file.
  * @param {string} projectDir
  * @param {unknown} card
- * @param {string} baseSha
+ * @param {string} readSha the commit to read the files at
  * @param {import('./git.mjs').GitRunner} run
  * @param {string} [wording] the sentence that tells the reader how to use the tests
+ * @param {string} [diffBase] the commit the diff starts at; the intro names both when it differs from readSha
  * @returns {{ text: string | null, shown: string[], truncated: string[], missing: string[], notShown: string[] }}
  */
-export function frozenTestsSection(projectDir, card, baseSha, run, wording = 'Judge the diff against them; a change to one of them in section 4 is a deviation from the plan, so report it.') {
+export function frozenTestsSection(projectDir, card, readSha, run, wording = 'Judge the diff against them; a change to one of them in section 4 is a deviation from the plan, so report it.', diffBase = readSha) {
   const result = { text: null, shown: [], truncated: [], missing: [], notShown: [] };
   const named = frozenTestPaths(/** @type {any} */ (card));
   if (named.length === 0) return result;
   let room = FROZEN_TESTS_MAX_BYTES;
   const files = [];
   for (const path of named) {
-    const content = fileAtCommit(projectDir, baseSha, path, run);
+    const content = fileAtCommit(projectDir, readSha, path, run);
     if (content === null) {
       result.missing.push(path);
       continue;
@@ -147,9 +164,11 @@ export function frozenTestsSection(projectDir, card, baseSha, run, wording = 'Ju
   const names = (paths) => paths.map((path) => `\`${path}\``).join(', ');
   result.text = [
     '## Frozen tests (read-only)',
-    `These test files were committed before the work began, at base ${baseSha.slice(0, 7)}. They are part of the plan, not the builder's reasoning. ${wording}`,
+    readSha === diffBase
+      ? `These test files were committed before the work began, at base ${shortSha(readSha)}. They are part of the plan, not the builder's reasoning. ${wording}`
+      : `These test files are shown as committed at ${shortSha(readSha)}, the commit the contract is read at; the diff starts at base ${shortSha(diffBase)}, so a file added or changed since then is in the diff too. They are part of the plan, not the builder's reasoning. ${wording}`,
     ...files,
-    ...(result.missing.length ? [`Named by the card but not at the base commit (the implementer's own tests, never frozen): ${names(result.missing)}.`] : []),
+    ...(result.missing.length ? [`Named by the card but not at the ${readSha === diffBase ? 'base commit' : `commit read (${shortSha(readSha)})`} (the implementer's own tests, never frozen): ${names(result.missing)}.`] : []),
     ...(result.notShown.length ? [`Not shown, section cap reached: ${names(result.notShown)}.`] : []),
   ].join('\n\n');
   return result;
@@ -206,7 +225,7 @@ export function secretFindings(sections, { file, noun, sources }) {
 const baseFolders = (cycle, id) => (cycle === null ? [`${BACKLOG_DIR}/${id}`] : COLUMNS.map((column) => `${cycleColumn(cycle, column)}/${id}`));
 
 /**
- * The text of a contract file (card.md) as it stood at the base commit, so the builder cannot change the contract the
+ * The text of a contract file (card.md) as it stood at the commit given (the head the packet reads at; the base when git names no head), so the builder cannot change the contract the
  * evaluator judges against; the card folder may have sat in any column of its cycle then. In a local document store the
  * working copy is the only copy. Null when there is none.
  * @param {{ projectDir: string, roots: { mode: string }, id: string, cycle: string | null, name: string, baseSha: string, run: import('./git.mjs').GitRunner }} input

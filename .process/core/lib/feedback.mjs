@@ -5,13 +5,13 @@ import { BoardError, slugify } from './board.mjs';
 import { checkSecrets } from './checks/secrets.mjs';
 import { readCycle } from './cycle.mjs';
 import { FrontmatterError, readFrontmatter, setFrontmatterField } from './frontmatter.mjs';
-import { BACKLOG_DIR, CYCLES_DIR, INBOX_DIR, cyclePaths, isCycleName } from './layout.mjs';
+import { BACKLOG_DIR, CYCLES_DIR, FEEDBACK_DIR, INBOX_DIR, PROPOSALS_DIR, SESSIONS_DIR, cyclePaths, isCycleName } from './layout.mjs';
 import { resolveProjectPath, resolveProjectRoots, resolveRawSessionPath } from './project-roots.mjs';
+import { isPlainObject } from './types.mjs';
+import { toLf } from './files.mjs';
 
 const TEMPLATE = join(dirname(fileURLToPath(import.meta.url)), '..', 'templates', 'feedback.md');
 const SUMMARY_MAX = 160;
-const FEEDBACK_DIR = 'docs/ephemeral/feedback';
-const PROPOSALS_DIR = 'docs/ephemeral/proposals';
 const DIGEST_SUFFIX = '.digest.json';
 const DIGEST_KEYS = ['items', 'questions'];
 const ITEM_KEYS = ['summary', 'stream', 'level', 'source', 'quote', 'body', 'affects', 'severity', 'priority'];
@@ -26,7 +26,7 @@ const ROUTE_FOLDER = { replan: CYCLES_DIR, ticket: BACKLOG_DIR, proposal: PROPOS
 
 export const STATUSES = Object.freeze(['new', 'triaged', 'replanned', 'ticketed', 'proposed', 'dropped']);
 export const ROUTES = Object.freeze(Object.keys(ROUTE_STATUS));
-export const SESSIONS_DIR = `${FEEDBACK_DIR}/sessions`;
+export { SESSIONS_DIR };
 export const BATCH_MAX = 200;
 
 /** Physical folders for a raw session and its durable digest. Does not create either folder. */
@@ -101,12 +101,12 @@ function slugOf(summary, at) {
  * first, so the heading found is always the form's own and never one inside text already filled in below it.
  */
 const fill = (text, heading, content) => text.replace(`## ${heading}\n\n`, () => `## ${heading}\n\n${content}\n\n`);
-const lf = (value) => value.replaceAll('\r\n', '\n').trimEnd();
+const lf = (value) => toLf(value).trimEnd();
 
 /** The feedback form filled in, with status new. Fields must already be valid. */
 function render({ summary, stream, level, source, body, session, quote, affects, severity, priority }) {
   // Sections first, while nothing above them but the bare form; the title and frontmatter cannot then match a heading.
-  let text = readFileSync(TEMPLATE, 'utf8').replaceAll('\r\n', '\n');
+  let text = toLf(readFileSync(TEMPLATE, 'utf8'));
   if (affects !== undefined && affects.length > 0) text = fill(text, 'Affected documents', affects.map((path) => `- ${path}`).join('\n'));
   if (quote !== undefined) text = fill(text, 'Evidence', lf(quote).split('\n').map((line) => (line === '' ? '>' : `> ${line}`)).join('\n'));
   if (body !== undefined && body.trim() !== '') text = fill(text, 'What was seen', lf(body));
@@ -183,7 +183,6 @@ const refuseUnknownKeys = (value, known, what) => {
   const extra = Object.keys(value).find((key) => !known.includes(key));
   if (extra !== undefined) throw new FeedbackError(`${what} has unknown key ${JSON.stringify(extra)}. Use only: ${known.join(', ')}.`);
 };
-const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 
 /** The project-relative folder of a cycle's feedback, after checking the cycle exists (and is open when asked). */
 function cycleFeedback(projectDir, cycle, { mustBeOpen }) {
@@ -292,7 +291,7 @@ function refuseSecrets(files, consequence) {
 /** One digest entry checked against the feedback rules; `n` is its 1-based position. */
 function checkEntry(entry, n) {
   const at = `Item ${n}: `;
-  if (!isObject(entry)) throw new FeedbackError(`${at}each item must be a JSON object.`);
+  if (!isPlainObject(entry)) throw new FeedbackError(`${at}each item must be a JSON object.`);
   refuseUnknownKeys(entry, ITEM_KEYS, `Item ${n}`);
   try {
     validate(entry);
@@ -360,7 +359,7 @@ export function addBatch(projectDir, digest) {
   } catch (cause) {
     throw new FeedbackError(`The digest ${path} is not valid JSON (${cause.message}). Write it again from the session.`);
   }
-  if (!isObject(data)) throw new FeedbackError(`The digest ${path} must hold a JSON object with an items list.`);
+  if (!isPlainObject(data)) throw new FeedbackError(`The digest ${path} must hold a JSON object with an items list.`);
   refuseUnknownKeys(data, DIGEST_KEYS, `The digest ${path}`);
   if (!Array.isArray(data.items)) throw new FeedbackError(`The digest ${path} needs an items list.`);
   if (data.items.length > BATCH_MAX) {
@@ -414,7 +413,7 @@ function cellsOf(line) {
 
 /** The rows of the table under the triage file's rows heading, as [item, route, target, reason]. */
 function triageRows(text, path) {
-  const lines = text.replaceAll('\r\n', '\n').split('\n');
+  const lines = toLf(text).split('\n');
   const start = lines.findIndex((line) => line.trim() === ROWS_HEADING);
   const rest = start === -1 ? [] : lines.slice(start + 1);
   const end = rest.findIndex((line) => line.startsWith('## '));
@@ -491,7 +490,7 @@ function planRow(root, [item, route, target, reason], n, seen, claimed) {
 /**
  * Applies a triage file: checks every row first, then sets status and routed_to on each item and moves a cycle item
  * routed to the inbox back there. The file is triage-YYYY-MM-DD[-N].md, directly in a cycle's feedback/ or in
- * docs/ephemeral/feedback/.
+ * the project's feedback folder (FEEDBACK_DIR).
  * @param {string} projectDir
  * @param {string} triage project-relative path of the triage file
  * @returns {{ routed: Array<{ item: string, route: string, status: string, routed_to: string }> }} in row order

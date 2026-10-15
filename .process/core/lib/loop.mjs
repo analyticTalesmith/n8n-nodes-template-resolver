@@ -4,14 +4,16 @@ import { fileURLToPath } from 'node:url';
 import { approverProblem } from './approval.mjs';
 import { analyzeCycle } from './analyze.mjs';
 import { listCards } from './board.mjs';
+import { blockedLine, parseBlockedLine } from './card-id.mjs';
 import { cycleEvidence, readCycle } from './cycle.mjs';
 import { designApprovalState, readDesignApproval } from './design-approval.mjs';
 import { readFrontmatter } from './frontmatter.mjs';
-import { cyclePaths } from './layout.mjs';
+import { STAGE, cyclePaths } from './layout.mjs';
 import { readPosture } from './posture.mjs';
 import { resolveProjectPath, resolveProjectRoots } from './project-roots.mjs';
 import { readRounds, roundsReport } from './rounds.mjs';
 import { next } from '../scripts/next.mjs';
+import { DATE, isoDate } from './time.mjs';
 
 export const LOOP_FILE = 'loop.md';
 export const STATUSES = Object.freeze(['running', 'paused', 'stopped', 'done']);
@@ -51,10 +53,10 @@ function ledgerPath(projectDir, cycle) {
 
 function parseLine(text, lineNumber) {
   const parts = text.slice(2).split(' | ');
-  if (parts.length === 3 && parts[1] === 'resume' && /^\d{4}-\d{2}-\d{2}$/.test(parts[0]) && parts[2]) {
+  if (parts.length === 3 && parts[1] === 'resume' && DATE.test(parts[0]) && parts[2]) {
     return { date: parts[0], resume: parts[2] };
   }
-  if (parts.length < 8 || !/^\d{4}-\d{2}-\d{2}$/.test(parts[0])) refuse(`Invalid iteration line ${lineNumber} in ${LOOP_FILE}.`);
+  if (parts.length < 8 || !DATE.test(parts[0])) refuse(`Invalid iteration line ${lineNumber} in ${LOOP_FILE}.`);
   const [date, iterationText, unit, action, outcome, progressText, failureText, spawnsText, ...extras] = parts;
   const iteration = integer(iterationText);
   const progress = /^progress (\d+)$/.exec(progressText)?.[1];
@@ -175,7 +177,7 @@ function latestWindow(lines) {
 
 function failureWait(failure, count) {
   const [card, ...rest] = failure.split(':');
-  return `blocked: ${card.trim()} (${rest.join(':').trim() || 'failure'}, ${count} times)`;
+  return blockedLine(card.trim(), rest.join(':').trim() || 'failure', count);
 }
 
 function failureWaits(lines, count) {
@@ -230,7 +232,7 @@ function verdictFor(projectDir, cycle, ledger) {
   const evidence = cycleEvidence(projectDir, cycle, { sweepRound: ledger.sweep_round });
   const nonPassing = nonPassingEvidence(projectDir, cycle, ledger, evidence.required);
   const cards = listCards(projectDir).filter((item) => item.cycle === cycle);
-  const unfinished = cards.filter((item) => item.column !== '06_done');
+  const unfinished = cards.filter((item) => item.column !== STAGE.done);
   const missingApproved = approval.cards.filter((id) => !cards.some(({ card }) => card.id === id));
   const fixRequests = openFixRequests(projectDir, cards);
   const waiting = [...new Set([...ledger.waiting_on, ...failureWaits(ledger.lines, loop.repeat_failure_limit)])];
@@ -253,12 +255,12 @@ function verdictFor(projectDir, cycle, ledger) {
     return { verdict: 'stop', detail: 'no progress', notes };
   }
   if (waiting.length) {
-    const blockedCards = new Set(waiting.map((item) => /^blocked: (\d{4}-[a-z0-9-]+) \(/.exec(item)?.[1]).filter(Boolean));
+    const blockedCards = new Set(waiting.map((item) => parseBlockedLine(item)?.id).filter(Boolean));
     const runnable = next(projectDir, cycle).ready.filter((card) => !blockedCards.has(card.id));
     if (!runnable.length && !evidence.gaps.length) return { verdict: 'waiting', detail: waiting.join('; '), notes };
     notes.push(`waiting on ${waiting.join('; ')}`);
   }
-  if (unfinished.length && next(projectDir, cycle).ready.length === 0 && unfinished.every((item) => item.column === '02_ready')) return { verdict: 'waiting', detail: waiting.length ? waiting.join('; ') : 'nothing runnable', notes };
+  if (unfinished.length && next(projectDir, cycle).ready.length === 0 && unfinished.every((item) => item.column === STAGE.ready)) return { verdict: 'waiting', detail: waiting.length ? waiting.join('; ') : 'nothing runnable', notes };
   return { verdict: 'continue', detail: '', notes };
 }
 
@@ -290,7 +292,7 @@ function normalizeEntry(entry, now) {
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) refuse('Iteration date is invalid.', 'loop-entry-refused');
   const iteration = integer(entry.iteration), progress = integer(entry.progress), spawns = integer(entry.spawns ?? 0);
   if (!iteration || progress === null || spawns === null || !OUTCOMES.includes(entry.outcome)) refuse('iteration must be positive; progress and spawns non-negative; outcome must be ok, fail, blocked or waiting.', 'loop-entry-refused');
-  const normalized = { date: date.toISOString().slice(0, 10), iteration, unit: lineSafe(entry.unit, 'unit'), action: lineSafe(entry.action, 'action'), outcome: entry.outcome, progress, failure: entry.failure == null ? null : lineSafe(entry.failure, 'failure'), spawns };
+  const normalized = { date: isoDate(date), iteration, unit: lineSafe(entry.unit, 'unit'), action: lineSafe(entry.action, 'action'), outcome: entry.outcome, progress, failure: entry.failure == null ? null : lineSafe(entry.failure, 'failure'), spawns };
   for (const key of ['wait', 'clear', 'decided']) normalized[key] = listSafe(entry[key], key);
   if (entry.cost !== undefined) {
     normalized.cost = number(entry.cost);
@@ -343,7 +345,7 @@ export function resumeLoop(projectDir, cycle, { by, now } = {}) {
   if (approvalVerdict(projectDir, cycle)) refuse('Design approval is stale or missing. Ask a person to re-approve first.', 'loop-resume-refused');
   const date = typeof now === 'function' ? now() : now ?? new Date();
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) refuse('Resume date is invalid.', 'loop-resume-refused');
-  const lines = [...ledger.lines, { date: date.toISOString().slice(0, 10), resume: lineSafe(by, 'by') }];
+  const lines = [...ledger.lines, { date: isoDate(date), resume: lineSafe(by, 'by') }];
   const resumed = { ...ledger, lines, status: 'running', stop_reason: '' };
   writeLedger(projectDir, cycle, resumed);
   return resumed;

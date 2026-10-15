@@ -1,16 +1,18 @@
+import { toLf } from './files.mjs';
 import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
 import { readFrontmatter } from './frontmatter.mjs';
 import { isCardId } from './board.mjs';
 import { writeFileAtomic } from './files.mjs';
+import { LEARNINGS_ARCHIVE_DIR, LEARNINGS_DIR } from './layout.mjs';
 import { resolveProjectPath, resolveProjectRoots } from './project-roots.mjs';
 
 /** @typedef {import('../scripts/validate.mjs').Finding} Finding */
 /** @typedef {import('./files.mjs').FileIo} FileIo */
 
-export const LEARNINGS_ROOT = 'docs/ephemeral/learnings';
+export const LEARNINGS_ROOT = LEARNINGS_DIR;
 /** Where a considered learning goes. Created on demand, so it is not one of the required project folders. */
-export const ARCHIVE_ROOT = 'docs/archive/learnings';
+export const ARCHIVE_ROOT = LEARNINGS_ARCHIVE_DIR;
 export const LEARNING_SCOPES = Object.freeze(['project', 'pack', 'aperture']);
 export const LEARNING_SECTIONS = Object.freeze(['What happened', 'Evidence', 'Suggested change']);
 
@@ -50,7 +52,7 @@ export function checkLearning(text) {
   /** @type {Finding[]} */
   const findings = [];
   const missing = (what, fix) => findings.push({ rule: 'learning-field-missing', message: `The learning note ${what}. ${fix}` });
-  const source = typeof text === 'string' ? text.replaceAll('\r\n', '\n') : '';
+  const source = typeof text === 'string' ? toLf(text) : '';
 
   const data = readFrontmatter(source);
   if (data === null) {

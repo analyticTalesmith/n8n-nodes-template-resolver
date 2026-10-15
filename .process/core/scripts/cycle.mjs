@@ -4,10 +4,12 @@ import { fileURLToPath } from 'node:url';
 import { ConfigError } from '../lib/config.mjs';
 import { analyzeCycle } from '../lib/analyze.mjs';
 import { CycleError, closeCycle, createCycle, cycleStatus, listCycles } from '../lib/cycle.mjs';
+import { applyReminder, openDeltaCount } from '../lib/delta.mjs';
 import { retroSuggestion } from '../lib/retro-suggestion.mjs';
 import { describeShape, listKinds, proposeShape, recordStage } from '../lib/cycle-shape.mjs';
-import { COLUMNS } from '../lib/layout.mjs';
-import { PLACEMENTS, proposeCycle } from '../lib/posture.mjs';
+import { COLUMNS, PROCESS_DIR, humanColumn } from '../lib/layout.mjs';
+import { APPROVAL_MEANING, PLACEMENTS, proposeCycle } from '../lib/posture.mjs';
+import { unsetDimensionsReminder } from '../lib/profile.mjs';
 
 const isMain = (() => {
   try {
@@ -24,7 +26,6 @@ if (isMain) {
     console.error(`${message} ${USAGE}`);
     process.exit(2);
   };
-  const humanColumn = (column) => column.replace(/^\d+_/, '').replaceAll('_', ' ');
   const [projectDir, command, ...rest] = process.argv.slice(2);
   if (!projectDir || projectDir.startsWith('--')) usage('Missing project directory.');
   if (!['new', 'close', 'status', 'analyze', 'list', 'shape', 'stage', 'kinds', 'propose'].includes(command)) usage(`Unknown command ${command ?? '(none)'}.`);
@@ -76,11 +77,14 @@ if (isMain) {
       console.log(`created cycle ${c.name}: ${c.tier}, ${c.stage}, approvals ${c.approvals} (from ${sources})`);
       console.log(`verification levels: ${c.verification_levels.join(', ') || 'none'}; review sweeps: ${c.review_sweeps.join(', ') || 'none'} (cycle selection)`);
       if (c.kind !== undefined) console.log(`shape: kind ${c.kind}; the shape line is in CYCLE.md and stage lines appear only when something is recorded. See the stages with: shape ${c.name}`);
+      console.log('next: type every Must-haves line in CYCLE.md with an id (a typed id is required); test plan rows may cite only those ids; each level the cycle does not select is already waived with a reason in test-plan.md; a card that changes code needs a blast_radius module name in card.json (or none).');
+      for (const line of unsetDimensionsReminder(dir)) console.log(line);
+      console.log(`approvals ${c.approvals} means ${APPROVAL_MEANING[c.approvals] ?? 'a placement this script does not describe'}.`);
     } else if (command === 'kinds') {
       const { lines, findings } = listKinds(dir);
       for (const line of lines) console.log(line);
       for (const finding of findings) console.error(`kind data: ${finding}`);
-      if (lines.length === 0) console.log('no kinds are installed; add the work-profile pack, or write your own in .process/kinds/');
+      if (lines.length === 0) console.log(`no kinds are installed; add the work-profile pack, or write your own in ${PROCESS_DIR}/kinds/`);
     } else if (command === 'propose') {
       console.log(proposeShape(dir, { kind: options.kind, settings: options.set ?? [] }).join('\n'));
     } else if (command === 'shape') {
@@ -108,6 +112,8 @@ if (isMain) {
       console.log(`cards: ${COLUMNS.map((c) => `${humanColumn(c)} ${counts[c]}`).join(', ')}`);
       for (const { id, column } of open) console.log(`open: ${id} (${humanColumn(column)})`);
       for (const gap of needed) console.log(`still needed before close: ${gap.kind} ${gap.name} (${gap.problem})`);
+      const openDeltas = openDeltaCount(dir, cycle.name);
+      if (openDeltas > 0) console.log(applyReminder(cycle.name, openDeltas));
     }
   } catch (err) {
     if (!(err instanceof CycleError || err instanceof ConfigError)) throw err;

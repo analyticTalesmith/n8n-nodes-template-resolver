@@ -2,12 +2,11 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { isApproved } from '../approval.mjs';
 import { VALIDATED_IN, readDeltaRecords, reviewedPath } from '../delta.mjs';
 import { DOC_STATES, readFrontmatter } from '../frontmatter.mjs';
-import { CYCLES_DIR, CYCLE_ARCHIVE_DIR } from '../layout.mjs';
+import { CYCLES_DIR, CYCLE_ARCHIVE_DIR, LIVING_DIR } from '../layout.mjs';
 import { resolveProjectPath, resolveProjectRoots } from '../project-roots.mjs';
 
 /** @typedef {import('../../scripts/validate.mjs').Finding} Finding */
 
-const LIVING_DIR = 'docs/living';
 const CLOSE_REVIEW = 'close-review.md';
 
 const byName = (a, b) => (a.name < b.name ? -1 : 1);

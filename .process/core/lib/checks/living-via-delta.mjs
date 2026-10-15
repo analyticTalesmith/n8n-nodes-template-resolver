@@ -1,5 +1,5 @@
 import { readDeltaRecords, reviewedPath } from '../delta.mjs';
-import { CYCLES_DIR, TIERS } from '../layout.mjs';
+import { CYCLES_DIR, LIVING_DIR, PROCESS_CORE, TIERS } from '../layout.mjs';
 import { localLivingChanges, LocalDocsAttestationError } from '../local-docs-attestation.mjs';
 
 /** @typedef {import('../../scripts/validate.mjs').Finding} Finding */
@@ -12,11 +12,11 @@ export const LIVING_DELTA_WARNING = 'living-without-delta-warning';
 
 /** The fix the gate names. */
 export const LIVING_DELTA_FIX =
-  'Record one with node .process/core/scripts/delta.mjs <projectDir> add <cycle> <slug> --op <add|modify|remove|recover> --target <path> --summary <text>, or revert the edit.';
+  `Record one with node ${PROCESS_CORE}/scripts/delta.mjs <projectDir> add <cycle> <slug> --op <add|modify|remove|recover> --target <path> --summary <text>, or revert the edit.`;
 /** The same fix, short enough that the handoff's 200-character line clip leaves it whole. */
-export const LIVING_DELTA_FIX_SHORT = 'Record one with node .process/core/scripts/delta.mjs ... add, or revert the edit.';
+export const LIVING_DELTA_FIX_SHORT = `Record one with node ${PROCESS_CORE}/scripts/delta.mjs ... add, or revert the edit.`;
 
-const LIVING_PREFIX = 'docs/living/';
+const LIVING_PREFIX = `${LIVING_DIR}/`;
 // The index script rewrites these, so an edit to one is never a direct change by a person or an agent.
 const GENERATED_INDEX = 'INDEX.md';
 
@@ -24,7 +24,7 @@ const GENERATED_INDEX = 'INDEX.md';
 const isGuarded = (path) => path.startsWith(LIVING_PREFIX) && path.endsWith('.md') && path.split('/').at(-1) !== GENERATED_INDEX;
 
 /**
- * Project-relative Markdown documents under docs/living/ among `paths` that no readable delta in a current (not
+ * Project-relative Markdown documents under the living docs folder among `paths` that no readable delta in a current (not
  * archived) cycle targets. INDEX.md files are exempt. A delta counts whether it is open or applied, and whether its cycle is open or
  * closed, because the docs steward applies and validates after a cycle closes and before it is archived.
  * @param {string} projectDir

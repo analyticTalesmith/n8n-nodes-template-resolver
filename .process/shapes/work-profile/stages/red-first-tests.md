@@ -10,6 +10,8 @@ owner: build
 who: agent, a separate writer
 risk: Tests shaped around the code.
 skip: oracle lacks new-tests or purpose = answer
+evidence-from: red-evidence
+grain: card
 today: exists
 today-note: a failing test passes the check; the reason is a convention
 links:

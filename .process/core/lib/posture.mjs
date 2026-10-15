@@ -1,11 +1,16 @@
 import { readFileSync } from 'node:fs';
 import { ConfigError, readConfig } from './config.mjs';
 import { resolveInside } from './files.mjs';
-import { TIERS } from './layout.mjs';
+import { PROCESS_DIR, PROCESS_TIERS, TIERS } from './layout.mjs';
+import { isKebab } from './names.mjs';
+import { isPlainObject } from './types.mjs';
 
 export const PLACEMENTS = Object.freeze(['card', 'cycle', 'front']);
+
+/** What each approvals placement means, said when a cycle is created and next to the approvals line of cycle shape. */
+export const APPROVAL_MEANING = Object.freeze({ front: 'one signed design approval at the front replaces per-card approval', cycle: 'the human reviews every card together at the cycle close', card: 'the human approves each card at its gate' });
 export const DEFAULT_POSTURE = 'hybrid';
-export const POSTURES_DIR = '.process/tiers/rigor/postures';
+export const POSTURES_DIR = `${PROCESS_TIERS}/postures`;
 
 const stageTiers = (concept, alpha, beta, mvp, ga) => Object.freeze({ concept, alpha, beta, mvp, ga });
 const loop = (allowed, maxIterations, maxSpawns) => Object.freeze({
@@ -26,24 +31,22 @@ export const BUILT_IN_POSTURES = Object.freeze({
 });
 
 const finding = (rule, message) => ({ rule, message });
-const object = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
-const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const PRESET_KEYS = ['stage_tiers', 'approvals', 'loop', 'regulated'];
 const LOOP_KEYS = ['allowed', 'max_iterations', 'max_spawns', 'no_progress_limit', 'repeat_failure_limit', 'sweep_rounds'];
 
 function presetProblem(value) {
-  if (!object(value)) return 'must be a JSON object';
+  if (!isPlainObject(value)) return 'must be a JSON object';
   const extra = Object.keys(value).find((key) => !PRESET_KEYS.includes(key));
   if (extra) return `has unknown key ${JSON.stringify(extra)}; use only ${PRESET_KEYS.join(', ')}`;
   const missing = PRESET_KEYS.find((key) => !Object.hasOwn(value, key));
   if (missing) return `is missing ${missing}`;
-  if (!object(value.stage_tiers) || Object.keys(value.stage_tiers).length === 0) return 'stage_tiers must map stage names to tiers';
+  if (!isPlainObject(value.stage_tiers) || Object.keys(value.stage_tiers).length === 0) return 'stage_tiers must map stage names to tiers';
   for (const [stage, tier] of Object.entries(value.stage_tiers)) {
-    if (!KEBAB.test(stage)) return `stage_tiers has invalid stage name ${JSON.stringify(stage)}; use kebab-case`;
+    if (!isKebab(stage)) return `stage_tiers has invalid stage name ${JSON.stringify(stage)}; use kebab-case`;
     if (!TIERS.includes(tier)) return `stage_tiers.${stage} must be one of ${TIERS.join(', ')}`;
   }
   if (!PLACEMENTS.includes(value.approvals)) return `approvals must be one of ${PLACEMENTS.join(', ')}`;
-  if (!object(value.loop)) return 'loop must be an object with explicit budgets';
+  if (!isPlainObject(value.loop)) return 'loop must be an object with explicit budgets';
   const extraLoop = Object.keys(value.loop).find((key) => !LOOP_KEYS.includes(key));
   if (extraLoop) return `loop has unknown key ${JSON.stringify(extraLoop)}; use only ${LOOP_KEYS.join(', ')}`;
   const missingLoop = LOOP_KEYS.find((key) => !Object.hasOwn(value.loop, key));
@@ -76,7 +79,7 @@ export function readPosture(projectDir) {
       name,
       preset: null,
       source: 'built-in',
-      findings: [finding('posture-unknown', `Unknown posture ${JSON.stringify(requested)} in .process/aperture.json.${special} Choose one of: ${Object.keys(BUILT_IN_POSTURES).join(', ')}.`)],
+      findings: [finding('posture-unknown', `Unknown posture ${JSON.stringify(requested)} in ${PROCESS_DIR}/aperture.json.${special} Choose one of: ${Object.keys(BUILT_IN_POSTURES).join(', ')}.`)],
     };
   }
   const path = `${POSTURES_DIR}/${name}.json`;

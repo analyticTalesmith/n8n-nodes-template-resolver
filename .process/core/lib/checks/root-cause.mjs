@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { toLf } from '../files.mjs';
 import { PLACEHOLDERS } from '../approval.mjs';
 import { CARD_FILES, WORK_ROOT, workFile } from '../card-files.mjs';
 import { sectionBody } from '../contract.mjs';
@@ -28,7 +29,7 @@ export function checkRootCause({ projectDir, card }) {
   const path = `${WORK_ROOT}/${card.id}/${CARD_FILES.rootCause}`;
   let text;
   try {
-    text = readFileSync(workFile(projectDir, card.id, CARD_FILES.rootCause), 'utf8').replaceAll('\r\n', '\n');
+    text = toLf(readFileSync(workFile(projectDir, card.id, CARD_FILES.rootCause), 'utf8'));
   } catch (err) {
     if (err.code !== 'ENOENT') throw err;
     return [finding('root-cause-missing', `A bug card needs its root-cause record, and ${path} does not exist. Copy ${TEMPLATE} there and fill in ${ROOT_CAUSE_SECTIONS.join(', ')}; three short lines are enough.`)];

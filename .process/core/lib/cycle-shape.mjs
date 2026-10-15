@@ -1,20 +1,56 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { approverProblem } from './approval.mjs';
+import { cardPath, listCards } from './board.mjs';
+import { CARD_FILES, workFile } from './card-files.mjs';
+import { parseRedEvidence } from './checks/red-evidence.mjs';
 import { CONCERNS, CONCERN_WORDS } from './concerns.mjs';
 import { CycleError, readCycle } from './cycle.mjs';
 import { readFrontmatter } from './frontmatter.mjs';
 import { readTierData } from './gate.mjs';
-import { cyclePaths } from './layout.mjs';
+import { PROCESS_CORE, PROCESS_DIR, RED_FIRST, STAGE, TIERS, cyclePaths } from './layout.mjs';
+import { APPROVAL_MEANING } from './posture.mjs';
 import { ProfileError, factsOf, parseSettings, readProjectProfile } from './profile.mjs';
 import { resolveProjectPath, resolveProjectRoots } from './project-roots.mjs';
-import { ShapeError, loadShapes, neverSkipped, parseShapeRecord, resolveShape, setStageLine, shapeLine, skipHolds, stageTiers } from './shapes.mjs';
-import { planFindings, readCyclePlan, selectedLevelsOf } from './test-plan.mjs';
+import { ShapeError, listedTiers, loadShapes, neverSkipped, parseShapeRecord, resolveShape, setStageLine, shapeLine, skipHolds, stageTiers } from './shapes.mjs';
+import { parseTestPlan, planFindings, readCyclePlan, selectedLevelsOf } from './test-plan.mjs';
 
 /** @typedef {import('../scripts/validate.mjs').Finding} Finding */
 
 const briefPath = (projectDir, name) => resolveProjectPath(resolveProjectRoots(projectDir), cyclePaths(name).brief);
 
-const STAGE_FIX = (name) => `Record each with: node .process/core/scripts/cycle.mjs <projectDir> stage ${name} <stage> done "<evidence>". A spine stage cannot be skipped.`;
+const STAGE_FIX = (name) => `Record each with: node ${PROCESS_CORE}/scripts/cycle.mjs <projectDir> stage ${name} <stage> done "<evidence>". A spine stage cannot be skipped.`;
+
+/** The columns whose cards are held to their red evidence: ready and later; a card still in the backlog or shaping has none yet. */
+const RED_WAIVER = /^\s*-\s*red-first waived:\s*\S/m;
+
+/**
+ * The per-card state of a stage with the card grain: which cards of the cycle need its artifact (a test-verified criterion,
+ * from ready on) and which of those lack it. A cycle below the tier that proves tests first has no card that needs one. A card has its red evidence when a valid log is on disk, when its context.md
+ * records a line `- red-first waived: <reason>`, or when it is done (it passed the gate that checks the log).
+ * @param {string} projectDir
+ * @param {string} name cycle name
+ * @returns {{ needing: string[], lacking: string[] }}
+ */
+export function perCardEvidence(projectDir, name) {
+  const needing = [];
+  const lacking = [];
+  // Below the tier that proves tests first nothing writes a red log, so no card of such a cycle needs one.
+  const minimum = readTierData(projectDir).data.checks['tests-fail-first'];
+  if (typeof minimum !== 'string' || TIERS.indexOf(readCycle(projectDir, name).tier) < TIERS.indexOf(minimum)) return { needing, lacking };
+  for (const { cycle, column, card } of listCards(projectDir)) {
+    if (cycle !== name || !RED_FIRST.includes(column)) continue;
+    const criteria = Array.isArray(card.criteria) ? card.criteria : [];
+    if (!criteria.some((c) => c !== null && typeof c === 'object' && /** @type {any} */ (c).verify === 'test')) continue;
+    needing.push(card.id);
+    if (column === STAGE.done) continue;
+    const log = workFile(projectDir, card.id, CARD_FILES.redEvidence);
+    const has = existsSync(log) && parseRedEvidence(readFileSync(log, 'utf8')).evidence !== null;
+    const context = cardPath(projectDir, card.id)?.dir;
+    const waived = context !== undefined && existsSync(`${context}/context.md`) && RED_WAIVER.test(readFileSync(`${context}/context.md`, 'utf8'));
+    if (!has && !waived) lacking.push(card.id);
+  }
+  return { needing, lacking };
+}
 
 /**
  * Whether the artifact a stage names (its `evidence-from` field) exists and passes its own check, so the stage is done
@@ -22,12 +58,16 @@ const STAGE_FIX = (name) => `Record each with: node .process/core/scripts/cycle.
  * @param {string} projectDir
  * @param {string} name cycle name
  * @param {{ evidenceFrom: string | null }} stage
- * @returns {{ done: boolean, source: string | null }}
+ * @returns {{ done: boolean, source: string | null, cards?: { have: number, need: number } }}
  */
 export function derivedStageStatus(projectDir, name, stage) {
   const source = stage.evidenceFrom;
   if (source === null) return { done: false, source: null };
   let done = false;
+  if (stage.grain === 'card') {
+    const { needing, lacking } = perCardEvidence(projectDir, name);
+    return { done: lacking.length === 0, source, cards: { have: needing.length - lacking.length, need: needing.length } };
+  }
   if (source === 'shape-line') {
     done = parseShapeRecord(readFileSync(briefPath(projectDir, name), 'utf8')).line !== null;
   } else if (source === 'test-plan') {
@@ -109,20 +149,27 @@ export function shapeFindings(projectDir, name, { phases } = {}) {
   const { tiers, reason } = resolveTiers(projectDir, cycle, data);
   const spine = tiers === null ? [] : tiers.spine.map(({ stage }) => stage);
   const open = [];
-  for (const stage of spine.filter(inPhase).sort((a, b) => (a.id < b.id ? -1 : 1))) {
+  // A per-card stage applies to every cycle that lists it, spine or suggested, and its status comes from the cards alone: a hand-written line for it is ignored.
+  const perCard = tiers === null ? [] : tiers.suggested.map(({ stage }) => stage).filter((stage) => stage.grain === 'card' && !spine.includes(stage));
+  for (const stage of [...spine, ...perCard].filter(inPhase).sort((a, b) => (a.id < b.id ? -1 : 1))) {
     const entry = record.stages.get(stage.id);
-    if (entry?.status === 'done') continue;
+    if (stage.grain !== 'card' && entry?.status === 'done') continue;
     if (derivedStageStatus(projectDir, name, stage).done) continue;
     open.push(stage.id);
   }
   /** @type {Finding[]} */
   const findings = [];
   if (tiers === null) findings.push({ rule: 'cycle-shape-unreadable', path, message: `Cycle ${name}'s stage set cannot be read (kind ${cycle.kind ?? 'none'}): ${reason}. The spine cannot be checked until it resolves: correct the kind in ${path}, or install the pack that has it.` });
-  if (open.length > 0) findings.push({ rule: 'cycle-shape-stage-open', path, message: `Cycle ${name} has spine stages not done: ${open.join(', ')}. ${STAGE_FIX(name)}` });
+  if (open.length > 0) {
+    const perCardOpen = open.filter((id) => data.stages.get(id)?.grain === 'card');
+    const manualOpen = open.filter((id) => !perCardOpen.includes(id));
+    const lacking = perCardOpen.length > 0 ? perCardEvidence(projectDir, name).lacking.join(', ') : '';
+    findings.push({ rule: 'cycle-shape-stage-open', path, message: `Cycle ${name} has ${manualOpen.length > 0 ? 'spine stages' : 'stages'} not done: ${open.join(', ')}.${manualOpen.length > 0 ? ` ${STAGE_FIX(name)}` : ''}${perCardOpen.length > 0 ? ` ${perCardOpen.join(', ')} cannot be recorded: it is done when every card has its evidence (cards still lacking it: ${lacking}).` : ''}` });
+  }
   if (noEvidence.length > 0) findings.push({ rule: 'cycle-shape-evidence-missing', path, message: `Cycle ${name} marks stages done with no evidence: ${noEvidence.join(', ')}. Say what shows it: a file, a commit or a card.` });
   if (badSkip.length > 0) findings.push({ rule: 'cycle-shape-skip-invalid', path, message: `Cycle ${name} skips stages without a valid reason: ${badSkip.join(', ')}. Give a one-line reason, or use "rule" only where the stage's skip rule holds.` });
   if (badAdd.length > 0) findings.push({ rule: 'cycle-shape-added-invalid', path, message: `Cycle ${name} adds stages with no reason: ${badAdd.join(', ')}. Say in one line why the stage was chosen.` });
-  if (unknown.length > 0) findings.push({ rule: 'cycle-shape-stage-unknown', path, message: `Cycle ${name} records stages that are in neither the catalog nor the project's own stages: ${unknown.join(', ')}. Correct the id, or add the stage under .process/stages/.` });
+  if (unknown.length > 0) findings.push({ rule: 'cycle-shape-stage-unknown', path, message: `Cycle ${name} records stages that are in neither the catalog nor the project's own stages: ${unknown.join(', ')}. Correct the id, or add the stage under ${PROCESS_DIR}/stages/.` });
   if (old.length > 0) findings.push({ rule: LEGACY_SHAPE_RULE, path, message: `Cycle ${name} has lines from before the stage model: ${old.join(', ')}. They no longer count; spine stages must still be recorded done.` });
   return findings;
 }
@@ -139,7 +186,7 @@ function skipRecord(projectDir, name, stage, reason) {
   const cycle = readCycle(projectDir, name);
   const tiers = tiersOf(projectDir, cycle, loadShapes(projectDir));
   const known = tiers === null ? [] : [...tiers.spine, ...tiers.suggested, ...tiers.notNeeded];
-  if (!known.some((entry) => entry.stage.id === stage.id)) throw new CycleError(`Stage ${stage.id} is not one of this cycle's stages, so there is nothing to skip. See them with: node .process/core/scripts/cycle.mjs <projectDir> shape ${name}.`);
+  if (!known.some((entry) => entry.stage.id === stage.id)) throw new CycleError(`Stage ${stage.id} is not one of this cycle's stages, so there is nothing to skip. See them with: node ${PROCESS_CORE}/scripts/cycle.mjs <projectDir> shape ${name}.`);
   if (skipHolds(stage, factsOf(cycle.profile ?? {}, readProjectProfile(projectDir)))) return { text: reason, override: false };
   if (reason.toLowerCase() === 'rule') throw new CycleError(`The skip rule of ${stage.id} does not hold for this cycle's profile, so "rule" is not a reason. Give a one-line reason of your own (it is recorded as an override), or do the stage.`);
   return { text: reason.replace(/^override:\s*/, ''), override: true };
@@ -160,12 +207,16 @@ export function recordStage(projectDir, name, stageId, status, text = '') {
   }
   const file = briefPath(projectDir, name);
   const stage = loadShapes(projectDir).stages.get(stageId);
-  if (stage === undefined) throw new CycleError(`Stage ${stageId} is in neither the catalog nor the project's own stages. See the cycle's stages with: node .process/core/scripts/cycle.mjs <projectDir> shape ${name}.`);
+  if (stage === undefined) throw new CycleError(`Stage ${stageId} is in neither the catalog nor the project's own stages. See the cycle's stages with: node ${PROCESS_CORE}/scripts/cycle.mjs <projectDir> shape ${name}.`);
   let recorded = { text: text.trim(), override: false };
   if (status === 'skipped') recorded = skipRecord(projectDir, name, stage, text.trim());
   if (status === 'added') {
     const tiers = tiersOf(projectDir, readCycle(projectDir, name), loadShapes(projectDir));
     if (tiers !== null && [...tiers.spine, ...tiers.suggested].some((entry) => entry.stage.id === stageId)) throw new CycleError(`Stage ${stageId} already applies to this cycle, so it is not added. Record it done with its evidence.`);
+  }
+  if (stage.grain === 'card') {
+    const { lacking } = perCardEvidence(projectDir, name);
+    throw new CycleError(`Stage ${stageId} is derived from the cards, so it is not recorded by hand. ${lacking.length === 0 ? 'Every card that needs it has it.' : `These cards still lack its evidence: ${lacking.join(', ')}. Run red-evidence.mjs for each, or record a line "- red-first waived: <reason>" in its context.md.`}`);
   }
   const next = setStageLine(readFileSync(file, 'utf8'), stageId, status, recorded.text, recorded.override);
   if (next === null) throw new CycleError(`Cycle ${name} has no Stages section to record ${stageId} in (it was opened with no kind).`);
@@ -174,6 +225,7 @@ export function recordStage(projectDir, name, stageId, status, text = '') {
 
 /** How one stage reads in `cycle shape` once something is recorded or derived: done, waived, skipped or added. */
 function stageState(entry, derived) {
+  if (derived?.cards !== undefined) return derived.done ? `done (derived: ${derived.source}) ${derived.cards.have} of ${derived.cards.need} cards` : `open: ${derived.cards.have} of ${derived.cards.need} cards have their ${derived.source === 'red-evidence' ? 'red evidence' : 'evidence'}`;
   if (entry?.status === 'done' && entry.text !== '') return `done: ${entry.text}`;
   if (derived?.done) return `done (derived: ${derived.source})`;
   if (entry?.status === 'skipped') return entry.override ? `waived: ${entry.text}` : `skipped: ${entry.text}`;
@@ -194,7 +246,7 @@ function shapeLines(shape, { record = null, derive = null, catalog }) {
   lines.push(`project: ${Object.keys(project).length === 0 ? 'no project dimensions are set (audience, governance, deployment, executor, independence, criticality)' : Object.entries(project).map(([key, value]) => `${key} ${value}`).join(', ')}`);
   const a = shape.derived.approvals;
   lines.push(`approvals: plan ${a.plan}, merge ${a.merge}${a.before_irreversible_step ? ', approval before the irreversible step' : ''}${a.risk_acceptance ? ', risk acceptance' : ''}`);
-  const tiers = stageTiers(shape, catalog);
+  const tiers = listedTiers(shape, catalog);
   lines.push('A stage is a question the cycle asks. Record an answer only when it is surprising: a waived stage, an added one, or a done stage with no artifact to derive it from.');
   lines.push(`spine (${tiers.spine.length}): always run, the only hard gate, never skipped`);
   lines.push(`suggested (${tiers.suggested.length}): the kind's set for this profile, run unless waived with a reason`);
@@ -209,6 +261,10 @@ function shapeLines(shape, { record = null, derive = null, catalog }) {
   };
   stageLines(tiers.spine, 'spine');
   stageLines(tiers.suggested, 'suggested');
+  if (tiers.dropped.length > 0) {
+    lines.push(`lighter path: a one-card feature (size card, reversibility trivial) keeps the spine, a red-first test and a blind review; ${tiers.dropped.length} stages of the full feature are dropped, each with its reason`);
+    for (const { stage, reason } of tiers.dropped) lines.push(`dropped ${stage.id}: ${reason}`);
+  }
   if (record !== null) {
     const rest = [...record.stages].filter(([id, entry]) => !shown.has(id) && entry.status !== 'todo').sort(([x], [y]) => (x < y ? -1 : 1));
     for (const [id, entry] of rest) {
@@ -266,11 +322,19 @@ export function describeShape(projectDir, name) {
   } else {
     try {
       const shape = resolveShape(projectDir, { kind: cycle.kind, set: cycle.profile ?? {} });
-      lines.push(...shapeLines(shape, { record, derive: (stage) => derivedStageStatus(projectDir, name, stage), catalog: loadShapes(projectDir).stages }));
+      const shown = shapeLines(shape, { record, derive: (stage) => derivedStageStatus(projectDir, name, stage), catalog: loadShapes(projectDir).stages });
+      // The meaning of the cycle's approvals mode goes on the line after the approvals line, once.
+      const at = shown.findIndex((line) => line.startsWith('approvals: '));
+      if (at >= 0 && APPROVAL_MEANING[cycle.approvals] !== undefined) shown.splice(at + 1, 0, `approvals ${cycle.approvals} means ${APPROVAL_MEANING[cycle.approvals]}.`);
+      lines.push(...shown);
     } catch (cause) {
       if (!(cause instanceof ShapeError)) throw cause;
       lines.push(`the stage set cannot be read: ${cause.message}`);
     }
+  }
+  const planFile = resolveProjectPath(resolveProjectRoots(projectDir), `${cyclePaths(name).root}/test-plan.md`);
+  if (existsSync(planFile)) {
+    for (const section of parseTestPlan(readFileSync(planFile, 'utf8')).sections.filter((entry) => entry.status === 'waived')) lines.push(`test plan: ${section.level} level waived: ${section.reason ?? 'no reason recorded'}`);
   }
   const tier = cycle.concerns ?? {};
   lines.push(`tier: ${cycle.tier}${Object.keys(tier).length === 0 ? '' : ` (concerns set on the cycle: ${CONCERNS.filter((c) => tier[c] !== undefined).map((c) => `${CONCERN_WORDS[c]} ${tier[c]}`).join(', ')})`}`);

@@ -1,6 +1,8 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmdirSync, writeFileSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve } from 'node:path';
-import { GitError, runGit } from './git.mjs';
+import { GitError, runGit, shortSha } from './git.mjs';
+import { isoDate } from './time.mjs';
+import { toPosix } from './files.mjs';
 
 /** The classes a sweep gives every branch, worktree, stash, orphan folder and remote branch. */
 export const CLASSES = Object.freeze(['merged', 'contained', 'superseded', 'unique', 'dirty']);
@@ -28,10 +30,9 @@ export class MaintenanceError extends Error {
  */
 
 const lines = (text) => text.split(/\r?\n/).filter((line) => line !== '');
-const slashes = (path) => String(path).replaceAll('\\', '/');
+const slashes = (path) => toPosix(String(path));
 const caseless = process.platform === 'win32' || process.platform === 'darwin';
 const samePath = (a, b) => (caseless ? slashes(resolve(a)).toLowerCase() === slashes(resolve(b)).toLowerCase() : slashes(resolve(a)) === slashes(resolve(b)));
-const short = (sha) => sha.slice(0, 7);
 
 /** Runs git; a git failure becomes null so a caller can treat "no" and "cannot" alike when that is right. */
 function tryGit(run, cwd, args) {
@@ -518,7 +519,7 @@ export function sweep(repoDir, { apply = false, base: baseOption, remote = [], p
       done('remote', target.name, target.tip);
     } catch (cause) {
       const stale = /stale info|rejected|lease/i.test(cause.message);
-      skip('remote', target.name, stale ? `the remote branch is not at ${short(target.tip)} any more; run git fetch --prune ${target.remote} and sweep again` : `could not delete it (${cause.message})`);
+      skip('remote', target.name, stale ? `the remote branch is not at ${shortSha(target.tip)} any more; run git fetch --prune ${target.remote} and sweep again` : `could not delete it (${cause.message})`);
     }
   }
   for (const item of items) {
@@ -532,7 +533,7 @@ export function sweep(repoDir, { apply = false, base: baseOption, remote = [], p
 
 /** A dated, not yet existing folder under .local/archive of the main worktree: <date>, then <date>-2, <date>-3. */
 function freshArchiveFolder(repo, now) {
-  const date = now.toISOString().slice(0, 10);
+  const date = isoDate(now);
   let folder = join(repo, ARCHIVE_DIR, date);
   for (let n = 2; existsSync(folder); n += 1) folder = join(repo, ARCHIVE_DIR, `${date}-${n}`);
   return folder;
@@ -568,7 +569,7 @@ export function formatReport(result) {
     if (group.length === 0) continue;
     out.push('', `${titles[kind]}:`);
     for (const item of group) {
-      const tip = item.tip ? ` ${short(item.tip)}` : '';
+      const tip = item.tip ? ` ${shortSha(item.tip)}` : '';
       const label = item.subject ? `${item.name} "${item.subject}"` : item.name;
       out.push(`  ${item.safe ? 'safe' : 'keep'}  ${item.class.padEnd(10)} ${label}${tip}  ${item.reason}`);
     }
@@ -577,7 +578,7 @@ export function formatReport(result) {
   if (result.mode === 'apply') {
     out.push('', 'Deleted:');
     if (result.deleted.length === 0) out.push('  nothing');
-    for (const entry of result.deleted) out.push(`  ${entry.kind} ${entry.name}${entry.tip ? ` ${short(entry.tip)}` : ''}`);
+    for (const entry of result.deleted) out.push(`  ${entry.kind} ${entry.name}${entry.tip ? ` ${shortSha(entry.tip)}` : ''}`);
   } else {
     const safe = result.items.filter((item) => item.safe).length;
     out.push('', `${safe} item${safe === 1 ? '' : 's'} safe to delete. Nothing was changed. Run again with --apply after reading this; name remote branches with --remote <remote>/<branch>.`);

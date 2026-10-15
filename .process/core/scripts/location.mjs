@@ -1,3 +1,4 @@
+import { PROCESS_CORE } from '../lib/layout.mjs';
 import { resolveProjectRoots } from '../lib/project-roots.mjs';
 
 export function location(projectDir) {
@@ -7,7 +8,7 @@ export function location(projectDir) {
 
 if (process.argv[1]?.endsWith('location.mjs')) {
   if (process.argv.length !== 3) {
-    console.error('Usage: node .process/core/scripts/location.mjs <projectDir>');
+    console.error(`Usage: node ${PROCESS_CORE}/scripts/location.mjs <projectDir>`);
     process.exitCode = 2;
   } else {
     try {

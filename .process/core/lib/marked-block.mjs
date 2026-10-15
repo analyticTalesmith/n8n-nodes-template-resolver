@@ -1,3 +1,4 @@
+import { toLf } from './files.mjs';
 import { readFileSync } from 'node:fs';
 
 export const BLOCK_BEGIN = '<!-- aperture:begin -->';
@@ -9,9 +10,11 @@ export class MarkedBlockError extends Error {
    * @param {string} file
    * @param {number} begins
    * @param {number} ends
+   * @param {string} [begin] the begin marker this file uses
+   * @param {string} [end] the end marker this file uses
    */
-  constructor(file, begins, ends) {
-    super(`${file} has ${begins} "${BLOCK_BEGIN}" and ${ends} "${BLOCK_END}" markers that are not one begin line followed by one end line.`);
+  constructor(file, begins, ends, begin = BLOCK_BEGIN, end = BLOCK_END) {
+    super(`${file} has ${begins} "${begin}" and ${ends} "${end}" markers that are not one begin line followed by one end line.`);
     this.name = 'MarkedBlockError';
     this.file = file;
     this.begins = begins;
@@ -19,7 +22,6 @@ export class MarkedBlockError extends Error {
   }
 }
 
-const lf = (text) => text.replaceAll('\r\n', '\n');
 const endLine = (text) => (text.endsWith('\n') ? text : `${text}\n`);
 
 const occurrences = (text, marker) => {
@@ -40,7 +42,31 @@ const onOwnLine = (text, index, marker) => {
  * @param {string} body
  */
 export function wrapBlock(body) {
-  return `${BLOCK_BEGIN}\n${endLine(lf(body))}${BLOCK_END}\n`;
+  return `${BLOCK_BEGIN}\n${endLine(toLf(body))}${BLOCK_END}\n`;
+}
+
+/**
+ * Where the one marked block sits: the index of the begin marker and of the end marker, or null when the text has no
+ * marker at all. Anything but one begin line followed by one end line is refused.
+ * @param {string} text
+ * @param {string} file the name used in the error message
+ * @param {string} [begin]
+ * @param {string} [end]
+ * @returns {{ begin: number, end: number } | null}
+ * @throws {MarkedBlockError}
+ */
+export function locateBlock(text, file, begin = BLOCK_BEGIN, end = BLOCK_END) {
+  const begins = occurrences(text, begin);
+  const ends = occurrences(text, end);
+  if (begins.length === 0 && ends.length === 0) return null;
+  const valid =
+    begins.length === 1 &&
+    ends.length === 1 &&
+    begins[0] < ends[0] &&
+    onOwnLine(text, begins[0], begin) &&
+    onOwnLine(text, ends[0], end);
+  if (!valid) throw new MarkedBlockError(file, begins.length, ends.length, begin, end);
+  return { begin: begins[0], end: ends[0] };
 }
 
 /**
@@ -55,24 +81,16 @@ export function insertBlock(existing, block, file) {
   const breaks = existing.match(/\r?\n/g) ?? [];
   const eol = breaks.length > 0 && breaks.every((b) => b === '\r\n') ? '\r\n' : '\n';
   const shaped = eol === '\n' ? block : block.replaceAll('\n', '\r\n');
-  const begins = occurrences(existing, BLOCK_BEGIN);
-  const ends = occurrences(existing, BLOCK_END);
-  if (begins.length === 0 && ends.length === 0) {
+  const found = locateBlock(existing, file);
+  if (found === null) {
     const lead = existing === '' || existing.endsWith('\n') ? '' : eol;
     return { text: `${existing}${lead}${eol}${shaped}`, result: 'inserted' };
   }
-  const valid =
-    begins.length === 1 &&
-    ends.length === 1 &&
-    begins[0] < ends[0] &&
-    onOwnLine(existing, begins[0], BLOCK_BEGIN) &&
-    onOwnLine(existing, ends[0], BLOCK_END);
-  if (!valid) throw new MarkedBlockError(file, begins.length, ends.length);
-  const innerStart = existing.indexOf('\n', begins[0]) + 1;
-  const inner = existing.slice(innerStart, ends[0]);
+  const innerStart = existing.indexOf('\n', found.begin) + 1;
+  const inner = existing.slice(innerStart, found.end);
   const next = shaped.slice(BLOCK_BEGIN.length + eol.length, shaped.length - BLOCK_END.length - eol.length);
   if (inner === next) return { text: existing, result: 'unchanged' };
-  return { text: existing.slice(0, innerStart) + next + existing.slice(ends[0]), result: 'replaced' };
+  return { text: existing.slice(0, innerStart) + next + existing.slice(found.end), result: 'replaced' };
 }
 
 /**
@@ -95,5 +113,5 @@ export function readUtf8Strict(path) {
  * @param {string} agentsTemplate
  */
 export function agentsBody(routingText, agentsTemplate) {
-  return `${endLine(lf(routingText))}\n${endLine(lf(agentsTemplate))}`;
+  return `${endLine(toLf(routingText))}\n${endLine(toLf(agentsTemplate))}`;
 }

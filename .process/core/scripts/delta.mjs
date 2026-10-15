@@ -1,7 +1,7 @@
-import { readFileSync, realpathSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DeltaError, addDelta, applyDeltas, listDeltas, validateCycleDocs } from '../lib/delta.mjs';
+import { DeltaError, addDeltas, applyDeltas, listDeltas, validateCycleDocs } from '../lib/delta.mjs';
 
 const isMain = (() => {
   try {
@@ -13,11 +13,16 @@ const isMain = (() => {
 
 if (isMain) {
   const USAGE =
-    'Usage: node delta.mjs <projectDir> add <cycle> <slug> --op <op> --target <path> --summary <text> [--body-file <path>] | list <cycle> | apply <cycle> [slug] | validate <cycle>';
+    'Usage: node delta.mjs <projectDir> add <cycle> <slug> --op <op> --target <path> --summary <text> [--body-file <path>] | list <cycle> | apply <cycle> [slug] | validate <cycle>\n' +
+    'add: repeat --target to record one delta per document (slugs become <slug>-1, <slug>-2, ...); give --summary once to share it, or repeat --summary once per --target in order. A missing target for op add gets a planned stub from the document template; every target is checked first and nothing is written if any is refused.';
   const usage = (message) => {
     console.error(`${message} ${USAGE}`);
     process.exit(2);
   };
+  if (process.argv.slice(2).some((arg) => arg === '--help' || arg === '-h')) {
+    console.log(USAGE);
+    process.exit(0);
+  }
   const [projectDir, command, ...rest] = process.argv.slice(2);
   if (!projectDir || projectDir.startsWith('--')) usage('Missing project directory.');
   if (!['add', 'list', 'apply', 'validate'].includes(command)) usage(`Unknown command ${command ?? '(none)'}.`);
@@ -32,7 +37,9 @@ if (isMain) {
     if (!FLAGS.includes(rest[i])) usage(`Unknown option ${rest[i]}.`);
     const value = rest[i + 1];
     if (value === undefined || value.startsWith('--')) usage(`${rest[i]} requires a value.`);
-    options[rest[i].slice(2)] = value;
+    const name = rest[i].slice(2);
+    if (name === 'target' || name === 'summary') (options[name] ??= []).push(value);
+    else options[name] = value;
     i += 1;
   }
   const [cycle, slug, ...extra] = positional;
@@ -43,6 +50,10 @@ if (isMain) {
     if (!slug) usage('Missing delta slug.');
     for (const required of ['op', 'target', 'summary']) {
       if (options[required] === undefined) usage(`--${required} is required.`);
+    }
+    const { target: targets, summary: summaries } = options;
+    if (summaries.length !== 1 && summaries.length !== targets.length) {
+      usage(`Got ${summaries.length} --summary values for ${targets.length} --target values: give one shared summary or one per target.`);
     }
   }
   try {
@@ -56,8 +67,21 @@ if (isMain) {
           throw new DeltaError(`Cannot read the body file ${options['body-file']} (${cause.message}). Check the path.`);
         }
       }
-      const delta = addDelta(dir, cycle, { slug, op: options.op, target: options.target, summary: options.summary, body });
-      console.log(`added delta ${delta.slug}: ${delta.op} ${delta.target} (${delta.path})`);
+      const targets = options.target;
+      const entries = targets.map((target, i) => ({
+        slug: targets.length === 1 ? slug : `${slug}-${i + 1}`,
+        op: options.op,
+        target,
+        summary: options.summary[options.summary.length === 1 ? 0 : i],
+        body,
+      }));
+      const missing = new Set(targets.filter((target) => !existsSync(resolve(dir, target))));
+      for (const delta of addDeltas(dir, cycle, entries)) {
+        console.log(`added delta ${delta.slug}: ${delta.op} ${delta.target} (${delta.path})`);
+        if (delta.op === 'add' && missing.has(delta.target)) {
+          console.log(`created planned stub ${delta.target} from the document template with the delta summary; fill in its Purpose section and refine the summary.`);
+        }
+      }
     } else if (command === 'list') {
       const deltas = listDeltas(dir, cycle);
       if (deltas.length === 0) console.log(`no deltas in cycle ${cycle}`);

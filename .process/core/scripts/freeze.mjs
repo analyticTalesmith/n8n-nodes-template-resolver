@@ -4,11 +4,12 @@ import { fileURLToPath } from 'node:url';
 import { BoardError, cardPath, isCardId, readCard, writeCard } from '../lib/board.mjs';
 import { CARD_FILES, cardFile } from '../lib/card-files.mjs';
 import { designContextPaths, designContextProblem } from '../lib/checks/reviewer-brief.mjs';
+import { approvedDesignPaths, designApprovalProblemOfCard } from '../lib/design-approval.mjs';
 import { FreezeError, changedFreezeFields, freezeHashes, validateFreeze } from '../lib/freeze.mjs';
 import { amendCriteria, amendManifest } from '../lib/freeze-amend.mjs';
 import { localDocsHashes, localLivingHashes } from '../lib/local-docs-attestation.mjs';
 import { localCharterHashes } from '../lib/local-charters.mjs';
-import { humanColumn } from '../lib/moves.mjs';
+import { AMENDABLE, CARD_JSON, CARD_MD, STAGE, humanColumn } from '../lib/layout.mjs';
 import { scriptCommand } from '../lib/script-command.mjs';
 
 /** @typedef {import('../lib/card.mjs').Card} Card */
@@ -27,7 +28,7 @@ export { FreezeError, amendCriteria, amendManifest };
 export function freezeCard(projectDir, id, options = {}) {
   const card = readCard(projectDir, id);
   const { column } = cardPath(projectDir, id);
-  if (column !== '01_shaping') {
+  if (column !== STAGE.shaping) {
     throw new FreezeError(
       'freeze-not-shaping',
       `Card ${id} is in ${humanColumn(column)}; only a card in shaping can be frozen. Move it back to shaping first.`,
@@ -58,8 +59,6 @@ export function freezeCard(projectDir, id, options = {}) {
   return frozen;
 }
 
-const AMENDABLE_COLUMNS = Object.freeze(['03_in_progress', '04_review']);
-
 /**
  * Re-freezes only the brief hash of a card in progress or in review, for a change confined to the brief's Design
  * context section: the manifest, criteria and scope must still match the record, and the brief with that section removed
@@ -75,7 +74,7 @@ export function amendBrief(projectDir, id, reason, options = {}) {
   const card = readCard(projectDir, id);
   const { column } = cardPath(projectDir, id);
   const toShaping = `Take the card back to shaping (${scriptCommand(projectDir, 'card-move.mjs')} <projectDir> ${id} shaping --reason <text>), edit there and run ${scriptCommand(projectDir, 'freeze.mjs')} <projectDir> ${id}.`;
-  if (!AMENDABLE_COLUMNS.includes(column)) {
+  if (!AMENDABLE.includes(column)) {
     throw new FreezeError('freeze-wrong-column', `Card ${id} is in ${humanColumn(column)}; a brief-only re-freeze works only on a card in progress or in review. In shaping run ${scriptCommand(projectDir, 'freeze.mjs')} <projectDir> ${id}; from ready, gate or done go back to shaping first.`);
   }
   if (String(reason).trim() === '') {
@@ -100,7 +99,9 @@ export function amendBrief(projectDir, id, reason, options = {}) {
   if (current.brief_sha256 === freeze.brief_sha256) {
     throw new FreezeError('freeze-brief-unchanged', `The reviewer brief of card ${id} already matches its freeze record; there is nothing to amend.`);
   }
-  const forbidden = designContextPaths(briefText).flatMap((path) => designContextProblem(path) ?? []);
+  const approved = approvedDesignPaths(projectDir, id);
+  const approvalProblem = designApprovalProblemOfCard(projectDir, id);
+  const forbidden = designContextPaths(briefText).flatMap((path) => designContextProblem(path, approved, approvalProblem) ?? []);
   if (forbidden.length > 0) {
     throw new FreezeError(forbidden[0].rule, `${forbidden.map((f) => f.message).join(' ')} Fix the Design context list, then run this again.`);
   }
@@ -120,14 +121,14 @@ const isMain = (() => {
 
 if (isMain) {
   const USAGE =
-    'Usage: node freeze.mjs <projectDir> <cardId> [--brief-only --reason <text>] | [--amend-manifest --reason <text> [--add <path>] [--edit <path>] [--remove <path>] [--drop <path>] [--scope <folder>] [--unscope <folder>] [--blast-radius <module>] [--by <name>]] | [--amend-criteria --reason <text> --criterion <text> --verify <type> [--level <level>] [--by <name>]] (each path option may be repeated)';
+    'Usage: node freeze.mjs <projectDir> <cardId> [--brief-only --reason <text>] | [--amend-manifest --reason <text> [--add <path>] [--edit <path>] [--remove <path>] [--drop <path>] [--scope <folder>] [--unscope <folder>] [--blast-radius <module>] [--by <name>]] | [--amend-criteria --reason <text> --criterion <text> --verify <type> [--level <level>] [--type <contract|constraint>] [--by <name>]] (each path option may be repeated)';
   const usage = (message) => {
     console.error(`${message} ${USAGE}`);
     process.exit(2);
   };
   const FLAGS = new Set(['--brief-only', '--amend-manifest', '--amend-criteria']);
   const LIST_OPTIONS = { '--add': 'add', '--edit': 'edit', '--remove': 'remove', '--drop': 'drop', '--scope': 'scope', '--unscope': 'unscope', '--blast-radius': 'blast_radius' };
-  const SINGLE_OPTIONS = ['--reason', '--by', '--criterion', '--verify', '--level'];
+  const SINGLE_OPTIONS = ['--reason', '--by', '--criterion', '--verify', '--level', '--type'];
   const args = process.argv.slice(2);
   const flags = new Set();
   const singles = {};
@@ -162,7 +163,7 @@ if (isMain) {
   }
   if (mode !== undefined && reason === undefined) usage(`${mode} needs --reason <text>.`);
   if (mode === '--amend-criteria' && (singles['--criterion'] === undefined || singles['--verify'] === undefined)) usage('--amend-criteria needs --criterion <text> and --verify <type>.');
-  if (mode !== '--amend-criteria' && ['--criterion', '--verify', '--level'].some((name) => singles[name] !== undefined)) usage('--criterion, --verify and --level belong with --amend-criteria.');
+  if (mode !== '--amend-criteria' && ['--criterion', '--verify', '--level', '--type'].some((name) => singles[name] !== undefined)) usage('--criterion, --verify, --level and --type belong with --amend-criteria.');
   if (mode !== '--amend-manifest' && Object.keys(changes).length > 0) usage('--add, --edit, --remove, --drop, --scope, --unscope and --blast-radius belong with --amend-manifest.');
   if (mode !== '--amend-manifest' && mode !== '--amend-criteria' && singles['--by'] !== undefined) usage('--by belongs with an amendment.');
   const [projectDir, id] = positional;
@@ -174,10 +175,14 @@ if (isMain) {
       console.log(`re-froze the brief of ${id} at ${card.freeze.brief_amendments.at(-1).at}`);
     } else if (mode === '--amend-manifest') {
       const card = amendManifest(root, id, /** @type {string} */ (reason), changes, { by: singles['--by'] });
-      console.log(`amended the manifest of ${id} at ${card.manifest_amendments.at(-1).at}; the review packet shows it as a deviation from the frozen plan. card.md's scope table was rewritten from card.json.`);
+      console.log(`amended the manifest of ${id} at ${card.manifest_amendments.at(-1).at}; the review packet shows it as a deviation from the frozen plan. ${CARD_MD}'s scope table was rewritten from ${CARD_JSON}.`);
     } else if (mode === '--amend-criteria') {
-      const card = amendCriteria(root, id, /** @type {string} */ (reason), [{ text: singles['--criterion'], verify: singles['--verify'], ...(singles['--level'] === undefined ? {} : { level: singles['--level'] }) }], { by: singles['--by'] });
-      console.log(`added a criterion to ${id} at ${card.criteria_amendments.at(-1).at}; add the same line to Must-haves in card.md and to the spec, and give it a test row if its verify type is test.`);
+      const card = amendCriteria(root, id, /** @type {string} */ (reason), [{ text: singles['--criterion'], verify: singles['--verify'], ...(singles['--level'] === undefined ? {} : { level: singles['--level'] }) }], { by: singles['--by'], type: singles['--type'] });
+      const { at, files } = card.criteria_amendments.at(-1);
+      const left = [[CARD_MD, `Must-haves in ${CARD_MD}`], [CARD_FILES.spec, 'Acceptance criteria in spec.md'], [CARD_FILES.reviewerBrief, `Rubric in ${CARD_FILES.reviewerBrief}`]]
+        .filter(([name]) => !files.some((file) => file.endsWith(`/${name}`) || file === name)).map(([, what]) => `add the line to ${what}`);
+      if (singles['--verify'] === 'test') left.push('give it a test row');
+      console.log(`added a criterion to ${id} at ${at}; wrote ${files.join(', ') || 'no file'}.${left.length ? ` Left for the lead: ${left.join('; ')}.` : ''}`);
     } else {
       const card = freezeCard(root, id);
       console.log(`frozen ${id} at ${card.freeze.at}`);

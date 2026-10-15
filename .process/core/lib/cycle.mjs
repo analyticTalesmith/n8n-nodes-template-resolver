@@ -1,14 +1,15 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { toLf } from './files.mjs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { approverProblem } from './approval.mjs';
 import { CONFIG_PATH, ConfigError, readConfig } from './config.mjs';
 import { designApprovalState } from './design-approval.mjs';
 import { readFrontmatter, setFrontmatterField } from './frontmatter.mjs';
-import { changedSince, headCommit, isAncestorCommit, runGit } from './git.mjs';
+import { changedSince, headCommit, isAncestorCommit, isCommitId, runGit } from './git.mjs';
 import { readTierData } from './gate.mjs';
 import { planIndexes } from './index-docs.mjs';
-import { COLUMNS, CYCLES_DIR, CycleNameError, TIERS, cycleColumn, cyclePaths } from './layout.mjs';
+import { CARD_JSON, COLUMNS, CYCLES_DIR, CycleNameError, DOCS_ROOT, PROCESS_CORE, PROCESS_DIR, STAGE, TIERS, cycleColumn, cyclePaths, humanColumn } from './layout.mjs';
 import { concernKey, CONCERNS } from './concerns.mjs';
 import { CYCLE_LEVELS, requiredAt, SWEEP_LENSES } from './levels.mjs';
 import { localDocsHashes, validLocalDocsHashes } from './local-docs-attestation.mjs';
@@ -17,7 +18,10 @@ import { DECLARED_KEYS, MULTI, ProfileError, parseSettings, profileProblems } fr
 import { resolveProjectPath, resolveProjectRoots } from './project-roots.mjs';
 import { LEGACY_SHAPE_RULE, shapeFindings } from './cycle-shape.mjs';
 import { ShapeError, resolveShape, shapeSection } from './shapes.mjs';
+import { seedWaivers, selectedLevelsOf } from './test-plan.mjs';
 import { scriptCommand, templateFile } from './script-command.mjs';
+import { isKebab } from './names.mjs';
+import { isPlainObject } from './types.mjs';
 
 /** @typedef {import('../scripts/validate.mjs').Finding} Finding */
 /** @typedef {{ name: string, goal: string, summary: string, tier: string, stage: string, approvals: 'card' | 'cycle' | 'front', status: 'open' | 'closed', verification_levels: string[], review_sweeps: string[], kind?: string, profile?: Record<string, string | string[]>, concerns?: Record<string, string> }} Cycle */
@@ -44,13 +48,10 @@ const STATUSES = ['open', 'closed'];
 const FIELDS = ['name', 'goal', 'summary', 'tier', 'stage', 'status'];
 // Tiers whose close needs a person's approval recorded in the close review.
 const REVIEWED_TIERS = ['product', 'hardened'];
-const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const CLOSE_REVIEW = 'verification/close-review.md';
-const DONE = '06_done';
+const DONE = STAGE.done;
 const INDEX_FILE = 'INDEX.md';
 
-const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
-const humanColumn = (column) => column.replace(/^\d+_/, '').replaceAll('_', ' ');
 
 /**
  * Where a cycle's files live, as absolute paths; a bad name is a CycleError.
@@ -86,7 +87,7 @@ export function stagesOf(projectDir) {
   }
   if (!('stages' in config)) return [...STAGES];
   const { stages } = config;
-  const usable = Array.isArray(stages) && stages.length > 0 && stages.every((s) => typeof s === 'string' && KEBAB.test(s));
+  const usable = Array.isArray(stages) && stages.length > 0 && stages.every((s) => isKebab(s));
   if (!usable) {
     throw new CycleError(
       `The stages key in ${CONFIG_PATH} is ${JSON.stringify(stages)}; it must be a non-empty list of kebab-case stage names. Correct the list, or remove the key to use the defaults (${STAGES.join(', ')}).`,
@@ -110,7 +111,7 @@ export function validateCycle(value) {
       message: `Cycle field ${path} must be ${expected}. Add or correct it in the CYCLE.md frontmatter.`,
       path,
     });
-  if (!isObject(value)) {
+  if (!isPlainObject(value)) {
     missing('cycle', 'an object');
     return findings;
   }
@@ -235,14 +236,14 @@ export function createCycle(projectDir, { name, goal, tier, stage, approvals, ve
       mkdirSync(physical, { recursive: true });
       writeFileSync(join(physical, '.gitkeep'), '');
     }
-    const body = readFileSync(TEMPLATE, 'utf8')
-      .replaceAll('\r\n', '\n')
+    const body = toLf(readFileSync(TEMPLATE, 'utf8'))
       .replace(/\{\{(name|goal|summary|tier|stage|approvals)\}\}/g, (_, key) => cycle[key])
       .replace('{{verification_levels}}', `[${verificationLevels.join(', ')}]`)
       .replace('{{review_sweeps}}', `[${reviewSweeps.join(', ')}]`)
       .replace('{{shape_fields}}\n', () => (shape === null ? '' : `${profileFrontmatter(cycle)}\n`))
       .replace('{{shape_section}}', () => shapeSection(shape));
-    io.writeFileSync(plan, readFileSync(PLAN_TEMPLATE, 'utf8').replaceAll('\r\n', '\n'), { flag: 'wx' });
+    const blankPlan = toLf(readFileSync(PLAN_TEMPLATE, 'utf8'));
+    io.writeFileSync(plan, seedWaivers(blankPlan, selectedLevelsOf(cycle, readTierData(projectDir).data)), { flag: 'wx' });
     planWritten = true;
     io.writeFileSync(brief, body, { flag: 'wx' });
   } catch (cause) {
@@ -275,7 +276,7 @@ function writeCyclesIndex(projectDir, name, io = { writeFileSync }) {
       if (plan.text !== plan.current) io.writeFileSync(resolveProjectPath(roots, plan.path), plan.text);
     }
   } catch (cause) {
-    throw new CycleError(`Cycle ${name} was created, but ${path} could not be updated (${cause.message}). Run node .process/core/scripts/index.mjs <projectDir> to list it.`, { cause });
+    throw new CycleError(`Cycle ${name} was created, but ${path} could not be updated (${cause.message}). Run node ${PROCESS_CORE}/scripts/index.mjs <projectDir> to list it.`, { cause });
   }
 }
 
@@ -285,13 +286,13 @@ function writeCyclesIndex(projectDir, name, io = { writeFileSync }) {
  * @returns {Cycle}
  */
 export function readCycle(projectDir, name) {
-  const { brief } = locate(projectDir, name);
+  const { brief, paths } = locate(projectDir, name);
   let text;
   try {
     text = readFileSync(brief, 'utf8');
   } catch (cause) {
     throw new CycleError(
-      `Cannot read cycle brief ${brief} (${cause.message}). Create the cycle with ${scriptCommand(projectDir, 'cycle.mjs')} <projectDir> new ${name} or fix the cycle name.`,
+      `Cannot read cycle brief ${paths.brief} (${cause.code === 'ENOENT' ? 'missing' : 'unreadable'}). Create the cycle with ${scriptCommand(projectDir, 'cycle.mjs')} <projectDir> new ${name} or fix the cycle name.`,
       { cause },
     );
   }
@@ -337,7 +338,7 @@ export function listCycles(projectDir) {
 /** Whether a card folder holds a card.json that can be read and parsed. */
 function readableCard(folder) {
   try {
-    JSON.parse(readFileSync(join(folder, 'card.json'), 'utf8'));
+    JSON.parse(readFileSync(join(folder, CARD_JSON), 'utf8'));
     return true;
   } catch {
     return false;
@@ -375,7 +376,7 @@ function cardsByColumn(projectDir, name) {
       if (cause.code !== 'ENOENT') throw cause;
     }
     const ids = entries
-      .filter((e) => e.isDirectory() && existsSync(join(folder, e.name, 'card.json')))
+      .filter((e) => e.isDirectory() && existsSync(join(folder, e.name, CARD_JSON)))
       .map((e) => e.name)
       .sort();
     return { column, ids };
@@ -417,7 +418,9 @@ function requireApproval(projectDir, roots, name) {
 /** @typedef {{ kind: 'level' | 'lens', name: string, problem: 'missing' | 'failed' | 'stale-code' | 'stale-local-docs' | 'unverifiable-local-docs' | 'unsigned' | 'signer-not-listed' | 'duplicate' | 'unknown', files: string[], reason?: string }} EvidenceGap */
 
 /** Paths a verification run does not cover: everything under docs/, and .process/ except the installed process code. */
-const outsideRun = (path) => path.startsWith('docs/') || (path.startsWith('.process/') && !/^\.process\/(core|tiers|hooks|skills|agents)\//.test(path));
+const INSTALLED_OWNED_FOLDERS = ['core', 'tiers', 'hooks', 'skills', 'agents'];
+const INSTALLED_OWNED = new RegExp(`^${PROCESS_DIR.replaceAll('.', '\\.')}/(${INSTALLED_OWNED_FOLDERS.join('|')})/`);
+const outsideRun = (path) => path.startsWith(`${DOCS_ROOT}/`) || (path.startsWith(`${PROCESS_DIR}/`) && !INSTALLED_OWNED.test(path));
 
 /**
  * Whether a record that ran against `ranAgainst` is still current for the code: that commit is in this history and no
@@ -430,7 +433,7 @@ const outsideRun = (path) => path.startsWith('docs/') || (path.startsWith('.proc
 function staleness(checkoutRoot, ranAgainst) {
   const again = 'Rerun verification against the current code.';
   if (ranAgainst === '') return { reason: `ran_against is empty. ${again}`, files: [] };
-  if (!/^[0-9a-f]{7,40}$/i.test(ranAgainst)) return { reason: `ran_against ${JSON.stringify(ranAgainst)} is not a commit id. ${again}`, files: [] };
+  if (!isCommitId(ranAgainst)) return { reason: `ran_against ${JSON.stringify(ranAgainst)} is not a commit id. ${again}`, files: [] };
   let commit;
   try {
     commit = runGit(checkoutRoot, ['rev-parse', '--verify', '--quiet', `${ranAgainst}^{commit}`]).trim();
@@ -548,7 +551,7 @@ export function closeCycle(projectDir, name) {
   const listed = (folders) => folders.map(({ id, column }) => `${id} (${humanColumn(column)})`).join(', ');
   const strays = strayFolders(projectDir, name);
   if (strays.length) {
-    throw new CycleError(`Cycle ${name} has folders on its board that are not valid cards (no readable card.json): ${listed(strays)}. Repair their card.json or remove the folders, then close again.`);
+    throw new CycleError(`Cycle ${name} has folders on its board that are not valid cards (no readable ${CARD_JSON}): ${listed(strays)}. Repair their ${CARD_JSON} or remove the folders, then close again.`);
   }
   const open = unfinished(cardsByColumn(projectDir, name));
   if (open.length) {

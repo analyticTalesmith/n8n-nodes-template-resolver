@@ -3,12 +3,13 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BoardError, isCardId, readCard } from '../lib/board.mjs';
 import { CARD_FILES, WORK_ROOT, workFile } from '../lib/card-files.mjs';
-import { runCardGate } from '../lib/checks/card-gate.mjs';
+import { redProofArgv, runCardGate } from '../lib/checks/card-gate.mjs';
+import { selectedLevelsFor } from '../lib/gate.mjs';
 import { buildRedEvidence, cardCriterionIds, parseGateOutput, reasonOf, reasonProblem, reportAdvice, testFilesHash } from '../lib/checks/red-evidence.mjs';
 import { runnerOf } from '../lib/checks/runner-json.mjs';
 
 /**
- * Runs the card's gate command and writes red-evidence.md in the card's work folder from its output (node:test TAP, or a
+ * Runs the card's gate command (for a card with no gate, its first selected gates entry) and writes red-evidence.md in the card's work folder from its output (node:test TAP, or a
  * jest or vitest json report): one row per failing test. The log is written even when a failure is not an assertion failure,
  * so the check can name it. Writes no other file.
  * @param {string} projectDir
@@ -19,19 +20,19 @@ import { runnerOf } from '../lib/checks/runner-json.mjs';
 export function writeRedEvidence(projectDir, id, { run } = {}) {
   const card = readCard(projectDir, id);
   const startedAt = Date.now();
-  const { result, findings } = runCardGate({ projectDir, card, ...(run === undefined ? {} : { run }) });
+  const argv = /** @type {string[]} */ (redProofArgv(card, selectedLevelsFor(projectDir, card)));
+  const { result, findings } = runCardGate({ projectDir, card, argv, ...(run === undefined ? {} : { run }) });
   if (result === null) return { ok: false, message: findings.map((f) => f.message).join('\n'), wrongReasons: [] };
   if (result.status === 0) {
     return { ok: false, message: `The gate command passed, so there are no failing tests to record. Write the failing tests first.`, wrongReasons: [] };
   }
-  const argv = /** @type {string[]} */ (card.gate);
   const tap = parseGateOutput({ argv, stdout: result.stdout, projectDir, startedAt });
   if (!tap.parsed || tap.failures.length === 0) {
     const runner = runnerOf(argv);
     const advice = runner === 'jest' || runner === 'vitest' ? reportAdvice(runner) : 'Add --test-reporter=tap to the gate command.';
     return { ok: false, message: `The gate command did not print a report with a failing test (node:test TAP, or a jest or vitest json report), so nothing was recorded. ${advice} Make sure a test fails.`, wrongReasons: [] };
   }
-  const text = buildRedEvidence({ cardId: id, command: /** @type {string[]} */ (card.gate), exitStatus: result.status ?? 1, failures: tap.failures, criteria: cardCriterionIds(card), projectDir, testsHash: testFilesHash(projectDir, card) });
+  const text = buildRedEvidence({ cardId: id, command: argv, exitStatus: result.status ?? 1, failures: tap.failures, criteria: cardCriterionIds(card), projectDir, testsHash: testFilesHash(projectDir, card) });
   const file = workFile(projectDir, id, CARD_FILES.redEvidence);
   mkdirSync(dirname(file), { recursive: true });
   writeFileSync(file, text);

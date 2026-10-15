@@ -1,7 +1,7 @@
 import { realpathSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { GitError, addedLines, effectiveBase, runGit } from '../lib/git.mjs';
+import { GitError, addedLines, effectiveBase, runGit, shortSha } from '../lib/git.mjs';
 import { DEFAULT_MAX, mutationCandidates, renderMutationInput } from '../lib/mutation-input.mjs';
 
 const isMain = (() => {
@@ -43,7 +43,7 @@ if (isMain) {
     const sha = runGit(projectDir, ['rev-parse', '--verify', `${base}^{commit}`]).trim();
     const lines = addedLines(projectDir, sha);
     const candidates = mutationCandidates(lines, { max: options.max ?? DEFAULT_MAX });
-    process.stdout.write(renderMutationInput(candidates, { base: sha.slice(0, 7), considered: lines.length }));
+    process.stdout.write(renderMutationInput(candidates, { base: shortSha(sha), considered: lines.length }));
   } catch (err) {
     console.error(err instanceof Error ? err.message : String(err));
     process.exit(err instanceof GitError ? 1 : 2);

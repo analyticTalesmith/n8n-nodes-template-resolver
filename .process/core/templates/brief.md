@@ -16,4 +16,4 @@
 <!-- The model and the effort this spawn runs on, with a reason for each, so a spawn records why. Never name the top-tier model. -->
 
 ## Result and status
-<!-- Where the caller saves the report, and the status to end with: done, done with concerns, needs context, or blocked. Never write secrets, tokens or credentials into the report or this brief. -->
+<!-- Where the caller saves the report, and the status to end with: done, done with concerns, needs context, or blocked. Never write secrets, tokens or credentials into the report or this brief. Name worktrees, branches and report files by the card's readable label (its title slug, at most four words), never by a card, task or plan code, and mention cards, tickets and tasks by label first. -->

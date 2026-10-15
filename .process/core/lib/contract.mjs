@@ -1,16 +1,18 @@
+import { toLf, toPosix } from './files.mjs';
 import { readFileSync } from 'node:fs';
 import { cardPath } from './board.mjs';
+import { CARD_MD, CONTEXT_MD } from './layout.mjs';
 
 /** The ticket contract files in a card folder: card.md holds the contract, context.md the working memory. */
-export const CONTRACT_FILES = Object.freeze({ card: 'card.md', context: 'context.md' });
+export const CONTRACT_FILES = Object.freeze({ card: CARD_MD, context: CONTEXT_MD });
 
 /** @typedef {'add' | 'edit' | 'remove'} WriteKind */
 /** @typedef {{ path: string, kind: WriteKind }} ScopeWrite */
 /** @typedef {{ date: string, path: string, kind: WriteKind, reason: string, approvedBy: string }} ScopeException */
 
 const WRITE_KINDS = ['add', 'edit', 'remove'];
-const lf = (text) => String(text).replaceAll('\r\n', '\n');
-const slashes = (path) => String(path).trim().replaceAll('\\', '/').replace(/^(\.\/)+/, '');
+const lf = (text) => toLf(String(text));
+const slashes = (path) => toPosix(String(path), { trim: true, stripDotSlash: true });
 
 /** Text without HTML comments (template guidance), so a hint never counts as content. */
 export const stripComments = (text) => lf(text).replace(/<!--[\s\S]*?-->/g, '');

@@ -1,4 +1,6 @@
 import { spawnSync } from 'node:child_process';
+import { isPlainObject } from '../types.mjs';
+import { CONFIG_PATH } from '../config.mjs';
 
 /** @typedef {import('../../scripts/validate.mjs').Finding} Finding */
 /** @typedef {{ status: number | null, stdout: string, stderr: string, error?: Error }} CommandResult */
@@ -6,7 +8,7 @@ import { spawnSync } from 'node:child_process';
 
 export const BOUNDARY_TIMEOUT_MS = 120000;
 export const WINDOWS_LAUNCHER_HINT =
-  'run it through its real executable or a node script; npx and .cmd launchers cannot be started without a shell';
+  'run it as node <script>, for example node node_modules/jest/bin/jest.js or node node_modules/vitest/vitest.mjs, or through its real executable: npx and .cmd launchers cannot be started without a shell';
 
 const MAX_BUFFER = 64 * 1024 * 1024;
 export const OUTPUT_LINES = 20;
@@ -47,21 +49,21 @@ const finding = (rule, message) => ({ rule, message });
  * @returns {Finding[]}
  */
 export function checkBoundary({ projectDir, tier, gate, run = runCommand, platform = process.platform, required = tier === 'hardened' }) {
-  const settings = gate !== null && typeof gate === 'object' && !Array.isArray(gate) ? /** @type {Record<string, unknown>} */ (gate) : {};
+  const settings = isPlainObject(gate) ? /** @type {Record<string, unknown>} */ (gate) : {};
   const boundary = settings.boundary;
   const canary = settings.boundary_canary;
   if (boundary === undefined) {
     return required
-      ? [finding('boundary-not-configured', 'The hardened tier needs an architecture boundary checker. Set gate.boundary (an argv array) and gate.boundary_canary in .process/aperture.json.')]
+      ? [finding('boundary-not-configured', `The hardened tier needs an architecture boundary checker. Set gate.boundary (an argv array) and gate.boundary_canary in ${CONFIG_PATH}.`)]
       : [];
   }
   /** @type {Finding[]} */
   const invalid = [];
   if (!isArgv(boundary)) {
-    invalid.push(finding('boundary-config-invalid', 'gate.boundary must be a non-empty array of non-empty strings (program, then its arguments). Fix it in .process/aperture.json.'));
+    invalid.push(finding('boundary-config-invalid', `gate.boundary must be a non-empty array of non-empty strings (program, then its arguments). Fix it in ${CONFIG_PATH}.`));
   }
   if (canary !== undefined && !isArgv(canary)) {
-    invalid.push(finding('boundary-config-invalid', 'gate.boundary_canary must be a non-empty array of non-empty strings (program, then its arguments). Fix it in .process/aperture.json.'));
+    invalid.push(finding('boundary-config-invalid', `gate.boundary_canary must be a non-empty array of non-empty strings (program, then its arguments). Fix it in ${CONFIG_PATH}.`));
   }
   if (invalid.length) return invalid;
   if (canary === undefined) {
@@ -109,7 +111,7 @@ export function describeRunFailure(label, argv, result, { platform, timeoutMs })
   }
   if (result.error) {
     const hint = platform === 'win32' && (code === 'ENOENT' || code === 'EINVAL') ? ` On Windows, ${WINDOWS_LAUNCHER_HINT}.` : '';
-    return `The ${label} (${argv[0]}) could not start (${result.error.message}). Check the command in .process/aperture.json.${hint}`;
+    return `The ${label} (${argv[0]}) could not start (${result.error.message}). Check the command in ${CONFIG_PATH}.${hint}`;
   }
   if (result.status === null) {
     return `The ${label} (${argv[0]}) ended by a signal before it exited. Run it by hand to see why.`;

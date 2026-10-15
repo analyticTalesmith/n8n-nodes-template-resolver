@@ -1,4 +1,6 @@
+import { toPosix } from '../files.mjs';
 import { existsSync } from 'node:fs';
+import { DOCS_ROOT, MODULES_DIR } from '../layout.mjs';
 import { dirname, isAbsolute, relative, resolve } from 'node:path';
 import { CONTRACT_FILES, parseBlastRadius, parseScope, proseOnly, readContractFile, sectionBody } from '../contract.mjs';
 import { MODULE_NAME } from '../card.mjs';
@@ -8,7 +10,7 @@ import { ProjectRootsError, resolveProjectPath, resolveProjectRoots } from '../p
 
 /** @typedef {import('../../scripts/validate.mjs').Finding} Finding */
 
-const slashes = (path) => String(path).replaceAll('\\', '/').replace(/^(\.\/)+/, '');
+const slashes = (path) => toPosix(String(path), { stripDotSlash: true });
 const LINK = /\[[^\]\n]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
 const KINDS = ['add', 'edit', 'remove'];
 
@@ -33,7 +35,7 @@ function brokenLinks(text, fileAbs, projectDir) {
       const docsRel = relative(roots.docsRoot, abs);
       const inside = (rel) => rel !== '..' && !rel.startsWith('..\\') && !rel.startsWith('../') && !isAbsolute(rel);
       if (!inside(codeRel) && !inside(docsRel)) continue;
-      if (inside(docsRel) && roots.mode === 'local' && docsRel !== '') abs = resolveProjectPath(roots, `docs/${slashes(docsRel)}`);
+      if (inside(docsRel) && roots.mode === 'local' && docsRel !== '') abs = resolveProjectPath(roots, `${DOCS_ROOT}/${slashes(docsRel)}`);
     } catch { broken.push(raw); continue; }
     if (!existsSync(abs)) broken.push(raw);
   }
@@ -60,7 +62,7 @@ export function checkCardContract({ projectDir, card, tier }) {
   const logicalFile = (abs) => {
     const rel = relative(roots.docsRoot, abs);
     return roots.mode === 'local' && rel !== '..' && !rel.startsWith('../') && !rel.startsWith('..\\') && !isAbsolute(rel)
-      ? `docs/${slashes(rel)}` : slashes(relative(projectDir, abs));
+      ? `${DOCS_ROOT}/${slashes(rel)}` : slashes(relative(projectDir, abs));
   };
   /** @type {Finding[]} */
   const findings = [];
@@ -119,7 +121,7 @@ export function checkCardContract({ projectDir, card, tier }) {
         message: `card.md Scope table Blast radius lists ${readable.found ? list(readable.modules) : 'no column'}; card.json blast_radius lists ${list(machine)}. Use the Scope table and make both module lists agree.`,
       });
     }
-    const moduleFolder = 'docs/living/architecture/modules';
+    const moduleFolder = MODULES_DIR;
     try {
       const folder = resolveProjectPath(roots, moduleFolder);
       if (existsSync(folder)) for (const name of machine.filter((item) => MODULE_NAME.test(item))) {
@@ -149,7 +151,9 @@ export function checkCardContract({ projectDir, card, tier }) {
     for (const raw of brokenLinks(body, abs, projectDir)) {
       findings.push({
         rule: 'card-link-broken',
-        message: `${name} links to ${raw}, which is not a file in the project. Fix the link or remove it (links point into docs/living, never copies).`,
+        message: raw.startsWith('/')
+          ? `${name} links to ${raw}, which does not resolve to a file from the project root, where a link that starts with a slash is read. Fix the link or remove it (link, never copy).`
+          : `${name} links to ${raw}, which does not resolve to a file from ${logicalFile(abs).split('/').slice(0, -1).join('/')}, the folder ${name} is in. Count the folders from ${name} up to ${DOCS_ROOT}/ for a relative link. Fix the link or remove it (link, never copy).`,
         path: logicalFile(abs),
       });
     }

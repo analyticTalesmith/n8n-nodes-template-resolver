@@ -1,3 +1,4 @@
+import { detectEol, toLf, toPosix } from './files.mjs';
 import { scriptCommand } from './script-command.mjs';
 
 /** The generated Scope table of a card.md: card.json is the source, the table is written from it. */
@@ -8,7 +9,7 @@ export const SCOPE_END = '<!-- end generated scope -->';
 export const scopeSyncCommand = (projectDir) => `${scriptCommand(projectDir, 'card-scope.mjs')} sync <projectDir> <cardId>`;
 
 const KINDS = ['add', 'edit', 'remove'];
-const slashes = (path) => String(path).replaceAll('\\', '/').replace(/^(\.\/)+/, '');
+const slashes = (path) => toPosix(String(path), { stripDotSlash: true });
 const strings = (value) => (Array.isArray(value) ? value.filter((s) => typeof s === 'string') : []);
 
 /** The blast radius cell of a card: its module names, or `none` when it declares none. */
@@ -53,7 +54,7 @@ export function findScopeBlock(text) {
   const close = text.indexOf(SCOPE_END, start);
   if (close < 0) return null;
   const end = close + SCOPE_END.length;
-  return { start, end, text: text.slice(start, end).replaceAll('\r\n', '\n') };
+  return { start, end, text: toLf(text.slice(start, end)) };
 }
 
 /** True when the card.md has a generated block that differs from what card.json would produce. */
@@ -73,7 +74,7 @@ const ROW = /^\s*(?:\||`?read-only`?(?:\s*[:.—–-].*)?$)/;
  * @returns {{ text: string, changed: boolean, written: boolean }} written is false when there was nowhere to put the block
  */
 export function applyScopeBlock(text, card) {
-  const eol = text.includes('\r\n') ? '\r\n' : '\n';
+  const eol = detectEol(text);
   const block = renderScopeBlock(card).replaceAll('\n', eol);
   const found = findScopeBlock(text);
   let next;

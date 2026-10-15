@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { CONFIG_PATH } from './config.mjs';
 
 /** @typedef {import('../scripts/validate.mjs').Finding} Finding */
 /** @typedef {import('./checks/boundary.mjs').CommandResult} CommandResult */
@@ -22,6 +23,7 @@ First restate the objective in your own words. If you disagree with the brief, p
 At product tier and up, write your verification plan from section 1 before you read section 3.
 Tie every finding to the objective chain with \`serves\` and a \`class\`. Only \`defect\` and \`goal-risk\` ask for a fix, and each asks for the smallest change that restores the criterion. File out-of-scope problems as \`drift\`.
 Before answering, re-read every finding against the chain and withdraw any whose \`serves\` does not hold.
+Write every backslash in a JSON string as two backslashes, and give file paths with forward slashes.
 Answer with the JSON object only.`;
 
 export class ReviewerError extends Error {
@@ -67,7 +69,7 @@ export const runReviewer = (argv, { cwd, input, timeoutMs }) => {
 export function readReviewSettings(config) {
   const raw = /** @type {any} */ (config)?.review;
   const bad = (key, expected) =>
-    reviewerError('review-config-invalid', `${key === 'review' ? 'review' : `review.${key}`} in .process/aperture.json must be ${expected}. Fix it there.`, key);
+    reviewerError('review-config-invalid', `${key === 'review' ? 'review' : `review.${key}`} in ${CONFIG_PATH} must be ${expected}. Fix it there.`, key);
   if (raw === undefined) return { reviewer: ['codex'], model: null, effort: null, fallbackOnly: false };
   if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) throw bad('review', 'an object');
   const { reviewer = ['codex'], model = null, effort = null, fallback_only: fallbackOnly = false } = raw;
@@ -87,7 +89,7 @@ export function readReviewSettings(config) {
  */
 export function codexArgs(settings, { workDir, outFile }) {
   if (settings.model === null || settings.effort === null) {
-    throw reviewerError('review-not-pinned', 'A Codex review needs both review.model and review.effort in .process/aperture.json (the spec pins them in project config). Set them, then run again.');
+    throw reviewerError('review-not-pinned', `A Codex review needs both review.model and review.effort in ${CONFIG_PATH} (the spec pins them in project config). Set them, then run again.`);
   }
   return [
     'exec', '--model', settings.model, '--config', `model_reasoning_effort="${settings.effort}"`, '--sandbox', 'read-only',
@@ -100,22 +102,49 @@ export function codexArgs(settings, { workDir, outFile }) {
 export const buildReviewPrompt = (packetText) => `${REVIEW_PREAMBLE}\n\n${packetText}`;
 
 /**
- * Accepts text that is one JSON object, optionally inside a single fenced block.
+ * Accepts text that is one JSON object, optionally inside a single fenced block. Only when the strict parse fails, every
+ * backslash that does not start a valid JSON escape is doubled and the text is parsed once more.
  * @param {string} text
- * @returns {unknown}
+ * @returns {{ value: object, repaired: number }} repaired is how many backslashes were doubled
  */
-export function parseReviewMessage(text) {
+export function parseReviewMessageWithNotes(text) {
   const trimmed = String(text).trim();
   const fence = /^```[^\n]*\n([\s\S]*?)\n?```$/.exec(trimmed);
   const body = fence ? fence[1] : trimmed;
   let value;
+  let repaired = 0;
   try {
     value = JSON.parse(body);
-  } catch {
-    throw reviewerError('review-output-invalid', 'The reviewer reply is not one JSON object (optionally inside a single fenced block). Ask for the JSON object only.');
+  } catch (strict) {
+    const fixed = body.replace(/\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4})|\\/g, (match, offset) => {
+      if (match.length > 1) {
+        const separator = /^\\[bfnrt]$/.test(match) && /[A-Za-z0-9_-]/.test(body[offset - 1] ?? '') && /[A-Za-z_]/.test(body[offset + 2] ?? '');
+        const drive = /^\\[bfnrt]$/.test(match) && /(?:^|[^A-Za-z0-9_-])[A-Za-z]:$/.test(body.slice(Math.max(0, offset - 3), offset)) && /[A-Za-z_]/.test(body[offset + 2] ?? '');
+        if (!separator && !drive) return match;
+        repaired++;
+        return `\\\\${match[1]}`;
+      }
+      repaired++;
+      return '\\\\';
+    });
+    try {
+      value = JSON.parse(fixed);
+    } catch {
+      const position = /position (\d+)/.exec(strict instanceof Error ? strict.message : '')?.[1];
+      throw reviewerError(
+        'review-output-invalid',
+        `The reviewer reply is not one JSON object (optionally inside a single fenced block)${position === undefined ? '' : `; the parse failed at position ${position}`}. Ask for the JSON object only; if the reply contains a backslash, write it as two.`,
+      );
+    }
   }
   if (value === null || typeof value !== 'object' || Array.isArray(value)) {
     throw reviewerError('review-output-invalid', 'The reviewer reply must be one JSON object. Ask for the JSON object only.');
   }
-  return value;
+  return { value, repaired };
 }
+
+/**
+ * @param {string} text
+ * @returns {unknown}
+ */
+export const parseReviewMessage = (text) => parseReviewMessageWithNotes(text).value;

@@ -1,7 +1,6 @@
-import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { ConfigError, readConfig } from './config.mjs';
-import { PathError } from './files.mjs';
+import { CONFIG_PATH, ConfigError, readConfig } from './config.mjs';
+import { PathError, sha256Bytes } from './files.mjs';
 import { resolveProjectPath, resolveProjectRoots } from './project-roots.mjs';
 
 /** Values that look filled in but name no one; compared trimmed and lowercased. */
@@ -35,7 +34,7 @@ export function fileHash(projectDir, logicalPath) {
     throw new ApprovalError(`Approval path ${String(logicalPath)} is unsafe. Use a project-relative path without links.`, 'path-unsafe', cause);
   }
   try {
-    return createHash('sha256').update(readFileSync(path)).digest('hex');
+    return sha256Bytes(readFileSync(path));
   } catch (cause) {
     if (cause.code === 'ENOENT') return 'missing';
     throw cause;
@@ -54,7 +53,7 @@ export function readApprovers(projectDir) {
   if (!Object.hasOwn(config, 'approvers')) return null;
   const values = config.approvers;
   if (!Array.isArray(values) || values.length === 0 || values.some(value => typeof value !== 'string' || !isApproved(value) || value.trim() !== value)) {
-    throw new ApprovalError('approvers in .process/aperture.json must be a non-empty list of non-placeholder person names. Fix the list and retry.', 'approvers-invalid');
+    throw new ApprovalError(`approvers in ${CONFIG_PATH} must be a non-empty list of non-placeholder person names. Fix the list and retry.`, 'approvers-invalid');
   }
   return values;
 }
@@ -63,6 +62,6 @@ export function readApprovers(projectDir) {
 export function approverProblem(projectDir, value) {
   if (!isApproved(value)) return 'Approval is empty or a placeholder. Fill it with a person\'s name.';
   const approvers = readApprovers(projectDir);
-  if (approvers !== null && !approvers.includes(value.trim())) return 'Approval name is not listed in approvers in .process/aperture.json. Use a listed person\'s name.';
+  if (approvers !== null && !approvers.includes(value.trim())) return `Approval name is not listed in approvers in ${CONFIG_PATH}. Use a listed person's name.`;
   return null;
 }

@@ -1,11 +1,12 @@
-import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { BoardError, cardPath, isCardId, listCards, readCard } from './board.mjs';
 import { CARD_FILES, WORK_ROOT, cardFile, workFile } from './card-files.mjs';
 import { CONTRACT_FILES, parseBlastRadius, parseScope, sectionBody, stripComments } from './contract.mjs';
 import { CycleError, readCycle } from './cycle.mjs';
-import { changedFreezeFields, freezeHashes, validateFreeze } from './freeze.mjs';
+import { approvedDesignDocs, designApprovalProblem } from './design-approval.mjs';
+import { sha256Bytes, toLf } from './files.mjs';
+import { changedFreezeFields, freezeHashes, headerLines, validateFreeze } from './freeze.mjs';
 import { effectiveBase, fileAtCommit, headCommit, runGit } from './git.mjs';
 import { cyclePaths, isCycleName } from './layout.mjs';
 import {
@@ -32,7 +33,7 @@ export const CYCLE_PACKAGE_FILE = 'evaluator-package.md';
 /** What an evaluator never receives, said in the package itself so a reader knows the absence is deliberate. */
 export const LEFT_OUT = "the implementer's session: its report, notes, working memory, reasons, review record and review rounds, and the diff. A deviation from what is written here is a finding; an explanation you were not shown does not change it.";
 
-const sha256 = (text) => createHash('sha256').update(text, 'utf8').digest('hex');
+const sha256 = (text) => sha256Bytes(Buffer.from(text, 'utf8'));
 
 export class PackageError extends Error {
   /** @param {string} rule @param {Finding[]} findings */
@@ -152,7 +153,7 @@ function buildCardPackage(projectDir, id, { now = new Date(), base, run = runGit
   const cardText = contractAtBase({ projectDir, roots, id, cycle: located.cycle, name: CONTRACT_FILES.card, baseSha, run });
   const specPath = `${WORK_ROOT}/${id}/${CARD_FILES.spec}`;
   const specText = roots.mode === 'local' ? (existsSync(workFile(projectDir, id, CARD_FILES.spec)) ? readFileSync(workFile(projectDir, id, CARD_FILES.spec), 'utf8') : null) : fileAtCommit(projectDir, baseSha, specPath, run);
-  const { contexts, problems } = readDesignContexts({ projectDir, roots, briefText, baseSha, run });
+  const { contexts, problems } = readDesignContexts({ projectDir, roots, briefText, baseSha, run, docs: located.cycle === null ? undefined : approvedDesignDocs(projectDir, located.cycle), unreadable: located.cycle === null ? null : designApprovalProblem(projectDir, located.cycle) });
   if (problems.length) throw new PackageError(problems[0].rule, problems);
 
   const blocks = contractBlocks(card, objective);
@@ -177,10 +178,7 @@ function buildCardPackage(projectDir, id, { now = new Date(), base, run = runGit
     `base: ${baseSha}`,
     `head: ${headCommit(projectDir, { short: false, run })}`,
     `frozen: ${frozen}`,
-    `brief_sha256: ${hashes.brief_sha256}`,
-    `manifest_sha256: ${hashes.manifest_sha256}`,
-    `criteria_sha256: ${hashes.criteria_sha256}`,
-    `scope_sha256: ${hashes.scope_sha256}`,
+    ...headerLines(hashes),
     `criteria_count: ${card.criteria.length}`,
     '---',
   ].join('\n');
@@ -231,7 +229,7 @@ function buildCardPackage(projectDir, id, { now = new Date(), base, run = runGit
 /** The cycle brief text, or '' when it cannot be read (the cycle error is raised where the brief is required). */
 function safeCycleText(projectDir, name) {
   try {
-    return readFileSync(resolveProjectPath(resolveProjectRoots(projectDir), cyclePaths(name).brief), 'utf8').replaceAll('\r\n', '\n');
+    return toLf(readFileSync(resolveProjectPath(resolveProjectRoots(projectDir), cyclePaths(name).brief), 'utf8'));
   } catch {
     return '';
   }
@@ -287,7 +285,7 @@ function buildCyclePackage(projectDir, name, { now = new Date(), run = runGit } 
     `tier: ${cycle.tier}`,
     `built_at: ${now.toISOString()}`,
     `head: ${headCommit(projectDir, { short: false, run })}`,
-    `brief_sha256: ${hash}`,
+    ...headerLines({ brief_sha256: hash }),
     `cards: ${cards.length}`,
     '---',
   ].join('\n');

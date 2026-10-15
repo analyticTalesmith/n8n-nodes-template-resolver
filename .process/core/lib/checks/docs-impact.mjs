@@ -1,10 +1,11 @@
+import { toPosix } from '../files.mjs';
 import { localDocsHashes, validLocalDocsHashes } from '../local-docs-attestation.mjs';
 
 /** @typedef {import('../card.mjs').Card} Card */
 /** @typedef {import('../git.mjs').Change} Change */
 /** @typedef {import('../../scripts/validate.mjs').Finding} Finding */
 
-const slashes = (path) => String(path).replaceAll('\\', '/').replace(/^(\.\/)+/, '');
+const slashes = (path) => toPosix(String(path), { stripDotSlash: true });
 /** Longest docs_impact entry accepted, in characters. */
 export const MAX_DOC_PATH_LENGTH = 260;
 const CONTROL_CHARACTER = /[\u0000-\u001f\u007f]/;

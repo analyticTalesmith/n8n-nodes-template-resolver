@@ -1,6 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { extname } from 'node:path';
+import { PROCESS_DIR, TOKENS_DIR } from '../layout.mjs';
 import { resolveProjectPath, resolveProjectRoots } from '../project-roots.mjs';
+import { toPosix } from '../files.mjs';
+import { isTestPath } from '../test-paths.mjs';
 
 /** @typedef {import('../git.mjs').AddedLine} AddedLine */
 /** @typedef {import('../git.mjs').Change} Change */
@@ -8,7 +11,7 @@ import { resolveProjectPath, resolveProjectRoots } from '../project-roots.mjs';
 
 export const STYLE_EXTENSIONS = Object.freeze(['.css', '.scss', '.sass', '.less', '.pcss']);
 export const MARKUP_EXTENSIONS = Object.freeze(['.html', '.htm', '.jsx', '.tsx', '.vue', '.svelte', '.astro']);
-export const DEFAULT_TOKEN_FILES = Object.freeze(['docs/living/ux/tokens/']);
+export const DEFAULT_TOKEN_FILES = Object.freeze([`${TOKENS_DIR}/`]);
 /** A line holding this marker is skipped by every rule here. */
 export const ALLOW_RAW_MARKER = 'aperture-allow-raw';
 export const ALLOWED_TRANSITION_PROPERTIES = Object.freeze(['transform', 'translate', 'scale', 'rotate', 'opacity']);
@@ -25,14 +28,8 @@ const TIMING_WORDS = new Set(['ease', 'ease-in', 'ease-out', 'ease-in-out', 'lin
 const TIME = /^[\d.]+m?s$/i;
 const REDUCED_MOTION = /prefers-reduced-motion/;
 
-const forward = (path) => path.replaceAll('\\', '/');
 const isStyle = (path) => STYLE_EXTENSIONS.includes(extname(path).toLowerCase());
 const isMarkup = (path) => MARKUP_EXTENSIONS.includes(extname(path).toLowerCase());
-const isTestFile = (path) => {
-  const parts = forward(path).split('/');
-  const name = parts[parts.length - 1];
-  return name.includes('.test.') || name.includes('.spec.') || parts.includes('__tests__');
-};
 
 /**
  * Whether a path is a token file: an entry ending in "/" matches every path under it, any other entry matches exactly.
@@ -40,7 +37,7 @@ const isTestFile = (path) => {
  * @param {readonly string[]} tokenFiles
  */
 export function isTokenFile(path, tokenFiles) {
-  const normal = forward(path);
+  const normal = toPosix(path);
   return tokenFiles.some((entry) => (entry.endsWith('/') ? normal.startsWith(entry) : normal === entry));
 }
 
@@ -108,7 +105,7 @@ function rawValues(text) {
 
 function readSetting(settings, key, problems) {
   const value = settings[key];
-  if (value !== undefined && !isNonEmptyString(value)) problems.push(invalid(`gate.front_end.${key} must be a non-empty string. Fix it in .process/aperture.json.`));
+  if (value !== undefined && !isNonEmptyString(value)) problems.push(invalid(`gate.front_end.${key} must be a non-empty string. Fix it in ${PROCESS_DIR}/aperture.json.`));
   return value;
 }
 
@@ -140,12 +137,12 @@ export function checkFrontEndCss({ projectDir, changes, addedLines, settings }) 
   const problems = [];
   const tokenFiles = settings.token_files === undefined ? DEFAULT_TOKEN_FILES : settings.token_files;
   if (!Array.isArray(tokenFiles) || !tokenFiles.every(isNonEmptyString)) {
-    problems.push(invalid('gate.front_end.token_files must be a list of non-empty path strings (an entry ending in "/" is a folder). Fix it in .process/aperture.json.'));
+    problems.push(invalid(`gate.front_end.token_files must be a list of non-empty path strings (an entry ending in "/" is a folder). Fix it in ${PROCESS_DIR}/aperture.json.`));
   }
   const reset = readSetting(settings, 'motion_reset', problems);
   if (problems.length > 0) return problems;
 
-  const judged = (path) => (isStyle(path) || isMarkup(path)) && !isTestFile(path) && !isTokenFile(path, tokenFiles);
+  const judged = (path) => (isStyle(path) || isMarkup(path)) && !isTestPath(toPosix(path)) && !isTokenFile(path, tokenFiles);
   const findings = [];
   for (const { path, line, text } of addedLines ?? []) {
     if (!judged(path) || typeof text !== 'string' || text.includes(ALLOW_RAW_MARKER)) continue;

@@ -1,15 +1,15 @@
-import { createHash } from 'node:crypto';
 import { existsSync, lstatSync, readFileSync, writeFileSync } from 'node:fs';
 import { relative } from 'node:path';
 import { BoardError, cardPath, isCardId, readCard } from './board.mjs';
 import { CARD_FILES, WORK_ROOT, cardFile, deltaDeliverables, workFile } from './card-files.mjs';
-import { validateFreeze, freezeHashes } from './freeze.mjs';
+import { approvedDesignDocs, designApprovalProblem } from './design-approval.mjs';
+import { sha256Bytes, toPosix } from './files.mjs';
+import { validateFreeze, freezeHashes, headerLines } from './freeze.mjs';
 import { gateFindings } from './gate.mjs';
-import { fileAtCommit, headCommit, reviewPatch, runGit } from './git.mjs';
+import { fileAtCommit, headCommit, reviewPatch, runGit, shortSha } from './git.mjs';
 import { reviewOwnPaths, scopeAmendmentLines } from './review-scope.mjs';
 import { CONTRACT_FILES, parseScopeExceptions, readContractFile, sectionBody } from './contract.mjs';
-import { TIERS } from './layout.mjs';
-import { humanColumn } from './moves.mjs';
+import { CARD_MD, EPHEMERAL_DIR, PROCESS_CORE, STAGE, TIERS, humanColumn } from './layout.mjs';
 import { parseObjective } from './checks/reviewer-brief.mjs';
 import { PACKET_MAX_BYTES, contractAtBase, contractBlocks, fenced, lf, readBriefText, readDesignContexts, secretFindings, frozenTestsSection } from './packet-parts.mjs';
 import { effectiveConcerns, effectiveTier } from './tier.mjs';
@@ -19,6 +19,7 @@ import { FINDING_CLASSES, GOAL_TARGETS, RESPONSE_VERDICTS, isEvidenceEntry } fro
 import { localDocsHashes, localLivingHashes } from './local-docs-attestation.mjs';
 import { resolveProjectPath, resolveProjectRoots } from './project-roots.mjs';
 import { scriptCommand } from './script-command.mjs';
+import { isPlainObject } from './types.mjs';
 
 /** @typedef {import('../scripts/validate.mjs').Finding} Finding */
 /** @typedef {import('./gate.mjs').GateOptions} GateOptions */
@@ -38,8 +39,7 @@ export { gateRunSection };
 export { FROZEN_TESTS_MAX_BYTES, PACKET_MAX_BYTES, designContextPaths, frozenTestPaths, readBriefText } from './packet-parts.mjs';
 
 const REVIEW_INVALID = 'review-output-invalid';
-const sha256 = (text) => createHash('sha256').update(text, 'utf8').digest('hex');
-const isPlainObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
+const sha256 = (text) => sha256Bytes(Buffer.from(text, 'utf8'));
 const isNonEmptyString = (value) => typeof value === 'string' && value.trim() !== '';
 
 export const REVIEW_OUTPUT_INSTRUCTIONS = `Answer with one JSON object and nothing else, in this shape:
@@ -70,7 +70,8 @@ Rules:
 - Every finding names what it serves in \`serves.target\`: a criterion (c1, c2, ...), a must-not (m1, m2, ...) or a goal (card-goal, cycle-goal, project-goal). A finding that serves nothing in the objective chain is dropped.
 - \`defect\` and \`goal-risk\` need a rubric item and falsifiable reproduction steps; \`goal-risk\` also needs evidence. Every evidence entry is \`<kind>:<ref>\` with a kind of doc, code, test or diff.
 - Answer each question in the reviewer brief. A weak answer to a goal-critical question is a \`goal-risk\` finding serving that question's goal (a fix request: revise and resubmit). A weak answer to a polish question is a \`drift\` finding (noted for the lead, never a fix request). Strong and adequate answers need no finding.
-- \`responses\` answers earlier findings by label when you are asked to; otherwise leave it empty.`;
+- \`responses\` answers earlier findings by label when you are asked to; otherwise leave it empty.
+- The Gate run line is tool output recorded by the gate, not the builder's claim. A criterion verified by tests may rely on it; you do not run, judge or ask for tests. A stale or missing line is a reason to say so, never to assume. Review is for what tests cannot catch: fit to the objective and contract, scope drift, design and readability, security, gaps in the tests themselves and edge cases nobody tested.`;
 
 /**
  * Checks a returned review. A finding that fails is dropped with a reason; a problem in the rest of the review makes
@@ -255,7 +256,7 @@ export function buildPacket(projectDir, id, options = {}) {
   if (!isCardId(id)) throw new BoardError(`"${id}" is not a card id (like 0001-some-title). Check the id with the board listing.`);
   const card = readCard(projectDir, id);
   const located = cardPath(projectDir, id);
-  if (located.column !== '04_review') {
+  if (located.column !== STAGE.review) {
     throw refuse('packet-wrong-column', `Card ${id} is in ${humanColumn(located.column)}; a review packet is built for a card in review. Move it to review first.`);
   }
 
@@ -270,7 +271,7 @@ export function buildPacket(projectDir, id, options = {}) {
   const concerns = effectiveConcerns(projectDir, card).tiers;
   // The packet is held to the card's review concern; when every concern agrees that is the tier.
   const tier = concerns.review;
-  const { findings: gate } = gateFindings({ projectDir, card, from: '03_in_progress', to: '04_review', tier: resolved.tier, concerns }, gateOptions);
+  const { findings: gate } = gateFindings({ projectDir, card, from: STAGE.inProgress, to: STAGE.review, tier: resolved.tier, concerns }, gateOptions);
   if (gate.length) throw new PacketError('packet-gate-findings', gate);
 
   // The brief is read once: the objective, the design context, the verbatim copy and the unfrozen hash all use this text.
@@ -279,7 +280,7 @@ export function buildPacket(projectDir, id, options = {}) {
   if (objective === null) {
     throw refuse(
       'packet-objective-missing',
-      `The reviewer brief has no complete objective chain: missing ${missing.join(', ')}. Start it with an "## Objective" section (copy .process/core/templates/reviewer-brief.md; in the Aperture checkout it is core/templates/reviewer-brief.md), then freeze it again.`,
+      `The reviewer brief has no complete objective chain: missing ${missing.join(', ')}. Start it with an "## Objective" section (copy ${PROCESS_CORE}/templates/reviewer-brief.md; in the Aperture checkout it is core/templates/reviewer-brief.md), then freeze it again.`,
       CARD_FILES.reviewerBrief,
     );
   }
@@ -296,28 +297,38 @@ export function buildPacket(projectDir, id, options = {}) {
   const localDeltas = roots.mode === 'local' ? localDeltaTexts(roots, deltaPaths) : [];
   const deltas = [...new Set([...included, ...localDeltas.map(({ path }) => path)])].sort();
   const patch = localDeltas.length === 0 ? gitPatch : [gitPatch.replace(/\n*$/, ''), ...localDeltas.map(newFileBlock)].filter((part) => part !== '').join('\n') + '\n';
-  const shortBase = baseSha.slice(0, 7);
-  const frozenTests = frozenTestsSection(projectDir, card, baseSha, run);
+  const shortBase = shortSha(baseSha);
+  // The diff starts at the first base, so the reviewer sees the whole change; the contract documents are read at the current
+  // commit, so a card that was reshaped after the base is judged against its present contract.
+  let head = null;
+  try {
+    head = headCommit(projectDir, { short: false, run });
+  } catch {
+    head = null;
+  }
+  const readSha = head === null || head === '' ? baseSha : head;
+  const readNote = readSha === baseSha ? `as of base ${shortBase}` : `as of base ${shortBase}, read at ${shortSha(readSha)}`;
+  const frozenTests = frozenTestsSection(projectDir, card, readSha, run, undefined, baseSha);
 
-  const gateRun = gateRunSection(projectDir, id);
+  const gateRun = gateRunSection(projectDir, id, diffHash);
   const specPath = `${WORK_ROOT}/${id}/${CARD_FILES.spec}`;
-  const specText = roots.mode === 'local' ? (existsSync(workFile(projectDir, id, CARD_FILES.spec)) ? readFileSync(workFile(projectDir, id, CARD_FILES.spec), 'utf8') : null) : fileAtCommit(projectDir, baseSha, specPath, run);
+  const specText = roots.mode === 'local' ? (existsSync(workFile(projectDir, id, CARD_FILES.spec)) ? readFileSync(workFile(projectDir, id, CARD_FILES.spec), 'utf8') : null) : fileAtCommit(projectDir, readSha, specPath, run);
   if (roots.mode !== 'local' && specText === null && existsSync(workFile(projectDir, id, CARD_FILES.spec))) {
     throw refuse(
       'packet-context-missing',
-      `${CARD_FILES.spec} exists only in the working tree, not at the base commit ${shortBase}. Commit the shaping documents before the move to in progress.`,
+      `${CARD_FILES.spec} exists only in the working tree, not at the commit it is read at (${shortSha(readSha)}). Commit the shaping documents before the move to in progress.`,
       CARD_FILES.spec,
     );
   }
 
-  // card.md is read as it stood at the base (the card folder may have sat in any column of its cycle then), so the builder
-  // cannot change the contract the reviewer judges against. The exceptions log is read as it is now: it is written during the work.
-  const cardMdAtBase = contractAtBase({ projectDir, roots, id, cycle: located.cycle, name: CONTRACT_FILES.card, baseSha, run });
+  // card.md is read as it stands at the commit the packet reads at (the card folder may have sat in any column of its cycle
+  // then), so a reshaped card is judged against its present contract; the freeze hashes show a change to it. The exceptions log is read as it is now: it is written during the work.
+  const cardMdAtBase = contractAtBase({ projectDir, roots, id, cycle: located.cycle, name: CONTRACT_FILES.card, baseSha: readSha, run });
   const liveCard = readContractFile(projectDir, id, CONTRACT_FILES.card);
   if (roots.mode !== 'local' && cardMdAtBase === null && liveCard?.text) {
     throw refuse(
       'packet-context-missing',
-      `${CONTRACT_FILES.card} exists only in the working tree, not at the base commit ${shortBase}. Commit the ticket before the move to in progress.`,
+      `${CONTRACT_FILES.card} exists only in the working tree, not at the commit it is read at (${shortSha(readSha)}). Commit the ticket before the move to in progress.`,
       CONTRACT_FILES.card,
     );
   }
@@ -330,11 +341,10 @@ export function buildPacket(projectDir, id, options = {}) {
   const notShown = otherLines > 0 ? `\n\n${otherLines} other ${otherLines === 1 ? 'line' : 'lines'} in the section ${otherLines === 1 ? 'was' : 'were'} not shown.` : '';
   const exceptionsBlock = `### Scope exceptions log (as of now, written during the work)\n\n${accepted.length === 0 ? 'No scope exceptions are logged.' : `Each row is a change outside the card's scope that its lead approved. A builder who can edit the card folder can add a row, so the human gate is the backstop.\n\n${acceptedTable}`}${notShown}`;
 
-  const { contexts, problems: contextProblems } = readDesignContexts({ projectDir, roots, briefText, baseSha, run });
+  const { contexts, problems: contextProblems } = readDesignContexts({ projectDir, roots, briefText, baseSha, run, docs: located.cycle === null ? undefined : approvedDesignDocs(projectDir, located.cycle), unreadable: located.cycle === null ? null : designApprovalProblem(projectDir, located.cycle) });
   if (contextProblems.length) throw new PacketError(contextProblems[0].rule, contextProblems);
 
-  const head = headCommit(projectDir, { short: false, run });
-  const localCardRoot = roots.mode === 'local' ? `docs/${relative(roots.docsRoot, located.dir).replaceAll('\\', '/')}` : null;
+  const localCardRoot = roots.mode === 'local' ? `docs/${toPosix(relative(roots.docsRoot, located.dir))}` : null;
   const localManifest = roots.mode === 'local' ? {
     ...localLivingHashes(projectDir),
     ...localDocsHashes(projectDir, [
@@ -357,7 +367,7 @@ export function buildPacket(projectDir, id, options = {}) {
     throw refuse('packet-rounds-invalid', `The review state for card ${id} cannot be read. ${err.message} Fix or delete ${CARD_FILES.rounds} in the card folder, or run ${scriptCommand(projectDir, 'rounds.mjs')} status to see its state.`, `${cardPath(projectDir, id).dir}/${CARD_FILES.rounds}`);
   }
   const showPlan = TIERS.indexOf(tier) >= TIERS.indexOf('product');
-  const specBlock = specText === null ? 'No spec.md for this card.' : `### spec.md ${roots.mode === 'local' ? '(uncommitted local snapshot)' : `as of base ${shortBase}`}\n\n${fenced(specText)}`;
+  const specBlock = specText === null ? 'No spec.md for this card.' : `### spec.md ${roots.mode === 'local' ? '(uncommitted local snapshot)' : readNote}\n\n${fenced(specText)}`;
   const blocks = contractBlocks(card, objective);
   const frontmatter = [
     '---',
@@ -366,14 +376,10 @@ export function buildPacket(projectDir, id, options = {}) {
     `tier: ${tier}`,
     `built_at: ${now.toISOString()}`,
     `base: ${baseSha}`,
-    `head: ${head}`,
+    `head: ${head ?? 'none'}`,
+    `read_at: ${head === null || head === '' ? 'base (no head commit)' : readSha}`,
     `frozen: ${frozen}`,
-    `brief_sha256: ${hashes.brief_sha256}`,
-    `manifest_sha256: ${hashes.manifest_sha256}`,
-    `criteria_sha256: ${hashes.criteria_sha256}`,
-    `scope_sha256: ${hashes.scope_sha256}`,
-    `diff_sha256: ${diffHash}`,
-    ...(localManifestHash === null ? [] : [`local_docs_sha256: ${localManifestHash}`]),
+    ...headerLines({ ...hashes, diff_sha256: diffHash, local_docs_sha256: localManifestHash }),
     `omitted_paths: ${omitted}`,
     `criteria_count: ${chain.criteria}`,
     `must_not_count: ${chain.mustNots}`,
@@ -385,7 +391,7 @@ export function buildPacket(projectDir, id, options = {}) {
     {
       key: 'header',
       number: null,
-      text: [frontmatter, `# Review packet: ${id}`, ...(frozen ? [] : [card.type === 'bug' ? 'Reviewer brief not frozen (bug fast path).' : 'Reviewer brief not frozen.']), ...amendmentLines(frozen ? record.brief_amendments : undefined), ...scopeAmendmentLines(card), READING_ORDER].join('\n\n'),
+      text: [frontmatter, `# Review packet: ${id}`, ...(frozen ? [] : [card.type === 'bug' ? 'Reviewer brief not frozen (bug fast path).' : 'Reviewer brief not frozen.']), ...(gateRun === null ? ['No green gate run is recorded for this card.'] : []), ...amendmentLines(frozen ? record.brief_amendments : undefined), ...scopeAmendmentLines(card), READING_ORDER].join('\n\n'),
     },
     {
       key: 'objective-and-contract',
@@ -397,7 +403,7 @@ export function buildPacket(projectDir, id, options = {}) {
         blocks.mustNots,
         `### Reviewer brief\n\n${fenced(briefText)}`,
         specBlock,
-        cardMdAtBase === null ? 'No card.md for this card.' : `### card.md ${roots.mode === 'local' ? '(uncommitted local snapshot)' : `as of base ${shortBase}`}\n\n${fenced(cardMdAtBase)}`,
+        cardMdAtBase === null ? `No ${CARD_MD} for this card.` : `### ${CARD_MD} ${roots.mode === 'local' ? '(uncommitted local snapshot)' : readNote}\n\n${fenced(cardMdAtBase)}`,
         exceptionsBlock,
         blocks.manifest,
       ].join('\n\n'),
@@ -406,7 +412,7 @@ export function buildPacket(projectDir, id, options = {}) {
     {
       key: 'design-context',
       number: 3,
-      text: ['## 3. Design context', ...(contexts.length ? contexts.map(({ path, text }) => `### ${path}${roots.mode === 'local' && path.startsWith('docs/') ? ' (uncommitted local snapshot)' : ''}\n\n${fenced(text)}`) : ['No design context was listed in the reviewer brief.']),
+      text: ['## 3. Design context', ...(contexts.length ? contexts.map(({ path, text, approved }) => `### ${path}${approved ? ` - approved design (signed ${approved.on} by ${approved.by})` : roots.mode === 'local' && path.startsWith('docs/') ? ' (uncommitted local snapshot)' : ''}\n\n${fenced(text)}`) : ['No design context was listed in the reviewer brief.']),
         ...(localManifest === null ? [] : [`### Uncommitted local documents\n\nThese exact byte hashes were present when this packet was built. Local documents are outside Git; a later edit requires a new review.\n\n${fenced(JSON.stringify(localManifest, null, 2), 'json')}`])].join('\n\n'),
     },
     ...(frozenTests.text === null ? [] : [{ key: 'frozen-tests', number: null, text: frozenTests.text }]),
@@ -415,7 +421,7 @@ export function buildPacket(projectDir, id, options = {}) {
       number: 4,
       text: [
         '## 4. Diff',
-        `${omitted} paths under docs/ephemeral/ omitted (process material, not part of the work under review).`,
+        `${omitted} paths under ${EPHEMERAL_DIR}/ omitted (process material, not part of the work under review).`,
         ...(deltas.length ? [`Delta documents shown below as the card's own deliverables: ${deltas.join(', ')}.`] : []),
         fenced(patch, 'diff'),
       ].join('\n\n'),

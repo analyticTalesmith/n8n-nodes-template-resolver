@@ -1,5 +1,8 @@
+import { CONFIG_PATH } from '../config.mjs';
 import { TIERS } from '../layout.mjs';
 import { OUTPUT_LINES, describeRunFailure, runCommand } from './boundary.mjs';
+import { isKebab } from '../names.mjs';
+import { isPlainObject } from '../types.mjs';
 
 /** @typedef {import('../../scripts/validate.mjs').Finding} Finding */
 /** @typedef {import('./boundary.mjs').CommandRunner} CommandRunner */
@@ -7,9 +10,7 @@ import { OUTPUT_LINES, describeRunFailure, runCommand } from './boundary.mjs';
 
 export const FRONT_END_TOOL_TIMEOUT_MS = 300000;
 
-const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const isArgv = (value) => Array.isArray(value) && value.length > 0 && value.every((part) => typeof part === 'string' && part !== '');
-const isPlainObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 const invalid = (message) => ({ rule: 'front-end-config-invalid', message });
 
 /**
@@ -23,7 +24,7 @@ export function checkFrontEndTools({ projectDir, tier, settings, run = runComman
   const tools = settings.tools;
   if (tools === undefined || (Array.isArray(tools) && tools.length === 0)) return [];
   if (!Array.isArray(tools)) {
-    return [invalid('gate.front_end.tools must be a list of entries { name, argv, min_tier }. Fix it in .process/aperture.json.')];
+    return [invalid(`gate.front_end.tools must be a list of entries { name, argv, min_tier }. Fix it in ${CONFIG_PATH}.`)];
   }
 
   /** @type {Finding[]} */
@@ -32,21 +33,21 @@ export function checkFrontEndTools({ projectDir, tier, settings, run = runComman
   tools.forEach((entry, index) => {
     const where = `gate.front_end.tools[${index}]${isPlainObject(entry) && typeof entry.name === 'string' ? ` ("${entry.name}")` : ''}`;
     if (!isPlainObject(entry)) {
-      problems.push(invalid(`${where} must be an object { name, argv, min_tier }. Fix it in .process/aperture.json.`));
+      problems.push(invalid(`${where} must be an object { name, argv, min_tier }. Fix it in ${CONFIG_PATH}.`));
       return;
     }
-    if (typeof entry.name !== 'string' || !KEBAB.test(entry.name)) {
-      problems.push(invalid(`${where} needs a kebab-case name (lowercase letters, digits and dashes). Fix it in .process/aperture.json.`));
+    if (!isKebab(entry.name)) {
+      problems.push(invalid(`${where} needs a kebab-case name (lowercase letters, digits and dashes). Fix it in ${CONFIG_PATH}.`));
     } else if (seen.has(entry.name)) {
-      problems.push(invalid(`${where} repeats a tool name; each name must be unique. Rename one in .process/aperture.json.`));
+      problems.push(invalid(`${where} repeats a tool name; each name must be unique. Rename one in ${CONFIG_PATH}.`));
     } else {
       seen.add(entry.name);
     }
     if (!isArgv(entry.argv)) {
-      problems.push(invalid(`${where} needs argv: a non-empty array of non-empty strings (program, then its arguments, no shell). Fix it in .process/aperture.json.`));
+      problems.push(invalid(`${where} needs argv: a non-empty array of non-empty strings (program, then its arguments, no shell). Fix it in ${CONFIG_PATH}.`));
     }
     if (entry.min_tier !== undefined && !TIERS.includes(entry.min_tier)) {
-      problems.push(invalid(`${where} has min_tier ${JSON.stringify(entry.min_tier)}; use one of ${TIERS.join(', ')} or leave it out. Fix it in .process/aperture.json.`));
+      problems.push(invalid(`${where} has min_tier ${JSON.stringify(entry.min_tier)}; use one of ${TIERS.join(', ')} or leave it out. Fix it in ${CONFIG_PATH}.`));
     }
   });
   if (problems.length > 0) return problems;

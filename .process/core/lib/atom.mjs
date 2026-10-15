@@ -1,7 +1,8 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { stripBom } from './files.mjs';
 import { checkDocFrontmatter, DOC_STATES, readFrontmatter } from './frontmatter.mjs';
-import { CYCLES_DIR, CYCLE_ARCHIVE_DIR } from './layout.mjs';
+import { CYCLES_DIR, CYCLE_ARCHIVE_DIR, LIVING_DIR } from './layout.mjs';
 import { resolveProjectPath, resolveProjectRoots } from './project-roots.mjs';
 
 /** @typedef {import('../scripts/validate.mjs').Finding} Finding */
@@ -26,7 +27,7 @@ export const LINK_TYPES = {
 };
 
 /** Where atoms live: the living docs, the cycle folders and the archived cycles. */
-export const ATOM_ROOTS = Object.freeze(['docs/living', CYCLES_DIR, CYCLE_ARCHIVE_DIR]);
+export const ATOM_ROOTS = Object.freeze([LIVING_DIR, CYCLES_DIR, CYCLE_ARCHIVE_DIR]);
 
 const LINK_ITEM = /^([a-z][a-z0-9]*(?:-[a-z0-9]+)*):[ \t]*(\S+)$/;
 const FILE_LINE = /^[^\s:]+:[1-9]\d*$/;
@@ -45,7 +46,7 @@ const ATOM_KEY_LINE = /^(?:id|type):/;
 /** True when the text opens a --- fence that never closes and has an id: or type: line. */
 const isUnclosed = (content) => {
   if (typeof content !== 'string') return false;
-  const lines = (content.startsWith('\ufeff') ? content.slice(1) : content).split('\n').map((line) => line.replace(/\r$/, ''));
+  const lines = stripBom(content).split('\n').map((line) => line.replace(/\r$/, ''));
   return FENCE_LINE.test(lines[0]) && !lines.slice(1).some((line) => FENCE_LINE.test(line)) && lines.some((line) => ATOM_KEY_LINE.test(line));
 };
 const trimmed = (value) => (typeof value === 'string' ? value.trim() : '');
@@ -93,7 +94,7 @@ export function parseAtom(content, path) {
   if (source === '') {
     if (SOURCE_REQUIRED.includes(type)) missing('source');
   } else if (!(ATOM_ID.test(source) || FILE_LINE.test(source) || source === ASSUMPTION)) {
-    report('atom-source-invalid', `has the source "${source}". Use an atom id, a file:line such as docs/living/glossary.md:12, or the word assumption.`);
+    report('atom-source-invalid', `has the source "${source}". Use an atom id, a file:line such as ${LIVING_DIR}/glossary.md:12, or the word assumption.`);
   }
 
   /** @type {{ type: string, target: string }[]} */
@@ -143,7 +144,7 @@ function markdownFiles(dir, display, findings, readDir, prefix = '') {
 }
 
 /**
- * Reads every atom under docs/living, the cycle folders and the archived cycles, through the project roots.
+ * Reads every atom under the living docs folder, the cycle folders and the archived cycles, through the project roots.
  * Never throws for file content or file system errors and never writes. The optional second argument replaces the
  * file system calls so a read failure can be tested without changing permissions.
  * @param {string} projectDir
@@ -175,7 +176,7 @@ export function readAtoms(projectDir, { readFile = readFileSync, readDir = readd
 }
 
 /** Where retired atom ids are recorded: one living document, one list item per id. */
-export const RETIRED_IDS_PATH = 'docs/living/retired-ids.md';
+export const RETIRED_IDS_PATH = `${LIVING_DIR}/retired-ids.md`;
 const RETIRED_ITEM = /^-[ \t]+(\S+?)(?::[ \t]*(.*))?$/;
 
 /**
@@ -198,7 +199,7 @@ export function readRetiredIds(projectDir) {
     }
     return { retired, findings };
   }
-  const lines = content.replace(/^\ufeff/, '').split('\n').map((line) => line.replace(/\r$/, ''));
+  const lines = stripBom(content).split('\n').map((line) => line.replace(/\r$/, ''));
   let start = 0;
   if (FENCE_LINE.test(lines[0] ?? '')) {
     const close = lines.findIndex((line, index) => index > 0 && FENCE_LINE.test(line));

@@ -1,6 +1,8 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { toLf } from './files.mjs';
 import { join } from 'node:path';
 import { checkSecrets } from './checks/secrets.mjs';
+import { HANDOFF_DIR } from './layout.mjs';
 import { resolveProjectPath, resolveProjectRoots } from './project-roots.mjs';
 
 /** @typedef {import('../scripts/validate.mjs').Finding} Finding */
@@ -15,7 +17,7 @@ import { resolveProjectPath, resolveProjectRoots } from './project-roots.mjs';
  * }} HandoffFacts
  */
 
-export const HANDOFF_ROOT = 'docs/ephemeral/handoffs';
+export const HANDOFF_ROOT = HANDOFF_DIR;
 export const HANDOFF_MAX_LINES = 60;
 export const AUTO_BLOCKERS_MAX = 3;
 export const HANDOFF_SECTIONS = Object.freeze([
@@ -87,7 +89,7 @@ export function renderHandoff(fields, facts) {
 export function checkHandoff(text, { path = DEFAULT_PATH } = {}) {
   /** @type {Finding[]} */
   const findings = [];
-  const lines = String(text).replaceAll('\r\n', '\n').replace(/\n$/, '').split('\n');
+  const lines = toLf(String(text)).replace(/\n$/, '').split('\n');
 
   if (lines.length > HANDOFF_MAX_LINES) {
     findings.push({
@@ -156,7 +158,7 @@ const sectionLines = (lines, name) => {
  * @returns {{ commit: string | null, next: string[] }}
  */
 export function readHandoffFacts(text) {
-  const lines = String(text).replaceAll('\r\n', '\n').split('\n');
+  const lines = toLf(String(text)).split('\n');
   const commitLine = sectionLines(lines, 'Branch and commit').find((line) => line.startsWith('Commit:'));
   const commit = commitLine?.match(/^Commit:\s*(\S+)/)?.[1] ?? null;
   const next = sectionLines(lines, 'Next actions')
