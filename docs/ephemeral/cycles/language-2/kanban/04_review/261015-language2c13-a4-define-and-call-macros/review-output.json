@@ -1,85 +1,111 @@
 {
-  "restatement": "Add macros to the deterministic, no-eval template language. `{{DEFINE name(params)}}...{{END_DEFINE}}` may appear only at the top level, is hoisted and prints nothing. `{{CALL name(args)}}` is a single tag that prints the body for positional path or literal arguments. A body sees only its parameters and the data. A call never leaks or reads the caller's locals, loop names or @ metadata. An unknown macro, a wrong argument count or bad syntax is a located syntax-error before any output, in every mode. Recursion, fan-out and output growth across calls are bounded by one runtime depth counter (maxDepth, capped at 256), by maxIterations (every CALL counts one) and by a running maxOutputChars check. An error inside a body stays at the failing body node and names the innermost macro and its CALL position. A stray RangeError becomes limit-depth in render, validate and analyze. analyze and validate walk each body once and never follow a CALL. Every template that was valid before keeps its output and error, except for the two named exceptions.",
-  "brief_mismatch": "m1 and c13 forbid changing any existing test file, and the card's own must-not (\"change any existing test expectation other than the one named amendment\") repeats that. Yet the manifest and files_scope list `tests/language/set.test.ts` as an edit, and the diff changes an expectation in it: the st-keywords derived block table now also expects DEFINE and CALL. That set.test.ts row pins the keyword table to today's rows plus SET, so any implementation of c12 (new lexer keywords) must change it. The criteria contradict the manifest. The lead should name this amendment in m1 and c13, or move the row, rather than treat the edit as a violation. Second, m5's exception list does not cover the new running output check. That check can now fail templates whose final output fits but whose untrimmed intermediate body does not (see the finding below). Either the code or m5 must change.",
+  "restatement": "Add hoisted, top-level-only `{{DEFINE name(params)}}...{{END_DEFINE}}` and the single tag `{{CALL name(args)}}` to the deterministic, no-eval template language. A macro body sees only its parameters and the data. Link errors (unknown macro, wrong argument count, duplicate or misplaced DEFINE, bad header) are syntax errors found before any output, in every mode. Recursion, fan-out and output growth across calls stay bounded by one runtime depth counter (capped at 256), the iteration count and a running output check. An error inside a body keeps the failing node's position and names the innermost macro and its CALL. analyze and validate stay linear and agree with render. No template that was valid before changes its output or error, apart from the two named exceptions, and no existing test file changes.",
+  "brief_mismatch": "The criteria and the card disagree about test files. c13 and m1 (from card.json) say no existing test file changes. card.md's mc-compat and its must-not allow a 'logged amendment' of the st-keywords row in tests/language/set.test.ts, and the manifest lists set.test.ts as an edit. The diff makes exactly that edit, but the scope exceptions log says 'No scope exceptions are logged'. Either c13 and m1 need the set.test.ts exception, or the amendment needs to be logged. I treated the set.test.ts edit as the intended one and did not file it as a finding. Separately, the manifest says tests/language/macros.test.ts is 'add', but the diff shows it as modified from a base blob (index ebbe375), so the file existed at base and is frozen.",
   "verification_plan": [
-    "c1: confirm DEFINE is dispatched only at the top level. Check every container that parses children through parseNode, including a top-level ROW or HEADER, LIST_ITEM content, CASE clauses and the FOR ELSE body, for a syntax-error at the nested DEFINE. Check that duplicate names fail at the second definition, that the macro table is built from parsed DefineNodes and that hoisting works.",
-    "c2: confirm arguments are evaluated in the caller's scope at the CALL, that a path reads like ${{ }} (strict missing-variable at the CALL, lenient null, nested missing key null) and that values are passed as values.",
-    "c3: confirm the link step runs in Interpreter.interpret before any visit, walks every CALL including dead branches, DEFINE bodies, cells, LIST and TABLE children and long ELSEIF chains without recursion, and follows the order parse, then duplicate, then calls in source order. Confirm that analyze makes unknown a diagnostic and throws on arity, and that validate maps them to warning and error.",
-    "c4: confirm the call frame's parent is the root scope, never the current scope, that the scope is restored in finally, that the parser rejects a SET of a parameter at any depth inside the body and that each call gets a fresh frame.",
-    "c5: confirm one counter is raised on every runtime path the parser counts through nested (visit, collectListItems, rowsFromChild, collectRows, nested LIST in LIST_ITEM) and on every CALL, with cap min(maxDepth, 256). Confirm a template without CALL never exceeds its parse depth, and that RangeError handling is correct in locateError, render and analyze.",
-    "c6: confirm countIteration is generalised, runs before the body, is located at the CALL and feeds stats.iterations on failure.",
-    "c7: confirm the held counter covers every body that accumulates child output across calls (IF, CASE, macro, SECTION, FENCE, LIST_ITEM) and look for accumulators that bypass it (LIST sibling items, TABLE rows and cells). Check whether held counts characters that are later trimmed, which could fail templates that were valid before (m5).",
-    "c8: confirm the CALL visit is not wrapped in at, that only argument evaluation is located at the CALL, and that the annotation is appended once, by the innermost macro, in one helper.",
-    "c9: confirm the macro table and frames are Maps and parameter reads go through own-property lookups.",
-    "c10: confirm DEFINE and END_DEFINE are in STANDALONE_TAGS, CALL is not, and trim markers are handled by the lexer.",
-    "c11: confirm the analyze Walker resets scopes and tableDepth for a DEFINE body, binds parameters only, records CALL path args as kind call, never follows a CALL, counts DEFINE in blocks, and adds an optional macros field only when DEFINEs exist, consistent with render's macro table.",
-    "c12: confirm spec BLOCKS has DEFINE (closes END_DEFINE) and CALL (no closes).",
-    "c13 and m1: confirm no existing test file changed and no file outside scope changed.",
-    "m2 and m3: confirm no new dependency, no eval, no compiled template regex and no file read.",
-    "m5: probe old templates for the depth counter, the running output check and locateError retyping."
+    "c1: a CALL before its DEFINE renders. A DEFINE prints nothing. A DEFINE in every block kind (IF/ELSE/CASE/FOR/LIST/LIST_ITEM/TABLE/ROW/HEADER/SECTION/FENCE/another DEFINE) is a syntax-error at the DEFINE. A duplicate name errors at the second definition. A duplicate, @, invalid or empty parameter is a syntax-error.",
+    "c2: positional binding works. Path and literal arguments are values, not text. A missing root path is missing-variable at the CALL in strict mode and null in lenient mode.",
+    "c3: an unknown name or wrong count errors at the CALL before output, also inside an unrendered branch or an uncalled DEFINE, in every entry point. In analyze, unknown is a diagnostic and a wrong count throws. validate maps these to analysis-warning and error.",
+    "c4: the body starts from a frame over the root data, not the caller's scope. SET in the body is local to it. A SET of a parameter is a parse error at any depth. The caller's scope is restored in a finally.",
+    "c5: one counter covers every block path (visit, LIST/TABLE child IF and FOR, nested LIST) and every CALL. The cap is min(maxDepth, 256). No template without a CALL may exceed its parse depth at runtime. render, validate and analyze turn a RangeError into limit-depth, and locateError does not retype it.",
+    "c6: countIteration counts each CALL before the body runs, with the call message variant, and stats.iterations includes calls.",
+    "c7: the running held check covers every body that can hold a CALL (program, IF, CASE, macro body, SECTION, FENCE, LIST_ITEM, cells, list lines, legacy TABLE-FOR text rows), so N calls stop near limit/bodySize.",
+    "c8: visitCall is not wrapped in at. Arguments are located at the CALL. The note is appended once by the innermost macro.",
+    "c9: the macro table is a Map, and prototype names work.",
+    "c10: DEFINE and END_DEFINE are in STANDALONE_TAGS; CALL is not.",
+    "c11: the analyze walker visits each DEFINE body once with only its params bound, never follows a CALL, records path arguments as 'call', counts DEFINE in blocks, and adds an optional macros key.",
+    "c12: spec BLOCKS has DEFINE (closes END_DEFINE) and CALL.",
+    "c13/m1: the diff touches no pre-existing test file. The gate is green.",
+    "m2/m3: no new imports of dependencies, no eval, no RegExp built from template text, no file reads.",
+    "m5: old templates keep their output. The runtime depth and held counts never exceed what the base allowed for valid templates, including trimming bodies."
   ],
   "findings": [
     {
-      "title": "A DEFINE inside a top-level ROW or HEADER is accepted silently instead of a syntax-error, and analyze then lists a macro that render does not have",
+      "title": "The frozen test file tests/language/macros.test.ts is modified by the diff",
       "class": "defect",
       "serves": {
-        "target": "c1",
-        "scenario": "c1 requires that a DEFINE inside any block is a syntax-error at the DEFINE. parseDefine rejects only when `this.depth > 0`. A ROW or HEADER written at the top level is parsed by parseNode (parseTableRow or parseTableHeader) without nested(), so depth stays 0 and the inner DEFINE is accepted. topLevelDefines reads only program.body, so this DEFINE never enters the macro table. A template without a CALL renders ok, with no error. With a CALL, the author gets 'Unknown macro: a' at the CALL instead of an error at the misplaced DEFINE. analyze's Walker reaches the DEFINE through visitCells, so it counts blocks.DEFINE and lists 'a' in `macros`, while render and analyze's own link check say 'a' does not exist (c11 consistency)."
+        "target": "m1",
+        "scenario": "macros.test.ts existed at base (the diff shows index ebbe375..41e6ce0, not a new file) and is listed as a frozen test. The diff edits it twice. It appends about 240 lines of new rows under a 'review fixes' banner, and it adds a comment at the PARENS rows telling readers to 'raise the depth if a machine overflows later'. The contract the work is judged against has therefore been rewritten by the work under review. Every row in that block (DEFINE placement in ROW/HEADER/LIST_ITEM, trimming-body guards, list/cell fan-out bounds, HUGE_CHAIN limit-output) is now a builder-written expectation rather than a frozen one. m1 and c13 forbid changing an existing test file, and the packet says a change to a frozen test is a deviation to report."
       },
-      "rubric": "c1 mc-define (a DEFINE inside any block is a syntax-error at it); rubric: resolveTemplate and render agree on the language, analyze agrees with render",
-      "reproduction": "1) render(\"{{ROW}}{{DEFINE a()}}x{{END_DEFINE}}{{END_ROW}}\", {}) returns ok:true with output \"\". Expected: syntax-error at 1:8. 2) render(\"{{ROW}}{{DEFINE a()}}x{{END_DEFINE}}{{END_ROW}}{{CALL a()}}\", {}) returns syntax-error 'Unknown macro: a' at the CALL, not at the DEFINE. 3) analyze of the first template returns macros [{name:'a',params:[]}] and blocks.DEFINE 1. The same holds with {{HEADER}}...{{END_HEADER}} at the top level. Smallest change that restores c1: reject a DEFINE whenever it is not a direct child of the program body. For example, dispatch DEFINE only from parse()'s top-level loop and let parseNode report it as the top-level error, or track a flag set while parsing ROW, HEADER and LIST_ITEM content.",
+      "rubric": "m1: change any existing test file; c13 mc-compat: no existing test file changes; packet rule: a change to a frozen test in section 4 is a deviation from the plan",
+      "reproduction": "In section 4, `diff --git a/tests/language/macros.test.ts b/tests/language/macros.test.ts` shows `index ebbe375..41e6ce0` with hunks `@@ -979,6 +979,7 @@` (an added comment line) and `@@ -1782,3 +1783,242 @@` (appended describe blocks). Run `git diff c96d1a74 2b9276fe -- tests/language/macros.test.ts` and the change is not empty. Smallest change that restores m1: revert macros.test.ts to its base content. Either move the new regression rows into a new test file (which needs a scope entry from the lead), or have the lead log them as a test amendment.",
       "evidence": [
-        "diff:core/src/parser.ts",
-        "diff:core/src/macros.ts",
-        "diff:core/src/analyze.ts",
-        "code:core/src/parser.ts:2640"
+        "diff:tests/language/macros.test.ts",
+        "test:mc-define: a DEFINE in a ROW, a HEADER or a LIST_ITEM is a syntax-error at the DEFINE",
+        "test:mc-compat: a trimming body keeps the output it had before macros"
       ],
-      "location": "core/src/parser.ts:376"
+      "location": "tests/language/macros.test.ts:1786"
     },
     {
-      "title": "The running output check counts body text that SECTION and LIST_ITEM later trim, so templates valid before now fail with limit-output",
-      "class": "defect",
-      "serves": {
-        "target": "m5",
-        "scenario": "m5 forbids changing the output or error of any template that was valid before, except for two named cases. A limit-output that now fires for a template that never overflowed is not one of them. renderChildren adds every finished child's full length to `held` before the enclosing SECTION strips leading and trailing blank lines (or drops a skip_empty body that is all whitespace) and before LIST_ITEM content is .trim()-ed. Before this change, only the final text was measured. A template whose final output fits maxOutputChars but whose untrimmed body does not now fails."
-      },
-      "rubric": "m5; spec Output bound: 'a template whose output stays within the limit renders exactly as before'",
-      "reproduction": "Data v = \"x\" + \"\\n\".repeat(30), limits {maxOutputChars: 20}. render('{{SECTION \"T\"}}${{v}}{{END_SECTION}}', {v}) at base returns ok with \"## T\\n\\nx\\n\" (8 chars). At head: held reaches 31 > 20, giving limit-output at the variable. The same happens with v = \" \".repeat(30) (base: the section is omitted, output \"\") and with '{{LIST}}{{LIST_ITEM}}${{v}}{{END_LIST_ITEM}}{{END_LIST}}' with v = \"x\" + \" \".repeat(30) (base: \"1. x\"). Smallest change that restores m5: keep the in-body running check from tripping on characters a trimming body can still drop. For example, have SECTION and LIST_ITEM bodies not count trailing and leading blank runs in `held` until non-blank output follows, or have the lead add this case to m5's named exceptions.",
-      "evidence": [
-        "diff:core/src/interpreter.ts",
-        "code:core/src/interpreter.ts:956",
-        "code:core/src/interpreter.ts:1068"
-      ],
-      "location": "core/src/interpreter.ts:160"
-    },
-    {
-      "title": "Output from sibling LIST items and TABLE cells is outside the running check, so calls there run unbounded until the LIST or TABLE returns",
+      "title": "CALLs in one text run of a legacy TABLE-FOR body all run before the output check sees any of them",
       "class": "goal-risk",
       "serves": {
         "target": "c7",
-        "scenario": "The card and cycle goal says output growth across calls is bounded by the output limit, and c7 says maxOutputChars is enforced across macro bodies, before the work holds much more than twice the limit. collectListItems pushes finished item lines into a local `lines` array, and processCellsArray and collectRows build cell strings, without adding them to `held`. Only each item's own content (or each macro body) is checked. So N CALLs spread over N LIST_ITEMs or N ROW cells all run, each up to the limit minus the outer held total, before visitList or visitTable returns and the parent body finally trips. With maxIterations 10000 and a large body, the interpreter can hold thousands of times the limit. If the string grows past the engine's maximum, that RangeError is reported by the new render net as limit-depth 'The template nests too deeply to run', the wrong code and message."
+        "scenario": "The card adds 'Call' to the inline kinds of the legacy text-row rule. In tableRowsFrom, flush() renders a run of several inline nodes with `run.map((node) => this.visit(node)).join(\"\")` and only then hands the lines to addText, which is the only place the cells are held. Each CALL in the run checks `held` only while its own body is built, and releases it on return. The outputs of earlier siblings in the same run are never in `held`. runLoop checks the loop total only after the whole iteration. So N CALLs written in one line of a FOR inside a TABLE all run, each producing up to the limit, before limit-output trips. This is the same unbounded-sibling pattern f3 fixed for LIST lines and ROW cells, left open on this path. It breaks the cycle goal that every call and output is bounded and c7's 'before the work holds much more than twice the limit'."
       },
-      "rubric": "c7 mc-output; rubric: one running output check covers bodies; reviewer question 1 (output bound across a CALL)",
-      "reproduction": "Template: '{{DEFINE a()}}' + 'x'.repeat(100) + '{{END_DEFINE}}{{IF t}}{{LIST}}' + '{{LIST_ITEM}}{{CALL a()}}{{END_LIST_ITEM}}'.repeat(100) + '{{END_LIST}}{{END_IF}}', data {t:true}, limits {maxOutputChars: 1000}. render returns limit-output, but stats.iterations is 100 (every call ran), not the ≤22 that mc-output's stopsNearTheLimit bound asks for. The same happens with '{{TABLE}}{{ROW}}' + '{{CALL a()}}|'.repeat(100) + '{{END_ROW}}{{END_TABLE}}'. Smallest change: count each finished LIST line and each finished cell or row into `held` (and release it when the LIST or TABLE returns), as renderChildren does for other bodies.",
+      "rubric": "c7 mc-output; rubric: one running output check covers bodies; reviewer brief goal-critical question 1 (output bound across a CALL in any body) and the polish row for a CALL in a legacy TABLE-FOR body",
+      "reproduction": "Template: `{{DEFINE a()}}` + 'x'.repeat(100) + `{{END_DEFINE}}{{TABLE}}{{FOR one AS i}}` + '{{CALL a()}}'.repeat(100) + `|1\\n{{END_FOR}}{{END_TABLE}}`. Data: {one:[1]}. Limits: {maxOutputChars: 1000}. Expected by c7: limit-output with stats.iterations at most about 22. Per the code in the diff, all 100 calls run (the run is visited whole at flush) before addText holds a cell, so stats.iterations is about 101. With a fan-out macro (each top-level call itself producing nearly the limit), the work held grows to N times the limit. Smallest change that restores c7: in flush, hold each visited node's output as it is produced, for example by rendering the run through renderChildren or by calling hold per node and releasing it after addText.",
       "evidence": [
         "diff:core/src/interpreter.ts",
-        "code:core/src/interpreter.ts:1033",
-        "code:core/src/interpreter.ts:1250",
-        "diff:core/src/render.ts",
-        "test:mc-output: 100 calls of a 100-character macro from a LIST_ITEM end in limit-output at the 11th call"
+        "code:core/src/interpreter.ts:967",
+        "test:mc-output: a finished list line, table cell and table row counts as it finishes"
       ],
-      "location": "core/src/interpreter.ts:721"
+      "location": "core/src/interpreter.ts:967"
+    },
+    {
+      "title": "CALL path arguments reject names the language accepts elsewhere (hyphenated and non-ASCII)",
+      "class": "drift",
+      "serves": {
+        "target": "cycle-goal",
+        "scenario": "macros.ts PATH is `^[A-Za-z_@][\\w@]*(\\.[\\w@]+)*$`. The language contract says a hyphen between two ASCII letters is part of a name (`first-name`, `user.first-name`), and CASE matchers accept paths such as `café`. `{{CALL f(first-name)}}` and `{{CALL f(user.café)}}` are therefore syntax errors, even though `${{first-name}}` reads the key. Such data cannot be passed to a macro except through a SET first. The spec's argument list does not mention hyphens, so this is noted for the lead rather than requested as a fix."
+      },
+      "rubric": "Language contract: Hyphens in names; CASE matchers variable path grammar",
+      "reproduction": "render('{{DEFINE f(p)}}${{p}}{{END_DEFINE}}{{CALL f(first-name)}}', {'first-name':'A'}) is a syntax-error 'Invalid CALL syntax: bad argument \"first-name\"', while render('${{first-name}}', {'first-name':'A'}) prints A.",
+      "evidence": [
+        "diff:core/src/macros.ts",
+        "doc:docs/living/architecture/language-contract.md"
+      ],
+      "location": "core/src/macros.ts:6749"
     }
   ],
-  "responses": [],
+  "responses": [
+    {
+      "finding": "f1",
+      "verdict": "withdraw",
+      "evidence": [
+        "diff:core/src/parser.ts",
+        "code:core/src/parser.ts:7077",
+        "test:mc-define: a DEFINE in a ROW, a HEADER or a LIST_ITEM is a syntax-error at the DEFINE"
+      ]
+    },
+    {
+      "finding": "f2",
+      "verdict": "withdraw",
+      "evidence": [
+        "diff:core/src/interpreter.ts",
+        "code:core/src/interpreter.ts:6236",
+        "test:mc-compat: a trimming body keeps the output it had before macros"
+      ]
+    },
+    {
+      "finding": "f3",
+      "verdict": "withdraw",
+      "evidence": [
+        "diff:core/src/interpreter.ts",
+        "code:core/src/interpreter.ts:6494",
+        "code:core/src/interpreter.ts:6680",
+        "diff:core/src/render.ts",
+        "test:mc-output: a finished list line, table cell and table row counts as it finishes"
+      ]
+    }
+  ],
   "reviewer": {
     "kind": "fallback",
     "label": "opus fallback (same model family as the builder; has repository access)"
   },
-  "at": "2026-10-15T16:31:08.718Z",
+  "at": "2026-10-15T16:54:21.499Z",
   "card": "261015-language2c13-a4-define-and-call-macros",
   "tier": "product",
-  "packet_sha256": "876833ec36719b322cfd623ed63c728962889eb824af449a2e0f247141ca3ac7",
-  "diff_sha256": "5458da16674955ef3fd477a6efbcd9a8f6f5bb946cd468a038ca4362a668c2a0",
+  "packet_sha256": "7f2cd9b1c3a30452f40eea066442c4dc05cd2d4a74154041632a1a6e36e589c7",
+  "diff_sha256": "f82bb811d40b18976cbe0f969d255c86c5bdcb8b5d43f344ab07a0312c56b307",
   "dropped": []
 }

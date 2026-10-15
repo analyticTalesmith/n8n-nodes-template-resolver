@@ -2,17 +2,17 @@
 type: review-packet
 card: 261015-language2c13-a4-define-and-call-macros
 tier: product
-built_at: 2026-10-15T16:26:12.598Z
+built_at: 2026-10-15T16:50:14.790Z
 base: c96d1a74c954729614be4395dc582c4deecf58ea
-head: a64405b31fbce803878fd1a89b38efabc5879c3f
-read_at: a64405b31fbce803878fd1a89b38efabc5879c3f
+head: 2b9276fe8cd4fc5dbd6263a4985ea98b9aca4139
+read_at: 2b9276fe8cd4fc5dbd6263a4985ea98b9aca4139
 frozen: true
 brief_sha256: 96f3db9b4049616891df62e5154baa4d66c207a35c90aea92d5d80f31d4c49a1
 manifest_sha256: 52089c79eaa31347060767230037db291f408dd746f7640fdb13df1eb7120888
 criteria_sha256: affcf76db5dad610fff7b8d2b8e783ea23a7b286d8015f797f0c1a290668926d
 scope_sha256: 93702e9aa34f792104c3aa05c2677206f6d577f6896428218d265f9c66dad4c7
-diff_sha256: 5458da16674955ef3fd477a6efbcd9a8f6f5bb946cd468a038ca4362a668c2a0
-omitted_paths: 7
+diff_sha256: f82bb811d40b18976cbe0f969d255c86c5bdcb8b5d43f344ab07a0312c56b307
+omitted_paths: 14
 criteria_count: 13
 must_not_count: 5
 ---
@@ -106,7 +106,7 @@ Must not:
 - core/src/spec.ts
 ```
 
-### spec.md as of base c96d1a74c954, read at a64405b31fbc
+### spec.md as of base c96d1a74c954, read at 2b9276fe8cd4
 
 ```
 # Spec: define and call macros
@@ -207,7 +207,7 @@ Verbatim from `card.json`; they are the contract.
 Partials (L5), `@parent` (L6), INPUT (L7), arguments with math or filters, named or default arguments, `return` values, closures, macros as values, a call-site `limit`, memoisation, living-document edits, deltas.
 ```
 
-### card.md as of base c96d1a74c954, read at a64405b31fbc
+### card.md as of base c96d1a74c954, read at 2b9276fe8cd4
 
 ```
 # Define and call macros
@@ -232,7 +232,7 @@ Define and call macros.
 - `contract` `mc-ws` DEFINE and END_DEFINE join the standalone set; CALL does not (it outputs, like a variable); trim markers work on all three.
 - `contract` `mc-analyze` analyze and validate walk each DEFINE body exactly once and never follow a CALL, so a fan-out or mutually recursive set of macros costs time linear in the template (rows run through `validate` and `analyze`, not only `render`); parameters are locals in the body; CALL argument paths are usage kind `call`; `blocks` counts DEFINE; unresolved names are warnings in validate; analyze lists the macros it saw in an optional `macros` field present only when DEFINEs exist (a required field would break the hand-built analysis literals in `tests/promptaware/section.test.ts` and `api/routes.ts`).
 - `contract` `mc-spec` `spec().blocks` lists DEFINE (closes END_DEFINE) and CALL (no closes); the derived surfaces test passes without edits.
-- `contract` `mc-compat` the full suite passes; no existing test file changes.
+- `contract` `mc-compat` the full suite passes; no existing test file changes except the logged amendment of the `st-keywords` keyword-table row in `tests/language/set.test.ts` (it lists DEFINE and CALL once they are keywords).
 
 ## Acceptance criteria
 
@@ -248,11 +248,11 @@ Define and call macros.
 - mc-ws: DEFINE and END_DEFINE join the standalone set; CALL does not (it outputs, like a variable); trim markers work on all three.
 - mc-analyze: analyze and validate walk each DEFINE body exactly once and never follow a CALL, so a fan-out or mutually recursive set of macros costs time linear in the template (rows run through `validate` and `analyze`, not only `render`); parameters are locals in the body; CALL argument paths are usage kind `call`; `blocks` counts DEFINE; unresolved names are warnings in validate; analyze lists the macros it saw in an optional `macros` field present only when DEFINEs exist (a required field would break the hand-built analysis literals in `tests/promptaware/section.test.ts` and `api/routes.ts`).
 - mc-spec: `spec().blocks` lists DEFINE (closes END_DEFINE) and CALL (no closes); the derived surfaces test passes without edits.
-- mc-compat: the full suite passes; no existing test file changes.
+- mc-compat: the full suite passes; no existing test file changes except the logged amendment of the `st-keywords` keyword-table row in `tests/language/set.test.ts` (it lists DEFINE and CALL once they are keywords).
 
 ## Must-nots
 
-- change any existing test expectation other than the one named amendment (if any)
+- change any existing test expectation other than the logged amendment of the keyword-table row in `tests/language/set.test.ts`
 - add a runtime dependency
 - evaluate template text as code, compile a template-supplied regular expression or read a file named by a template
 - let an unknown name or bad argument pass in lenient mode (ADR 0003)
@@ -4615,7 +4615,7 @@ export function spec(): Spec {
 
 ## Frozen tests (read-only)
 
-These test files are shown as committed at a64405b31fbc, the commit the contract is read at; the diff starts at base c96d1a74c954, so a file added or changed since then is in the diff too. They are part of the plan, not the builder's reasoning. Judge the diff against them; a change to one of them in section 4 is a deviation from the plan, so report it.
+These test files are shown as committed at 2b9276fe8cd4, the commit the contract is read at; the diff starts at base c96d1a74c954, so a file added or changed since then is in the diff too. They are part of the plan, not the builder's reasoning. Judge the diff against them; a change to one of them in section 4 is a deviation from the plan, so report it.
 
 ### tests/language/macros.test.ts (frozen, truncated)
 
@@ -5601,6 +5601,7 @@ describe("mc-depth: one runtime counter, bounded by maxDepth and by 256", () => 
     check(() => analyze(tpl, { limits: RAISED }), "analyze throws a TemplateError").toThrow(TemplateError);
   });
   // a stack overflow inside the interpreter or the analyzer (a condition nested far deeper than any block) passes through locateError unchanged
+  // the rows below build 25000-deep nested conditions: they assume the default stack size of the node process; raise the depth if a machine overflows later
   const PARENS = [
     { name: "an IF condition with 25000 nested parentheses", cond: rep("(", 25000) + "a" + rep(")", 25000) },
   ];
@@ -5834,14 +5835,13 @@ const LOCATE_ROWS: Row[] = [
   inBody("an error in a FOR of the body", `${FB("{{FOR xs AS i}}[§\${{missing}}]{{END_FOR}}")}\n¤{{CALL f(1)}}`, MV, "f", "\n[][][]"),
   inBody("an error in a SECTION of the body", `${FB('{{SECTION "T"}}[§\${{missing}}]{{END_SECTION}}')}\n¤{{CALL f(1)}}`, MV, "f", "\n## T\n\n[]\n"),
   inBody("an error in a SET of the body is located at the SET", `${FB("§{{SET v = missing}}z")}\n¤{{CALL f(1)}}`, MV, "f", "\nz"),
-  inBody("an error in the condition of an IF in the body is located at the IF", `${FB("\n  §{{IF missing > 1}}x{{END_IF}}")}\n¤{{CALL f(1)}}`, "type-error", "f", "same"),
 ````
 
-Truncated: showing the first 98295 of 159436 bytes (section cap 98304 bytes).
+Truncated: showing the first 98279 of 177381 bytes (section cap 98304 bytes).
 
 ## 4. Diff
 
-7 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
+14 paths under docs/ephemeral/ omitted (process material, not part of the work under review).
 
 ```diff
 diff --git a/core/src/analyze.ts b/core/src/analyze.ts
@@ -6096,7 +6096,7 @@ index e050391..372feeb 100644
    return error;
  }
 diff --git a/core/src/interpreter.ts b/core/src/interpreter.ts
-index 295ad13..d538000 100644
+index 295ad13..28ec2bc 100644
 --- a/core/src/interpreter.ts
 +++ b/core/src/interpreter.ts
 @@ -15,6 +15,9 @@ import {
@@ -6139,7 +6139,7 @@ index 295ad13..d538000 100644
   */
  export class Interpreter {
    private strictMode: boolean;
-@@ -81,6 +93,12 @@ export class Interpreter {
+@@ -81,6 +93,16 @@ export class Interpreter {
    private render: boolean;
    private iterations = 0;
    private omittedSections = 0;
@@ -6148,11 +6148,15 @@ index 295ad13..d538000 100644
 +  private readonly depthCap: number;
 +  /** Characters of the finished children of every body being built, across calls */
 +  private held = 0;
++  /** True while a body that trims its text is being built (not through a macro body) */
++  private inTrimmed = false;
++  /** Whitespace that trimmed counts left out of the output of the CALLs run so far */
++  private callBlanks = 0;
 +  private macros = new Map<string, DefineNode>();
    private readonly root: RootScope;
    /** The innermost scope: a block or loop frame while one renders, else the root */
    private scope: VariableLookup;
-@@ -92,12 +110,13 @@ export class Interpreter {
+@@ -92,12 +114,13 @@ export class Interpreter {
      this.strictMode = options?.strictMode ?? true;
      this.render = options?.render ?? false;
      this.limits = withDefaultLimits(options?.limits);
@@ -6167,19 +6171,21 @@ index 295ad13..d538000 100644
     */
    get iterationCount(): number {
      return this.iterations;
-@@ -116,7 +135,11 @@ export class Interpreter {
+@@ -116,7 +139,13 @@ export class Interpreter {
    interpret(ast: ProgramNode): string {
      this.iterations = 0;
      this.omittedSections = 0;
 +    this.depth = 0;
 +    this.held = 0;
++    this.inTrimmed = false;
++    this.callBlanks = 0;
      this.scope = this.root;
 +    // linking comes first: a bad call is found before any output
 +    this.macros = linkProgram(ast);
      return this.visitProgram(ast);
    }
  
-@@ -124,17 +147,64 @@ export class Interpreter {
+@@ -124,17 +153,86 @@ export class Interpreter {
     * Visit program node (root)
     */
    private visitProgram(node: ProgramNode): string {
@@ -6200,6 +6206,11 @@ index 295ad13..d538000 100644
 +   * maxOutputChars is where the error is located, or `at` when the caller
 +   * names the node (a loop keeps its own place). The body's characters are
 +   * released when it returns: the parent then adds the returned text.
++   * Inside a body that trims its text (SECTION, LIST_ITEM, a cell) a child
++   * adds only its text without the blanks around it, so text the trim drops
++   * never fails the limit; the blanks of CALL output inside the child are
++   * added back, since a macro body starts a fresh context and its whole
++   * output counts.
 +   */
 +  private renderChildren(
 +    nodes: ASTNode[],
@@ -6210,14 +6221,14 @@ index 295ad13..d538000 100644
 +    let mine = 0;
 +    try {
 +      for (const child of nodes) {
++        const blanksBefore = this.callBlanks;
 +        const output = render(child);
          parts.push(output);
-+        mine += output.length;
-+        this.held += output.length;
-+        if (this.held > this.limits.maxOutputChars) {
-+          const node = at ?? child;
-+          throw this.outputTooLong(node.line, node.column);
-+        }
++        const kept = this.inTrimmed
++          ? output.trim().length + (this.callBlanks - blanksBefore)
++          : output.length;
++        mine += kept;
++        this.hold(kept, at ?? child);
        }
 -      return parts.join("");
 -    });
@@ -6225,6 +6236,23 @@ index 295ad13..d538000 100644
 +      this.held -= mine;
 +    }
 +    return parts.join("");
++  }
++
++  /** Add characters to `held`; the limit is crossed at `node` */
++  private hold(length: number, node: ASTNode): void {
++    this.held += length;
++    this.checkOutputLength(this.held, node);
++  }
++
++  /** Run a body with its trimming context set, restoring the one around it */
++  private trimming<T>(value: boolean, run: () => T): T {
++    const outer = this.inTrimmed;
++    this.inTrimmed = value;
++    try {
++      return run();
++    } finally {
++      this.inTrimmed = outer;
++    }
 +  }
 +
 +  /**
@@ -6253,7 +6281,7 @@ index 295ad13..d538000 100644
    }
  
    /**
-@@ -164,12 +234,15 @@ export class Interpreter {
+@@ -164,12 +262,15 @@ export class Interpreter {
      }
    }
  
@@ -6271,7 +6299,7 @@ index 295ad13..d538000 100644
          node.line,
          node.column,
          "Iterate over less data or raise limits.maxIterations"
-@@ -218,6 +291,10 @@ export class Interpreter {
+@@ -218,6 +319,10 @@ export class Interpreter {
          return this.visitFence(node as FenceNode);
        case "Set":
          return this.at(node, () => this.visitSet(node as SetNode));
@@ -6282,7 +6310,7 @@ index 295ad13..d538000 100644
        case "Ternary":
          return this.at(node, () => this.visitTernary(node as TernaryNode));
        case "Comment":
-@@ -254,6 +331,44 @@ export class Interpreter {
+@@ -254,6 +359,51 @@ export class Interpreter {
      return "";
    }
  
@@ -6296,7 +6324,11 @@ index 295ad13..d538000 100644
 +    const macro = this.macros.get(node.name) as DefineNode; // linked in interpret
 +    this.countIteration(node);
 +    const args = this.at(node, () => node.args.map((arg) => this.readArgument(arg)));
-+    return this.enter(node, "call", () => this.runMacro(macro, node, args));
++    const output = this.enter(node, "call", () => this.runMacro(macro, node, args));
++    // a trimming body may drop the blanks around the output, but a macro's
++    // text counts in full: keep what the trimmed count leaves out
++    if (this.inTrimmed) this.callBlanks += output.length - output.trim().length;
++    return output;
 +  }
 +
 +  /** An argument value, passed as the value (an array stays an array) */
@@ -6313,21 +6345,24 @@ index 295ad13..d538000 100644
 +    const frame = new Frame(this.root);
 +    macro.params.forEach((param, i) => frame.set(param, args[i]));
 +    const outer = this.scope;
++    const outerCallBlanks = this.callBlanks;
 +    this.scope = frame;
 +    try {
-+      return this.renderChildren(macro.body);
++      // a body starts a fresh context that trims nothing
++      return this.trimming(false, () => this.renderChildren(macro.body));
 +    } catch (error) {
 +      if (error instanceof TemplateError) error.addNote(macroNote(macro, call));
 +      throw error;
 +    } finally {
 +      this.scope = outer;
++      this.callBlanks = outerCallBlanks;
 +    }
 +  }
 +
    /**
     * The one value evaluator behind ${{ }} and SET: a path, arithmetic or a
     * literal, then the ?? default and the filter chain. Returns the value, not
-@@ -332,7 +447,7 @@ export class Interpreter {
+@@ -332,7 +482,7 @@ export class Interpreter {
     * Visit IF node
     */
    private visitIf(node: IfNode): string {
@@ -6336,7 +6371,7 @@ index 295ad13..d538000 100644
    }
  
    /**
-@@ -355,18 +470,19 @@ export class Interpreter {
+@@ -355,18 +505,19 @@ export class Interpreter {
      }
    }
  
@@ -6362,7 +6397,7 @@ index 295ad13..d538000 100644
      const valueStr = this.at(node, () =>
        this.valueToString(this.resolveNestedPath(node.expression.split(".")))
      );
-@@ -392,11 +508,13 @@ export class Interpreter {
+@@ -392,11 +543,13 @@ export class Interpreter {
     */
    private visitFor(node: ForNode): string {
      const results: string[] = [];
@@ -6381,7 +6416,7 @@ index 295ad13..d538000 100644
      return results.join("");
    }
  
-@@ -503,6 +621,10 @@ export class Interpreter {
+@@ -503,9 +656,17 @@ export class Interpreter {
     * skipEmpty is set
     */
    private visitSection(node: SectionNode): string {
@@ -6391,8 +6426,16 @@ index 295ad13..d538000 100644
 +  private runSection(node: SectionNode): string {
      const title = this.at(node, () => this.sectionTitle(node));
      const heading = `${"#".repeat(node.level)} ${title}\n`;
-     const body = this.visitBody(node.body).replace(/\r\n/g, "\n");
-@@ -536,6 +658,10 @@ export class Interpreter {
+-    const body = this.visitBody(node.body).replace(/\r\n/g, "\n");
++    // the body loses blank edges below, so its children count trimmed
++    const body = this.trimming(true, () => this.visitBody(node.body)).replace(
++      /\r\n/g,
++      "\n"
++    );
+ 
+     if (body.trim() === "") {
+       if (!node.skipEmpty) return heading;
+@@ -536,6 +697,10 @@ export class Interpreter {
     * Visit FENCE: the rendered body in a code fence sized to it
     */
    private visitFence(node: FenceNode): string {
@@ -6403,17 +6446,43 @@ index 295ad13..d538000 100644
      const lang = this.at(node, () => {
        const value = this.fenceLang(node);
        checkFenceLang(value);
-@@ -568,7 +694,7 @@ export class Interpreter {
+@@ -568,7 +733,13 @@ export class Interpreter {
     */
    private visitList(node: ListNode, depth = 0): string {
      const lines: string[] = [];
 -    this.collectListItems(node.items, depth, lines);
-+    this.enter(node, "block", () => this.collectListItems(node.items, depth, lines));
++    // each finished line counts into `held` and is released when the list returns
++    const start = this.held;
++    try {
++      this.enter(node, "block", () => this.collectListItems(node.items, depth, lines, node));
++    } finally {
++      this.held = start;
++    }
      return lines.join("\n");
    }
  
-@@ -595,17 +721,17 @@ export class Interpreter {
+@@ -577,12 +748,14 @@ export class Interpreter {
+    * the lines of its branch, a FOR the lines of each iteration (or of its
+    * ELSE body). The numbering follows the lines already collected for this
+    * LIST, so items from any source share one counter. Returns the characters
+-   * the lines hold.
++   * the lines hold. The limit is crossed at `list`, where it was before lines
++   * counted as they finish.
+    */
+   private collectListItems(
+     children: ASTNode[],
+     depth: number,
+-    lines: string[]
++    lines: string[],
++    list: ListNode
+   ): number {
+     const indent = "   ".repeat(depth); // 3 spaces per level
+     let length = 0;
+@@ -593,19 +766,20 @@ export class Interpreter {
+           const line = `${indent}${lines.length + 1}. ${output}`;
+           lines.push(line);
            length += line.length;
++          this.hold(line.length, list);
          }
        } else if (child.type === "If") {
 -        length += this.collectListItems(
@@ -6421,7 +6490,7 @@ index 295ad13..d538000 100644
 -          depth,
 -          lines
 +        length += this.enter(child, "block", () =>
-+          this.collectListItems(this.selectBranch(child as IfNode), depth, lines)
++          this.collectListItems(this.selectBranch(child as IfNode), depth, lines, list)
          );
        } else if (child.type === "For") {
 -        this.runLoop(child as ForNode, false, (nodes) => {
@@ -6431,7 +6500,7 @@ index 295ad13..d538000 100644
 -        });
 +        this.enter(child, "block", () =>
 +          this.runLoop(child as ForNode, false, (nodes) => {
-+            const added = this.collectListItems(nodes, depth, lines);
++            const added = this.collectListItems(nodes, depth, lines, list);
 +            length += added;
 +            return added;
 +          })
@@ -6439,7 +6508,7 @@ index 295ad13..d538000 100644
        }
      }
      return length;
-@@ -628,18 +754,13 @@ export class Interpreter {
+@@ -628,18 +802,16 @@ export class Interpreter {
      }
  
      // Render content, in a block of its own
@@ -6455,28 +6524,50 @@ index 295ad13..d538000 100644
 -      }
 -      return text;
 -    });
-+    const content = this.block(node.content, () =>
-+      this.renderChildren(node.content, undefined, (child) =>
-+        child.type === "List"
-+          ? "\n" + this.visitList(child as ListNode, depth + 1) // nested list
-+          : this.visit(child)
++    // the content is trimmed, so its children count trimmed (see renderChildren)
++    const content = this.trimming(true, () =>
++      this.block(node.content, () =>
++        this.renderChildren(node.content, undefined, (child) =>
++          child.type === "List"
++            ? "\n" + this.visitList(child as ListNode, depth + 1) // nested list
++            : this.visit(child)
++        )
 +      )
 +    );
  
      return content.trim();
    }
-@@ -648,6 +769,10 @@ export class Interpreter {
+@@ -648,11 +820,28 @@ export class Interpreter {
     * Visit TABLE node
     */
    private visitTable(node: TableNode): string {
 +    return this.enter(node, "block", () => this.runTable(node));
 +  }
 +
++  /**
++   * The finished cells count into `held` as they finish (see processCellsArray)
++   * and are released when the table returns: the parent then adds its text.
++   */
 +  private runTable(node: TableNode): string {
++    const start = this.held;
++    try {
++      return this.buildTable(node);
++    } finally {
++      this.held = start;
++    }
++  }
++
++  private buildTable(node: TableNode): string {
      const rows: string[][] = [];
  
      // Process header
-@@ -719,15 +844,19 @@ export class Interpreter {
+     if (node.header) {
+-      const headerCells = this.processCellsArray(node.header.cells);
++      const headerCells = this.processCellsArray(node.header);
+       rows.push(headerCells);
+     }
+ 
+@@ -719,17 +908,21 @@ export class Interpreter {
    private rowsFromChild(child: TableChild, rows: string[][], strict: boolean): number {
      if (child.type === "For") {
        let length = 0;
@@ -6500,10 +6591,29 @@ index 295ad13..d538000 100644
 +        this.tableRowsFrom(this.selectBranch(child), rows, strict)
 +      );
      }
-     const cells = this.processCellsArray(child.cells);
+-    const cells = this.processCellsArray(child.cells);
++    const cells = this.processCellsArray(child);
      rows.push(cells);
-@@ -763,7 +892,7 @@ export class Interpreter {
-         add(text.split("|").map((cell) => cell.trim()));
+     return cells.reduce((sum, cell) => sum + cell.length, 0);
+   }
+@@ -752,32 +945,34 @@ export class Interpreter {
+     };
+     if (strict) {
+       for (const bodyNode of nodes) {
+-        if (bodyNode.type === "TableRow") add(this.processCellsArray((bodyNode as TableRowNode).cells));
++        if (bodyNode.type === "TableRow") add(this.processCellsArray(bodyNode as TableRowNode));
+         else if (bodyNode.type === "For" || bodyNode.type === "If") length += this.rowsFromChild(bodyNode as TableChild, rows, true);
+       }
+       return length;
+     }
+ 
+-    const addText = (text: string): void => {
++    const addText = (text: string, at: ASTNode): void => {
+       if (text.trim()) {
+-        add(text.split("|").map((cell) => cell.trim()));
++        const cells = text.split("|").map((cell) => cell.trim());
++        for (const cell of cells) this.hold(cell.length, at);
++        add(cells);
        }
      };
 -    const inline = ["Text", "Variable", "Ternary", "Comment", "Set"];
@@ -6511,6 +6621,58 @@ index 295ad13..d538000 100644
      let run: ASTNode[] = [];
      const flush = (): void => {
        if (run.length === 1) {
+-        addText(this.visit(run[0]));
++        addText(this.visit(run[0]), run[0]);
+       } else if (run.length > 1) {
+         const text = run.map((node) => this.visit(node)).join("");
+-        for (const line of text.split(/\r?\n/)) addText(line);
++        for (const line of text.split(/\r?\n/)) addText(line, run[0]);
+       }
+       run = [];
+     };
+     for (const bodyNode of nodes) {
+       if (bodyNode.type === "TableRow") {
+         flush();
+-        add(this.processCellsArray((bodyNode as TableRowNode).cells));
++        add(this.processCellsArray(bodyNode as TableRowNode));
+       } else if (holdsRow(bodyNode)) {
+         flush();
+         length += this.rowsFromChild(bodyNode as TableChild, rows, false);
+@@ -785,7 +980,7 @@ export class Interpreter {
+         run.push(bodyNode);
+       } else {
+         flush();
+-        addText(this.visit(bodyNode));
++        addText(this.visit(bodyNode), bodyNode);
+       }
+     }
+     flush();
+@@ -796,17 +991,20 @@ export class Interpreter {
+    * Process cells array where each cell is an array of AST nodes
+    * Returns an array of strings, one per cell
+    */
+-  private processCellsArray(cells: ASTNode[][]): string[] {
++  private processCellsArray(row: ASTNode & { cells: ASTNode[][] }): string[] {
+     // one block for the whole row: a SET in one cell reads on in the next
+-    return this.block(cells.flat(), () =>
+-      cells.map((cellNodes) => {
+-        const content = cellNodes.map((node) => this.visit(node)).join("");
+-        return content
++    return this.block(row.cells.flat(), () =>
++      row.cells.map((cellNodes) => {
++        // a cell is trimmed, so its children count trimmed (see renderChildren)
++        const content = this.trimming(true, () => this.renderChildren(cellNodes));
++        const cell = content
+           .replace(/\r?\n/g, " ")
+           .replace(/(\\*)\|/g, (found, slashes: string) =>
+             slashes.length % 2 === 0 ? `${slashes}\\|` : found
+           )
+           .trim();
++        this.hold(cell.length, cellNodes[0] ?? row);
++        return cell;
+       })
+     );
+   }
 diff --git a/core/src/lexer.ts b/core/src/lexer.ts
 index c8d452f..22af9f8 100644
 --- a/core/src/lexer.ts
@@ -6869,7 +7031,7 @@ index 0000000..caece62
 +  return ` (in macro '${macro.name}', called at line ${call.line}, col ${call.column})`;
 +}
 diff --git a/core/src/parser.ts b/core/src/parser.ts
-index 5f1b82e..cc0bad5 100644
+index 5f1b82e..4c35394 100644
 --- a/core/src/parser.ts
 +++ b/core/src/parser.ts
 @@ -25,12 +25,15 @@ import {
@@ -6897,18 +7059,40 @@ index 5f1b82e..cc0bad5 100644
    private readonly maxDepth: number;
    private readonly maxNodes: number;
  
-@@ -115,6 +120,10 @@ export class Parser {
+@@ -70,7 +75,11 @@ export class Parser {
+     const body: ASTNode[] = [];
+ 
+     while (!this.isAtEnd()) {
+-      const node = this.parseNode();
++      // Only here may a DEFINE start; every other path reaches parseNode
++      const node =
++        this.current().type === TokenType.DEFINE
++          ? this.nested(() => this.parseDefineBlock())
++          : this.parseNode();
+       if (node) {
+         body.push(node);
+       }
+@@ -115,6 +124,10 @@ export class Parser {
          return this.parseTableRow();
        case TokenType.SET:
          return this.parseSet();
 +      case TokenType.DEFINE:
-+        return this.parseDefine();
++        return this.misplacedDefine();
 +      case TokenType.CALL:
 +        return this.parseCall();
        case TokenType.COMMENT:
          return this.parseComment();
        case TokenType.EOF:
-@@ -269,6 +278,9 @@ export class Parser {
+@@ -128,6 +141,8 @@ export class Parser {
+             "Close the item with {{END_LIST_ITEM}} before the FOR or IF that builds items"
+           );
+         }
++        // A stray item is an error, but a DEFINE inside it is the first error
++        this.parseListItem();
+         return this.unexpectedToken(token);
+       default:
+         return this.unexpectedToken(token);
+@@ -269,6 +284,9 @@ export class Parser {
      if (this.loopNames.includes(name)) {
        fail(`"${name}" is the item of an enclosing FOR`);
      }
@@ -6918,28 +7102,26 @@ index 5f1b82e..cc0bad5 100644
      if (rest.startsWith("=")) fail("a single = binds, == compares");
      const expression = rest.trim();
      if (expression === "") fail("the expression is missing");
-@@ -357,6 +369,88 @@ export class Parser {
+@@ -357,6 +375,86 @@ export class Parser {
      return parts;
    }
  
 +  /**
-+   * Parse DEFINE: {{DEFINE name(param, ...)}}...{{END_DEFINE}}. It sits at the
-+   * top level only: any block around it (another DEFINE included) is an error
-+   * at the DEFINE.
++   * A DEFINE sits directly in the program body only (see parse): anywhere else,
++   * in a block, a table row or header, an item or another DEFINE, it is an
++   * error at the DEFINE.
 +   */
-+  private parseDefine(): DefineNode {
-+    if (this.depth > 0) {
-+      const token = this.current();
-+      throw new SyntaxError(
-+        "A {{DEFINE}} must sit at the top level, outside every block",
-+        token.line,
-+        token.column,
-+        "Move the DEFINE out of the block; a CALL can still sit anywhere"
-+      );
-+    }
-+    return this.nested(() => this.parseDefineBlock());
++  private misplacedDefine(): never {
++    const token = this.current();
++    throw new SyntaxError(
++      "A {{DEFINE}} must sit at the top level, outside every block",
++      token.line,
++      token.column,
++      "Move the DEFINE out of the block; a CALL can still sit anywhere"
++    );
 +  }
 +
++  /** Parse DEFINE: {{DEFINE name(param, ...)}}...{{END_DEFINE}} */
 +  private parseDefineBlock(): DefineNode {
 +    const token = this.open(TokenType.DEFINE);
 +    const header = parseDefineHeader(token.value.slice("DEFINE".length));
@@ -7008,7 +7190,7 @@ index 5f1b82e..cc0bad5 100644
     * Parse IF block: {{IF condition}}...{{ELSEIF}}...{{ELSE}}...{{END_IF}}
     * ELSEIF branches nest in the alternate of the branch before them and are
 diff --git a/core/src/render.ts b/core/src/render.ts
-index 7d55556..cb6581e 100644
+index 7d55556..63d37d7 100644
 --- a/core/src/render.ts
 +++ b/core/src/render.ts
 @@ -4,7 +4,7 @@ import {
@@ -7020,18 +7202,23 @@ index 7d55556..cb6581e 100644
  import { Lexer } from "./lexer";
  import { Parser } from "./parser";
  import { Interpreter } from "./interpreter";
-@@ -79,6 +79,10 @@ export function render(
+@@ -79,6 +79,15 @@ export function render(
      }).parse();
      output = interpreter.interpret(ast);
    } catch (error) {
-+    // a stack overflow inside a very deep template is a depth error, not a crash
++    // a stack overflow inside a very deep template is a depth error, not a
++    // crash; any other RangeError is a string grown past what the engine holds
 +    if (error instanceof RangeError) {
-+      return failure(toDiagnostic(tooDeep()), interpreter.iterationCount);
++      const overflow = error.message.includes("Maximum call stack size exceeded");
++      return failure(
++        toDiagnostic(overflow ? tooDeep() : tooLong()),
++        interpreter.iterationCount
++      );
 +    }
      if (!(error instanceof TemplateError)) throw error;
      return failure(toDiagnostic(error), interpreter.iterationCount);
    }
-@@ -134,6 +138,17 @@ function failure(diagnostic: Diagnostic, iterations: number): RenderResult {
+@@ -134,6 +143,28 @@ function failure(diagnostic: Diagnostic, iterations: number): RenderResult {
    };
  }
  
@@ -7043,6 +7230,17 @@ index 7d55556..cb6581e 100644
 +    1,
 +    1,
 +    "Flatten the nested blocks or lower limits.maxDepth"
++  );
++}
++
++/** The error for text grown past the engine's string size; no position is known */
++function tooLong(): TemplateError {
++  return new LimitError(
++    "limit-output",
++    "Output is longer than the engine can hold",
++    1,
++    1,
++    "Render less content or lower limits.maxOutputChars"
 +  );
 +}
 +
@@ -7135,6 +7333,261 @@ index b9c5548..6fc5f94 100644
    TokenType.COMMENT,
  ]);
  
+diff --git a/tests/language/macros.test.ts b/tests/language/macros.test.ts
+index ebbe375..41e6ce0 100644
+--- a/tests/language/macros.test.ts
++++ b/tests/language/macros.test.ts
+@@ -979,6 +979,7 @@ describe("mc-depth: one runtime counter, bounded by maxDepth and by 256", () =>
+     check(() => analyze(tpl, { limits: RAISED }), "analyze throws a TemplateError").toThrow(TemplateError);
+   });
+   // a stack overflow inside the interpreter or the analyzer (a condition nested far deeper than any block) passes through locateError unchanged
++  // the rows below build 25000-deep nested conditions: they assume the default stack size of the node process; raise the depth if a machine overflows later
+   const PARENS = [
+     { name: "an IF condition with 25000 nested parentheses", cond: rep("(", 25000) + "a" + rep(")", 25000) },
+   ];
+@@ -1782,3 +1783,242 @@ describe("mc-compat: old templates keep their output", () => {
+     check(run(entry, "{{FOR items AS a}}\${{a.n}}{{END_FOR}}[\${{a}}]", DATA).output, "xy then A").toBe("xy[A]");
+   });
+ });
++
++// =====================================================================================
++// review fixes: where a DEFINE may stand, what a trimming body counts, and finished list lines and table cells
++// =====================================================================================
++
++// ---- mc-define: a DEFINE that is not a direct child of the template is a syntax-error at the DEFINE ----
++
++/** [label, text before the DEFINE, text after it]: containers that a ROW, a HEADER or a LIST_ITEM opens */
++const PLACE_CONTAINERS: Array<[string, string, string]> = [
++  ["a ROW at the top level", "{{ROW}}", "{{END_ROW}}"],
++  ["a HEADER at the top level", "{{HEADER}}", "{{END_HEADER}}"],
++  ["a ROW cell after other cells at the top level", "{{ROW}}a|", "{{END_ROW}}"],
++  ["a ROW inside a TABLE", "{{TABLE}}{{ROW}}", "{{END_ROW}}{{END_TABLE}}"],
++  ["a HEADER inside a TABLE", "{{TABLE}}{{HEADER}}", "{{END_HEADER}}{{END_TABLE}}"],
++  ["a ROW cell after other cells inside a TABLE", "{{TABLE}}{{ROW}}a|", "{{END_ROW}}{{END_TABLE}}"],
++  ["a ROW in a FOR inside a TABLE", "{{TABLE}}{{FOR xs AS x}}{{ROW}}", "{{END_ROW}}{{END_FOR}}{{END_TABLE}}"],
++  ["a LIST_ITEM inside a LIST", "{{LIST}}{{LIST_ITEM}}", "{{END_LIST_ITEM}}{{END_LIST}}"],
++  ["a LIST_ITEM at the top level", "{{LIST_ITEM}}", "{{END_LIST_ITEM}}"],
++];
++const PLACE_ROWS: Row[] = PLACE_CONTAINERS.flatMap(([label, before, after]) =>
++  [
++    ["", ""],
++    [" and a CALL after it", "{{CALL a()}}"],
++  ].map(([suffixLabel, suffix]): Row => {
++    const m = marked(`${before}§${def("a", "", "x")}${after}${suffix}`);
++    return { name: `a DEFINE in ${label}${suffixLabel} is a syntax-error at the DEFINE, not an unknown macro`, tpl: m.tpl, data: DATA, want: ERR("syntax-error", m.line, m.col, undefined, "Unknown macro") };
++  }),
++);
++
++describe("mc-define: a DEFINE in a ROW, a HEADER or a LIST_ITEM is a syntax-error at the DEFINE", () => {
++  it.each(expand(PLACE_ROWS))("mc-define: [$entry] $name", ({ entry, r }) => verify(entry, r, "mc-define"));
++  const statics = PLACE_ROWS.flatMap((r) => (["validate", "analyze"] as const).map((kind) => ({ kind, r, name: r.name })));
++  it.each(statics)("mc-define: [$kind] $name", ({ kind, r }) => {
++    const want = r.want as Extract<Want, { err: string }>;
++    verifyOutcome(runStatic(kind, r.tpl), ERR(want.err, want.line, want.col, undefined, want.lacks), `mc-define [${kind}] ${r.name}`);
++  });
++  it.each(ENTRIES)("mc-define: [%s] a top-level DEFINE after a top-level TABLE and between texts still works", (entry) => {
++    const tpl = `a{{TABLE}}{{ROW}}1|2{{END_ROW}}{{END_TABLE}}b${def("a", "", "x")}c{{CALL a()}}{{LIST}}{{LIST_ITEM}}{{CALL a()}}{{END_LIST_ITEM}}{{END_LIST}}`;
++    check(run(entry, tpl, DATA).output, `[${entry}] the table, the texts, the macro in text and in a LIST_ITEM`).toBe("a| 1 | 2 |bcx1. x");
++  });
++});
++
++// ---- mc-compat and mc-output: the running output check counts only what a trimming body keeps ----
++
++interface Sc {
++  name: string;
++  tpl: string;
++  data: Record<string, any>;
++  limits?: Partial<Limits>;
++}
++const V = "${{v}}";
++const NL_TEXT = "x" + rep("\n", 30);
++const BLANK_TEXT = rep(" ", 30);
++const SPACE_TEXT = "x" + rep(" ", 30);
++const PADDED_TEXT = rep(" ", 15) + "x" + rep(" ", 15);
++const LINES_TEXT = rep("\n", 30) + "x";
++const L20 = { maxOutputChars: 20 };
++/** Where a variable sits inside a trimming body: [label, a function from the variable tag to the body] */
++const TRIM_CTXS: Array<[string, (b: string) => string]> = [
++  ["the body itself", (b) => b],
++  ["an IF", (b) => `{{IF t}}${b}{{END_IF}}`],
++  ["a CASE clause", (b) => `{{CASE b}}{{WHEN 2}}${b}{{END_CASE}}`],
++  ["a FOR with one item", (b) => `{{FOR one AS i}}${b}{{END_FOR}}`],
++  ["an IF in an IF", (b) => `{{IF t}}{{IF t}}${b}{{END_IF}}{{END_IF}}`],
++];
++const TRIM_SCENARIOS: Sc[] = TRIM_CTXS.flatMap(([label, w]): Sc[] => {
++  const sc = (name: string, tpl: string, v: string, limits: Partial<Limits> = L20): Sc => ({ name: `${name} in ${label}`, tpl, data: { ...DATA, v }, limits });
++  const section = (attrs = "") => `{{SECTION "T"${attrs}}}${w(V)}{{END_SECTION}}`;
++  return [
++    sc("a SECTION body with 30 trailing newlines, limit 20", section(), NL_TEXT),
++    sc("a SECTION body of 30 blanks, limit 20", section(), BLANK_TEXT),
++    sc("a SECTION body of 30 blanks with skip_empty=true, limit 20", section(" skip_empty=true"), BLANK_TEXT),
++    sc("a SECTION body of 30 blanks with skip_empty=false, limit 20", section(" skip_empty=false"), BLANK_TEXT),
++    sc("a LIST_ITEM with 30 trailing blanks, limit 20", `{{LIST}}{{LIST_ITEM}}${w(V)}{{END_LIST_ITEM}}{{END_LIST}}`, SPACE_TEXT),
++    sc("a LIST_ITEM padded on both sides, limit 20", `{{LIST}}{{LIST_ITEM}}${w(V)}{{END_LIST_ITEM}}{{END_LIST}}`, PADDED_TEXT),
++    sc("a ROW cell with 30 trailing blanks, limit 20", `{{TABLE}}{{ROW}}${w(V)}|b{{END_ROW}}{{END_TABLE}}`, SPACE_TEXT),
++    sc("a ROW cell with 30 leading line breaks, limit 20", `{{TABLE}}{{ROW}}${w(V)}|b{{END_ROW}}{{END_TABLE}}`, LINES_TEXT),
++    sc("a HEADER cell with 30 trailing blanks, limit 20", `{{TABLE}}{{HEADER}}${w(V)}{{END_HEADER}}{{END_TABLE}}`, SPACE_TEXT),
++  ];
++});
++/** A trimmed body exactly at the limit renders and one more character does not */
++const PAD_NL = rep("\n", 30) + rep("y", 10) + rep("\n", 30);
++const PAD_SP = rep(" ", 30) + rep("y", 10) + rep(" ", 30);
++const TRIM_EDGES: Sc[] = [
++  { name: "a SECTION whose kept text fills the limit exactly", tpl: `{{SECTION "T"}}${V}{{END_SECTION}}`, data: { ...DATA, v: PAD_NL }, limits: { maxOutputChars: 17 } },
++  { name: "a SECTION whose kept text is one character over the limit", tpl: `{{SECTION "T"}}${V}{{END_SECTION}}`, data: { ...DATA, v: PAD_NL }, limits: { maxOutputChars: 16 } },
++  { name: "a LIST_ITEM whose kept text fills the limit exactly", tpl: `{{LIST}}{{LIST_ITEM}}${V}{{END_LIST_ITEM}}{{END_LIST}}`, data: { ...DATA, v: PAD_SP }, limits: { maxOutputChars: 13 } },
++  { name: "a LIST_ITEM whose kept text is one character over the limit", tpl: `{{LIST}}{{LIST_ITEM}}${V}{{END_LIST_ITEM}}{{END_LIST}}`, data: { ...DATA, v: PAD_SP }, limits: { maxOutputChars: 12 } },
++  { name: "a ROW cell whose kept text fills the limit exactly", tpl: `{{TABLE}}{{ROW}}${V}{{END_ROW}}{{END_TABLE}}`, data: { ...DATA, v: PAD_SP }, limits: { maxOutputChars: 14 } },
++  { name: "a ROW cell whose kept text is one character over the limit", tpl: `{{TABLE}}{{ROW}}${V}{{END_ROW}}{{END_TABLE}}`, data: { ...DATA, v: PAD_SP }, limits: { maxOutputChars: 13 } },
++];
++/** The base output of each scenario above, in the guard notation (one text when the four entries agree) */
++const TRIM_WANT: Record<string, string | string[]> = {
++  "a SECTION body with 30 trailing newlines, limit 20 in the body itself": "## T\n\nx\n",
++  "a SECTION body of 30 blanks, limit 20 in the body itself": "",
++  "a SECTION body of 30 blanks with skip_empty=true, limit 20 in the body itself": "",
++  "a SECTION body of 30 blanks with skip_empty=false, limit 20 in the body itself": "## T\n",
++  "a LIST_ITEM with 30 trailing blanks, limit 20 in the body itself": "1. x",
++  "a LIST_ITEM padded on both sides, limit 20 in the body itself": "1. x",
++  "a ROW cell with 30 trailing blanks, limit 20 in the body itself": "| x | b |",
++  "a ROW cell with 30 leading line breaks, limit 20 in the body itself": "| x | b |",
++  "a HEADER cell with 30 trailing blanks, limit 20 in the body itself": "| x |\n|:-----|",
++  "a SECTION body with 30 trailing newlines, limit 20 in an IF": "## T\n\nx\n",
++  "a SECTION body of 30 blanks, limit 20 in an IF": "",
++  "a SECTION body of 30 blanks with skip_empty=true, limit 20 in an IF": "",
++  "a SECTION body of 30 blanks with skip_empty=false, limit 20 in an IF": "## T\n",
++  "a LIST_ITEM with 30 trailing blanks, limit 20 in an IF": "1. x",
++  "a LIST_ITEM padded on both sides, limit 20 in an IF": "1. x",
++  "a ROW cell with 30 trailing blanks, limit 20 in an IF": "| x | b |",
++  "a ROW cell with 30 leading line breaks, limit 20 in an IF": "| x | b |",
++  "a HEADER cell with 30 trailing blanks, limit 20 in an IF": "| x |\n|:-----|",
++  "a SECTION body with 30 trailing newlines, limit 20 in a CASE clause": "## T\n\nx\n",
++  "a SECTION body of 30 blanks, limit 20 in a CASE clause": "",
++  "a SECTION body of 30 blanks with skip_empty=true, limit 20 in a CASE clause": "",
++  "a SECTION body of 30 blanks with skip_empty=false, limit 20 in a CASE clause": "## T\n",
++  "a LIST_ITEM with 30 trailing blanks, limit 20 in a CASE clause": "1. x",
++  "a LIST_ITEM padded on both sides, limit 20 in a CASE clause": "1. x",
++  "a ROW cell with 30 trailing blanks, limit 20 in a CASE clause": "| x | b |",
++  "a ROW cell with 30 leading line breaks, limit 20 in a CASE clause": "| x | b |",
++  "a HEADER cell with 30 trailing blanks, limit 20 in a CASE clause": "| x |\n|:-----|",
++  "a SECTION body with 30 trailing newlines, limit 20 in a FOR with one item": "!limit-output@1:16",
++  "a SECTION body of 30 blanks, limit 20 in a FOR with one item": "!limit-output@1:16",
++  "a SECTION body of 30 blanks with skip_empty=true, limit 20 in a FOR with one item": "!limit-output@1:32",
++  "a SECTION body of 30 blanks with skip_empty=false, limit 20 in a FOR with one item": "!limit-output@1:33",
++  "a LIST_ITEM with 30 trailing blanks, limit 20 in a FOR with one item": "!limit-output@1:22",
++  "a LIST_ITEM padded on both sides, limit 20 in a FOR with one item": "!limit-output@1:22",
++  "a ROW cell with 30 trailing blanks, limit 20 in a FOR with one item": "!limit-output@1:17",
++  "a ROW cell with 30 leading line breaks, limit 20 in a FOR with one item": "!limit-output@1:17",
++  "a HEADER cell with 30 trailing blanks, limit 20 in a FOR with one item": "!limit-output@1:20",
++  "a SECTION body with 30 trailing newlines, limit 20 in an IF in an IF": "## T\n\nx\n",
++  "a SECTION body of 30 blanks, limit 20 in an IF in an IF": "",
++  "a SECTION body of 30 blanks with skip_empty=true, limit 20 in an IF in an IF": "",
++  "a SECTION body of 30 blanks with skip_empty=false, limit 20 in an IF in an IF": "## T\n",
++  "a LIST_ITEM with 30 trailing blanks, limit 20 in an IF in an IF": "1. x",
++  "a LIST_ITEM padded on both sides, limit 20 in an IF in an IF": "1. x",
++  "a ROW cell with 30 trailing blanks, limit 20 in an IF in an IF": "| x | b |",
++  "a ROW cell with 30 leading line breaks, limit 20 in an IF in an IF": "| x | b |",
++  "a HEADER cell with 30 trailing blanks, limit 20 in an IF in an IF": "| x |\n|:-----|",
++  "a SECTION whose kept text fills the limit exactly": "## T\n\nyyyyyyyyyy\n",
++  "a SECTION whose kept text is one character over the limit": "!limit-output@1:1",
++  "a LIST_ITEM whose kept text fills the limit exactly": "1. yyyyyyyyyy",
++  "a LIST_ITEM whose kept text is one character over the limit": "!limit-output@1:1",
++  "a ROW cell whose kept text fills the limit exactly": "| yyyyyyyyyy |",
++  "a ROW cell whose kept text is one character over the limit": "!limit-output@1:1",
++};
++
++// ---- mc-output: a finished LIST line and a finished TABLE cell or row count as soon as it finishes ----
++
++const HUNDRED = Array.from({ length: 100 }, (_, i) => i);
++const LI = (n: number): string => rep("{{LIST_ITEM}}{{CALL a()}}{{END_LIST_ITEM}}", n);
++/** Bodies that hold 100 calls of the 100-character macro a: [label, template part] */
++const FANOUTS: Array<[string, string]> = [
++  ["100 LIST_ITEMs", `{{LIST}}${LI(100)}{{END_LIST}}`],
++  ["100 LIST_ITEMs in a LIST in a LIST_ITEM", `{{LIST}}{{LIST_ITEM}}top{{LIST}}${LI(100)}{{END_LIST}}{{END_LIST_ITEM}}{{END_LIST}}`],
++  ["LIST_ITEMs built by a FOR", "{{LIST}}{{FOR hundred AS i}}{{LIST_ITEM}}{{CALL a()}}{{END_LIST_ITEM}}{{END_FOR}}{{END_LIST}}"],
++  ["LIST_ITEMs built by a FOR in an IF", "{{LIST}}{{IF t}}{{FOR hundred AS i}}{{LIST_ITEM}}{{CALL a()}}{{END_LIST_ITEM}}{{END_FOR}}{{END_IF}}{{END_LIST}}"],
++  ["one ROW of 100 cells", `{{TABLE}}{{ROW}}${rep("{{CALL a()}}|", 100)}{{END_ROW}}{{END_TABLE}}`],
++  ["100 ROWs", `{{TABLE}}${rep("{{ROW}}{{CALL a()}}|b{{END_ROW}}", 100)}{{END_TABLE}}`],
++  ["a HEADER of 100 cells", `{{TABLE}}{{HEADER}}${rep("{{CALL a()}}|", 100)}{{END_HEADER}}{{ROW}}1{{END_ROW}}{{END_TABLE}}`],
++  ["ROWs built by a FOR", "{{TABLE}}{{FOR hundred AS i}}{{ROW}}{{CALL a()}}|b{{END_ROW}}{{END_FOR}}{{END_TABLE}}"],
++  ["ROWs built by a FOR in an IF", "{{TABLE}}{{IF t}}{{FOR hundred AS i}}{{ROW}}{{CALL a()}}|b{{END_ROW}}{{END_FOR}}{{END_IF}}{{END_TABLE}}"],
++  ["rows written as text in a FOR of a TABLE", "{{TABLE}}{{FOR hundred AS i}}{{CALL a()}}|1\n{{END_FOR}}{{END_TABLE}}"],
++  ["100 calls in one cell", `{{TABLE}}{{ROW}}${calls("a", 100)}|b{{END_ROW}}{{END_TABLE}}`],
++];
++const FANOUT_WRAPS: Array<[string, (c: string) => string]> = [
++  ["the top level", (c) => c],
++  ["an IF body", (c) => `{{IF t}}${c}{{END_IF}}`],
++];
++const FANOUT_ROWS = FANOUTS.flatMap(([label, part]) =>
++  FANOUT_WRAPS.flatMap(([where, wrap]) => ENTRIES.map((entry) => ({ entry, name: `${label} at ${where}`, tpl: ADEF + wrap(part) }))),
++);
++const EXACT_LIST = Array.from({ length: 9 }, (_, i) => `${i + 1}. ${X100}`).join("\n");
++const EXACT_TABLE = rep(`| ${X100} | b |\n`, 5).trimEnd();
++const EXACT_ROWS = [
++  { name: "9 LIST_ITEMs of 100 characters", tpl: ADEF + `{{LIST}}${LI(9)}{{END_LIST}}`, out: EXACT_LIST },
++  { name: "5 ROWs with a cell of 100 characters", tpl: ADEF + "{{TABLE}}" + rep("{{ROW}}{{CALL a()}}|b{{END_ROW}}", 5) + "{{END_TABLE}}", out: EXACT_TABLE },
++].flatMap((r) => ENTRIES.map((entry) => ({ ...r, entry })));
++
++/** a 1,100,000-character leaf and nine levels that each call the one below twice: the text of the top call is over any string the engine can hold */
++const HUGE_LEAF = rep("y", 1100000);
++const HUGE_CHAIN =
++  `{{DEFINE m0()}}${HUGE_LEAF}{{END_DEFINE}}` +
++  Array.from({ length: 9 }, (_, i) => `{{DEFINE m${i + 1}()}}{{CALL m${i}()}}{{CALL m${i}()}}{{END_DEFINE}}`).join("") +
++  "{{CALL m9()}}";
++
++describe("mc-compat: a trimming body keeps the output it had before macros", () => {
++  const all = [...TRIM_SCENARIOS, ...TRIM_EDGES];
++  const cases = all.flatMap((sc) => ENTRIES.map((entry, i) => ({ entry, i, sc, name: sc.name })));
++  it.each(cases)("mc-compat: [$entry] $name", ({ entry, i, sc }) => {
++    const w = TRIM_WANT[sc.name];
++    check(w !== undefined, `the base output of ${sc.name} is recorded`).toBe(true);
++    guardCheck(run(entry, sc.tpl, sc.data, sc.limits), Array.isArray(w) ? w[i] : (w as string), `mc-compat [${entry}] ${sc.name}`);
++  });
++});
++
++describe("mc-output: a trimming body still counts what a CALL printed", () => {
++  const SPACES_MACRO = def("s", "", rep(" ", 100));
++  const NEWLINES_MACRO = def("m", "", "x" + rep("\n", 30));
++  const wraps: Array<[string, (c: string) => string]> = [
++    ["a SECTION", (c) => `{{SECTION "T"}}${c}{{END_SECTION}}`],
++    ["an IF in a SECTION", (c) => `{{SECTION "T"}}{{IF t}}${c}{{END_IF}}{{END_SECTION}}`],
++    ["a CASE in a SECTION", (c) => `{{SECTION "T"}}{{CASE b}}{{WHEN 2}}${c}{{END_CASE}}{{END_SECTION}}`],
++    ["a LIST_ITEM", (c) => `{{LIST}}{{LIST_ITEM}}${c}{{END_LIST_ITEM}}{{END_LIST}}`],
++  ];
++  const fan = wraps.flatMap(([label, wrap]) => ENTRIES.map((entry) => ({ entry, label, tpl: SPACES_MACRO + wrap(calls("s", 100)) })));
++  it.each(fan)("mc-output: [$entry] 100 calls of a macro that prints 100 blanks in $label end in limit-output after about 11 calls", ({ entry, tpl }) => {
++    const o = run(entry, tpl, DATA, OUT_LIMITS);
++    check(o.code, `[${entry}] limit-output (got ${o.code} ${o.message ?? ""})`).toBe("limit-output");
++    if (entry.startsWith("render")) check(o.iterations, `[${entry}] stats.iterations ${o.iterations} <= 22`).toBeLessThanOrEqual(22);
++  });
++  const trail = wraps.flatMap(([label, wrap]) => ENTRIES.map((entry) => ({ entry, label, tpl: NEWLINES_MACRO + wrap("{{CALL m()}}") })));
++  it.each(trail)("mc-output: [$entry] a macro that prints 30 trailing line breaks in $label counts them in full: limit 20 is limit-output", ({ entry, tpl }) => {
++    const o = run(entry, tpl, DATA, L20);
++    check(o.code, `[${entry}] the call's whole text counts (got ${o.code} ${o.message ?? ""})`).toBe("limit-output");
++  });
++});
++
++describe("mc-output: a finished list line, table cell and table row counts as it finishes", () => {
++  it.each(FANOUT_ROWS)("mc-output: [$entry] $name end in limit-output after about 11 calls", ({ entry, tpl }) => {
++    const o = run(entry, tpl, { ...DATA, hundred: HUNDRED }, OUT_LIMITS);
++    check(o.code, `[${entry}] limit-output (got ${o.code} ${o.message ?? ""})`).toBe("limit-output");
++    if (entry.startsWith("render")) check(o.iterations, `[${entry}] stats.iterations ${o.iterations} <= 22: the calls stop when the held text passes the limit`).toBeLessThanOrEqual(22);
++  });
++  it.each(EXACT_ROWS)("mc-output: [$entry] $name fill a limit exactly and render", ({ entry, tpl, out }) => {
++    const o = run(entry, tpl, DATA, { maxOutputChars: out.length });
++    check(o.code, `[${entry}] renders at the limit (got ${o.code} ${o.message ?? ""})`).toBe("ok");
++    check(o.output, `[${entry}] the whole text`).toBe(out);
++  });
++  it.each(EXACT_ROWS)("mc-output: [$entry] $name are limit-output with a limit one under", ({ entry, tpl, out }) => {
++    const o = run(entry, tpl, DATA, { maxOutputChars: out.length - 1 });
++    check(o.code, `[${entry}] one character over the limit (got ${o.code} ${o.message ?? ""})`).toBe("limit-output");
++  });
++  it.each(RENDER)("mc-output: [%s] a text grown past what the engine can hold is limit-output, not limit-depth and not a thrown error", (entry) => {
++    const r = render(HUGE_CHAIN, DATA, { strictMode: entry.endsWith("strict"), limits: { maxOutputChars: Number.MAX_SAFE_INTEGER } });
++    check(r.ok, `[${entry}] render fails`).toBe(false);
++    check(r.diagnostics[0]?.code, `[${entry}] a string past the engine maximum is limit-output (got ${r.diagnostics[0]?.code}: ${r.diagnostics[0]?.message})`).toBe("limit-output");
++    check(r.output, `[${entry}] no output`).toBe("");
++  });
++});
 diff --git a/tests/language/set.test.ts b/tests/language/set.test.ts
 index 334e2b6..2b5d283 100644
 --- a/tests/language/set.test.ts
@@ -7152,7 +7605,35 @@ index 334e2b6..2b5d283 100644
 
 ## Gate run
 
-Gate command green at commit a64405b31fbc (3330 tests).
+Gate command green at commit 2b9276fe8cd4 (3784 tests).
+
+## 5. Earlier findings and replies
+
+Answer each fix-class (defect or goal-risk) finding below in `responses` with sustain or withdraw and evidence. Raise new findings only about what the revision changed or an in-scope problem newly evidenced.
+
+### f1: A DEFINE inside a top-level ROW or HEADER is accepted silently instead of a syntax-error, and analyze then lists a macro that render does not have
+
+- Class: defect
+- Serves: c1: c1 requires that a DEFINE inside any block is a syntax-error at the DEFINE. parseDefine rejects only when `this.depth > 0`. A ROW or HEADER written at the top level is parsed by parseNode (parseTableRow or parseTableHeader) without nested(), so depth stays 0 and the inner DEFINE is accepted. topLevelDefines reads only program.body, so this DEFINE never enters the macro table. A template without a CALL renders ok, with no error. With a CALL, the author gets 'Unknown macro: a' at the CALL instead of an error at the misplaced DEFINE. analyze's Walker reaches the DEFINE through visitCells, so it counts blocks.DEFINE and lists 'a' in `macros`, while render and analyze's own link check say 'a' does not exist (c11 consistency).
+- Reproduction: 1) render("{{ROW}}{{DEFINE a()}}x{{END_DEFINE}}{{END_ROW}}", {}) returns ok:true with output "". Expected: syntax-error at 1:8. 2) render("{{ROW}}{{DEFINE a()}}x{{END_DEFINE}}{{END_ROW}}{{CALL a()}}", {}) returns syntax-error 'Unknown macro: a' at the CALL, not at the DEFINE. 3) analyze of the first template returns macros [{name:'a',params:[]}] and blocks.DEFINE 1. The same holds with {{HEADER}}...{{END_HEADER}} at the top level. Smallest change that restores c1: reject a DEFINE whenever it is not a direct child of the program body. For example, dispatch DEFINE only from parse()'s top-level loop and let parseNode report it as the top-level error, or track a flag set while parsing ROW, HEADER and LIST_ITEM content.
+- Status: fixed
+- Reply (fixed): restate: A DEFINE inside a top-level ROW or HEADER was accepted; every DEFINE not directly in the program body must be a syntax-error at it.; verify: parse() starts DEFINE only at top level; parseNode rejects others at the DEFINE. render of the ROW repro now gives syntax-error 1:8; analyze throws.; evidence: diff:core/src/parser.ts, test:mc-define: a DEFINE inside a ROW or HEADER is a syntax-error at it
+
+### f2: The running output check counts body text that SECTION and LIST_ITEM later trim, so templates valid before now fail with limit-output
+
+- Class: defect
+- Serves: m5: m5 forbids changing the output or error of any template that was valid before, except for two named cases. A limit-output that now fires for a template that never overflowed is not one of them. renderChildren adds every finished child's full length to `held` before the enclosing SECTION strips leading and trailing blank lines (or drops a skip_empty body that is all whitespace) and before LIST_ITEM content is .trim()-ed. Before this change, only the final text was measured. A template whose final output fits maxOutputChars but whose untrimmed body does not now fails.
+- Reproduction: Data v = "x" + "\n".repeat(30), limits {maxOutputChars: 20}. render('{{SECTION "T"}}${{v}}{{END_SECTION}}', {v}) at base returns ok with "## T\n\nx\n" (8 chars). At head: held reaches 31 > 20, giving limit-output at the variable. The same happens with v = " ".repeat(30) (base: the section is omitted, output "") and with '{{LIST}}{{LIST_ITEM}}${{v}}{{END_LIST_ITEM}}{{END_LIST}}' with v = "x" + " ".repeat(30) (base: "1. x"). Smallest change that restores m5: keep the in-body running check from tripping on characters a trimming body can still drop. For example, have SECTION and LIST_ITEM bodies not count trailing and leading blank runs in `held` until non-blank output follows, or have the lead add this case to m5's named exceptions.
+- Status: fixed
+- Reply (fixed): restate: The running output check counted body text that SECTION, LIST_ITEM and cells trim, so valid old templates failed with limit-output.; verify: In trimming bodies a child counts its trimmed text plus CALL blanks. The 30-newline SECTION repro renders as at base (8 chars); guard rows match base probes.; evidence: diff:core/src/interpreter.ts, test:mc-compat: trimming bodies keep their base output
+
+### f3: Output from sibling LIST items and TABLE cells is outside the running check, so calls there run unbounded until the LIST or TABLE returns
+
+- Class: goal-risk
+- Serves: c7: The card and cycle goal says output growth across calls is bounded by the output limit, and c7 says maxOutputChars is enforced across macro bodies, before the work holds much more than twice the limit. collectListItems pushes finished item lines into a local `lines` array, and processCellsArray and collectRows build cell strings, without adding them to `held`. Only each item's own content (or each macro body) is checked. So N CALLs spread over N LIST_ITEMs or N ROW cells all run, each up to the limit minus the outer held total, before visitList or visitTable returns and the parent body finally trips. With maxIterations 10000 and a large body, the interpreter can hold thousands of times the limit. If the string grows past the engine's maximum, that RangeError is reported by the new render net as limit-depth 'The template nests too deeply to run', the wrong code and message.
+- Reproduction: Template: '{{DEFINE a()}}' + 'x'.repeat(100) + '{{END_DEFINE}}{{IF t}}{{LIST}}' + '{{LIST_ITEM}}{{CALL a()}}{{END_LIST_ITEM}}'.repeat(100) + '{{END_LIST}}{{END_IF}}', data {t:true}, limits {maxOutputChars: 1000}. render returns limit-output, but stats.iterations is 100 (every call ran), not the ≤22 that mc-output's stopsNearTheLimit bound asks for. The same happens with '{{TABLE}}{{ROW}}' + '{{CALL a()}}|'.repeat(100) + '{{END_ROW}}{{END_TABLE}}'. Smallest change: count each finished LIST line and each finished cell or row into `held` (and release it when the LIST or TABLE returns), as renderChildren does for other bodies.
+- Status: fixed
+- Reply (fixed): restate: Finished LIST lines and table cells did not count into held, so calls in sibling items or cells all ran; engine-size growth was reported as limit-depth.; verify: Lines and cells are held as they finish, restored on return: LIST repro 10 iterations, TABLE repro 11 (was 100). Invalid string length is limit-output in render.; evidence: diff:core/src/interpreter.ts, diff:core/src/render.ts, test:mc-output: 100 calls of a 100-character macro from LIST_ITEMs and cells stop near the limit
 
 ## Output
 

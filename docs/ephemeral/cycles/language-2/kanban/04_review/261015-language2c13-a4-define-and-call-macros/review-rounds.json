@@ -34,6 +34,76 @@
         "f3"
       ],
       "responses": []
+    },
+    {
+      "number": 2,
+      "at": "2026-10-15T16:54:25.368Z",
+      "reviewer": {
+        "kind": "fallback",
+        "label": "opus fallback (same model family as the builder; has repository access)"
+      },
+      "output_sha256": "1b3a9e01e3f91a2686494dcd9b5ec06e5f080d00094d43d5b1d96ee8e8a7401f",
+      "diff_sha256": "f82bb811d40b18976cbe0f969d255c86c5bdcb8b5d43f344ab07a0312c56b307",
+      "at_commit": "2b9276fe8cd4fc5dbd6263a4985ea98b9aca4139",
+      "restatement": "Add hoisted, top-level-only `{{DEFINE name(params)}}...{{END_DEFINE}}` and the single tag `{{CALL name(args)}}` to the deterministic, no-eval template language. A macro body sees only its parameters and the data. Link errors (unknown macro, wrong argument count, duplicate or misplaced DEFINE, bad header) are syntax errors found before any output, in every mode. Recursion, fan-out and output growth across calls stay bounded by one runtime depth counter (capped at 256), the iteration count and a running output check. An error inside a body keeps the failing node's position and names the innermost macro and its CALL. analyze and validate stay linear and agree with render. No template that was valid before changes its output or error, apart from the two named exceptions, and no existing test file changes.",
+      "brief_mismatch": "The criteria and the card disagree about test files. c13 and m1 (from card.json) say no existing test file changes. card.md's mc-compat and its must-not allow a 'logged amendment' of the st-keywords row in tests/language/set.test.ts, and the manifest lists set.test.ts as an edit. The diff makes exactly that edit, but the scope exceptions log says 'No scope exceptions are logged'. Either c13 and m1 need the set.test.ts exception, or the amendment needs to be logged. I treated the set.test.ts edit as the intended one and did not file it as a finding. Separately, the manifest says tests/language/macros.test.ts is 'add', but the diff shows it as modified from a base blob (index ebbe375), so the file existed at base and is frozen.",
+      "evidence": [
+        "code:core/src/interpreter.ts:6236",
+        "code:core/src/interpreter.ts:6494",
+        "code:core/src/interpreter.ts:6680",
+        "code:core/src/interpreter.ts:967",
+        "code:core/src/parser.ts:7077",
+        "diff:core/src/interpreter.ts",
+        "diff:core/src/macros.ts",
+        "diff:core/src/parser.ts",
+        "diff:core/src/render.ts",
+        "diff:tests/language/macros.test.ts",
+        "doc:docs/living/architecture/language-contract.md",
+        "patch:f82bb811d40b18976cbe0f969d255c86c5bdcb8b5d43f344ab07a0312c56b307",
+        "test:mc-compat: a trimming body keeps the output it had before macros",
+        "test:mc-compat: trimming bodies keep their base output",
+        "test:mc-define: a DEFINE in a ROW, a HEADER or a LIST_ITEM is a syntax-error at the DEFINE",
+        "test:mc-define: a DEFINE inside a ROW or HEADER is a syntax-error at it",
+        "test:mc-output: 100 calls of a 100-character macro from LIST_ITEMs and cells stop near the limit",
+        "test:mc-output: a finished list line, table cell and table row counts as it finishes"
+      ],
+      "stalled": false,
+      "raised": [
+        "f4",
+        "f5",
+        "f6"
+      ],
+      "responses": [
+        {
+          "finding": "f1",
+          "verdict": "withdraw",
+          "evidence": [
+            "diff:core/src/parser.ts",
+            "code:core/src/parser.ts:7077",
+            "test:mc-define: a DEFINE in a ROW, a HEADER or a LIST_ITEM is a syntax-error at the DEFINE"
+          ]
+        },
+        {
+          "finding": "f2",
+          "verdict": "withdraw",
+          "evidence": [
+            "diff:core/src/interpreter.ts",
+            "code:core/src/interpreter.ts:6236",
+            "test:mc-compat: a trimming body keeps the output it had before macros"
+          ]
+        },
+        {
+          "finding": "f3",
+          "verdict": "withdraw",
+          "evidence": [
+            "diff:core/src/interpreter.ts",
+            "code:core/src/interpreter.ts:6494",
+            "code:core/src/interpreter.ts:6680",
+            "diff:core/src/render.ts",
+            "test:mc-output: a finished list line, table cell and table row counts as it finishes"
+          ]
+        }
+      ]
     }
   ],
   "findings": [
@@ -55,7 +125,7 @@
       "location": "core/src/parser.ts:376",
       "label": "f1",
       "raised_in": 1,
-      "status": "fixed",
+      "status": "withdrawn",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [
@@ -89,7 +159,7 @@
       "location": "core/src/interpreter.ts:160",
       "label": "f2",
       "raised_in": 1,
-      "status": "fixed",
+      "status": "withdrawn",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [
@@ -125,7 +195,7 @@
       "location": "core/src/interpreter.ts:721",
       "label": "f3",
       "raised_in": 1,
-      "status": "fixed",
+      "status": "withdrawn",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [
@@ -142,6 +212,81 @@
         }
       ],
       "rulings": []
+    },
+    {
+      "title": "The frozen test file tests/language/macros.test.ts is modified by the diff",
+      "class": "defect",
+      "serves": {
+        "target": "m1",
+        "scenario": "macros.test.ts existed at base (the diff shows index ebbe375..41e6ce0, not a new file) and is listed as a frozen test. The diff edits it twice. It appends about 240 lines of new rows under a 'review fixes' banner, and it adds a comment at the PARENS rows telling readers to 'raise the depth if a machine overflows later'. The contract the work is judged against has therefore been rewritten by the work under review. Every row in that block (DEFINE placement in ROW/HEADER/LIST_ITEM, trimming-body guards, list/cell fan-out bounds, HUGE_CHAIN limit-output) is now a builder-written expectation rather than a frozen one. m1 and c13 forbid changing an existing test file, and the packet says a change to a frozen test is a deviation to report."
+      },
+      "rubric": "m1: change any existing test file; c13 mc-compat: no existing test file changes; packet rule: a change to a frozen test in section 4 is a deviation from the plan",
+      "reproduction": "In section 4, `diff --git a/tests/language/macros.test.ts b/tests/language/macros.test.ts` shows `index ebbe375..41e6ce0` with hunks `@@ -979,6 +979,7 @@` (an added comment line) and `@@ -1782,3 +1783,242 @@` (appended describe blocks). Run `git diff c96d1a74 2b9276fe -- tests/language/macros.test.ts` and the change is not empty. Smallest change that restores m1: revert macros.test.ts to its base content. Either move the new regression rows into a new test file (which needs a scope entry from the lead), or have the lead log them as a test amendment.",
+      "evidence": [
+        "diff:tests/language/macros.test.ts",
+        "test:mc-define: a DEFINE in a ROW, a HEADER or a LIST_ITEM is a syntax-error at the DEFINE",
+        "test:mc-compat: a trimming body keeps the output it had before macros"
+      ],
+      "location": "tests/language/macros.test.ts:1786",
+      "label": "f4",
+      "raised_in": 2,
+      "status": "withdrawn",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [
+        {
+          "after_round": 2,
+          "ruling": "withdraw",
+          "note": "the appended rows are logged in test_amendments for macros.test.ts, approved by the project lead; they test the first-round fixes; no existing row changed"
+        }
+      ]
+    },
+    {
+      "title": "CALLs in one text run of a legacy TABLE-FOR body all run before the output check sees any of them",
+      "class": "goal-risk",
+      "serves": {
+        "target": "c7",
+        "scenario": "The card adds 'Call' to the inline kinds of the legacy text-row rule. In tableRowsFrom, flush() renders a run of several inline nodes with `run.map((node) => this.visit(node)).join(\"\")` and only then hands the lines to addText, which is the only place the cells are held. Each CALL in the run checks `held` only while its own body is built, and releases it on return. The outputs of earlier siblings in the same run are never in `held`. runLoop checks the loop total only after the whole iteration. So N CALLs written in one line of a FOR inside a TABLE all run, each producing up to the limit, before limit-output trips. This is the same unbounded-sibling pattern f3 fixed for LIST lines and ROW cells, left open on this path. It breaks the cycle goal that every call and output is bounded and c7's 'before the work holds much more than twice the limit'."
+      },
+      "rubric": "c7 mc-output; rubric: one running output check covers bodies; reviewer brief goal-critical question 1 (output bound across a CALL in any body) and the polish row for a CALL in a legacy TABLE-FOR body",
+      "reproduction": "Template: `{{DEFINE a()}}` + 'x'.repeat(100) + `{{END_DEFINE}}{{TABLE}}{{FOR one AS i}}` + '{{CALL a()}}'.repeat(100) + `|1\\n{{END_FOR}}{{END_TABLE}}`. Data: {one:[1]}. Limits: {maxOutputChars: 1000}. Expected by c7: limit-output with stats.iterations at most about 22. Per the code in the diff, all 100 calls run (the run is visited whole at flush) before addText holds a cell, so stats.iterations is about 101. With a fan-out macro (each top-level call itself producing nearly the limit), the work held grows to N times the limit. Smallest change that restores c7: in flush, hold each visited node's output as it is produced, for example by rendering the run through renderChildren or by calling hold per node and releasing it after addText.",
+      "evidence": [
+        "diff:core/src/interpreter.ts",
+        "code:core/src/interpreter.ts:967",
+        "test:mc-output: a finished list line, table cell and table row counts as it finishes"
+      ],
+      "location": "core/src/interpreter.ts:967",
+      "label": "f5",
+      "raised_in": 2,
+      "status": "open",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": []
+    },
+    {
+      "title": "CALL path arguments reject names the language accepts elsewhere (hyphenated and non-ASCII)",
+      "class": "drift",
+      "serves": {
+        "target": "cycle-goal",
+        "scenario": "macros.ts PATH is `^[A-Za-z_@][\\w@]*(\\.[\\w@]+)*$`. The language contract says a hyphen between two ASCII letters is part of a name (`first-name`, `user.first-name`), and CASE matchers accept paths such as `café`. `{{CALL f(first-name)}}` and `{{CALL f(user.café)}}` are therefore syntax errors, even though `${{first-name}}` reads the key. Such data cannot be passed to a macro except through a SET first. The spec's argument list does not mention hyphens, so this is noted for the lead rather than requested as a fix."
+      },
+      "rubric": "Language contract: Hyphens in names; CASE matchers variable path grammar",
+      "reproduction": "render('{{DEFINE f(p)}}${{p}}{{END_DEFINE}}{{CALL f(first-name)}}', {'first-name':'A'}) is a syntax-error 'Invalid CALL syntax: bad argument \"first-name\"', while render('${{first-name}}', {'first-name':'A'}) prints A.",
+      "evidence": [
+        "diff:core/src/macros.ts",
+        "doc:docs/living/architecture/language-contract.md"
+      ],
+      "location": "core/src/macros.ts:6749",
+      "label": "f6",
+      "raised_in": 2,
+      "status": "filed",
+      "sustained": 0,
+      "failed_fixes": 0,
+      "replies": [],
+      "rulings": [],
+      "ticket": "261015-language2c13-a10-follow-up-call-path-arguments-reject-nam"
     }
   ]
 }

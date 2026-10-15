@@ -195,7 +195,7 @@
   "docs_impact": "none",
   "started": "2026-10-15T16:14:02.274Z",
   "ended": null,
-  "review_rounds": 1,
+  "review_rounds": 2,
   "schema_version": 1,
   "blast_radius": [
     "template-resolver"
