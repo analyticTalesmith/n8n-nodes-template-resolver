@@ -8,36 +8,32 @@
   "tier": null,
   "claimed_in": null,
   "files_scope": [
-    "core/src/types.ts",
-    "core/src/parser.ts",
-    "core/src/interpreter.ts",
     "core/src/analyze.ts",
-    "core/src/spec.ts",
     "core/src/expressions.ts",
+    "core/src/interpreter.ts",
+    "core/src/parser.ts",
     "core/src/scope.ts",
-    "tests/language/for-window.test.ts",
-    "tests/golden/render-cases/lang-for-window/template.md",
+    "core/src/spec.ts",
+    "core/src/types.ts",
     "tests/golden/render-cases/lang-for-window/data.json",
+    "tests/golden/render-cases/lang-for-window/expected.md",
     "tests/golden/render-cases/lang-for-window/options.json",
-    "tests/golden/render-cases/lang-for-window/expected.md"
+    "tests/golden/render-cases/lang-for-window/template.md",
+    "tests/language/for-window.test.ts"
   ],
   "manifest": {
     "add": [
       "core/src/scope.ts",
-      "tests/language/for-window.test.ts",
-      "tests/golden/render-cases/lang-for-window/template.md",
-      "tests/golden/render-cases/lang-for-window/data.json",
-      "tests/golden/render-cases/lang-for-window/options.json",
-      "tests/golden/render-cases/lang-for-window/expected.md"
+      "tests/language/for-window.test.ts"
     ],
     "remove": [],
     "edit": [
-      "core/src/types.ts",
-      "core/src/parser.ts",
-      "core/src/interpreter.ts",
       "core/src/analyze.ts",
+      "core/src/expressions.ts",
+      "core/src/interpreter.ts",
+      "core/src/parser.ts",
       "core/src/spec.ts",
-      "core/src/expressions.ts"
+      "core/src/types.ts"
     ],
     "frozen": true
   },
@@ -148,8 +144,12 @@
   ],
   "claim": {
     "owner": "build:implementer",
-    "heartbeat": "2026-10-15T13:32:10.173Z",
-    "agent": "a"
+    "heartbeat": "2026-10-15T13:40:21.941Z",
+    "agent": "a",
+    "built": {
+      "commit": "c82958e7cd75c1cc777f4a75489c661b89043ebd",
+      "at": "2026-10-15T13:40:21.941Z"
+    }
   },
   "blocked_on": null,
   "docs_impact": "none",
@@ -167,7 +167,7 @@
     "at": "2026-10-15T13:31:19.806Z",
     "brief_sha256": "22e05a16d69e41d05511ad3a5fbf346c644c82a2446fb7eaa243914825fe8586",
     "brief_core_sha256": "a200c593ce73f8514aba55abe17464eaade34834ad0c15400c7361725a6a5a2e",
-    "manifest_sha256": "ab7e766c56031026d36bff32854a1357f8565fedf3a412b01d274abc83a7a925",
+    "manifest_sha256": "88e020bad183ccbfd77268a2705e3dbf7d1d55dcc7210b7cff5a68b604413f32",
     "criteria_sha256": "202a441410c0a6939b89df15f2e2c72e925923feda945d7fccb4ebb3ed16f410",
     "scope_sha256": "cfbf8a64b217ae51e84c69370f64696f29a064c39d66fa99813cec47423a0f58",
     "scope_parts": {
@@ -183,6 +183,85 @@
       "path": "tests/language/for-window.test.ts",
       "reason": "56 strict-mode entries expected missing-variable for a missing non-root segment or a missing name in an IF condition, which strict mode never raised; they now expect the lenient outcome (the card own test file, corrected before review)",
       "approved_by": "project lead"
+    }
+  ],
+  "manifest_amendments": [
+    {
+      "at": "2026-10-15T13:40:32.113Z",
+      "by": "lead",
+      "reason": "test writer committed the golden case before the base, so these paths are not adds",
+      "from": {
+        "manifest": {
+          "add": [
+            "core/src/scope.ts",
+            "tests/golden/render-cases/lang-for-window/data.json",
+            "tests/golden/render-cases/lang-for-window/expected.md",
+            "tests/golden/render-cases/lang-for-window/options.json",
+            "tests/golden/render-cases/lang-for-window/template.md",
+            "tests/language/for-window.test.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/expressions.ts",
+            "core/src/interpreter.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/analyze.ts",
+          "core/src/expressions.ts",
+          "core/src/interpreter.ts",
+          "core/src/parser.ts",
+          "core/src/scope.ts",
+          "core/src/spec.ts",
+          "core/src/types.ts",
+          "tests/golden/render-cases/lang-for-window/data.json",
+          "tests/golden/render-cases/lang-for-window/expected.md",
+          "tests/golden/render-cases/lang-for-window/options.json",
+          "tests/golden/render-cases/lang-for-window/template.md",
+          "tests/language/for-window.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [
+            "core/src/scope.ts",
+            "tests/language/for-window.test.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/expressions.ts",
+            "core/src/interpreter.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/analyze.ts",
+          "core/src/expressions.ts",
+          "core/src/interpreter.ts",
+          "core/src/parser.ts",
+          "core/src/scope.ts",
+          "core/src/spec.ts",
+          "core/src/types.ts",
+          "tests/golden/render-cases/lang-for-window/data.json",
+          "tests/golden/render-cases/lang-for-window/expected.md",
+          "tests/golden/render-cases/lang-for-window/options.json",
+          "tests/golden/render-cases/lang-for-window/template.md",
+          "tests/language/for-window.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      }
     }
   ]
 }

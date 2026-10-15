@@ -60,10 +60,6 @@ See the plan section for this card in docs/ephemeral/research/language-2-plan.md
 | Path | Permission (add, edit, remove) | Blast radius |
 | --- | --- | --- |
 | `core/src/scope.ts` | add | template-resolver |
-| `tests/golden/render-cases/lang-for-window/data.json` | add | template-resolver |
-| `tests/golden/render-cases/lang-for-window/expected.md` | add | template-resolver |
-| `tests/golden/render-cases/lang-for-window/options.json` | add | template-resolver |
-| `tests/golden/render-cases/lang-for-window/template.md` | add | template-resolver |
 | `tests/language/for-window.test.ts` | add | template-resolver |
 | `core/src/analyze.ts` | edit | template-resolver |
 | `core/src/expressions.ts` | edit | template-resolver |

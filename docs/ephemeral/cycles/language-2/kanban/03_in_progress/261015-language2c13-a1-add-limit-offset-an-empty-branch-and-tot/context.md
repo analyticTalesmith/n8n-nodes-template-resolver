@@ -24,3 +24,4 @@ Working memory for this ticket, next to card.md. The lead updates it in small ed
 
 | Date | Path | Kind | Reason | Approved by |
 | --- | --- | --- | --- | --- |
+| 2026-10-15 | docs/ephemeral/work/261015-language2c13-a1-add-limit-offset-an-empty-branch-and-tot/spec.md | edit | notes on strict missing segments and the TABLE non-ROW grouping, asked for by the project lead | project lead |
