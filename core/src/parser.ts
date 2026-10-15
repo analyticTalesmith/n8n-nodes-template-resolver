@@ -10,6 +10,7 @@ import {
   WhenNode,
   DefaultNode,
   ForNode,
+  ForWindowArg,
   ListNode,
   ListItemNode,
   TableNode,
@@ -475,13 +476,16 @@ export class Parser {
   }
 
   /**
-   * Parse FOR loop: {{FOR items AS item}}...{{END_FOR}}
+   * Parse FOR loop: {{FOR items AS item [limit=N] [offset=N]}}...{{ELSE}}...{{END_FOR}}
+   * An {{ELSE}} directly in the body starts the branch that renders when no
+   * item does; an IF inside the body parses its own ELSE.
    */
   private parseFor(): ForNode {
     const token = this.open(TokenType.FOR);
-    const { iterable, itemName } = this.parseForExpression(token.value);
+    const header = this.parseForHeader(token);
 
     const body: ASTNode[] = [];
+    let elseBody: ASTNode[] | undefined;
     while (!this.check(TokenType.END_FOR)) {
       if (this.isAtEnd()) {
         throw new SyntaxError(
@@ -491,46 +495,87 @@ export class Parser {
           "Add {{END_FOR}}"
         );
       }
+      if (this.check(TokenType.ELSE)) {
+        const elseToken = this.advance();
+        if (elseBody !== undefined) {
+          throw new SyntaxError(
+            "A {{FOR}} block takes one {{ELSE}}",
+            elseToken.line,
+            elseToken.column,
+            "Remove the second {{ELSE}}"
+          );
+        }
+        elseBody = [];
+        continue;
+      }
       const node = this.parseNode();
-      if (node) body.push(node);
+      if (node) (elseBody ?? body).push(node);
     }
 
     this.consume(TokenType.END_FOR);
 
-    return {
+    const node: ForNode = {
       type: "For",
-      iterable,
-      itemName,
+      iterable: header.iterable,
+      itemName: header.itemName,
       body,
       line: token.line,
       column: token.column,
     };
+    if (header.limit) node.limit = header.limit;
+    if (header.offset) node.offset = header.offset;
+    if (elseBody) node.elseBody = elseBody;
+    return node;
   }
 
   /**
-   * Parse FOR expression: "FOR items AS item" â†’ { iterable: ["items"], itemName: "item" }
+   * Parse the FOR tag word by word: "FOR items AS item limit=2 offset=n".
+   * Every problem is a syntax error at the tag.
    */
-  private parseForExpression(expr: string): {
+  private parseForHeader(token: Token): {
     iterable: string[];
     itemName: string;
+    limit?: ForWindowArg;
+    offset?: ForWindowArg;
   } {
-    const match = expr.match(/FOR\s+(.+?)\s+AS\s+(\w+)/i);
-    if (!match) {
+    const fail = (why: string): never => {
       throw new SyntaxError(
-        `Invalid FOR syntax: ${expr}`,
-        this.current().line,
-        this.current().column,
-        "Expected: {{FOR items AS item}}"
+        `Invalid FOR syntax: ${why}`,
+        token.line,
+        token.column,
+        "Expected: {{FOR items AS item}} with optional limit=N and offset=N"
       );
+    };
+
+    const words = token.value.trim().split(/\s+/);
+    if (words.length < 4) fail(token.value);
+    if (words[2].toUpperCase() !== "AS") fail(token.value);
+    const itemName = words[3];
+    if (!/^\w+$/.test(itemName)) fail(`bad item name "${itemName}"`);
+
+    const iterable = words[1].split(".").map((p) => p.trim());
+    const result: {
+      iterable: string[];
+      itemName: string;
+      limit?: ForWindowArg;
+      offset?: ForWindowArg;
+    } = { iterable, itemName };
+
+    for (const word of words.slice(4)) {
+      const argument = /^(limit|offset)=(.+)$/.exec(word);
+      if (!argument) fail(`unexpected "${word}"`);
+      const [, key, written] = argument as RegExpExecArray;
+      const name = key as "limit" | "offset";
+      if (result[name]) fail(`${name} is given twice`);
+      if (/^[+-]?\d+(\.\d+)?$/.test(written)) {
+        result[name] = { kind: "literal", value: Number(written) };
+      } else if (VARIABLE_PATH.test(written)) {
+        result[name] = { kind: "path", path: written.split(".") };
+      } else {
+        fail(`bad ${name} value "${written}"`);
+      }
     }
-
-    const iterablePath = match[1]
-      .trim()
-      .split(".")
-      .map((p) => p.trim());
-    const itemName = match[2].trim();
-
-    return { iterable: iterablePath, itemName };
+    return result;
   }
 
   /**

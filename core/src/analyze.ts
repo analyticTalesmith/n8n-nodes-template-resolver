@@ -230,9 +230,13 @@ class Walker {
 
   private visitFor(node: ForNode): void {
     this.record(node.iterable.join("."), "for", false);
+    for (const arg of [node.limit, node.offset]) {
+      if (arg?.kind === "path") this.record(arg.path.join("."), "for", false);
+    }
     this.scopes.push(node.itemName);
     this.visitAll(node.body);
     this.scopes.pop();
+    if (node.elseBody) this.visitAll(node.elseBody);
   }
 
   private visitSection(node: SectionNode): void {

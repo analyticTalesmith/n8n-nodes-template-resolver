@@ -28,7 +28,8 @@ const BLOCKS: Spec["blocks"] = [
   {
     name: "ELSE",
     args: "",
-    description: "Inside IF: renders when every condition was false",
+    description:
+      "Inside IF: renders when every condition was false. Directly inside FOR: starts the empty branch, which renders when the loop renders no item",
   },
   {
     name: "CASE",
@@ -52,9 +53,9 @@ const BLOCKS: Spec["blocks"] = [
   {
     name: "FOR",
     closes: "END_FOR",
-    args: "array AS item",
+    args: "array AS item [limit=N] [offset=N]",
     description:
-      "Renders its body once per array element, with @index0, @first, @last and related metadata",
+      "Renders its body once per array element, with @index0, @index1, @first, @last, @notFirst, @notLast and @total (the number of items rendered). limit=N renders at most N items and offset=N skips the first N; each is a whole number or a variable path. {{ELSE}} inside the loop starts a branch that renders when no item does",
   },
   {
     name: "LIST",

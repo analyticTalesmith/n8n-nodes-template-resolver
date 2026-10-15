@@ -17,6 +17,15 @@ export type TemplateValue =
 export type VariableMap = Map<string, TemplateValue>;
 
 /**
+ * Read-only variable lookup; a Map satisfies it, and so does a loop frame
+ * over a parent lookup
+ */
+export interface VariableLookup {
+  has(name: string): boolean;
+  get(name: string): TemplateValue | undefined;
+}
+
+/**
  * Filter call structure
  */
 export interface FilterCall {
@@ -196,7 +205,20 @@ export interface ForNode extends ASTNode {
   iterable: string[];
   itemName: string;
   body: ASTNode[];
+  /** limit= argument, set only when written */
+  limit?: ForWindowArg;
+  /** offset= argument, set only when written */
+  offset?: ForWindowArg;
+  /** Body of the {{ELSE}} branch, set only when written */
+  elseBody?: ASTNode[];
 }
+
+/**
+ * A FOR window argument: a number written in the tag or a variable path
+ */
+export type ForWindowArg =
+  | { kind: "literal"; value: number }
+  | { kind: "path"; path: string[] };
 
 /**
  * SECTION title: a quoted string or a variable path

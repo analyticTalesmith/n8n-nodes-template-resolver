@@ -177,5 +177,12 @@
       "gate": "0fbbbc5534e300f3b1fe6e1974ef3a55f9247f52c7bca8716a45d389f35ff2cc"
     }
   },
-  "base_commit": "292601da41a656de89e170feed03457d5e955f90"
+  "base_commit": "292601da41a656de89e170feed03457d5e955f90",
+  "test_amendments": [
+    {
+      "path": "tests/language/for-window.test.ts",
+      "reason": "56 strict-mode entries expected missing-variable for a missing non-root segment or a missing name in an IF condition, which strict mode never raised; they now expect the lenient outcome (the card own test file, corrected before review)",
+      "approved_by": "project lead"
+    }
+  ]
 }

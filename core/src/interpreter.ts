@@ -13,7 +13,8 @@ import {
   TernaryNode,
   SectionNode,
   FenceNode,
-  VariableMap,
+  VariableLookup,
+  ForWindowArg,
   TemplateValue,
   Limits,
   withDefaultLimits,
@@ -44,6 +45,7 @@ import {
 } from "./expressions";
 import { applyFilters, fenced, checkFenceLang, valueToText } from "./filters";
 import { COLLECTION_FILTERS } from "./filters-collection";
+import { Frame, RootScope, readOwn } from "./scope";
 
 /** Filters that take any value as it is, so they run before the unprintable check */
 const KEEPS_RAW_INPUT = new Set([
@@ -75,15 +77,19 @@ export class Interpreter {
   private render: boolean;
   private iterations = 0;
   private omittedSections = 0;
-  private loopContext: Map<string, TemplateValue> = new Map();
+  private readonly root: RootScope;
+  /** The innermost scope: a loop frame while a loop renders, else the root */
+  private scope: VariableLookup;
 
   constructor(
-    private variables: VariableMap,
+    variables: VariableLookup,
     options?: { strictMode?: boolean; limits?: Partial<Limits>; render?: boolean }
   ) {
     this.strictMode = options?.strictMode ?? true;
     this.render = options?.render ?? false;
     this.limits = withDefaultLimits(options?.limits);
+    this.root = new RootScope(variables);
+    this.scope = this.root;
   }
 
   /**
@@ -106,6 +112,7 @@ export class Interpreter {
   interpret(ast: ProgramNode): string {
     this.iterations = 0;
     this.omittedSections = 0;
+    this.scope = this.root;
     return this.visitProgram(ast);
   }
 
@@ -208,7 +215,7 @@ export class Interpreter {
     let mathError: unknown = null;
     if (isMathExpression(pathStr) || hasStrayCharacter(pathStr)) {
       try {
-        const result = evaluateMathExpression(pathStr, this.getAllVariables(), {
+        const result = evaluateMathExpression(pathStr, this.scope, {
           zeroIsError: this.render,
         });
         return this.render ? formatNumber(result) : String(result);
@@ -258,7 +265,7 @@ export class Interpreter {
     for (;;) {
       const current = branch;
       const result = this.at(current, () =>
-        evaluateCondition(current.condition, this.getAllVariables())
+        evaluateCondition(current.condition, this.scope)
       );
       if (result) return this.visitBody(current.consequent);
 
@@ -305,47 +312,110 @@ export class Interpreter {
    * Visit FOR loop
    */
   private visitFor(node: ForNode): string {
+    const results: string[] = [];
+    this.runLoop(node, false, (nodes) => {
+      const output = this.visitBody(nodes);
+      results.push(output);
+      return output.length;
+    });
+    return results.join("");
+  }
+
+  /**
+   * The one loop runner behind FOR and the rows a TABLE builds with FOR.
+   * renderBranch renders a body (the loop body per item, then the ELSE body
+   * when no item rendered) and returns the characters it added.
+   * A TABLE keeps its legacy rule: a non-iterable value is no rows, no error.
+   */
+  private runLoop(
+    node: ForNode,
+    silentNonIterable: boolean,
+    renderBranch: (nodes: ASTNode[]) => number
+  ): void {
     const iterable = this.at(node, () => this.resolveNestedPath(node.iterable));
     const array = tryCoerceToArray(iterable);
+    if (array === null && this.strictMode && !silentNonIterable) {
+      throw new TypeError(
+        `Cannot iterate over non-array value: ${describeValue(iterable)}`,
+        node.line,
+        node.column,
+        "Ensure the value is an array or can be coerced to one"
+      );
+    }
 
-    if (array === null) {
-      if (this.strictMode) {
-        throw new TypeError(
-          `Cannot iterate over non-array value: ${describeValue(iterable)}`,
-          node.line,
-          node.column,
-          "Ensure the value is an array or can be coerced to one"
+    const limit = this.at(node, () => this.readWindow(node.limit, "limit"));
+    const offset = this.at(node, () => this.readWindow(node.offset, "offset"));
+    const start = offset ?? 0;
+    const items = array
+      ? array.slice(start, limit === undefined ? undefined : start + limit)
+      : [];
+
+    let length = 0;
+    if (items.length > 0) {
+      const outer = this.scope;
+      const frame = new Frame(outer);
+      this.scope = frame;
+      try {
+        for (let i = 0; i < items.length; i++) {
+          this.countIteration(node);
+          frame.set(node.itemName, items[i]);
+          frame.set("@index0", i);
+          frame.set("@index1", i + 1);
+          frame.set("@first", i === 0);
+          frame.set("@last", i === items.length - 1);
+          frame.set("@notFirst", i !== 0);
+          frame.set("@notLast", i !== items.length - 1);
+          frame.set("@total", items.length);
+
+          length += renderBranch(node.body);
+          this.checkOutputLength(length, node);
+        }
+      } finally {
+        this.scope = outer;
+      }
+    } else if (node.elseBody) {
+      length += renderBranch(node.elseBody);
+      this.checkOutputLength(length, node);
+    }
+  }
+
+  /**
+   * Read a limit or offset: a number or a variable path read in the scope
+   * outside the loop. A missing value is an error in strict mode and an
+   * ignored argument in lenient mode; undefined means no such argument.
+   */
+  private readWindow(
+    arg: ForWindowArg | undefined,
+    name: "limit" | "offset"
+  ): number | undefined {
+    if (!arg) return undefined;
+    let value: TemplateValue;
+    if (arg.kind === "literal") {
+      value = arg.value;
+    } else {
+      value = this.resolveNestedPath(arg.path, true);
+      if (value == null) {
+        if (!this.strictMode) return undefined;
+        throw new MissingVariableError(
+          arg.path.join("."),
+          1,
+          1,
+          this.root.names(),
+          subtractionHint(arg.path[0])
         );
       }
-      return "";
     }
 
-    const results: string[] = [];
-    let length = 0;
-    const outerLoopContext = new Map(this.loopContext);
-
-    for (let i = 0; i < array.length; i++) {
-      this.countIteration(node);
-
-      // Set loop context
-      this.loopContext.set(node.itemName, array[i]);
-      this.loopContext.set("@index0", i);
-      this.loopContext.set("@index1", i + 1);
-      this.loopContext.set("@first", i === 0);
-      this.loopContext.set("@last", i === array.length - 1);
-      this.loopContext.set("@notFirst", i !== 0);
-      this.loopContext.set("@notLast", i !== array.length - 1);
-
-      // Render body
-      const output = node.body.map((child) => this.visit(child)).join("");
-      length += output.length;
-      this.checkOutputLength(length, node);
-      results.push(output);
+    const number = windowNumber(value);
+    if (number === null) {
+      throw new TypeError(
+        `${name} must be a whole number of 0 or more, got ${describeValue(value)}`,
+        1,
+        1,
+        `Give ${name}= a whole number or a variable that holds one`
+      );
     }
-
-    this.restoreLoopContext(outerLoopContext);
-
-    return results.join("");
+    return number;
   }
 
   /**
@@ -418,13 +488,6 @@ export class Interpreter {
     return value;
   }
 
-  private restoreLoopContext(saved: Map<string, TemplateValue>): void {
-    this.loopContext.clear();
-    for (const [key, value] of saved) {
-      this.loopContext.set(key, value);
-    }
-  }
-
   /**
    * Visit LIST node
    */
@@ -456,7 +519,7 @@ export class Interpreter {
     if (node.condition) {
       const condition = node.condition;
       const result = this.at(node, () =>
-        evaluateCondition(condition, this.getAllVariables())
+        evaluateCondition(condition, this.scope)
       );
       if (!result) {
         // Show fallback if provided
@@ -500,45 +563,8 @@ export class Interpreter {
       ) {
         const forNode = rowNode.cells[0][0] as ForNode;
 
-        // Iterate and generate rows
-        const iterable = this.at(forNode, () =>
-          this.resolveNestedPath(forNode.iterable)
-        );
-        const array = tryCoerceToArray(iterable);
-
-        if (array) {
-          const outerLoopContext = new Map(this.loopContext);
-          for (let i = 0; i < array.length; i++) {
-            this.countIteration(forNode);
-
-            // Set loop context
-            this.loopContext.set(forNode.itemName, array[i]);
-            this.loopContext.set("@index0", i);
-            this.loopContext.set("@index1", i + 1);
-            this.loopContext.set("@first", i === 0);
-            this.loopContext.set("@last", i === array.length - 1);
-            this.loopContext.set("@notFirst", i !== 0);
-            this.loopContext.set("@notLast", i !== array.length - 1);
-
-            // Process FOR body - look for TableRow nodes
-            for (const bodyNode of forNode.body) {
-              if (bodyNode.type === "TableRow") {
-                const tableRowNode = bodyNode as TableRowNode;
-                const cells = this.processCellsArray(tableRowNode.cells);
-                rows.push(cells);
-              } else {
-                // Fallback: render and split by |
-                const forOutput = this.visit(bodyNode);
-                if (forOutput.trim()) {
-                  const cells = forOutput.split("|").map((cell) => cell.trim());
-                  rows.push(cells);
-                }
-              }
-            }
-          }
-
-          this.restoreLoopContext(outerLoopContext);
-        }
+        // Generate rows with the loop runner
+        this.runLoop(forNode, true, (nodes) => this.tableRowsFrom(nodes, rows));
       } else {
         // Regular row - process all cells
         const cells = this.processCellsArray(rowNode.cells);
@@ -594,6 +620,37 @@ export class Interpreter {
   }
 
   /**
+   * Render the nodes of a FOR body in a TABLE into rows: a ROW node gives its
+   * cells, and a run of other nodes is rendered together and split on a pipe.
+   * Returns the characters the rows hold.
+   */
+  private tableRowsFrom(nodes: ASTNode[], rows: string[][]): number {
+    let length = 0;
+    const add = (cells: string[]): void => {
+      rows.push(cells);
+      length += cells.reduce((sum, cell) => sum + cell.length, 0);
+    };
+
+    let pending = "";
+    const flush = (): void => {
+      if (pending.trim()) {
+        add(pending.split("|").map((cell) => cell.trim()));
+      }
+      pending = "";
+    };
+    for (const bodyNode of nodes) {
+      if (bodyNode.type === "TableRow") {
+        flush();
+        add(this.processCellsArray((bodyNode as TableRowNode).cells));
+      } else {
+        pending += this.visit(bodyNode);
+      }
+    }
+    flush();
+    return length;
+  }
+
+  /**
    * Process cells array where each cell is an array of AST nodes
    * Returns an array of strings, one per cell
    */
@@ -608,7 +665,7 @@ export class Interpreter {
    * Visit TERNARY node
    */
   private visitTernary(node: TernaryNode): string {
-    const result = evaluateCondition(node.condition, this.getAllVariables());
+    const result = evaluateCondition(node.condition, this.scope);
 
     if (result) {
       return this.resolveTernaryValue(node.trueValue);
@@ -653,15 +710,8 @@ export class Interpreter {
   ): TemplateValue {
     const rootKey = path[0];
 
-    let current: TemplateValue;
     const hasKey = this.hasRootKey(rootKey);
-
-    // Determine correct root value
-    if (this.loopContext.has(rootKey)) {
-      current = this.loopContext.get(rootKey);
-    } else if (this.variables.has(rootKey)) {
-      current = this.variables.get(rootKey);
-    }
+    let current: TemplateValue = hasKey ? this.scope.get(rootKey) : undefined;
 
     // Missing variable (not existing key)
     if (!hasKey) {
@@ -670,7 +720,7 @@ export class Interpreter {
           rootKey,
           1,
           1,
-          Array.from(this.variables.keys()),
+          this.root.names(),
           subtractionHint(rootKey)
         );
       }
@@ -703,7 +753,7 @@ export class Interpreter {
 
       // Access property
       if (typeof current === "object" && !Array.isArray(current)) {
-        current = (current as Record<string, TemplateValue>)[path[i]];
+        current = readOwn(current, path[i]);
       } else if (Array.isArray(current)) {
         const index = parseInt(path[i]);
         current = current[index];
@@ -719,7 +769,7 @@ export class Interpreter {
    * True when a variable or loop value holds this name, whatever its value
    */
   private hasRootKey(rootKey: string): boolean {
-    return this.loopContext.has(rootKey) || this.variables.has(rootKey);
+    return this.scope.has(rootKey);
   }
 
   /**
@@ -737,17 +787,6 @@ export class Interpreter {
     }
     return valueToText(value);
   }
-
-  /**
-   * Get all variables (including loop context)
-   */
-  private getAllVariables(): VariableMap {
-    const combined = new Map(this.variables);
-    for (const [key, value] of this.loopContext.entries()) {
-      combined.set(key, value);
-    }
-    return combined;
-  }
 }
 
 /**
@@ -760,4 +799,24 @@ function describeValue(value: unknown): string {
   } catch {
     return String(value);
   }
+}
+
+/**
+ * A FOR window value as a number: a number, or a text holding a plain decimal
+ * number, that is a whole number from 0 up to the largest safe integer; null
+ * for anything else
+ */
+function windowNumber(value: TemplateValue): number | null {
+  let number: number;
+  if (typeof value === "number") {
+    number = value;
+  } else if (
+    typeof value === "string" &&
+    /^\s*[+-]?(\d+(\.\d*)?|\.\d+)\s*$/.test(value)
+  ) {
+    number = Number(value);
+  } else {
+    return null;
+  }
+  return Number.isSafeInteger(number) && number >= 0 ? number : null;
 }

@@ -55,3 +55,8 @@ A window value is valid when it is a number or a string holding a plain decimal 
 ## Non-goals
 
 SET, LIST/TABLE IF children, `@parent`, `AS k, v` (later cards). No living document edits; no deltas (docs_impact none).
+
+## Notes
+
+- Strict mode and missing non-root segments: strict mode raises `missing-variable` only for a missing root name in output and math, as before; a missing non-root segment (including an inherited name such as `x.constructor`) and a missing name inside an IF condition stay silent (empty output, false). The 56 test rows that said otherwise were corrected (card.json `test_amendments`).
+- TABLE FOR, a body that is not a ROW (legacy fallback): consecutive non-ROW body nodes are now rendered together as one run and split on `|` into one row, so `${{x}}|${{@index0}}` is one row; before, each node was rendered and split alone. A reviewer should confirm no previously valid template changes meaning (ROW bodies are unaffected).
