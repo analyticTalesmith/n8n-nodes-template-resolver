@@ -21,7 +21,7 @@
 
 ## Examples
 
-- `${{ s | replace:find="a",with="b" }}` over `banana` is `bbnbnb`... no: over `banana` it is `bbnbnb` only if every `a` is replaced; the output is `bbnbnb`. Written exactly: `banana` becomes `bbnbnb`? No, `banana` with `a` replaced by `b` is `bbnbnb`.
+- `${{ s | replace:find="a",with="b" }}` over `banana` is `bbnbnb`.
 - `${{ n | round=2 }}` over `1.005` is `1.01`; over `3.1` is `3.10`.
 - `${{ t | indent=4 }}` over `a\n\nb` is `    a\n\n    b`.
 - `${{ x | default="n/a" }}` with `x` of `0` is `n/a`; `${{ x | indent=two }}` fails with a type-error located at the variable.
