@@ -61,7 +61,7 @@
       "location": "tests/language/filters-collection.test.ts:188",
       "label": "f1",
       "raised_in": 1,
-      "status": "fixed",
+      "status": "withdrawn",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [
@@ -76,7 +76,13 @@
           ]
         }
       ],
-      "rulings": []
+      "rulings": [
+        {
+          "after_round": 1,
+          "ruling": "withdraw",
+          "note": "the one-line strict-mode change in a frozen test row is a named amendment recorded in the card's test_amendments, approved by the project lead; the row's own name says lenient mode"
+        }
+      ]
     },
     {
       "title": "Living documents edited directly outside files_scope, while the two deltas the manifest adds are empty templates",

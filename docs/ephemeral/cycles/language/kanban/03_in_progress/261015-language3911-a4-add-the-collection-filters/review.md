@@ -17,12 +17,13 @@ Restatement: The card adds nine list-shaping filters (join, length, first, last,
 ### f1: The builder edited the frozen test file without a logged scope exception or a named amendment
 
 - Class: defect
-- Status: fixed
+- Status: withdrawn
 - Serves: m1: The frozen test is the plan's red test, and the builder changed its render options from RAW (strict by default) to strictMode:false. The edit makes the test match its name, but the builder changed a plan-owned test unilaterally, no scope exception is logged, and the card's 'named amendment' clause names none. If the original strict-default call was intended, the test now asserts different behavior from what was frozen.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: Diff the test file between base f4e552a and head 010500d. Line ~188 changes render('${{ v | join="," }}|${{ v | length }}', {}, RAW) to render(..., {}, { ...RAW, strictMode: false }). Section 'Scope exceptions log' reads 'No scope exceptions are logged.' Smallest fix: log the change as a named test amendment or scope exception that the test owner accepts, or revert it and let the test owner amend it.
 - Evidence: diff:tests/language/filters-collection.test.ts, test:fc-collection: a missing variable renders the same as an empty list in lenient mode, doc:docs/ephemeral/cycles/language/deltas
 - Reply after round 1 (fixed): restate: The strictMode:false edit to the frozen lenient row had no logged amendment.; verify: card.json test_amendments names tests/language/filters-collection.test.ts, approved_by project lead.; evidence: diff:tests/language/filters-collection.test.ts, doc:docs/ephemeral/cycles/language/kanban/03_in_progress/261015-language3911-a4-add-the-collection-filters/card.json
+- Review lead ruling after round 1: withdraw: the one-line strict-mode change in a frozen test row is a named amendment recorded in the card's test_amendments, approved by the project lead; the row's own name says lenient mode
 
 ### f2: Living documents edited directly outside files_scope, while the two deltas the manifest adds are empty templates
 
