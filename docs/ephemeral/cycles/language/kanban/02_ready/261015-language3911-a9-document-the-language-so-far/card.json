@@ -30,12 +30,12 @@
       "README.md",
       "changelog.md"
     ],
-    "frozen": false
+    "frozen": true
   },
   "criteria": [
     {
       "text": "ld-spec: a test proves every lexer keyword and every registry filter appears in spec(), and every operator the evaluator supports appears in spec().operators",
-      "verify": "test",
+      "verify": "tool",
       "evidence": null,
       "status": "pending"
     },
@@ -78,5 +78,19 @@
   "blast_radius": [
     "template-resolver"
   ],
-  "docs_deferred": true
+  "docs_deferred": true,
+  "freeze": {
+    "at": "2026-10-15T05:20:57.171Z",
+    "brief_sha256": "11b3fc3cfb707e04398e6c112a4f50c693d4b13990c34629f186abee09100858",
+    "brief_core_sha256": "560a37ef43d50f8e36d3f1cc9d79429df7317f4930e497352a23a9914a9ca7fb",
+    "manifest_sha256": "2cafef8777eff7ffde4a43e582f4410a2ae33983979399df362317881d8f8df7",
+    "criteria_sha256": "666380ac502bfd0bcbb26f0c0d596fb6c2a79f7923250d88f9530a84a203ea7b",
+    "scope_sha256": "45e68ebca902112e61c9d0baa54dfa3c49279f6007c9d7f094f5b6cfa517c927",
+    "scope_parts": {
+      "files_scope": "cc6a204e401d01722e41d9db112826bccffd5d8c665e9d2e39ff596cdffd7cc1",
+      "docs_impact": "28fcf7ec9ffd2b1f9a0b2000e47257f6301314857363093961381566ab543816",
+      "docs_deferred": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
+      "gate": "54e7f57846fcf5a15e9dd89127d7afa8e48ce3d51e4f388c7c29de2be3e87438"
+    }
+  }
 }
