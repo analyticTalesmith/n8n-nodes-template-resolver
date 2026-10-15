@@ -547,13 +547,14 @@ export class Parser {
       );
     };
 
-    const words = token.value.trim().split(/\s+/);
-    if (words.length < 4) fail(token.value);
-    if (words[2].toUpperCase() !== "AS") fail(token.value);
-    const itemName = words[3];
+    const match = /^FOR\s+(.+?)\s+AS(?:\s+(.*))?$/is.exec(token.value.trim());
+    const rest = match?.[2]?.trim();
+    if (!match || !rest) return fail(token.value);
+    const words = rest.split(/\s+/);
+    const itemName = words[0];
     if (!/^\w+$/.test(itemName)) fail(`bad item name "${itemName}"`);
 
-    const iterable = words[1].split(".").map((p) => p.trim());
+    const iterable = match[1].split(".").map((p) => p.trim());
     const result: {
       iterable: string[];
       itemName: string;
@@ -561,7 +562,7 @@ export class Parser {
       offset?: ForWindowArg;
     } = { iterable, itemName };
 
-    for (const word of words.slice(4)) {
+    for (const word of words.slice(1)) {
       const argument = /^(limit|offset)=(.+)$/.exec(word);
       if (!argument) fail(`unexpected "${word}"`);
       const [, key, written] = argument as RegExpExecArray;

@@ -631,19 +631,31 @@ export class Interpreter {
       length += cells.reduce((sum, cell) => sum + cell.length, 0);
     };
 
-    let pending = "";
-    const flush = (): void => {
-      if (pending.trim()) {
-        add(pending.split("|").map((cell) => cell.trim()));
+    const addText = (text: string): void => {
+      if (text.trim()) {
+        add(text.split("|").map((cell) => cell.trim()));
       }
-      pending = "";
+    };
+    const inline = ["Text", "Variable", "Ternary", "Comment"];
+    let run: ASTNode[] = [];
+    const flush = (): void => {
+      if (run.length === 1) {
+        addText(this.visit(run[0]));
+      } else if (run.length > 1) {
+        const text = run.map((node) => this.visit(node)).join("");
+        for (const line of text.split(/\r?\n/)) addText(line);
+      }
+      run = [];
     };
     for (const bodyNode of nodes) {
       if (bodyNode.type === "TableRow") {
         flush();
         add(this.processCellsArray((bodyNode as TableRowNode).cells));
+      } else if (inline.includes(bodyNode.type)) {
+        run.push(bodyNode);
       } else {
-        pending += this.visit(bodyNode);
+        flush();
+        addText(this.visit(bodyNode));
       }
     }
     flush();
