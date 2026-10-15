@@ -17,29 +17,32 @@ Restatement: In the headless, no-eval template core, math and output mistakes sh
 ### f1: formatNumber rounds integers with 16 or more significant digits, so integer results no longer print unchanged in render
 
 - Class: defect
-- Status: open
+- Status: fixed
 - Serves: c2: In render, an arithmetic result that is an integer with more than 15 significant digits (for example a safe integer ID or count near 2^53) is rounded to 15 digits and prints a different integer. This breaks 'integers ... print unchanged' (spec: 'large integers print unchanged') and silently corrupts the output.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: render('${{1234567890123456 + 0}}', {}): formatNumber computes Number((1234567890123456).toPrecision(15)), which is 1234567890123460, so the output is '1234567890123460' instead of '1234567890123456'. Likewise '${{x * 1}}' with x = 9007199254740991 prints 9007199254740990. The frozen test only covers 1000000 * 1000000 (13 digits), so the gate does not catch this. Smallest change: in formatNumber, return String(n) when Number.isInteger(n), and round only non-integers.
 - Evidence: diff:core/src/expressions.ts, code:core/src/expressions.ts:845, test:mt-float: [render-strict] ${{1000000 * 1000000}} prints 1000000000000
+- Reply after round 1 (fixed): restate: formatNumber rounded integers of 16+ digits; verify: Now returns String(n) for integers; rows for 1234567890123456 and 9007199254740991 pass; evidence: test:tests/language/math.test.ts
 
 ### f2: The unprintable-value check runs before every filter, so filters that turn such a value into a printable result now fail
 
 - Class: goal-risk
-- Status: open
+- Status: fixed
 - Serves: card-goal: Spec c5 makes an unprintable value an error when it is used as output, 'after filters that keep it'. The new pre-filter call this.valueToString(value) throws before any filter runs. A template that reduces such a value to printable text, such as `${{xs | length}}` with a list that holds a cycle or a BigInt, used to print a count and is now a type-error in both entry points. A valid output turns into an error, which the card did not ask for, and the language-contract edit writes the broader rule ('or before a filter') into the living contract.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: Let xs = [1n, 2n] (or a cyclic array). render('${{xs | length}}', {xs}) and resolveTemplate('${{xs | length}}', new Map([['xs', xs]])) now return type-error 'Cannot print a value with no text form'. The length filter returns the number 2, which prints. Smallest change: limit the pre-filter check to filters that coerce their input to text (the text filters and default), or check the final value after filters plus the text-coercing step, and leave collection filters such as length, first, last and slice that return a printable value alone. Align the language-contract wording with whatever the fix settles.
 - Evidence: diff:core/src/interpreter.ts, code:core/src/interpreter.ts:1020, doc:docs/living/architecture/language-contract.md, test:mt-cyclic: [render-strict] a cyclic object as output after a filter that keeps the value (trim) is a type-error
+- Reply after round 1 (fixed): restate: Pre-filter unprintable check broke xs | length; verify: Filters run one at a time; check only before text-coercing filters; rows for length, first, json pass; evidence: test:tests/language/math.test.ts
 
 ### f3: hasStrayCharacter plus isUnparseableMath turn plain keys holding characters like ':' or '#' into math type-errors, even when the key exists with a null value
 
 - Class: goal-risk
-- Status: open
+- Status: fixed
 - Serves: card-goal: Any variable path with a character outside letters, digits, _, @, ., whitespace and '-' (for example 'a:b', 'Order #', an emoji key) is now tried as math and fails with a MathSyntaxError. isUnparseableMath then rethrows it whenever the looked-up value is null, including when the key is present with value null. Spec c5 says null still prints empty and missing data stays lenient (ADR 0003: strict mode governs missing data). Before this change, isMathExpression did not match ':' and the result was empty text. resolveTemplate output also changes for these keys, and in strict mode a missing such key loses its missing-variable code and 'Available variables' suggestion.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: render('${{a:b}}', {'a:b': null}, {strictMode: false}): before the change, output ''; now ok false with type-error 'Unexpected character ":" in math expression'. render('${{Order #}}', {}, {strictMode: false}) is now a type-error instead of empty, and render('${{a:b}}', {}) in strict mode is a type-error instead of missing-variable. Smallest change: in isUnparseableMath, rethrow the math error only when the root key is absent (a MissingVariableError, or no such key in lenient mode), never when the key exists. Then decide whether a stray character in a key that is merely absent should count as malformed math or as missing data.
 - Evidence: diff:core/src/interpreter.ts, code:core/src/interpreter.ts:983, code:core/src/interpreter.ts:1011, code:core/src/interpreter.ts:1106, doc:docs/living/decisions/adr/0003-unknown-names-are-always-errors.md
+- Reply after round 1 (fixed): restate: Stray-character math error hit existing or merely odd keys; verify: Math error rethrown only when root key is absent and text holds a number literal; mt-keys rows pass; evidence: test:tests/language/math.test.ts
 
 ### f4: The hyphen and name-character rules are duplicated in interpreter.ts instead of using the shared helper
 

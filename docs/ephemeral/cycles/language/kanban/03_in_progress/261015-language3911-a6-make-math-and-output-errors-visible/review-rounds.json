@@ -60,10 +60,20 @@
       "location": "core/src/expressions.ts:845",
       "label": "f1",
       "raised_in": 1,
-      "status": "open",
+      "status": "fixed",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "formatNumber rounded integers of 16+ digits",
+          "verify": "Now returns String(n) for integers; rows for 1234567890123456 and 9007199254740991 pass",
+          "action": "fixed",
+          "evidence": [
+            "test:tests/language/math.test.ts"
+          ]
+        }
+      ],
       "rulings": []
     },
     {
@@ -84,10 +94,20 @@
       "location": "core/src/interpreter.ts:1020",
       "label": "f2",
       "raised_in": 1,
-      "status": "open",
+      "status": "fixed",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "Pre-filter unprintable check broke xs | length",
+          "verify": "Filters run one at a time; check only before text-coercing filters; rows for length, first, json pass",
+          "action": "fixed",
+          "evidence": [
+            "test:tests/language/math.test.ts"
+          ]
+        }
+      ],
       "rulings": []
     },
     {
@@ -109,10 +129,20 @@
       "location": "core/src/interpreter.ts:1090",
       "label": "f3",
       "raised_in": 1,
-      "status": "open",
+      "status": "fixed",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "Stray-character math error hit existing or merely odd keys",
+          "verify": "Math error rethrown only when root key is absent and text holds a number literal; mt-keys rows pass",
+          "action": "fixed",
+          "evidence": [
+            "test:tests/language/math.test.ts"
+          ]
+        }
+      ],
       "rulings": []
     },
     {
