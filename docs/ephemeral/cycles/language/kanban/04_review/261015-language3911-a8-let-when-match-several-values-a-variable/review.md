@@ -37,20 +37,22 @@ Restatement: A CASE branch has to accept more than one quoted value. A WHEN can 
 ### f3: WHEN_PATH accepts names the language does not treat as names, such as n-1, a-, a--b and @ inside a name
 
 - Class: goal-risk
-- Status: open
+- Status: fixed
 - Serves: m4: The language contract says a hyphen joins a name only between two ASCII letters; n-1, x1-y and 1-a are arithmetic. The new WHEN_PATH regex /^[\p{L}_@][\p{L}\p{N}_@-]*(\.[\p{L}\p{N}_@-]+)*$/u accepts limit-1, a-, a--b and a@b as variable paths. It is a second name rule, separate from the parser's VARIABLE_PATH. An author who writes {{WHEN limit-1}} gets no syntax-error at parse. In lenient mode the item reads as a missing variable, which is empty text, so the CASE silently takes the wrong branch. analyze also reports a required variable 'limit-1'. Under ADR 0003 an item that is neither a literal nor a variable path must be an error in every mode.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: render('{{CASE x}}{{WHEN limit-1}}Y{{DEFAULT}}N{{END_CASE}}', {x:'', limit:5}, {strictMode:false}). Expected per the contract: a syntax-error at 1:11. Observed by reading the code: ok, output 'Y', because limit-1 is read as an empty missing variable and equals the empty subject. analyze on the same template lists 'limit-1'.
 - Evidence: diff:core/src/expressions.ts, doc:docs/living/architecture/language-contract.md, doc:docs/living/decisions/adr/0003-unknown-names-are-always-errors.md
+- Reply after round 1 (fixed): restate: WHEN accepted names such as limit-1, a-, a--b and a@b that the language reads as arithmetic or invalid.; verify: isWhenPath now builds on joinsName; those names are a located syntax-error at the WHEN in all modes and analyze lists none.; evidence: test:tests/language/case.test.ts, diff:core/src/expressions.ts
 
 ### f4: A quoted WHEN value ending in a backslash, which worked before, is now an unclosed-quote syntax-error
 
 - Class: goal-risk
-- Status: open
+- Status: fixed
 - Serves: card-goal: The spec says the old single form keeps matching text exactly as before and that a quoted text is not unescaped. splitCommas treats a quote preceded by a backslash as still open (text[i-1] !== '\\'). At the base, {{WHEN 'C:\'}} matched the text C:\ through the old regex. At head it fails with 'Unclosed quote in {{WHEN}}', so a template that used to render now stops with an error. The scanner thereby treats a backslash before a quote as an escape, which contradicts the spec's no-unescape rule for WHEN.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: render("{{CASE p}}{{WHEN 'C:\\'}}Y{{DEFAULT}}N{{END_CASE}}", {p:'C:\\'}). At base f140e131 the output is 'Y'. At head the result is a syntax-error at the WHEN. No test covers a trailing backslash inside quotes.
 - Evidence: diff:core/src/expressions.ts, diff:core/src/parser.ts
+- Reply after round 1 (fixed): restate: A quoted WHEN value ending in a backslash, such as C:\ in quotes, became an unclosed-quote error although it matched before.; verify: splitCommas closes a quote before a comma or the end even after a backslash, for WHEN only; rows cover it in all four entries.; evidence: test:tests/language/case.test.ts, diff:core/src/expressions.ts
 
 ### f5: Two living architecture documents were edited directly, outside the card's scope and with no approved exception
 

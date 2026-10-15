@@ -110,10 +110,21 @@
       "location": "core/src/expressions.ts:607",
       "label": "f3",
       "raised_in": 1,
-      "status": "open",
+      "status": "fixed",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "WHEN accepted names such as limit-1, a-, a--b and a@b that the language reads as arithmetic or invalid.",
+          "verify": "isWhenPath now builds on joinsName; those names are a located syntax-error at the WHEN in all modes and analyze lists none.",
+          "action": "fixed",
+          "evidence": [
+            "test:tests/language/case.test.ts",
+            "diff:core/src/expressions.ts"
+          ]
+        }
+      ],
       "rulings": []
     },
     {
@@ -132,10 +143,21 @@
       "location": "core/src/expressions.ts:586",
       "label": "f4",
       "raised_in": 1,
-      "status": "open",
+      "status": "fixed",
       "sustained": 0,
       "failed_fixes": 0,
-      "replies": [],
+      "replies": [
+        {
+          "after_round": 1,
+          "restate": "A quoted WHEN value ending in a backslash, such as C:\\ in quotes, became an unclosed-quote error although it matched before.",
+          "verify": "splitCommas closes a quote before a comma or the end even after a backslash, for WHEN only; rows cover it in all four entries.",
+          "action": "fixed",
+          "evidence": [
+            "test:tests/language/case.test.ts",
+            "diff:core/src/expressions.ts"
+          ]
+        }
+      ],
       "rulings": []
     },
     {
