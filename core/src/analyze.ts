@@ -1,6 +1,6 @@
 import { Lexer } from "./lexer";
 import { Parser } from "./parser";
-import { FILTER_REGISTRY } from "./filters";
+import { FILTER_REGISTRY, undeclaredParameterMessages } from "./filters";
 import {
   conditionOperands,
   hasBareWhitespace,
@@ -176,10 +176,20 @@ class Walker {
     for (const filter of node.filters ?? []) {
       const { name } = filter;
       this.filterCounts.set(name, (this.filterCounts.get(name) ?? 0) + 1);
-      if (!FILTER_REGISTRY.some((f) => f.name === name)) {
+      const definition = FILTER_REGISTRY.find((f) => f.name === name);
+      if (!definition) {
         this.diagnostics.push({
           code: "unknown-filter",
           message: `Unknown filter: ${name}`,
+          line: node.line,
+          column: node.column,
+        });
+        continue;
+      }
+      for (const message of undeclaredParameterMessages(definition, filter)) {
+        this.diagnostics.push({
+          code: "type-error",
+          message,
           line: node.line,
           column: node.column,
         });

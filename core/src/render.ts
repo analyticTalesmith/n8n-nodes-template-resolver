@@ -107,7 +107,7 @@ export function validate(
   try {
     diagnostics = analyze(template, options).diagnostics.map(
       ({ code, message, line, column }): Diagnostic =>
-        code === "unknown-filter"
+        code === "unknown-filter" || code === "type-error"
           ? { severity: "error", code, message, line, column }
           : { severity: "warning", code: "analysis-warning", message, line, column }
     );

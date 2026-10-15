@@ -194,6 +194,22 @@ type FilterSummary = { name: string; params: string; description: string };
 export const FILTERS: FilterSummary[] = listFilters();
 
 /**
+ * One message per parameter the call passes that the filter does not declare;
+ * shared by applyFilter and the static analysis so both word it alike
+ */
+export function undeclaredParameterMessages(
+  definition: { paramNames: string[] },
+  filter: FilterCall
+): string[] {
+  return Object.keys(filter.params)
+    .filter((key) => !definition.paramNames.includes(key))
+    .map(
+      (key) =>
+        `Filter ${filter.name} has no parameter '${key}' (accepts: ${definition.paramNames.join(", ") || "none"})`
+    );
+}
+
+/**
  * Apply single filter to a value: an unknown name or a parameter the filter
  * does not declare is an error
  */
@@ -207,13 +223,8 @@ export function applyFilter(value: unknown, filter: FilterCall): unknown {
       FILTER_REGISTRY.map((f) => f.name)
     );
   }
-  for (const key of Object.keys(filter.params)) {
-    if (!definition.paramNames.includes(key)) {
-      throw new Error(
-        `Filter ${filter.name} has no parameter '${key}' (accepts: ${definition.paramNames.join(", ") || "none"})`
-      );
-    }
-  }
+  const problems = undeclaredParameterMessages(definition, filter);
+  if (problems.length > 0) throw new Error(problems[0]);
   return definition.apply(value, filter.params);
 }
 

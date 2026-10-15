@@ -362,6 +362,27 @@ describe("fr-args: filter calls are parsed once, quote-aware", () => {
         });
       }
     );
+
+    it.each(errorRows)(
+      "fr-args: validate and analyze report the same undeclared parameter, %s",
+      (_n, template, line, column, make) => {
+        if (make) register(make());
+        const v = validate(template);
+        expect(v.ok).toBe(false);
+        expect(v.diagnostics[0]).toMatchObject({ severity: "error", code: "type-error", line, column });
+        const a = analyze(template).diagnostics[0];
+        expect(a).toMatchObject({ code: "type-error", line, column });
+        const r = render(template, { v: "x" }, { ...RAW, strictMode });
+        expect(a?.message).toBe(r.diagnostics[0]?.message);
+      }
+    );
+  });
+
+  it("fr-args: declared parameters give no diagnostic in validate or analyze", () => {
+    for (const t of ["intro\n  ${{ v | escape_md=block }}", "intro\n  ${{ v | head=3 }}", "intro\n  ${{ v | head:value=3 }}"]) {
+      expect(analyze(t).diagnostics).toEqual([]);
+      expect(validate(t).ok).toBe(true);
+    }
   });
 });
 
