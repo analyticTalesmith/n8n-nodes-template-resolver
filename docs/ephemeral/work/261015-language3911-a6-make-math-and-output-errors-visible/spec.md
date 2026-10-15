@@ -6,7 +6,7 @@
 - mt-float: in `render`, an arithmetic result prints with at most 15 significant digits (`${{0.1 + 0.2}}` prints `0.3`, `${{x * 3}}` with 1.1 prints `3.3`; `1/3` prints `0.333333333333333`; integers, negative numbers and large integers print unchanged); `resolveTemplate` keeps its old `String(result)`
 - mt-hyphen: in math and plain paths, a hyphen with an ASCII letter on both sides is part of one name (`${{first-name}}`, `${{user.first-name + 1}}`, `${{a-b}}` read the key `a-b`); `a - b`, `a -b`, `n-1`, `x1-y`, `1-a` stay arithmetic; a missing hyphenated name in strict mode is a `missing-variable` error whose suggestion names the spaced form (`a - b`); `analyze` reports the hyphenated name as one variable
 - mt-lenient: a malformed math expression (`${{(1 + 2}}`, `${{1 + }}`, `${{1 + * 2}}`, `${{2 $ 3}}`) is a located `type-error` in lenient mode too, in `render` and in `resolveTemplate`; a missing variable in a well-formed math expression stays lenient (empty output); unknown names/filters stay errors in every mode
-- mt-cyclic: a value that has no printable form (a cyclic object or array, a BigInt) used as output (`${{x}}`, a CASE subject, a ternary variable branch, after filters that keep it) is a `type-error` located at the variable (or the CASE / ternary node), in render and in resolveTemplate, instead of ok true with empty text; null and undefined still print as empty
+- mt-cyclic: a value that has no printable form (a cyclic object or array, a BigInt) used as output (`${{x}}`, a CASE subject, after filters that keep it) is a `type-error` located at the variable (or the CASE node), in render and in resolveTemplate, instead of ok true with empty text; null and undefined still print as empty
 
 ## Interface
 
