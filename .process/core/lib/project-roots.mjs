@@ -1,16 +1,21 @@
-import { createHash, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, rmdirSync, rmSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { dirname, isAbsolute, join, parse, posix, relative, resolve, sep, win32 } from 'node:path';
-import { resolveInside, safeRelative, writeJsonAtomic } from './files.mjs';
+import { basename, dirname, isAbsolute, join, parse, posix, relative, resolve, sep, win32 } from 'node:path';
+import { resolveInside, safeRelative, sha256Bytes, writeJsonAtomic } from './files.mjs';
+import { CYCLES_DIR, DOCS_ROOT, PROCESS_DIR, SESSIONS_DIR } from './layout.mjs';
 
 const REGISTRY = 'registry.json';
-const MARKER = '.process/docs-store.json';
+const MARKER = `${PROCESS_DIR}/docs-store.json`;
+const DOCS_PREFIX = `${DOCS_ROOT}/`;
+const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const IDENTITY = 'store.json';
 const STORE_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const STORE_GENERATION = new WeakMap();
 const LOCK_WAIT_MS = 30_000;
 const LOCK_POLL_MS = 20;
+/** Lock mkdir codes that mean another process holds the lock. Windows reports EPERM, EACCES or EBUSY when a mkdir races the holder's rmdir. */
+const LOCK_CONTENTION = new Set(['EEXIST', 'EPERM', 'EACCES', 'EBUSY']);
 
 export class ProjectRootsError extends Error {
   constructor(message, rule, cause) {
@@ -71,8 +76,19 @@ function noLinks(path) {
   }
 }
 
+/** The path with its deepest existing ancestor resolved to the real spelling (an 8.3 short name or a link becomes the long one). */
+function realSpelling(path) {
+  const absolute = resolve(path);
+  const rest = [];
+  for (let current = absolute; ; current = dirname(current)) {
+    try { return join(realpathSync.native(current), ...rest.reverse()); } catch { /* Not there yet: resolve the parent. */ }
+    if (dirname(current) === current) return absolute;
+    rest.push(basename(current));
+  }
+}
+
 function isWithin(parent, child) {
-  const rel = relative(parent, child);
+  const rel = relative(realSpelling(parent), realSpelling(child));
   return rel === '' || (rel !== '..' && !rel.startsWith(`..${sep}`) && !isAbsolute(rel));
 }
 
@@ -81,32 +97,35 @@ function generation(path) {
   return `${stat.dev}:${stat.ino}:${stat.birthtimeNs}`;
 }
 
-function withRegistryLock(dataRoot, action) {
+function withRegistryLock(dataRoot, action, { lockMkdir = mkdirSync, lockWaitMs = LOCK_WAIT_MS } = {}) {
   const madeDataRoot = !existsSync(dataRoot);
   mkdirSync(dataRoot, { recursive: true });
   const lockPath = join(dataRoot, '.registry.lock');
-  const deadline = process.hrtime.bigint() + BigInt(LOCK_WAIT_MS) * 1_000_000n;
+  const deadline = process.hrtime.bigint() + BigInt(Math.ceil(lockWaitMs * 1_000_000));
+  const busy = (lastCause) => new ProjectRootsError(`Registry lock ${lockPath} is busy. Wait for setup to finish, or repair a stale lock after checking no setup is running.`, 'registry-locked', lastCause);
   while (true) {
     try {
-      mkdirSync(lockPath);
+      lockMkdir(lockPath);
       break;
     } catch (cause) {
-      if (cause.code !== 'EEXIST') {
+      if (!LOCK_CONTENTION.has(cause.code)) {
         throw new ProjectRootsError(`Cannot lock registry at ${lockPath}. Repair local-store access.`, 'registry-locked', cause);
       }
       let lockStat;
       try {
         lockStat = lstatSync(lockPath);
       } catch (inspectError) {
-        if (inspectError.code === 'ENOENT') continue;
+        if (inspectError.code === 'ENOENT') {
+          // The holder released it between the failed mkdir and now: retry at once, but a mkdir that keeps failing with no folder must still end.
+          if (process.hrtime.bigint() >= deadline) throw busy(cause);
+          continue;
+        }
         throw new ProjectRootsError(`Cannot inspect registry lock ${lockPath}. Repair local-store access.`, 'registry-locked', inspectError);
       }
       if (!lockStat.isDirectory()) {
         throw new ProjectRootsError(`${lockPath} is not a lock directory. Repair the local registry lock.`, 'registry-locked');
       }
-      if (process.hrtime.bigint() >= deadline) {
-        throw new ProjectRootsError(`Registry lock ${lockPath} is busy. Wait for setup to finish, or repair a stale lock after checking no setup is running.`, 'registry-locked');
-      }
+      if (process.hrtime.bigint() >= deadline) throw busy(cause);
       Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, LOCK_POLL_MS);
     }
   }
@@ -134,7 +153,7 @@ function registryAt(dataRoot) {
 function storePaths(dataRoot, storeId) {
   if (!STORE_ID.test(storeId)) throw new ProjectRootsError('Store ID is invalid. Repair or relink the local project.', 'identity-mismatch');
   const base = join(dataRoot, 'projects', storeId);
-  return { base, docsRoot: join(base, 'docs'), identity: join(base, IDENTITY) };
+  return { base, docsRoot: join(base, DOCS_ROOT), identity: join(base, IDENTITY) };
 }
 
 function validateStore(checkoutRoot, dataRoot, storeId) {
@@ -164,7 +183,7 @@ export function resolveProjectRoots(checkoutRoot, options = {}) {
   const markerPresent = existsSync(markerPath);
   const registry = registryAt(dataRoot);
   const record = registry.projects[checkout];
-  if (!markerPresent && !record) return { checkoutRoot: checkout, docsRoot: resolveInside(checkout, 'docs'), mode: 'shared', storeId: null };
+  if (!markerPresent && !record) return { checkoutRoot: checkout, docsRoot: resolveInside(checkout, DOCS_ROOT), mode: 'shared', storeId: null };
   if (!markerPresent) throw new ProjectRootsError(`Local registry names ${checkout}, but ${MARKER} is missing. Restore the marker or relink this checkout.`, 'identity-mismatch');
   const marker = readJson(markerPath, 'identity-mismatch', 'Restore the marker or relink this checkout.');
   if (!STORE_ID.test(marker.storeId)) throw new ProjectRootsError(`${MARKER} has an invalid store ID. Repair or relink this checkout.`, 'identity-mismatch');
@@ -190,7 +209,7 @@ export function registerLocalProject(checkoutRoot, options = {}) {
   const dataRoot = projectDataRoot(options);
   if (isWithin(checkout, dataRoot)) throw new ProjectRootsError(`Local data root ${dataRoot} is inside the checkout. Repair its location before setup.`, 'store-unsafe');
   noLinks(dataRoot);
-  return withRegistryLock(dataRoot, () => registerLocked(checkout, dataRoot, options));
+  return withRegistryLock(dataRoot, () => registerLocked(checkout, dataRoot, options), { lockMkdir: options.lockMkdir, lockWaitMs: options.lockWaitMs });
 }
 
 function registerLocked(checkout, dataRoot, options) {
@@ -251,14 +270,14 @@ export function switchToSharedProject(checkoutRoot, options = {}) {
       try { writeJsonAtomic(join(dataRoot, REGISTRY), registry); } catch { /* A retained marker makes a partial transition fail closed. */ }
       throw new ProjectRootsError(`Could not switch ${checkout} to shared docs. Restore the local binding or retry the move.`, 'switch-failed', cause);
     }
-    return { ...roots, mode: 'shared', docsRoot: resolveInside(checkout, 'docs'), previousDocsRoot: roots.docsRoot };
+    return { ...roots, mode: 'shared', docsRoot: resolveInside(checkout, DOCS_ROOT), previousDocsRoot: roots.docsRoot };
   });
 }
 
 /** Map stable logical docs paths into the store; all other paths stay in the checkout. */
 export function resolveProjectPath(roots, logicalPath) {
   const path = safeRelative(logicalPath);
-  if (path === 'docs' || path.startsWith('docs/')) {
+  if (path === DOCS_ROOT || path.startsWith(DOCS_PREFIX)) {
     if (roots.mode === 'local') {
       const dataRoot = dirname(dirname(dirname(roots.docsRoot)));
       const fresh = resolveProjectRoots(roots.checkoutRoot, { dataRoot });
@@ -266,8 +285,8 @@ export function resolveProjectPath(roots, logicalPath) {
         throw new ProjectRootsError(`Local docs store ${roots.docsRoot} changed since it was resolved. Repair or relink this checkout.`, 'store-replaced');
       }
     }
-    if (path === 'docs') return roots.docsRoot;
-    return resolveInside(roots.docsRoot, path.slice('docs/'.length));
+    if (path === DOCS_ROOT) return roots.docsRoot;
+    return resolveInside(roots.docsRoot, path.slice(DOCS_PREFIX.length));
   }
   return resolveInside(roots.checkoutRoot, path);
 }
@@ -278,8 +297,8 @@ export function resolveProjectPath(roots, logicalPath) {
  */
 export function resolveRawSessionPath(roots, logicalPath, options = {}) {
   const path = safeRelative(logicalPath);
-  const root = 'docs/ephemeral/feedback/sessions/';
-  const cycle = /^docs\/ephemeral\/cycles\/[^/]+\/feedback\/sessions\/[^/]+\.md$/;
+  const root = `${SESSIONS_DIR}/`;
+  const cycle = new RegExp(`^${escapeRegExp(CYCLES_DIR)}/[^/]+/feedback/sessions/[^/]+\\.md$`);
   if (!((path.startsWith(root) && !path.slice(root.length).includes('/') && path.endsWith('.md')) || cycle.test(path))) {
     throw new ProjectRootsError(`Raw session ${path} must be a .md file directly in a feedback sessions folder.`, 'session-path-unsafe');
   }
@@ -289,8 +308,8 @@ export function resolveRawSessionPath(roots, logicalPath, options = {}) {
   if (isWithin(roots.checkoutRoot, dataRoot)) {
     throw new ProjectRootsError(`Private session store ${dataRoot} is inside the checkout. Repair its location.`, 'store-unsafe');
   }
-  const id = createHash('sha256').update(roots.checkoutRoot).digest('hex');
+  const id = sha256Bytes(Buffer.from(roots.checkoutRoot, 'utf8'));
   const privateRoot = join(dataRoot, 'private-sessions', id);
   noLinks(privateRoot);
-  return resolveInside(privateRoot, path.slice('docs/'.length));
+  return resolveInside(privateRoot, path.slice(DOCS_PREFIX.length));
 }

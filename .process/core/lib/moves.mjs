@@ -2,33 +2,20 @@ import { existsSync, readFileSync } from 'node:fs';
 import { archivedIds, cardPath, isCardId } from './board.mjs';
 import { VERIFY_TYPES } from './card.mjs';
 import { CARD_FILES, workFile } from './card-files.mjs';
+import { redProofArgv } from './checks/card-gate.mjs';
 import { checkFrozen } from './checks/frozen.mjs';
 import { parseRedEvidence } from './checks/red-evidence.mjs';
 import { CycleError, readCycle } from './cycle.mjs';
+import { selectedLevelsFor } from './gate.mjs';
+import { ALLOWED_MOVES, RESUME_EDGE, STAGE, edgeKey, humanColumn } from './layout.mjs';
 
 /** @typedef {import('../scripts/validate.mjs').Finding} Finding */
 /** @typedef {import('./card.mjs').Card} Card */
 /** @typedef {{ projectDir: string, card: Card, from: string, to: string, tier: string, concerns?: Record<string, string>, reason?: string, resume?: boolean }} MoveContext */
 /** @typedef {(ctx: MoveContext) => Finding[]} Guard */
 
-export const ALLOWED_MOVES = Object.freeze(
-  [
-    ['00_backlog', '01_shaping'],
-    ['01_shaping', '02_ready'],
-    ['02_ready', '03_in_progress'],
-    ['03_in_progress', '04_review'],
-    ['03_in_progress', '01_shaping'],
-    ['04_review', '03_in_progress'],
-    ['04_review', '01_shaping'],
-    ['04_review', '05_gate'],
-    ['05_gate', '06_done'],
-  ].map((edge) => Object.freeze(edge)),
-);
+export { ALLOWED_MOVES, RESUME_EDGE, humanColumn };
 
-/** Human form of a column folder name: `03_in_progress` becomes `in progress`. */
-export const humanColumn = (column) => column.replace(/^\d+_/, '').replaceAll('_', ' ');
-
-const edgeKey = (from, to) => `${from}>${to}`;
 const finding = (rule, message) => ({ rule, message });
 
 /** @type {Map<string, { guard: Guard }[]>} */
@@ -83,7 +70,7 @@ const depsNotDone = ({ projectDir, card }) => {
   const pending = [];
   for (const dep of card.depends_on) {
     const found = cardPath(projectDir, dep);
-    if (found?.column === '06_done' || (!found && inArchive(projectDir, dep))) continue;
+    if (found?.column === STAGE.done || (!found && inArchive(projectDir, dep))) continue;
     pending.push(found ? `${dep} (${humanColumn(found.column)})` : `${dep} (not found)`);
   }
   return pending.length
@@ -109,9 +96,6 @@ const noReason = ({ card, from, to, reason }) =>
         ),
       ];
 
-/** The one edge a resume may take: back into work from the shaping a correction was made in. */
-export const RESUME_EDGE = Object.freeze(['01_shaping', '03_in_progress']);
-
 const sameList = (a, b) => Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((part, index) => part === b[index]);
 
 /** A resumed card was started once: it has the base commit its diff is measured from. */
@@ -122,10 +106,11 @@ const resumeNeedsBase = ({ card }) =>
 
 /**
  * A resumed card skips the red-first run because its red evidence already exists: the log was written from a failing run
- * of this same gate command before the build. A card with no gate command has no red run to reuse.
+ * of this same command (the card's gate, or for a gates-only card its first selected gates entry) before the build. A card with neither has no red run to reuse.
  */
 const resumeNeedsRedEvidence = ({ projectDir, card }) => {
-  if (card.gate === null) return [];
+  const argv = redProofArgv(card, selectedLevelsFor(projectDir, card));
+  if (argv === null) return [];
   let evidence = null;
   try {
     const file = workFile(projectDir, card.id, CARD_FILES.redEvidence);
@@ -133,7 +118,7 @@ const resumeNeedsRedEvidence = ({ projectDir, card }) => {
   } catch {
     evidence = null;
   }
-  return evidence !== null && evidence.exit_status !== 0 && sameList(evidence.command, card.gate)
+  return evidence !== null && evidence.exit_status !== 0 && sameList(evidence.command, argv)
     ? []
     : [
         finding(
@@ -158,12 +143,12 @@ const bugNeedsRepro = ({ card }) =>
 
 /** @type {Record<string, Guard[]>} */
 const BUILT_IN = {
-  [edgeKey('00_backlog', '01_shaping')]: [notSelected],
-  [edgeKey('01_shaping', '02_ready')]: [noCriteria],
-  [edgeKey('02_ready', '03_in_progress')]: [depsNotDone, noClaim],
-  [edgeKey('03_in_progress', '01_shaping')]: [noReason],
-  [edgeKey('04_review', '03_in_progress')]: [noReason],
-  [edgeKey('04_review', '01_shaping')]: [noReason],
+  [edgeKey(STAGE.backlog, STAGE.shaping)]: [notSelected],
+  [edgeKey(STAGE.shaping, STAGE.ready)]: [noCriteria],
+  [edgeKey(STAGE.ready, STAGE.inProgress)]: [depsNotDone, noClaim],
+  [edgeKey(STAGE.inProgress, STAGE.shaping)]: [noReason],
+  [edgeKey(STAGE.review, STAGE.inProgress)]: [noReason],
+  [edgeKey(STAGE.review, STAGE.shaping)]: [noReason],
 };
 
 /**
@@ -180,7 +165,7 @@ export function checkMove(ctx) {
     return [finding('move-resume-not-shaping', `Only a card in shaping can be resumed into in progress (card-move <id> in_progress --resume); card ${card.id} is moving from ${humanColumn(from)} to ${humanColumn(to)}. Leave out --resume.`)];
   }
   const listed = ALLOWED_MOVES.some((edge) => edge[0] === from && edge[1] === to) || (resumeEdge && ctx.resume === true);
-  const bugSkip = card.type === 'bug' && from === '00_backlog' && to === '02_ready';
+  const bugSkip = card.type === 'bug' && from === STAGE.backlog && to === STAGE.ready;
   if (!listed && !bugSkip) {
     const next = ALLOWED_MOVES.filter((edge) => edge[0] === from).map((edge) => humanColumn(edge[1]));
     const hint = next.length ? `From ${humanColumn(from)} it can move to: ${next.join(', ')}.` : `Nothing moves out of ${humanColumn(from)}.`;

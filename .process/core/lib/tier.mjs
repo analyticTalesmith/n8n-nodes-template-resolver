@@ -1,8 +1,9 @@
 import { cardPath } from './board.mjs';
-import { readConfig } from './config.mjs';
+import { CONFIG_PATH, readConfig } from './config.mjs';
 import { CONCERNS, CONCERN_WORDS } from './concerns.mjs';
 import { CycleError, readCycle } from './cycle.mjs';
 import { TIERS } from './layout.mjs';
+import { isPlainObject } from './types.mjs';
 
 /**
  * @typedef {{
@@ -21,11 +22,10 @@ export class TierError extends Error {
   }
 }
 
-const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 
 /** One layer's setting for a concern: its own concern setting, else the layer's general tier. */
 function layerValue(map, general, concern, where) {
-  if (concern === undefined || !isObject(map) || map[concern] === undefined) return general;
+  if (concern === undefined || !isPlainObject(map) || map[concern] === undefined) return general;
   const value = map[concern];
   if (!TIERS.includes(value)) {
     throw new TierError(`${where} sets ${concern} to ${JSON.stringify(value)}. Use one of: ${TIERS.join(', ')}.`);
@@ -72,7 +72,7 @@ export function effectiveTier(projectDir, card, concern) {
 
   const cardLayer = layerValue(/** @type {any} */ (card).concerns, cardTier, concern, `Card ${card.id}`);
   const cycleLayer = layerValue(cycleConcerns, cycleTier, concern, `Cycle ${cycle}`);
-  const projectLayer = layerValue(config.concerns, project, concern, '.process/aperture.json');
+  const projectLayer = layerValue(config.concerns, project, concern, `${CONFIG_PATH}`);
   const layers = { card: cardLayer, cycle: cycleLayer, project: projectLayer };
   const extra = concern === undefined ? {} : { concern };
   if (cardLayer !== null) return { tier: cardLayer, source: 'card', layers, warning, ...extra };

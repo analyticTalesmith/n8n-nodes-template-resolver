@@ -1,7 +1,8 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { PROCESS_CORE } from './layout.mjs';
 
-const INSTALLED_SCRIPTS = '.process/core/scripts';
+const INSTALLED_SCRIPTS = `${PROCESS_CORE}/scripts`;
 const CHECKOUT_SCRIPTS = 'core/scripts';
 
 /**

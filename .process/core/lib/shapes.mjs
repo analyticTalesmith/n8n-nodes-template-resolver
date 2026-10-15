@@ -1,6 +1,9 @@
+import { detectEol, stripBom, toLf } from './files.mjs';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { cardPath } from './board.mjs';
 import { readFrontmatter } from './frontmatter.mjs';
+import { PROCESS_CORE, PROCESS_DIR, cyclePaths } from './layout.mjs';
 import {
   CYCLE_DIMENSIONS,
   ProfileError,
@@ -11,6 +14,7 @@ import {
   profileProblems,
   readProjectProfile,
 } from './profile.mjs';
+import { resolveProjectPath, resolveProjectRoots } from './project-roots.mjs';
 
 /**
  * Kinds and stages are pack data: one small markdown file each, in the atomic-document format (frontmatter with an
@@ -18,13 +22,15 @@ import {
  * a project's own live in `.process/kinds/` and `.process/stages/` and win over a pack's with the same name.
  */
 
-export const SHAPES_DIR = '.process/shapes';
-export const LOCAL_KINDS_DIR = '.process/kinds';
-export const LOCAL_STAGES_DIR = '.process/stages';
+export const SHAPES_DIR = `${PROCESS_DIR}/shapes`;
+export const LOCAL_KINDS_DIR = `${PROCESS_DIR}/kinds`;
+export const LOCAL_STAGES_DIR = `${PROCESS_DIR}/stages`;
 export const PHASES = Object.freeze(['down', 'implement', 'up', 'release', 'learn']);
 export const SKIP_RULES = Object.freeze(['never', 'manual']);
 /** The artifacts a stage may be derived done from; a stage with none of these is recorded by hand. */
-export const EVIDENCE_SOURCES = Object.freeze(['shape-line', 'test-plan', 'close-review']);
+export const EVIDENCE_SOURCES = Object.freeze(['shape-line', 'test-plan', 'close-review', 'red-evidence']);
+/** The grains a stage may have: a stage with the card grain is derived from each card of the cycle, never recorded by hand. */
+export const STAGE_GRAINS = Object.freeze(['card']);
 
 export class ShapeError extends Error {
   constructor(message) {
@@ -35,7 +41,7 @@ export class ShapeError extends Error {
 
 /**
  * @typedef {{ id: string, name: string, summary: string, values: Record<string, string | string[]>, teams: string[], runs: { stage: string, when: string | null }[], how: string, path: string }} Kind
- * @typedef {{ id: string, code: string, name: string, phase: string, form: string, owner: string | null, who: string, risk: string, skip: string, addWhen: string | null, minimal: boolean, spine: boolean, evidenceFrom: string | null, today: string, todayNote: string, pairs: string[], body: string, path: string }} Stage
+ * @typedef {{ id: string, code: string, name: string, phase: string, form: string, owner: string | null, who: string, risk: string, skip: string, addWhen: string | null, minimal: boolean, spine: boolean, evidenceFrom: string | null, grain: 'card' | null, today: string, todayNote: string, pairs: string[], body: string, path: string }} Stage
  */
 
 const text = (value) => (typeof value === 'string' ? value.trim() : '');
@@ -47,7 +53,7 @@ const markdownIn = (dir) => {
   }
 };
 const bodyOf = (content) => {
-  const lines = content.replace(/^﻿/, '').split(/\r?\n/);
+  const lines = stripBom(content).split(/\r?\n/);
   const close = lines.findIndex((line, i) => i > 0 && /^---[ \t]*$/.test(line));
   return lines.slice(close + 1).join('\n');
 };
@@ -71,6 +77,9 @@ function parseStage(file, content) {
   const pairs = links.map((item) => /^pairs-with:\s*(\S+)$/.exec(item.trim())?.[1]).filter(Boolean);
   const evidenceFrom = text(fm['evidence-from']) || null;
   if (evidenceFrom !== null && !EVIDENCE_SOURCES.includes(evidenceFrom)) return `${file} has the evidence-from "${evidenceFrom}". Use one of ${EVIDENCE_SOURCES.join(', ')}.`;
+  const grain = text(fm.grain) || null;
+  if (grain !== null && !STAGE_GRAINS.includes(grain)) return `${file} has the grain "${grain}". Use ${STAGE_GRAINS.join(' or ')}, or leave it out.`;
+  if (grain === 'card' && evidenceFrom !== 'red-evidence') return `${file} has the card grain but names no per-card evidence. Set evidence-from: red-evidence.`;
   try {
     parsePredicate(fm.skip);
     if (text(fm['add-when']) !== '') parsePredicate(fm['add-when']);
@@ -81,7 +90,7 @@ function parseStage(file, content) {
   return {
     id: text(fm.id), code: text(fm.code), name: text(fm.summary), phase: fm.phase, form: text(fm.form), owner: text(fm.owner) || null,
     who: text(fm.who), risk: text(fm.risk), skip: text(fm.skip), addWhen: text(fm['add-when']) || null, minimal: fm.minimal === 'yes',
-    spine: fm.spine === 'yes', evidenceFrom,
+    spine: fm.spine === 'yes', evidenceFrom, grain,
     today: text(fm.today), todayNote: text(fm['today-note']), pairs, body: bodyOf(content).replace(/^\s*# .*\n/, '').trim(), path: file,
   };
 }
@@ -165,7 +174,7 @@ export function resolveShape(projectDir, { kind, set = {}, legibility }) {
       const known = [...data.kinds.keys()];
       throw new ShapeError(
         known.length === 0
-          ? `No kinds are installed, so --kind ${kind} cannot be used. Add the shapes pack with: node .process/core/scripts/add.mjs <projectDir> work-profile, or use --kind custom and set each dimension with --set.`
+          ? `No kinds are installed, so --kind ${kind} cannot be used. Add the shapes pack with: node ${PROCESS_CORE}/scripts/add.mjs <projectDir> work-profile, or use --kind custom and set each dimension with --set.`
           : `Unknown kind "${kind}". Use one of: ${known.join(', ')}, or custom.`,
       );
     }
@@ -208,6 +217,39 @@ export const skipHolds = (stage, facts) => parsePredicate(stage.skip).test(facts
 /** A stage that can never be waived: the spine, a minimal stage or one whose own rule is "never". */
 export const neverSkipped = (stage) => stage.spine || stage.minimal || stage.skip === 'never';
 
+/** The stages the lighter path keeps beyond the spine, besides any stage that is never skipped: a red-first test and a blind review. */
+export const LIGHTER_KEPT = Object.freeze(['stg-red-first-tests', 'stg-independent-review']);
+
+/**
+ * Whether a profile is a one-card feature: kind feature, size card, reversibility trivial. Recorded values choose it;
+ * uncertainty is not part of it.
+ * @param {string | null | undefined} kind
+ * @param {Record<string, unknown> | undefined} values
+ */
+export const isLighter = (kind, values) => kind === 'feature' && values?.size === 'card' && values?.reversibility === 'trivial';
+
+/**
+ * The name and goal of the cycle a card sits in when that cycle is a one-card feature (the lighter path); null for any
+ * other card or when the cycle brief cannot be read. Reads the brief's own frontmatter, so checks can ask it cheaply.
+ * @param {string} projectDir
+ * @param {string} id card id
+ * @returns {{ name: string, goal: string } | null}
+ */
+export function lighterCycleOf(projectDir, id) {
+  try {
+    const name = cardPath(projectDir, id)?.cycle;
+    if (name === null || name === undefined) return null;
+    const data = readFrontmatter(readFileSync(resolveProjectPath(resolveProjectRoots(projectDir), cyclePaths(name).brief), 'utf8'));
+    return data !== null && isLighter(data.kind, data) ? { name, goal: String(data.goal ?? '') } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Why a stage of the full feature is not listed on the lighter path. */
+const droppedReason = (stage, facts) =>
+  skipHolds(stage, facts) ? 'its own skip rule holds for a one-card change' : 'a one-card change with trivial reversibility runs the spine, a red-first test and a blind review';
+
 /**
  * Sorts the stage catalog into the tiers of one cycle. The spine is the shape's stages that always run; it is the only hard gate. The suggested
  * stages are the shape's stages whose own skip rule does not hold for the profile. A stage of the shape whose skip rule
@@ -227,6 +269,21 @@ export function stageTiers(shape, catalog) {
   }
   const other = [...catalog.values()].filter((stage) => !inShape.has(stage.id));
   return { spine, suggested, notNeeded, other, available: notNeeded.length + other.length };
+}
+
+/**
+ * The tiers of a cycle as `cycle shape` lists them: stageTiers for every profile but a one-card feature, where the
+ * lighter path lists the spine plus a red-first test and a blind review, and the stages the full feature lists are
+ * returned as dropped, each with its reason. `dropped` is empty for every other profile.
+ * @param {ReturnType<typeof resolveShape>} shape
+ * @param {Map<string, Stage>} catalog
+ */
+export function listedTiers(shape, catalog) {
+  const tiers = stageTiers(shape, catalog);
+  if (!isLighter(shape.kind?.name, shape.values)) return { ...tiers, dropped: [] };
+  const kept = ({ stage }) => LIGHTER_KEPT.includes(stage.id) || neverSkipped(stage);
+  const dropped = shape.stages.filter((entry) => !entry.stage.spine && !kept(entry)).map((entry) => ({ ...entry, reason: droppedReason(entry.stage, shape.facts) }));
+  return { ...tiers, suggested: shape.stages.filter((entry) => !entry.stage.spine && kept(entry)), notNeeded: [], dropped, available: dropped.length + tiers.other.length };
 }
 
 export const hasShapeData = (projectDir) => loadShapes(projectDir).stages.size > 0 || existsSync(join(projectDir, LOCAL_STAGES_DIR));
@@ -268,7 +325,7 @@ export function shapeSection(shape) {
  * @returns {{ line: string | null, stages: Map<string, { status: 'todo' | 'done' | 'skipped' | 'added', text: string, override: boolean }>, hasSection: boolean }}
  */
 export function parseShapeRecord(briefText) {
-  const lines = briefText.replaceAll('\r\n', '\n').split('\n');
+  const lines = toLf(briefText).split('\n');
   const start = lines.findIndex((line) => line.trimEnd() === SHAPE_HEADING);
   const stages = new Map();
   if (start === -1) return { line: null, stages, hasSection: false };
@@ -305,7 +362,7 @@ export const stageLine = (stageId, status, text, override = false) => `- ${stage
  * the Stages section. A status of todo removes the line. Returns null when the brief has no Stages section.
  */
 export function setStageLine(briefText, stageId, status, text, override = false) {
-  const eol = briefText.includes('\r\n') ? '\r\n' : '\n';
+  const eol = detectEol(briefText);
   const lines = briefText.split(/\r?\n/);
   const at = lines.findIndex((line) => STAGE_LINE.exec(line)?.[1] === stageId);
   if (at !== -1) {

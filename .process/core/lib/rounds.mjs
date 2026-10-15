@@ -1,26 +1,34 @@
-import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { BoardError, cardPath, readCard, slugify, writeCard } from './board.mjs';
-import { CARD_FILES, cardFile, deltaDeliverables } from './card-files.mjs';
-import { projectRootOf, reviewPatch, runGit } from './git.mjs';
+import { CARD_FILES, cardFile, deltaDeliverables, isCardProcessPath } from './card-files.mjs';
+import { sha256Bytes, toPosix } from './files.mjs';
+import { BACKLOG_DIR, CARD_MD, PROCESS_DIR } from './layout.mjs';
+import { changedSince, projectRootOf, reviewPatch, runGit } from './git.mjs';
+import { headCommitOrNull, readGateRun } from './gate-run.mjs';
+import { writeIndexes } from './index-docs.mjs';
 import { resolveProjectRoots } from './project-roots.mjs';
 import { reviewOwnPaths } from './review-scope.mjs';
 import { EVIDENCE_KINDS, RULINGS, isEvidenceEntry } from './review-schema.mjs';
 import { createCard } from '../scripts/card-new.mjs';
 import { scriptCommand } from './script-command.mjs';
+import { isPlainObject } from './types.mjs';
 
 /** @typedef {import('./card.mjs').Card} Card */
 /** @typedef {import('./review-schema.mjs').ReviewFinding} ReviewFinding */
 /** @typedef {import('./review-schema.mjs').ReviewResponse} ReviewResponse */
 /** @typedef {import('../scripts/review.mjs').ReviewLabel} ReviewLabel */
-/** @typedef {'open' | 'fixed' | 'rebutted' | 'sustained' | 'withdrawn' | 'filed'} FindingStatus */
+/** @typedef {'open' | 'fixed' | 'rebutted' | 'sustained' | 'withdrawn' | 'filed' | 'verified'} FindingStatus */
 /** @typedef {{ after_round: number, restate: string, verify: string, action: 'fixed' | 'rebut', ground?: 'evidence' | 'drift', evidence: string[] }} Reply */
 /** @typedef {{ after_round: number, ruling: 'sustain' | 'withdraw' | 'drift', note: string }} Ruling */
 /** @typedef {ReviewFinding & { label: string, raised_in: number, status: FindingStatus, sustained: number, failed_fixes: number, replies: Reply[], rulings: Ruling[], ticket?: string }} TrackedFinding */
-/** @typedef {{ number: number, at: string, reviewer: ReviewLabel, output_sha256: string, diff_sha256: string, restatement: string, brief_mismatch: string | null, evidence: string[], stalled: boolean, raised: string[], responses: ReviewResponse[] }} Round */
-/** @typedef {{ card: string, rounds: Round[], findings: TrackedFinding[] }} RoundsState */
+/** @typedef {{ number: number, at: string, reviewer: ReviewLabel, output_sha256: string, diff_sha256: string, at_commit: string | null, restatement: string, brief_mismatch: string | null, evidence: string[], stalled: boolean, raised: string[], responses: ReviewResponse[] }} Round */
+/** @typedef {{ finding: string, by: string, at: string, gate_commit: string, test: string, files: string[], diff_sha256: string | null }} Closure */
+/** @typedef {{ card: string, rounds: Round[], findings: TrackedFinding[], closures?: Closure[] }} RoundsState */
 /** @typedef {{ round: number, stalled: boolean, fixRequests: string[], undecided: string[], backToShaping: string[], briefMismatch: string | null, clear: boolean, messages: string[] }} RoundsReport */
+
+/** The start of the messages line that carries the reviewer's brief mismatch text. */
+export const MISMATCH_PREFIX = 'The reviewer says the brief has a defect for the lead: ';
 
 export const FIX_CLASSES = Object.freeze(['defect', 'goal-risk']);
 export const BACK_TO_SHAPING_AFTER = 2;
@@ -33,7 +41,7 @@ const GROUNDS = ['evidence', 'drift'];
 const TICKET_TYPES = ['improvement', 'bug'];
 
 export class RoundsError extends Error {
-  /** @param {'rounds-no-review' | 'rounds-review-reused' | 'rounds-unknown-finding' | 'rounds-input-invalid' | 'rounds-not-drift' | 'review-output-stale'} rule @param {string} message */
+  /** @param {'rounds-no-review' | 'rounds-review-reused' | 'rounds-unknown-finding' | 'rounds-input-invalid' | 'rounds-not-drift' | 'rounds-close-refused' | 'review-output-stale'} rule @param {string} message */
   constructor(rule, message) {
     super(message);
     this.name = 'RoundsError';
@@ -42,14 +50,15 @@ export class RoundsError extends Error {
 }
 
 const invalid = (message) => new RoundsError('rounds-input-invalid', message);
-const sha256 = (text) => createHash('sha256').update(text, 'utf8').digest('hex');
+const sha256 = (text) => sha256Bytes(Buffer.from(text, 'utf8'));
 const isFix = (finding) => FIX_CLASSES.includes(finding.class);
 const isLive = (finding) => LIVE.includes(finding.status);
-const isPlainObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 const isList = (value) => Array.isArray(value);
 const isRound = (r) => isPlainObject(r) && typeof r.number === 'number' && isList(r.raised) && isList(r.responses);
 const isStoredFinding = (f) =>
   isPlainObject(f) && typeof f.label === 'string' && typeof f.class === 'string' && typeof f.status === 'string' && isPlainObject(f.serves) && isList(f.evidence) && isList(f.replies) && isList(f.rulings);
+const isClosure = (c) =>
+  isPlainObject(c) && ['finding', 'by', 'at', 'gate_commit', 'test'].every((key) => typeof c[key] === 'string') && isList(c.files) && c.files.every((path) => typeof path === 'string') && (c.diff_sha256 === null || typeof c.diff_sha256 === 'string');
 const oneLine = (text) => String(text).replace(/\s+/g, ' ').trim();
 
 /**
@@ -91,8 +100,8 @@ export function readRounds(projectDir, id) {
   if (!isPlainObject(state) || !Array.isArray(state.rounds) || !Array.isArray(state.findings)) {
     throw invalid(`${file} is unreadable: it must be an object with rounds and findings lists. Restore it from version control.`);
   }
-  if (!state.rounds.every(isRound) || !state.findings.every(isStoredFinding)) {
-    throw invalid(`${file} is unreadable: every round and finding must be a complete object. Restore it from version control, or delete it and record the reviews again.`);
+  if (!state.rounds.every(isRound) || !state.findings.every(isStoredFinding) || (state.closures !== undefined && !(isList(state.closures) && state.closures.every(isClosure)))) {
+    throw invalid(`${file} is unreadable: every round, finding and closure must be a complete object. Restore it from version control, or delete it and record the reviews again.`);
   }
   return state;
 }
@@ -105,19 +114,20 @@ export function roundsReport(state, projectDir) {
   const latest = state.rounds.at(-1);
   const fixRequests = state.findings.filter((f) => isFix(f) && isLive(f)).map((f) => f.label);
   const undecided = state.findings.filter((f) => f.class === 'drift' && f.status === 'open').map((f) => f.label);
-  const backToShaping = state.findings.filter((f) => f.failed_fixes >= BACK_TO_SHAPING_AFTER && f.status !== 'withdrawn' && f.status !== 'filed').map((f) => f.label);
-  const stalled = latest?.stalled === true;
+  const backToShaping = state.findings.filter((f) => f.failed_fixes >= BACK_TO_SHAPING_AFTER && f.status !== 'withdrawn' && f.status !== 'filed' && f.status !== 'verified').map((f) => f.label);
+  const stillOpen = [...fixRequests, ...undecided];
+  const stalled = latest?.stalled === true && stillOpen.length > 0;
   const briefMismatch = latest?.brief_mismatch ?? null;
   const messages = [];
   if (stalled) {
     messages.push(
-      `Round ${latest.number} added no new evidence. The Review lead rules on the open findings (${scriptCommand(projectDir, 'rounds.mjs')} rule); a dispute about the design itself goes to the human in todo.md.`,
+      `Round ${latest.number} is stalled: stalled means nothing new came in while ${stillOpen.join(', ')} still need a fix or a ruling. The Review lead rules on the open findings (${scriptCommand(projectDir, 'rounds.mjs')} rule); a dispute about the design itself goes to the human in todo.md.`,
     );
   }
   for (const label of backToShaping) {
     messages.push(`${label} was sustained ${BACK_TO_SHAPING_AFTER} times and its fix keeps failing, so the spec may be wrong. The lead considers moving the card to shaping (card-move <projectDir> <id> shaping --reason <why>).`);
   }
-  if (briefMismatch !== null) messages.push(`The reviewer says the brief has a defect for the lead: ${oneLine(briefMismatch)}`);
+  if (briefMismatch !== null) messages.push(`${MISMATCH_PREFIX}${oneLine(briefMismatch)}`);
   const optional = state.findings.filter((f) => f.class === 'simplification' && f.status === 'open').map((f) => f.label);
   if (optional.length) messages.push(`Optional simplification findings, never blocking: ${optional.join(', ')}.`);
   return { round: state.rounds.length, stalled, fixRequests, undecided, backToShaping, briefMismatch, clear: state.rounds.length > 0 && fixRequests.length === 0 && undecided.length === 0, messages };
@@ -137,6 +147,11 @@ export function renderReviewLog(state) {
     out.push(`- Brief mismatch: ${round.brief_mismatch ?? 'none'}`, `- Raised: ${round.raised.length ? round.raised.join(', ') : 'none'}`, '', `Restatement: ${oneLine(round.restatement)}`, '');
     for (const r of round.responses) out.push(`- Response to ${r.finding}: ${r.verdict} (evidence: ${evidenceLine(r.evidence)})`);
     if (round.responses.length) out.push('');
+  }
+  if (state.closures?.length) {
+    out.push('## Gate-verified closures', '');
+    for (const c of state.closures) out.push(`- ${c.finding}: verified by ${c.by} at ${c.at}; gate run at commit ${short(c.gate_commit)}; test ${c.test}; files ${c.files.join(', ')}`);
+    out.push('');
   }
   out.push('## Findings', '');
   if (state.findings.length === 0) out.push('None.', '');
@@ -158,8 +173,11 @@ export function renderReviewLog(state) {
  * @returns {string}
  */
 export function renderEarlierFindings(state) {
-  const open = state.findings.filter((f) => f.status !== 'withdrawn' && f.status !== 'filed');
-  const out = ['Answer each fix-class (defect or goal-risk) finding below in `responses` with sustain or withdraw and evidence. Raise new findings only about what the revision changed or an in-scope problem newly evidenced.', ''];
+  const ruled = state.findings.filter((f) => f.status === 'withdrawn' || f.status === 'filed');
+  const open = state.findings.filter((f) => f.status !== 'withdrawn' && f.status !== 'filed' && f.status !== 'verified');
+  let opening = 'Answer each fix-class (defect or goal-risk) finding below in `responses` with sustain or withdraw and evidence. Raise new findings only about what the revision changed or an in-scope problem newly evidenced.';
+  if (ruled.length) opening += ' A finding listed under Already ruled is decided: do not raise it again unless the revision touched it (say so in `responses`) or you have new evidence.';
+  const out = [opening, ''];
   if (open.length === 0) out.push('No earlier findings remain open.');
   for (const f of open) {
     out.push(`### ${f.label}: ${oneLine(f.title)}`, '', `- Class: ${f.class}`, `- Serves: ${f.serves.target}: ${oneLine(f.serves.scenario)}`, `- Reproduction: ${oneLine(f.reproduction)}`, `- Status: ${f.status}`);
@@ -167,6 +185,14 @@ export function renderEarlierFindings(state) {
       out.push(`- Reply (${r.action}${r.ground ? `, ${r.ground}` : ''}): restate: ${r.restate}; verify: ${r.verify}; evidence: ${evidenceLine(r.evidence)}`);
     }
     for (const r of f.rulings) out.push(`- Review lead ruling: ${r.ruling}: ${r.note}`);
+    out.push('');
+  }
+  if (ruled.length) {
+    out.push('### Already ruled', '');
+    for (const f of ruled) {
+      out.push(`- ${f.label}: ${oneLine(f.title)} (${f.class}, ${f.status})`);
+      for (const r of f.rulings) out.push(`  - Review lead ruling: ${r.ruling}: ${r.note}`);
+    }
     out.push('');
   }
   return out.join('\n').trimEnd();
@@ -263,6 +289,7 @@ export function recordRound(projectDir, id, { now = new Date() } = {}) {
     reviewer: output.reviewer,
     output_sha256: hash,
     diff_sha256: output.diff_sha256,
+    at_commit: headCommitOrNull(projectDir),
     restatement: output.restatement,
     brief_mismatch: output.brief_mismatch ?? null,
     evidence: set,
@@ -316,6 +343,12 @@ export function ruleOnFinding(projectDir, id, input) {
   const finding = find(state, input.finding, projectDir);
   if (!RULINGS.includes(input.ruling)) throw invalid(`ruling must be one of ${RULINGS.join(', ')}.`);
   checkText('note', input.note);
+  const answeredIn = state.rounds.find((r) => r.number > finding.raised_in && r.responses.some((x) => x.finding === finding.label));
+  if (answeredIn) {
+    throw invalid(
+      `Finding ${finding.label} was raised in round ${finding.raised_in} and the reviewer already answered it in round ${answeredIn.number}; its status is ${finding.status}. A ruling cannot override that answer: use the reply command (${scriptCommand(projectDir, 'rounds.mjs')} reply) to respond, or wait for the next review.`,
+    );
+  }
   if (finding.status === 'withdrawn' || finding.status === 'filed') throw invalid(`Finding ${finding.label} is already ${finding.status}; there is nothing to rule on.`);
   finding.rulings.push({ after_round: state.rounds.length, ruling: input.ruling, note: input.note });
   if (input.ruling === 'sustain') {
@@ -356,7 +389,7 @@ ${context}
  */
 export function backlogRoot(projectDir) {
   const root = projectRootOf(projectDir);
-  if (root === projectDir || !existsSync(join(root, '.process', 'aperture.json'))) return projectDir;
+  if (root === projectDir || !existsSync(join(root, PROCESS_DIR, 'aperture.json'))) return projectDir;
   try {
     return resolveProjectRoots(projectDir).mode === 'shared' ? root : projectDir;
   } catch {
@@ -390,7 +423,7 @@ export function fileDrift(projectDir, id, input) {
   const origin = cardPath(projectDir, id).cycle;
   const root = backlogRoot(projectDir);
   const ticket = createCard(root, { title, type, origin });
-  const mdFile = cardFile(root, ticket.id, 'card.md');
+  const mdFile = cardFile(root, ticket.id, CARD_MD);
   const context = [
     `Source card: ${id}`,
     `Finding: ${finding.label} (${finding.class})`,
@@ -404,6 +437,89 @@ export function fileDrift(projectDir, id, input) {
   finding.ticket = ticket.id;
   save(projectDir, id, state);
   return { report: roundsReport(state, projectDir), ticket, root };
+}
+
+/**
+ * Files every open drift finding of the card, in label order, each through fileDrift (which saves its own mark before the
+ * next ticket is made, so an interrupted run resumes on the rest), then regenerates the indexes of the backlog root once.
+ * Findings the lead ruled on are no longer open drift and are left alone.
+ * @param {string} projectDir
+ * @param {string} id
+ * @param {{ type?: 'improvement' | 'bug' }} [input]
+ * @returns {{ report: RoundsReport, tickets: Array<{ finding: string, ticket: Card }>, root: string }}
+ */
+export function fileAllDrift(projectDir, id, { type } = {}) {
+  if (type !== undefined && !TICKET_TYPES.includes(type)) throw invalid(`type must be one of ${TICKET_TYPES.join(', ')}.`);
+  const labels = readRounds(projectDir, id).findings.filter((f) => f.class === 'drift' && f.status === 'open').map((f) => f.label);
+  const root = backlogRoot(projectDir);
+  const tickets = labels.map((finding) => ({ finding, ticket: fileDrift(projectDir, id, { finding, type }).ticket }));
+  if (tickets.length > 0) writeIndexes(root);
+  return { report: roundsReport(readRounds(projectDir, id), projectDir), tickets, root };
+}
+
+const refuse = (why) => new RoundsError('rounds-close-refused', `${why} Run a full blind round instead (review run, then rounds record).`);
+const normalPath = (path) => toPosix(String(path), { stripDotSlash: true });
+/** Filed follow-up tickets and generated index files are written by file-drift, never part of a fix. */
+const isFiledOrIndex = (path) => path.startsWith(`${BACKLOG_DIR}/`) || path.split('/').at(-1) === 'INDEX.md';
+const looksLikeTest = (path) => path.split('/').some((part, i, parts) => ['test', 'tests', '__tests__'].includes(part) && i < parts.length - 1) || /\.(test|spec)\.|_test\.[^/]*$|_test$/.test(path.split('/').at(-1));
+const listed = (paths) => `${paths.slice(0, 5).join(', ')}${paths.length > 5 ? `, and ${paths.length - 5} more` : ''}`;
+
+/** Every modified, staged or untracked path in the working tree, with the old name of a rename too. */
+function uncommittedPaths(projectDir, run) {
+  const tokens = run(projectDir, ['status', '--porcelain', '-z', '--untracked-files=all']).split('\0').filter(Boolean);
+  const paths = [];
+  for (let i = 0; i < tokens.length; i += 1) {
+    paths.push(normalPath(tokens[i].slice(3)));
+    if (tokens[i][0] === 'R' || tokens[i][0] === 'C') paths.push(normalPath(tokens[++i]));
+  }
+  return paths;
+}
+
+/**
+ * Closes fixed fix-class findings on the evidence of a green gate run instead of a second blind round. Everything is
+ * checked before anything is written; any failed check is a RoundsError rounds-close-refused that says to run a full blind round.
+ * The finding files are the given files, or the file part of each finding's location.
+ * @param {string} projectDir
+ * @param {string} id
+ * @param {{ findings: string[], by: string, scopeUnchanged: boolean, test: string, files?: string[] }} input
+ * @param {{ run?: import('./git.mjs').GitRunner, now?: Date }} [options]
+ * @returns {RoundsReport}
+ */
+export function closeVerifiedByGate(projectDir, id, input, { run = runGit, now = new Date() } = {}) {
+  if (typeof input.by !== 'string' || input.by.trim() === '') throw refuse('--by is required: say who states the scope is unchanged.');
+  if (input.scopeUnchanged !== true) throw refuse('--scope-unchanged is required: the lead must state the card scope is unchanged.');
+  if (typeof input.test !== 'string' || input.test.trim() === '') throw refuse('--test is required: name the test added or changed for the fix.');
+  if (!Array.isArray(input.findings) || input.findings.length === 0) throw refuse('Name at least one finding.');
+  const state = readRounds(projectDir, id);
+  const named = input.findings.map((label) => find(state, label, projectDir));
+  for (const f of named) {
+    if (!isFix(f) || f.status !== 'fixed') throw refuse(`Finding ${f.label} is ${f.class}/${f.status}; only a defect or goal-risk finding the implementer replied fixed to can be closed this way.`);
+  }
+  const round = state.rounds.at(-1);
+  if (typeof round?.at_commit !== 'string') throw refuse('The latest round has no recorded commit, so the changes since it cannot be told.');
+  const test = normalPath(input.test);
+  const files = (input.files ?? named.map((f) => f.location?.replace(/:\d+(?:[-:]\d+)?$/, ''))).filter((path) => typeof path === 'string' && path !== '').map(normalPath);
+  if (files.length === 0) throw refuse('The findings name no file; pass --file for each file the fix changed.');
+  const changed = changedSince(projectDir, round.at_commit, (path) => isCardProcessPath(path, id) || isFiledOrIndex(normalPath(path)), run).paths;
+  const outside = changed.filter((path) => path !== test && !files.includes(path));
+  if (outside.length > 0) throw refuse(`These paths changed since round ${round.number} and are neither a finding file nor the test: ${listed(outside)}.`);
+  if (!changed.includes(test)) throw refuse(`The test ${test} was not added or changed since round ${round.number}; a fix needs a test.`);
+  const sources = named.map((f) => f.location?.replace(/:\d+(?:[-:]\d+)?$/, '')).filter((path) => typeof path === 'string' && path !== '').map(normalPath);
+  if (!looksLikeTest(test) || sources.includes(test) || !existsSync(join(projectDir, test))) {
+    throw refuse(`--test ${test} must be a test file that still exists, changed since round ${round.number}, and is not the source file of a finding being closed: a path with a test, tests or __tests__ folder, or a name containing .test. or .spec. or ending in _test.`);
+  }
+  const dirty = uncommittedPaths(projectDir, run).filter((path) => !isCardProcessPath(path, id) && !isFiledOrIndex(path));
+  if (dirty.length > 0) throw refuse(`These paths have uncommitted changes: ${listed(dirty)}. Commit them and rerun the gate first, so the green gate run covers the fix.`);
+  const head = headCommitOrNull(projectDir, run);
+  const gate = readGateRun(projectDir, id);
+  if (gate === null) throw refuse('There is no gate run recorded for this card.');
+  if (gate.exit_status !== 0) throw refuse(`The last gate run failed (exit status ${gate.exit_status}).`);
+  if (head === null || gate.commit !== head) throw refuse('The last gate run was not at the current commit.');
+  const diff = currentDiffSha256(projectDir, readCard(projectDir, id), run);
+  for (const f of named) f.status = 'verified';
+  state.closures = [...(state.closures ?? []), ...named.map((f) => ({ finding: f.label, by: input.by.trim(), at: now.toISOString(), gate_commit: head, test, files: [...new Set(files)], diff_sha256: diff }))];
+  save(projectDir, id, state);
+  return roundsReport(state, projectDir);
 }
 
 /**

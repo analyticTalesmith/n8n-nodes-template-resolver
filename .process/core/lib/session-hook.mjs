@@ -3,7 +3,8 @@ import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { CONFIG_PATH } from './config.mjs';
 import { reviewedPath } from './delta.mjs';
 import { hashBytes } from './files.mjs';
-import { GitError, changedFiles, fileAtCommit, headCommit, runGit } from './git.mjs';
+import { GitError, changedFiles, fileAtCommit, headCommit, isCommitId, runGit } from './git.mjs';
+import { isPlainObject } from './types.mjs';
 
 /** @typedef {import('./git.mjs').GitRunner} GitRunner */
 /** @typedef {{ cwd?: string, sessionId?: string, scratchpadDir?: string, stopHookActive: boolean, lastMessage?: string }} HookInput */
@@ -22,7 +23,6 @@ const REMINDER_PREFIX = 'Aperture:';
 const CAPTURE_PREFIX = 'Noted: ';
 const BOLD_LABEL = '**Noted:** ';
 const SESSION_ID = /^[A-Za-z0-9_-]{1,128}$/;
-const FULL_SHA = /^[0-9a-f]{40}([0-9a-f]{24})?$/;
 // A path printed into a reminder is one short line.
 const PATH_SHOWN_MAX_CHARS = 120;
 const BASELINE_MAX_BYTES = 8 * 1024 * 1024;
@@ -36,7 +36,6 @@ export class HookDeadlineError extends Error {
   }
 }
 
-const isPlainObject = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
 
 /**
  * Parses the hook's stdin and keeps only the fields the scripts read; every other field is dropped.
@@ -179,7 +178,7 @@ export function readBaseline(path) {
     const stat = lstatSync(path);
     if (!stat.isFile() || stat.size > BASELINE_MAX_BYTES) return null;
     const data = JSON.parse(readFileSync(path, 'utf8'));
-    if (!isPlainObject(data) || typeof data.head !== 'string' || !FULL_SHA.test(data.head) || !isPlainObject(data.files)) return null;
+    if (!isPlainObject(data) || typeof data.head !== 'string' || !isCommitId(data.head, { full: true }) || !isPlainObject(data.files)) return null;
     // A key reaches the file system in the secret scan, so one path outside the project discards the whole baseline.
     const entries = Object.entries(data.files);
     if (!entries.every(([path, hash]) => projectPath(path) === path && (hash === null || typeof hash === 'string'))) return null;

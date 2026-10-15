@@ -1,8 +1,9 @@
+import { toPosix } from './files.mjs';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, posix, relative as relativePath, resolve } from 'node:path';
 import { cardExists, cardPath, isCardId, listCards } from './board.mjs';
 import { WORK_ROOT } from './card-files.mjs';
-import { isCycleName } from './layout.mjs';
+import { CARD_MD, DOCS_ROOT, LIVING_DIR, isCycleName } from './layout.mjs';
 import { proseOnly } from './contract.mjs';
 import { findCycle, normalize, overlaps, parallelGroups } from './graph.mjs';
 import { resolveProjectPath, resolveProjectRoots } from './project-roots.mjs';
@@ -10,7 +11,7 @@ import { resolveProjectPath, resolveProjectRoots } from './project-roots.mjs';
 /** @typedef {import('./card.mjs').Card} Card */
 /** @typedef {{ a: string, b: string, path: string, reason: string }} ScopeConflict */
 
-const LIVING_ROOT = 'docs/living/';
+const LIVING_ROOT = `${LIVING_DIR}/`;
 const LINK = /\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
 const SCHEME = /^[a-z][a-z0-9+.-]*:/i;
 
@@ -88,7 +89,7 @@ export function findScopeConflicts(cards) {
 }
 
 /**
- * Relative links in a card.md that lead into docs/living, as project-relative paths, once each, in order.
+ * Relative links in a card.md that lead into the living docs folder, as project-relative paths, once each, in order.
  * @param {string} body
  * @param {string} cardDir project-relative folder of the card, forward slashes
  * @returns {string[]}
@@ -104,7 +105,7 @@ export function extractLivingLinks(body, cardDir) {
     } catch {
       // keep the raw text
     }
-    const slashed = target.replaceAll('\\', '/');
+    const slashed = toPosix(target);
     const path = slashed.startsWith('/') ? posix.normalize(slashed.replace(/^\/+/, '')) : posix.normalize(posix.join(cardDir, slashed));
     if (path.startsWith(LIVING_ROOT) && !found.includes(path)) found.push(path);
   }
@@ -176,13 +177,13 @@ export function buildSlicePlan({ slice, cards, isKnown = () => false }) {
   const waves = computeWaves(cards.map((c) => ({ id: c.card.id, depends_on: c.card.depends_on })));
   const entries = cards.map(({ card, dir, body }) => {
     const scope = [...card.files_scope, ...card.manifest.add, ...card.manifest.remove, ...card.manifest.edit];
-    return { card, cardMd: `${dir}/card.md`, links: extractLivingLinks(body, dir), scope };
+    return { card, cardMd: `${dir}/${CARD_MD}`, links: extractLivingLinks(body, dir), scope };
   });
   return { ...render({ slice, entries, waves }), waves };
 }
 
 /**
- * Reads the cards of a cycle (or a parent's children) and writes docs/ephemeral/work/<slice>/slice-plan.md (never a
+ * Reads the cards of a cycle (or a parent's children) and writes the slice-plan.md of the slice's work folder (never a
  * card's own plan.md). Refuses to replace an existing slice plan unless `force`.
  * @param {string} projectDir
  * @param {{ cycle: string } | { parent: string }} selector
@@ -210,9 +211,9 @@ export function generateSlicePlan(projectDir, selector, options = {}) {
 
   const cards = entries.map(({ card }) => {
     const folder = cardPath(root, card.id).dir;
-    const file = `${folder}/card.md`;
+    const file = `${folder}/${CARD_MD}`;
     try {
-      return { card, dir: `docs/${relativePath(roots.docsRoot, folder).replaceAll('\\', '/')}`, body: existsSync(file) ? readFileSync(file, 'utf8') : '' };
+      return { card, dir: `${DOCS_ROOT}/${toPosix(relativePath(roots.docsRoot, folder))}`, body: existsSync(file) ? readFileSync(file, 'utf8') : '' };
     } catch (cause) {
       throw new SlicePlanError('unreadable', `Cannot read ${file} (${cause.message}). Fix the file or its permissions.`, { cause });
     }

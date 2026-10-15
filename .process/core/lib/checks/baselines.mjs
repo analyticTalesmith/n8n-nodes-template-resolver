@@ -1,15 +1,15 @@
-import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { CONFIG_PATH } from '../config.mjs';
+import { isSha256, sha256Bytes } from '../files.mjs';
 import { isTokenFile } from './front-end-css.mjs';
 import { resolveProjectPath, resolveProjectRoots } from '../project-roots.mjs';
+import { isPlainObject } from '../types.mjs';
 
 /** @typedef {import('../git.mjs').Change} Change */
 /** @typedef {import('../card.mjs').Card} Card */
 /** @typedef {import('../../scripts/validate.mjs').Finding} Finding */
 /** @typedef {{ at: string, files: Record<string, string> }} BaselineApproval */
 
-const SHA256 = /^[0-9a-f]{64}$/;
-const isPlainObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 const isNonEmptyString = (value) => typeof value === 'string' && value !== '';
 
 /**
@@ -24,7 +24,7 @@ export function readBaselineSetting(settings) {
   if (!Array.isArray(value) || value.length === 0 || !value.every(isNonEmptyString)) {
     return {
       list: null,
-      problem: { rule: 'front-end-config-invalid', message: 'gate.front_end.baselines must be a non-empty list of path strings (an entry ending in "/" is a folder). Fix it in .process/aperture.json.' },
+      problem: { rule: 'front-end-config-invalid', message: `gate.front_end.baselines must be a non-empty list of path strings (an entry ending in "/" is a folder). Fix it in ${CONFIG_PATH}.` },
     };
   }
   return { list: value, problem: null };
@@ -55,7 +55,7 @@ export function changedBaselines(changes, baselines) {
  */
 export function baselineHash(projectDir, path) {
   try {
-    return createHash('sha256').update(readFileSync(resolveProjectPath(resolveProjectRoots(projectDir), path))).digest('hex');
+    return sha256Bytes(readFileSync(resolveProjectPath(resolveProjectRoots(projectDir), path)));
   } catch (err) {
     if (err.code === 'ENOENT') return 'deleted';
     throw err;
@@ -77,7 +77,7 @@ export function checkBaselines({ projectDir, card, changes, settings }) {
 
   const record = /** @type {{ baseline_approval?: unknown }} */ (card).baseline_approval;
   const files = record === undefined ? {} : isPlainObject(record) && typeof record.at === 'string' && isPlainObject(record.files) ? record.files : null;
-  if (files === null || !Object.values(files).every((hash) => hash === 'deleted' || (typeof hash === 'string' && SHA256.test(hash)))) {
+  if (files === null || !Object.values(files).every((hash) => hash === 'deleted' || isSha256(hash))) {
     return [
       {
         rule: 'baseline-approval-invalid',

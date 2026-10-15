@@ -24,12 +24,12 @@ review_sweeps: {{review_sweeps}}
 
 ## Stories
 
-<!-- What people will be able to do when the cycle is done, one line each, linked to their story documents. -->
+<!-- What people will be able to do when the cycle is done, one line each, linked to their story documents. When the cycle has no user-facing story, write none: <reason> (a reason is required). -->
 
 ## Must-haves
 
 <!-- What has to be true for the cycle to count as a success. -->
-<!-- Type each line: "- `contract` `id` text" or "- `constraint` `id` must: text". Constraint kinds: must, must-not, evidence-required, human-decides, open-ended. -->
+<!-- Every line is typed and needs an id: "- `contract` `area-01` text" or "- `constraint` `area-02` must: text". The test plan and the cards cite these ids, and only ids defined here. Constraint kinds: must, must-not, evidence-required, human-decides, open-ended. A Must-have met by a document or a decision has no natural test: write it as a constraint, evidence-required (or human-decides when a person chooses), for example "- `constraint` `doc-01` evidence-required: the glossary names the new term". -->
 
 ## Won't-haves
 
@@ -48,6 +48,8 @@ review_sweeps: {{review_sweeps}}
 ## Exit
 
 <!-- How a person judges the cycle done. The close command does not check this text. -->
+
+<!-- An approved design document may live in this folder under docs/ephemeral/ when design-approval.md lists it; the reviewer then sees it as approved design. List docs/x.md#Heading to approve only that section. -->
 
 <!-- Session instructions: the depth script adds a dated one-line list under a Session instructions heading here, created on first use. Do not write instructions by hand or leave them only in chat. -->
 

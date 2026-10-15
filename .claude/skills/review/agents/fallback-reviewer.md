@@ -41,7 +41,7 @@ Follow the prompt's rules exactly:
 2. Give every finding a `serves` (the criterion, must-not or goal it protects, and the failure scenario) and a `class` of `defect`, `goal-risk`, `drift` or `simplification`. File out-of-scope problems as `drift`.
 3. Withdraw any finding whose `serves` does not hold against the objective.
 
-Your final message is the JSON object only, with no fences and no prose.
+Write every backslash in a JSON string as two backslashes, and give file paths with forward slashes. Your final message is the JSON object only, with no fences and no prose.
 
 ## Stop and ask
 

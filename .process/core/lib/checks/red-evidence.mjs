@@ -1,9 +1,10 @@
+import { stripBom } from '../files.mjs';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { CARD_FILES, WORK_ROOT, workFile } from '../card-files.mjs';
 import { runCommand } from './boundary.mjs';
-import { notFailingFinding, runCardGate } from './card-gate.mjs';
+import { notFailingFinding, redProofArgv, runCardGate } from './card-gate.mjs';
 import { frozenTestPaths } from '../packet-parts.mjs';
 import { scriptCommand } from '../script-command.mjs';
 import { parseGateOutput, parseTap } from './gate-output.mjs';
@@ -115,7 +116,7 @@ const splitRow = (line) => line.trim().replace(/^\|/, '').replace(/\|$/, '').spl
  * @returns {{ evidence: RedEvidence | null, problems: string[] }} evidence is null when any problem is found
  */
 export function parseRedEvidence(text) {
-  const lines = String(text ?? '').replace(/^﻿/, '').split(/\r?\n/);
+  const lines = stripBom(String(text ?? '')).split(/\r?\n/);
   /** @type {string[]} */
   const problems = [];
   const close = lines[0]?.trim() === '---' ? lines.findIndex((line, index) => index > 0 && line.trim() === '---') : -1;
@@ -248,14 +249,16 @@ function recordedBeforeBuild({ projectDir, card, argv }) {
  * same command and exit status, list the failing tests the run shows, cover every test criterion, and every failure must be
  * an assertion failure. The failing set always comes from the run. Output that is neither TAP nor a jest or vitest json report is not read for failures; the
  * log's shape, command and exit status are still checked, a node --test gate without the TAP reporter gets the blocking finding red-evidence-tap-required, a jest or vitest gate the blocking finding red-evidence-report-required, any other runner the warning red-evidence-unparsed-output.
- * @param {{ projectDir: string, card: Card, run?: CommandRunner, platform?: string }} input
+ * The command is the card's gate, or for a card with no gate its first gates entry whose level selectedLevels names (the first
+ * entry when the selection is not known); see redProofArgv.
+ * @param {{ projectDir: string, card: Card, run?: CommandRunner, platform?: string, selectedLevels?: string[] }} input
  * @returns {Finding[]}
  */
-export function checkRedEvidence({ projectDir, card, run = runCommand, platform = process.platform }) {
+export function checkRedEvidence({ projectDir, card, run = runCommand, platform = process.platform, selectedLevels }) {
   const startedAt = Date.now();
-  const { result, findings: gateFindings } = runCardGate({ projectDir, card, run, platform });
+  const argv = /** @type {string[]} */ (redProofArgv(card, selectedLevels));
+  const { result, findings: gateFindings } = runCardGate({ projectDir, card, run, platform, argv });
   if (result === null) return gateFindings;
-  const argv = /** @type {string[]} */ (card.gate);
   if (result.status === 0) return recordedBeforeBuild({ projectDir, card, argv }) ? [recordedEarlierFinding(card.id)] : [notFailingFinding(argv)];
   const tap = parseGateOutput({ argv, stdout: result.stdout, projectDir, startedAt });
   /** @type {Finding[]} */
@@ -301,7 +304,7 @@ export function checkRedEvidence({ projectDir, card, run = runCommand, platform 
       for (const text of idlessTestCriteria(card)) {
         findings.push(finding('red-evidence-no-failing-test', `Criterion "${text}" is verified by test but its text starts with no id, so no failing test can be matched to it in ${logName}. Start the criterion text with an id like vf-01a, name a test after it that fails by assertion, then run the script again. A no-regression or pass-before criterion has no failing test to write: change its verify type to review or tool in card.json instead.`));
       }
-      if (!sameList(evidence.command, argv)) findings.push(finding('red-evidence-stale', `The command in ${logName} is not the card's gate command. ${fix}`));
+      if (!sameList(evidence.command, argv)) findings.push(finding('red-evidence-stale', `The command in ${logName} is not the card's proof command, ${argv.join(' ')}. ${fix}`));
       if (evidence.exit_status !== result.status) findings.push(finding('red-evidence-stale', `${logName} says the run exited ${evidence.exit_status}, but it exited ${result.status}. ${fix}`));
       if (tap.parsed) {
         const logged = new Set(evidence.rows.map((row) => row.test));

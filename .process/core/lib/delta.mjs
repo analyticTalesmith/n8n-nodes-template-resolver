@@ -1,10 +1,13 @@
+import { PathError, toLf, toPosix } from './files.mjs';
 import { existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CYCLES_DIR, CYCLE_ARCHIVE_DIR, CycleNameError, cyclePaths, isCycleName } from './layout.mjs';
-import { COMMIT_HASH, readFrontmatter, readRecovered, setFrontmatterField } from './frontmatter.mjs';
+import { CYCLES_DIR, CYCLE_ARCHIVE_DIR, CycleNameError, DOCS_ROOT, LIVING_DIR, PROCESS_CORE, cyclePaths, isCycleName } from './layout.mjs';
+import { isCommitId } from './git.mjs';
+import { readFrontmatter, readRecovered, setFrontmatterField } from './frontmatter.mjs';
 import { isApproved } from './approval.mjs';
 import { resolveProjectPath, resolveProjectRoots } from './project-roots.mjs';
+import { writeIndexes } from './index-docs.mjs';
 import { evidenceReport, recoveredInScope } from './checks/evidence-cited.mjs';
 
 /**
@@ -16,7 +19,6 @@ export const OPS = Object.freeze(['add', 'modify', 'remove', 'recover']);
 
 const STATUSES = ['open', 'applied'];
 const SUMMARY_MAX = 160;
-const LIVING_DIR = 'docs/living';
 const CLOSE_REVIEW = 'close-review.md';
 const OPEN_QUESTIONS = '## Open questions';
 const KNOWN_ISSUES = '## Known issues';
@@ -25,6 +27,7 @@ const FOLDER_INDEX = 'INDEX.md';
 /** Whether a folder entry is a delta file. */
 const isDeltaFile = (entry) => entry.isFile() && entry.name.endsWith('.md') && entry.name !== FOLDER_INDEX;
 const TEMPLATE = join(dirname(fileURLToPath(import.meta.url)), '..', 'templates', 'delta.md');
+const DOCUMENT_TEMPLATE = join(dirname(fileURLToPath(import.meta.url)), '..', 'templates', 'document.md');
 
 export class DeltaError extends Error {
   /** @param {string} message */
@@ -34,7 +37,7 @@ export class DeltaError extends Error {
   }
 }
 
-const slashes = (path) => String(path).replaceAll('\\', '/');
+const slashes = (path) => toPosix(String(path));
 
 /**
  * A document path as a close review's validates list names it, in the form the checks compare: forward slashes and
@@ -67,7 +70,7 @@ function sectionLines(text, heading) {
   let current = false;
   let fence = null;
   let comment = false;
-  for (let line of text.replaceAll('\r\n', '\n').split('\n')) {
+  for (let line of toLf(text).split('\n')) {
     if (fence !== null) {
       const close = /^\s{0,3}(`{3,}|~{3,})/.exec(line)?.[1];
       if (close && close[0] === fence[0] && close.length >= fence.length) fence = null;
@@ -122,7 +125,7 @@ const recoverProblem = (text, target) => {
   if (stateOf(text) !== 'planned') return `${target} must hold state: planned for op recover, but its state is ${stateOf(text)}.`;
   const { recovered, recoveredAt } = readRecovered(readFrontmatter(text));
   if (!recovered) return `${target} must hold provenance: recovered for op recover.`;
-  if (recoveredAt === null || !COMMIT_HASH.test(recoveredAt)) return `${target} must hold recovered_at: a full lowercase commit hash for op recover.`;
+  if (recoveredAt === null || !isCommitId(recoveredAt, { full: true })) return `${target} must hold recovered_at: a full lowercase commit hash for op recover.`;
   return null;
 };
 
@@ -133,16 +136,39 @@ const recoverProblem = (text, target) => {
  */
 function targetProblem(target) {
   const shown = JSON.stringify(target);
-  const rule = 'a target is a project-relative path to a .md file inside docs/living, written with forward slashes and without "..", "." or an absolute form';
+  const rule = `a target is a project-relative path to a .md file inside ${LIVING_DIR}, written with forward slashes and without "..", "." or an absolute form`;
   if (typeof target !== 'string' || target === '') return `target ${shown} is missing: ${rule}.`;
   if (/[\\:\u0000-\u001f]/.test(target)) return `target ${shown} is not usable: ${rule}.`;
   if (target.split('/').some((part) => part === '' || part === '.' || part === '..')) return `target ${shown} is not usable: ${rule}.`;
-  if (!target.startsWith(`${LIVING_DIR}/`) || !target.endsWith('.md')) return `target ${shown} is outside docs/living or not a .md file: ${rule}.`;
+  if (!target.startsWith(`${LIVING_DIR}/`) || !target.endsWith('.md')) return `target ${shown} is outside ${LIVING_DIR} or not a .md file: ${rule}.`;
   return null;
 }
 
 /**
- * The absolute path of a target, or the reason it is refused. An existing file must also resolve inside docs/living.
+ * Whether the deepest existing part of a target's path, with links followed, still lies inside the living docs folder.
+ * @param {ReturnType<typeof resolveProjectRoots>} roots
+ * @param {string} target
+ * @returns {boolean}
+ */
+function linkStaysInsideLiving(roots, target) {
+  try {
+    const livingAbs = resolveProjectPath(roots, LIVING_DIR);
+    const living = realpathSync(livingAbs);
+    let probe = join(livingAbs, ...target.slice(LIVING_DIR.length + 1).split('/'));
+    while (!existsSync(probe)) {
+      const parent = dirname(probe);
+      if (parent === probe) return false;
+      probe = parent;
+    }
+    const real = relative(living, realpathSync(probe));
+    return real.split(sep)[0] !== '..' && !isAbsolute(real);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The absolute path of a target, or the reason it is refused. An existing file must also resolve inside the living docs folder.
  * @param {ReturnType<typeof resolveProjectRoots>} roots
  * @param {unknown} target
  * @returns {{ abs: string } | { problem: string }}
@@ -150,11 +176,23 @@ function targetProblem(target) {
 function locate(roots, target) {
   const problem = targetProblem(target);
   if (problem !== null) return { problem };
-  const abs = resolveProjectPath(roots, target);
+  let abs;
+  try {
+    abs = resolveProjectPath(roots, target);
+  } catch (err) {
+    if (!(err instanceof PathError)) throw err;
+    if (linkStaysInsideLiving(roots, target)) {
+      return { problem: `target ${JSON.stringify(target)} has a link in its path, so it would not be a plain file at that path. Point it at a real file path inside ${LIVING_DIR} with no link in it.` };
+    }
+    return { problem: `target ${JSON.stringify(target)} resolves outside ${LIVING_DIR} through a link. Point it at a real file inside ${LIVING_DIR}.` };
+  }
+  if (existsSync(abs) && statSync(abs).isDirectory()) {
+    return { problem: `target ${JSON.stringify(target)} is a directory, not a document. Point it at a .md file inside ${LIVING_DIR}.` };
+  }
   try {
     const real = relative(realpathSync(resolveProjectPath(roots, LIVING_DIR)), realpathSync(abs));
     if (real === '' || real.split(sep)[0] === '..' || isAbsolute(real)) {
-      return { problem: `target ${JSON.stringify(target)} resolves outside docs/living. Point it at a real file inside docs/living.` };
+      return { problem: `target ${JSON.stringify(target)} resolves outside ${LIVING_DIR}. Point it at a real file inside ${LIVING_DIR}.` };
     }
   } catch {
     // The target or the folder does not exist; callers check existence where it matters.
@@ -229,7 +267,7 @@ function summaryProblem(summary) {
 
 /** The delta template with its three fields set through the frontmatter writer, and an optional body after it. */
 function renderDelta({ summary, op, target }, body) {
-  let text = readFileSync(TEMPLATE, 'utf8').replaceAll('\r\n', '\n').replace(/\{\{(summary|op|target)\}\}/g, '');
+  let text = toLf(readFileSync(TEMPLATE, 'utf8')).replace(/\{\{(summary|op|target)\}\}/g, '');
   for (const [key, value] of [['summary', summary], ['op', op], ['target', target]]) {
     const next = setFrontmatterField(text, key, value);
     if (next === null) throw new Error(`The delta template at ${TEMPLATE} has no frontmatter. Reinstall Aperture's core files.`);
@@ -242,15 +280,19 @@ function renderDelta({ summary, op, target }, body) {
   return typeof body === 'string' && body.trim() !== '' ? `${text.replace(/\n*$/, '\n')}\n${body.trim()}\n` : text;
 }
 
+/** The generic document template as a planned stub for a new target: titled from the file name, summary taken from the delta. */
+function renderStub(target, summary) {
+  const name = target.split('/').pop().replace(/\.md$/, '').replace(/-+/g, ' ');
+  const title = name.charAt(0).toUpperCase() + name.slice(1);
+  const template = toLf(readFileSync(DOCUMENT_TEMPLATE, 'utf8')).replace(/\{\{title\}\}/g, title);
+  return setFrontmatterField(template, 'summary', summary) ?? template;
+}
+
 /**
- * Records a proposed change to one living document in an open cycle. Writes nothing when any rule fails.
- * @param {string} projectDir
- * @param {string} cycle
- * @param {{ slug: string, op: string, target: string, summary: string, body?: string }} input
- * @returns {Delta}
- * @throws {DeltaError}
+ * Checks every rule for one delta and returns what would be written, without writing anything.
+ * `batch` holds the plans already made for earlier entries of the same call.
  */
-export function addDelta(projectDir, cycle, { slug, op, target, summary, body }) {
+function planDelta(projectDir, cycle, { slug, op, target, summary, body, createStub = true }, batch = []) {
   const { paths, roots, status } = findCycle(projectDir, cycle);
   if (status !== 'open') throw new DeltaError(`Cycle "${cycle}" is ${status === '' ? 'not open' : status}; record deltas only in an open cycle.`);
   if (!isCycleName(slug)) {
@@ -262,25 +304,32 @@ export function addDelta(projectDir, cycle, { slug, op, target, summary, body })
   if (badSummary !== null) throw new DeltaError(badSummary);
   const located = locate(roots, target);
   if ('problem' in located) throw new DeltaError(located.problem);
+  const cleanSummary = summary.trim();
+  let stub = null;
   if (!isFile(located.abs)) {
-    throw new DeltaError(
-      op === 'add'
-        ? `${target} does not exist. Create the planned document first (copy core/templates/document.md, keep state: planned), then record the add delta.`
-        : op === 'recover'
-          ? `${target} does not exist. Create the recovered document first (copy core/templates/recovered.md, keep state: planned), then record the recover delta.`
-        : `${target} does not exist, so it cannot be ${op === 'modify' ? 'modified' : 'removed'}. Check the path, or use op add for a new document.`,
-    );
-  }
-  const targetText = readText(located.abs);
-  if (op === 'add' && readRecovered(readFrontmatter(targetText)).recovered) {
-    throw new DeltaError(`${target} has provenance: recovered; use op recover instead of op add.`);
-  }
-  if (op === 'add' && stateOf(targetText) !== 'planned') {
-    throw new DeltaError(`${target} must hold state: planned to be added, but its state is ${stateOf(readText(located.abs))}. Create the document as planned, or use op modify.`);
-  }
-  if (op === 'recover') {
-    const problem = recoverProblem(targetText, target);
-    if (problem !== null) throw new DeltaError(problem);
+    if (op === 'add' && createStub) {
+      stub = { abs: located.abs, text: renderStub(target, cleanSummary) };
+    } else {
+      throw new DeltaError(
+        op === 'add'
+          ? `${target} does not exist. Create the planned document first (copy core/templates/document.md, keep state: planned), then record the add delta.`
+          : op === 'recover'
+            ? `${target} does not exist. Create the recovered document first (copy core/templates/recovered.md, keep state: planned), then record the recover delta.`
+            : `${target} does not exist, so it cannot be ${op === 'modify' ? 'modified' : 'removed'}. Check the path, or use op add for a new document.`,
+      );
+    }
+  } else {
+    const targetText = readText(located.abs);
+    if (op === 'add' && readRecovered(readFrontmatter(targetText)).recovered) {
+      throw new DeltaError(`${target} has provenance: recovered; use op recover instead of op add.`);
+    }
+    if (op === 'add' && stateOf(targetText) !== 'planned') {
+      throw new DeltaError(`${target} must hold state: planned to be added, but its state is ${stateOf(targetText)}. Create the document as planned, or use op modify.`);
+    }
+    if (op === 'recover') {
+      const problem = recoverProblem(targetText, target);
+      if (problem !== null) throw new DeltaError(problem);
+    }
   }
   const records = readDeltaRecords(projectDir);
   // A damaged file may be an open delta for this document, so it blocks unless it plainly names another one.
@@ -292,13 +341,73 @@ export function addDelta(projectDir, cycle, { slug, op, target, summary, body })
   if (clash !== undefined) {
     throw new DeltaError(`${target} already has an open delta in ${clash.path}. Apply or remove that delta before recording another for the same document.`);
   }
+  if (batch.some((earlier) => earlier.delta.target === target)) {
+    throw new DeltaError(`${target} is named twice in one call. Record one delta per document.`);
+  }
   const file = `${paths.deltas}/${slug}.md`;
-  if (existsSync(resolveProjectPath(roots, file))) throw new DeltaError(`A delta named "${slug}" already exists in cycle "${cycle}" (${file}). Choose another slug.`);
-  const cleanSummary = summary.trim();
-  const text = renderDelta({ summary: cleanSummary, op, target }, body);
-  mkdirSync(resolveProjectPath(roots, paths.deltas), { recursive: true });
-  writeFileSync(resolveProjectPath(roots, file), text, { flag: 'wx' });
-  return { slug, cycle, op, target, summary: cleanSummary, status: 'open', path: file };
+  if (batch.some((earlier) => earlier.delta.slug === slug) || existsSync(resolveProjectPath(roots, file))) {
+    throw new DeltaError(`A delta named "${slug}" already exists in cycle "${cycle}" (${file}). Choose another slug.`);
+  }
+  return {
+    roots,
+    deltasDir: paths.deltas,
+    file,
+    text: renderDelta({ summary: cleanSummary, op, target }, body),
+    stub,
+    delta: { slug, cycle, op, target, summary: cleanSummary, status: 'open', path: file },
+  };
+}
+
+/** Writes planned deltas and stubs; if a write fails, removes what this call wrote before rethrowing. */
+function writePlans(plans) {
+  const written = [];
+  try {
+    for (const plan of plans) {
+      if (plan.stub !== null) {
+        mkdirSync(dirname(plan.stub.abs), { recursive: true });
+        writeFileSync(plan.stub.abs, plan.stub.text, { flag: 'wx' });
+        written.push(plan.stub.abs);
+      }
+      mkdirSync(resolveProjectPath(plan.roots, plan.deltasDir), { recursive: true });
+      const abs = resolveProjectPath(plan.roots, plan.file);
+      writeFileSync(abs, plan.text, { flag: 'wx' });
+      written.push(abs);
+    }
+  } catch (err) {
+    for (const abs of written) rmSync(abs, { force: true });
+    throw err;
+  }
+}
+
+/**
+ * Records a proposed change to one living document in an open cycle. Writes nothing when any rule fails.
+ * For op add on a missing target it also writes a planned stub from the generic document template, unless createStub is false.
+ * @param {string} projectDir
+ * @param {string} cycle
+ * @param {{ slug: string, op: string, target: string, summary: string, body?: string, createStub?: boolean }} input
+ * @returns {Delta}
+ * @throws {DeltaError}
+ */
+export function addDelta(projectDir, cycle, input) {
+  const plan = planDelta(projectDir, cycle, input);
+  writePlans([plan]);
+  return plan.delta;
+}
+
+/**
+ * Records several deltas in one open cycle, all or none: every entry is checked before anything is written.
+ * @param {string} projectDir
+ * @param {string} cycle
+ * @param {{ slug: string, op: string, target: string, summary: string, body?: string, createStub?: boolean }[]} entries
+ * @returns {Delta[]}
+ * @throws {DeltaError}
+ */
+export function addDeltas(projectDir, cycle, entries) {
+  if (!Array.isArray(entries) || entries.length === 0) throw new DeltaError('Give at least one delta to record.');
+  const plans = [];
+  for (const entry of entries) plans.push(planDelta(projectDir, cycle, entry, plans));
+  writePlans(plans);
+  return plans.map((plan) => plan.delta);
 }
 
 /**
@@ -345,7 +454,7 @@ const FILES = Object.freeze({
 /**
  * Writes every change, or none: when a write fails, every file already written and the one that failed part way are
  * put back. Always a DeltaError then, naming the failed file and any file that could not be put back.
- * @param {string} projectDir the checkout path; error paths retain logical docs/... form
+ * @param {string} projectDir the checkout path; error paths retain the logical docs root form
  * @param {{ abs: string, prev: string, next: string | null }[]} changes next null deletes the file
  * @param {{ read: (abs: string) => string, write: (abs: string, text: string) => void, remove: (abs: string) => void }} [io]
  *   the file operations; a test passes its own to make one fail
@@ -356,7 +465,7 @@ export function commitChanges(projectDir, changes, io = FILES) {
   const shown = (abs) => {
     const underDocs = relative(roots.docsRoot, abs);
     if (underDocs === '' || (underDocs !== '..' && !underDocs.startsWith(`..${sep}`) && !isAbsolute(underDocs))) {
-      return slashes(join('docs', underDocs));
+      return slashes(join(DOCS_ROOT, underDocs));
     }
     return slashes(relative(roots.checkoutRoot, abs));
   };
@@ -413,6 +522,19 @@ function withFields(text, fields) {
   } catch (err) {
     return { problem: err.message };
   }
+}
+
+/** Splits text at the end of its frontmatter block: the block with its closing fence, and what follows. */
+function splitFrontmatter(text) {
+  const match = /^(﻿?---[ \t]*\r?\n(?:[\s\S]*?\r?\n)?---[ \t]*)(?:\r?\n|$)/.exec(text);
+  return match === null ? { head: '', rest: text } : { head: match[1], rest: text.slice(match[0].length) };
+}
+
+/** What the author wrote in a delta file after its frontmatter, apart from the template's own guidance; '' when nothing. */
+function deltaBody(text) {
+  const rest = toLf(splitFrontmatter(text).rest).trim();
+  const guidance = toLf(splitFrontmatter(toLf(readFileSync(TEMPLATE, 'utf8'))).rest).trim();
+  return (rest.startsWith(guidance) ? rest.slice(guidance.length) : rest).trim();
 }
 
 /**
@@ -483,8 +605,17 @@ export function applyDeltas(projectDir, cycle, slug) {
     // A validation belongs to the content it approved, so a document set back to built keeps none.
     const clear = readFrontmatter(prev)?.[VALIDATED_IN] !== undefined ? [[VALIDATED_IN, '']] : [];
     const result = withFields(prev, [['state', 'built'], ...clear]);
-    if ('problem' in result) fail(`${delta.target} cannot be marked built: ${result.problem}.`);
-    else changes.push({ abs: located.abs, prev, next: result.next });
+    if ('problem' in result) {
+      fail(`${delta.target} cannot be marked built: ${result.problem}.`);
+      continue;
+    }
+    let next = result.next;
+    const body = delta.op === 'add' ? deltaBody(readText(resolveProjectPath(roots, delta.path)) ?? '') : '';
+    if (body !== '') {
+      const eol = next.includes('\r\n') ? '\r\n' : '\n';
+      next = `${splitFrontmatter(next).head}${eol}${eol}${body.replace(/\n/g, eol)}${eol}`;
+    }
+    changes.push({ abs: located.abs, prev, next });
   }
   if (problems.length === 0) {
     for (const delta of chosen) {
@@ -497,6 +628,7 @@ export function applyDeltas(projectDir, cycle, slug) {
   }
   if (problems.length > 0) throw new DeltaError(`Nothing was applied. ${problems.join(' ')}`);
   commitChanges(projectDir, changes);
+  writeIndexes(projectDir);
   return { applied: chosen.map((delta) => delta.slug) };
 }
 
@@ -569,4 +701,24 @@ export function validateCycleDocs(projectDir, cycle, options = {}) {
   }
   commitChanges(projectDir, changes);
   return { validated: named };
+}
+
+/**
+ * How many readable deltas of a cycle are still open.
+ * @param {string} projectDir
+ * @param {string} cycle
+ * @returns {number}
+ */
+export function openDeltaCount(projectDir, cycle) {
+  return readDeltaRecords(projectDir).filter((r) => r.cycle === cycle && r.readable && r.status === 'open').length;
+}
+
+/**
+ * The one-line reminder to apply a cycle's open deltas.
+ * @param {string} cycle
+ * @param {number} open
+ * @returns {string}
+ */
+export function applyReminder(cycle, open) {
+  return `Cycle ${cycle} has ${open} open delta${open === 1 ? '' : 's'}: run node ${PROCESS_CORE}/scripts/delta.mjs apply ${cycle} after the work merges.`;
 }

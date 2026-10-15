@@ -17,4 +17,4 @@ Must not:
 
 ## Design context
 
-<!-- Project-relative paths to the docs the reviewer needs, one per line starting with a dash. They are copied as they stood when the work started, so commit them before the move to in progress. -->
+<!-- Project-relative paths to the docs the reviewer needs, one per line starting with a dash. They are copied as they stood when the work started, so commit them before the move to in progress. A docs/ephemeral path is allowed only when the cycle's signed design-approval.md lists it; any other docs/ephemeral path is refused, so never list one: list living documents and source files committed at the base instead. -->

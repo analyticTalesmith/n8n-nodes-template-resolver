@@ -2,11 +2,13 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { checkSecrets } from './checks/secrets.mjs';
-import { writeFileAtomic } from './files.mjs';
+import { toLf, writeFileAtomic } from './files.mjs';
+import { EPHEMERAL_DIR } from './layout.mjs';
 import { resolveProjectPath, resolveProjectRoots } from './project-roots.mjs';
+import { isoDate } from './time.mjs';
 
 /** Where any session records a skill, agent or team it needed and did not have. Created on the first record. */
-export const MISSING_SKILLS_PATH = 'docs/ephemeral/missing-skills.md';
+export const MISSING_SKILLS_PATH = `${EPHEMERAL_DIR}/missing-skills.md`;
 export const KINDS = Object.freeze(['skill', 'agent', 'team']);
 
 const TEMPLATE = join(dirname(fileURLToPath(import.meta.url)), '..', 'templates', 'missing-skills.md');
@@ -24,7 +26,6 @@ export class MissingSkillError extends Error {
 
 /** @typedef {{ wanted: string, kind: string, times: number, lastAsked: string, doing: string }} MissingRow */
 
-const normalize = (text) => text.replaceAll('\r\n', '\n');
 const cells = (line) => line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((cell) => cell.trim());
 const keyOf = ({ kind, wanted }) => `${kind}\u0000${wanted.trim().replace(/\s+/g, ' ').toLowerCase()}`;
 const render = ({ wanted, kind, times, lastAsked, doing }) => `| ${wanted} | ${kind} | ${times} | ${lastAsked} | ${doing} |`;
@@ -40,7 +41,7 @@ function oneLine(value, what, max) {
 
 /** The table inside the log: the lines around it and its rows (unreadable lines are kept as text). */
 function parse(text, path) {
-  const lines = normalize(text).split('\n');
+  const lines = toLf(text).split('\n');
   const header = lines.findIndex((line) => line.trim().replace(/\s+/g, ' ') === HEADER);
   if (header === -1 || !/^\|[\s:|-]+$/.test((lines[header + 1] ?? '').trim())) {
     throw new MissingSkillError(`${path} has no table headed ${HEADER}. Restore it from core/templates/missing-skills.md.`);
@@ -80,7 +81,7 @@ export function recordMissing(projectDir, { wanted, kind, doing }, { now = new D
   const [hit] = checkSecrets({ addedLines: [{ path: MISSING_SKILLS_PATH, line: 1, text: `${name} ${context}` }] });
   if (hit) throw new MissingSkillError(`${hit.message} Nothing was recorded.`);
   const { file, parsed } = load(projectDir);
-  const lastAsked = now.toISOString().slice(0, 10);
+  const lastAsked = isoDate(now);
   const probe = { wanted: name, kind };
   let row = parsed.rows.find((candidate) => candidate.raw === undefined && keyOf(candidate) === keyOf(probe));
   if (row === undefined) {

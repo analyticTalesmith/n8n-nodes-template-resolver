@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { PROCESS_TEAMS } from './layout.mjs';
 
 /**
  * The advisory line printed after a cycle closes: run a retro, which ends with one to three owned, dated actions.
@@ -9,7 +10,7 @@ import { join, resolve } from 'node:path';
  * @returns {string}
  */
 export function retroSuggestion(projectDir, cycle) {
-  const installed = existsSync(join(resolve(projectDir), '.process', 'teams', 'process', 'charter.md'));
+  const installed = existsSync(join(resolve(projectDir), PROCESS_TEAMS, 'process', 'charter.md'));
   const how = installed
     ? 'ask the project lead to spawn process:process-engineer'
     : 'add the team first with aperture add <project> process';

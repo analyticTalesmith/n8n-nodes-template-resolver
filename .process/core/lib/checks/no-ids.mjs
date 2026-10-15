@@ -2,6 +2,9 @@
 /** @typedef {import('../git.mjs').Commit} Commit */
 /** @typedef {import('../../scripts/validate.mjs').Finding} Finding */
 
+import { shortSha } from '../git.mjs';
+import { parseCardId } from '../card-id.mjs';
+
 // A match must not follow `#`, a word character, `-` or `.`, and must end at a boundary: hex colours, hyphenated compounds,
 // base64url fragments and dotted names stay clear. The principle shape also excludes the elliptic-curve names.
 
@@ -26,7 +29,6 @@ export const ID_PATTERNS = Object.freeze(
 /** A line holding this marker is skipped. */
 export const ALLOW_IDS_MARKER = 'aperture-allow-ids';
 
-const SHORT_SHA_LENGTH = 7;
 
 /**
  * Every id-like token in the text, in order of appearance. Anything but a string has none.
@@ -63,12 +65,41 @@ export function checkPrText(text) {
 
 const isDocsPath =(path) => typeof path === 'string' && path.startsWith('docs/');
 
+/** Name matching reads the same shapes as `ID_PATTERNS` in any case, plus the milestone code, which only names carry. */
+const NAME_PATTERNS = [...ID_PATTERNS.map(({ pattern }) => pattern), /(?<![#\w.-])M\d+\b/].map((pattern) => new RegExp(pattern.source, 'gi'));
+
+function tokensIn(text) {
+  const hits = [];
+  for (const scan of NAME_PATTERNS) for (const match of text.matchAll(scan)) hits.push({ index: match.index, token: match[0] });
+  return hits.sort((a, b) => a.index - b.index).map((hit) => hit.token);
+}
+
 /**
- * Finds ids in added code lines (outside docs/) and in commit messages. Missing or non-string text is skipped, never thrown on.
- * @param {{ addedLines?: AddedLine[] | null, commits?: Commit[] | null }} [input]
+ * Every id-like token in one name part, in any case. The lookbehind refuses a token that follows `-` or `.`, so the name is
+ * also read from each point after a separator: `notes-t04.md` holds t04, `sc-1-notes` holds sc-1. A card id is read by its
+ * slug only, because its agent-and-counter part (`b12`, `t10`) can look like a code.
+ * @param {string} name
+ * @returns {string[]}
+ */
+function idsInPart(name) {
+  const card = parseCardId(name);
+  const text = card ? card.slug : name;
+  const found = new Set(tokensIn(text));
+  for (const match of text.matchAll(/[-_. ]/g)) for (const token of tokensIn(text.slice(match.index + 1))) found.add(token);
+  return [...found];
+}
+
+const idsInName = (name) => [...new Set(name.split('/').flatMap(idsInPart))];
+
+const ADDED_STATUSES = new Set(['A', 'R', 'C']);
+
+/**
+ * Finds ids in added code lines (outside docs/), commit messages, the names of added or renamed paths and the branch.
+ * Missing or malformed input is skipped, never thrown on.
+ * @param {{ addedLines?: AddedLine[] | null, commits?: Commit[] | null, changes?: { status: string, path: string }[] | null, branch?: string | null }} [input]
  * @returns {Finding[]}
  */
-export function checkNoIds({ addedLines, commits } = {}) {
+export function checkNoIds({ addedLines, commits, changes, branch } = {}) {
   /** @type {Finding[]} */
   const findings = [];
   for (const { path, line, text } of addedLines ?? []) {
@@ -87,8 +118,27 @@ export function checkNoIds({ addedLines, commits } = {}) {
     if (found.length === 0) continue;
     findings.push({
       rule: 'ids-in-commit',
-      message: `Commit ${String(sha).slice(0, SHORT_SHA_LENGTH)} holds ${found.join(', ')}. Reword the commit message to say what changed, without ids.`,
+      message: `Commit ${shortSha(String(sha))} holds ${found.join(', ')}. Reword the commit message to say what changed, without ids.`,
     });
+  }
+  for (const change of Array.isArray(changes) ? changes : []) {
+    if (typeof change?.path !== 'string' || !ADDED_STATUSES.has(change.status)) continue;
+    const found = idsInName(change.path);
+    if (found.length === 0) continue;
+    findings.push({
+      rule: 'ids-in-name',
+      message: `The added path ${change.path} holds ${found.join(', ')} in its name. Rename it to describe what it is, without ids.`,
+      path: change.path,
+    });
+  }
+  if (typeof branch === 'string') {
+    const found = idsInName(branch);
+    if (found.length > 0) {
+      findings.push({
+        rule: 'ids-in-branch',
+        message: `The branch ${branch} holds ${found.join(', ')}. Rename it to describe the work in plain words, without ids.`,
+      });
+    }
   }
   return findings;
 }

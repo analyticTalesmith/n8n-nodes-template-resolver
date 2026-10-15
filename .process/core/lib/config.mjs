@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { PROCESS_DIR } from './layout.mjs';
 
 /**
  * @typedef {{
@@ -13,7 +14,7 @@ import { join } from 'node:path';
  * }} Config
  */
 
-export const CONFIG_PATH = '.process/aperture.json';
+export const CONFIG_PATH = `${PROCESS_DIR}/aperture.json`;
 
 export class ConfigError extends Error {
   /**

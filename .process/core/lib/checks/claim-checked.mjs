@@ -1,3 +1,4 @@
+import { toPosix } from '../files.mjs';
 import { readFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { cardPath } from '../board.mjs';
@@ -11,7 +12,7 @@ export const CLAIM_CHECK_REPORT = 'claim-check.md';
 
 // One line per claim: a cited path and range, then its class.
 const CLAIM_LINE = /\S+:\d+(?:-\d+)?\b.*\b(?:confirmed|wrong|unsupported|inference|prescriptive)\b/i;
-const slashes = (path) => String(path).replaceAll('\\', '/').replace(/^(\.\/)+/, '');
+const slashes = (path) => toPosix(String(path), { stripDotSlash: true });
 
 /** The card folder as a project-relative logical path, the way the other review checks name it. */
 function logicalDir(projectDir, dir) {

@@ -2,6 +2,8 @@
 /** @typedef {import('../git.mjs').CommitLine} CommitLine */
 /** @typedef {import('../../scripts/validate.mjs').Finding} Finding */
 
+import { shortSha } from '../git.mjs';
+
 /** Secret shapes scanned for in added lines; two entries may share a name when one kind has two shapes. */
 export const SECRET_PATTERNS = Object.freeze(
   [
@@ -20,7 +22,6 @@ export const SECRET_PATTERNS = Object.freeze(
 /** A line holding this marker is skipped. */
 export const ALLOW_SECRET_MARKER = 'aperture-allow-secret';
 
-const SHORT_SHA_LENGTH = 7;
 
 /** Every pattern name one line matches, in pattern order; none for a marked or non-string line. */
 function secretNames(text) {
@@ -52,7 +53,7 @@ export function checkSecrets({ addedLines, commitLines = [] }) {
       const same = `${path}\0${name}\0${text}`;
       if (seen.has(at) || seen.has(same)) continue;
       seen.add(at).add(same);
-      const commit = String(sha).slice(0, SHORT_SHA_LENGTH);
+      const commit = shortSha(String(sha));
       hits.push({
         path,
         line,

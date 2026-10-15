@@ -197,9 +197,13 @@ function briefDefinitions(briefText) {
   };
 }
 
+/** The reason a new cycle's plan gives for a level the cycle does not select. */
+export const seededReason = (level) => `this cycle does not select the ${level} level.`;
+
 /**
- * True only for the untouched template createCycle writes: all four level sections once each, every one with Status
- * planned, no table row anywhere and nothing the parser reports. Any other plan has been started, even with no rows.
+ * True only for the untouched plan createCycle writes: all four level sections once each, every one planned or waived
+ * with the reason createCycle seeds, no table row anywhere and nothing the parser reports. Any other plan has been
+ * started, even with no rows.
  * @param {TestPlan} plan
  * @returns {boolean}
  */
@@ -208,7 +212,7 @@ export function isBlankPlan(plan) {
     && plan.findings.length === 0
     && plan.sections.length === TEST_LEVELS.length
     && TEST_LEVELS.every((level) => plan.sections.some((section) => section.level === level))
-    && plan.sections.every((section) => section.status === 'planned');
+    && plan.sections.every((section) => section.status === 'planned' || (section.status === 'waived' && section.reason === seededReason(section.level)));
 }
 
 /**
@@ -241,6 +245,21 @@ export function readCyclePlan(projectDir, cycleName, selectedLevels) {
 export function selectedLevelsOf(cycle, tierData) {
   const { levels } = resolveDepth({ tierData, tier: cycle.tier, source: 'cycle', verificationLevels: cycle.verification_levels ?? [] });
   return TEST_LEVELS.filter((level) => levels[level].selected);
+}
+
+/**
+ * The blank plan with every level the cycle does not select set to waived and a reason recorded, so a lead writes no
+ * waiver for a level the cycle never selected.
+ * @param {string} template the blank plan text
+ * @param {string[]} selectedLevels
+ * @returns {string}
+ */
+export function seedWaivers(template, selectedLevels) {
+  return template.split(/^(?=## )/m).map((section) => {
+    const level = TEST_LEVELS.find((name) => section.startsWith(`## ${capitalised(name)}\n`));
+    if (level === undefined || selectedLevels.includes(level)) return section;
+    return section.replace('Status: planned.', `Status: waived.\nReason: ${seededReason(level)}`);
+  }).join('');
 }
 
 /**
@@ -278,12 +297,14 @@ export function planFindings({ plan, selectedLevels, briefIds }) {
     }
   }
   for (const section of plan.sections) {
-    if (section.status !== 'waived' && section.criteria.length === 0) {
-      found.push(finding('test-plan-section-no-criteria', `The ${section.level} section covers no criteria id. Add a test row naming the ids it proves, or set Status: waived with a Reason.`));
+    // A waiver the template seeded for a level the cycle did not select is not an answer once the cycle selects that level.
+    const seeded = section.status === 'waived' && selectedLevels.includes(section.level) && section.reason === seededReason(section.level);
+    if ((section.status !== 'waived' || seeded) && section.criteria.length === 0) {
+      found.push(finding('test-plan-section-no-criteria', `The ${section.level} section of ${PLAN_FILE} covers no criteria id. Add a test row naming the ids it proves (the ids are the typed lines under ## Must-haves in the cycle brief, CYCLE.md), or set Status: waived with a Reason.`));
     }
   }
   for (const id of unique(plan.tests.flatMap((test) => test.covers))) {
-    if (!defined.has(id)) found.push(finding('test-plan-criterion-unknown', `The plan covers ${id}, which the cycle brief does not define. Correct the id, or add the line to the brief.`));
+    if (!defined.has(id)) found.push(finding('test-plan-criterion-unknown', `The plan covers ${id}, which the cycle brief (CYCLE.md) does not define. Correct the id, or add a typed line for it under ## Must-haves in CYCLE.md, a line of the form: - contract ${id} what must be true (contract and the id each in backticks).`));
   }
   return found;
 }

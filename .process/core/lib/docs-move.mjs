@@ -1,7 +1,8 @@
-import { createHash, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { closeSync, existsSync, mkdirSync, openSync, readFileSync, rmSync, rmdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
-import { listTree, resolveInside } from './files.mjs';
+import { listTree, resolveInside, sha256Bytes } from './files.mjs';
+import { CYCLES_DIR, DOCS_ROOT, SESSIONS_DIR } from './layout.mjs';
 import { projectDataRoot, registerLocalProject, resolveProjectRoots, resolveRawSessionPath, switchToSharedProject } from './project-roots.mjs';
 
 export class DocsMoveError extends Error {
@@ -12,11 +13,14 @@ export class DocsMoveError extends Error {
   }
 }
 
-const sha = (bytes) => createHash('sha256').update(bytes).digest('hex');
-const rawSession = (path) => /^ephemeral\/feedback\/sessions\/|^ephemeral\/cycles\/[^/]+\/feedback\/sessions\//.test(path);
+const sha = sha256Bytes;
+const DOCS_PREFIX = `${DOCS_ROOT}/`;
+const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const RAW_SESSION = new RegExp(`^${escapeRegExp(SESSIONS_DIR.slice(DOCS_PREFIX.length))}/|^${escapeRegExp(CYCLES_DIR.slice(DOCS_PREFIX.length))}/[^/]+/feedback/sessions/`);
+const rawSession = (path) => RAW_SESSION.test(path);
 const privateRoot = (checkoutRoot, options) => join(projectDataRoot(options), 'private-sessions', sha(Buffer.from(checkoutRoot)));
 const sharedRoots = (checkoutRoot) => ({ checkoutRoot, mode: 'shared' });
-const checkPrivateRoot = (checkoutRoot, options) => resolveRawSessionPath(sharedRoots(checkoutRoot), 'docs/ephemeral/feedback/sessions/_probe.md', options);
+const checkPrivateRoot = (checkoutRoot, options) => resolveRawSessionPath(sharedRoots(checkoutRoot), `${SESSIONS_DIR}/_probe.md`, options);
 const sameFiles = (actual, expected) => actual.length === expected.length && actual.every((path, index) => path === expected[index]);
 
 /** Preview an explicit mode change without writing anything. */
@@ -27,8 +31,8 @@ export function planDocsMove(checkoutRoot, targetMode, options = {}) {
   if (!existsSync(roots.docsRoot)) throw new DocsMoveError(`Source docs ${roots.docsRoot} are missing. Restore them before moving.`);
   const storeId = targetMode === 'local' ? randomUUID() : roots.storeId;
   const destination = targetMode === 'local'
-    ? join(projectDataRoot(options), 'projects', storeId, 'docs')
-    : join(roots.checkoutRoot, 'docs');
+    ? join(projectDataRoot(options), 'projects', storeId, DOCS_ROOT)
+    : join(roots.checkoutRoot, DOCS_ROOT);
   if (targetMode === 'local' && existsSync(dirname(destination))) {
     throw new DocsMoveError(`Destination ${dirname(destination)} already exists. Preview again to choose a new store.`);
   }
@@ -43,20 +47,20 @@ export function planDocsMove(checkoutRoot, targetMode, options = {}) {
   const copyPaths = [...all.filter((path) => !excluded.includes(path)).map((path) => ({ path, root: roots.docsRoot })), ...privatePaths.map((path) => ({ path, root: privateSource }))];
   if (new Set(copyPaths.map((f) => f.path)).size !== copyPaths.length) throw new DocsMoveError('A raw session exists in both shared docs and the private store. Reconcile the duplicate before moving.');
   const files = copyPaths.map(({ path, root }) => {
-    const source = root === privateSource ? resolveRawSessionPath(sharedRoots(roots.checkoutRoot), `docs/${path}`, options) : resolveInside(root, path);
+    const source = root === privateSource ? resolveRawSessionPath(sharedRoots(roots.checkoutRoot), `${DOCS_PREFIX}${path}`, options) : resolveInside(root, path);
     const to = resolveInside(destination, path);
     if (existsSync(to)) throw new DocsMoveError(`Destination conflict at ${to}. Move or reconcile that file, then preview again.`);
-    return { path: `docs/${path}`, source, destination: to, sha256: sha(readFileSync(source)) };
+    return { path: `${DOCS_PREFIX}${path}`, source, destination: to, sha256: sha(readFileSync(source)) };
   });
   const privateDestination = targetMode === 'shared' ? privateRoot(roots.checkoutRoot, options) : null;
   if (privateDestination !== null) checkPrivateRoot(roots.checkoutRoot, options);
   const privateFiles = excluded.map((path) => {
     const source = resolveInside(roots.docsRoot, path);
-    const to = resolveRawSessionPath(sharedRoots(roots.checkoutRoot), `docs/${path}`, options);
+    const to = resolveRawSessionPath(sharedRoots(roots.checkoutRoot), `${DOCS_PREFIX}${path}`, options);
     if (existsSync(to)) throw new DocsMoveError(`Private session conflict at ${to}. Reconcile it before moving.`);
-    return { path: `docs/${path}`, source, destination: to, sha256: sha(readFileSync(source)) };
+    return { path: `${DOCS_PREFIX}${path}`, source, destination: to, sha256: sha(readFileSync(source)) };
   });
-  return { checkoutRoot: roots.checkoutRoot, from: roots.mode, to: targetMode, source: roots.docsRoot, destination, privateDestination, storeId, files, privateFiles, sourceFiles: all, sourcePrivateFiles: privatePaths, excluded: excluded.map((p) => `docs/${p}`) };
+  return { checkoutRoot: roots.checkoutRoot, from: roots.mode, to: targetMode, source: roots.docsRoot, destination, privateDestination, storeId, files, privateFiles, sourceFiles: all, sourcePrivateFiles: privatePaths, excluded: excluded.map((p) => `${DOCS_PREFIX}${p}`) };
 }
 
 function verifySourceSet(plan, options) {
@@ -73,7 +77,7 @@ function verifySourceSet(plan, options) {
 
 function verifyDestinationSet(plan) {
   const actual = listTree(plan.destination);
-  const expected = plan.files.map((file) => file.path.slice('docs/'.length)).sort();
+  const expected = plan.files.map((file) => file.path.slice(DOCS_PREFIX.length)).sort();
   if (!sameFiles(actual, expected)) throw new DocsMoveError('Destination docs changed during the move. Reconcile them before switching.', 'docs-move-failed');
 }
 
@@ -129,8 +133,8 @@ export function applyDocsMove(plan, { dataRoot, io = {} } = {}) {
     throw new DocsMoveError('Documentation location changed since preview. Preview the move again.');
   }
   const expectedDestination = plan.to === 'local'
-    ? join(projectDataRoot({ dataRoot }), 'projects', plan.storeId, 'docs')
-    : join(current.checkoutRoot, 'docs');
+    ? join(projectDataRoot({ dataRoot }), 'projects', plan.storeId, DOCS_ROOT)
+    : join(current.checkoutRoot, DOCS_ROOT);
   const expectedPrivate = plan.to === 'shared' ? privateRoot(current.checkoutRoot, { dataRoot }) : null;
   checkPrivateRoot(current.checkoutRoot, { dataRoot });
   if (plan.destination !== expectedDestination || plan.privateDestination !== expectedPrivate) {
@@ -142,8 +146,8 @@ export function applyDocsMove(plan, { dataRoot, io = {} } = {}) {
   verifySourceSet(plan, { dataRoot });
   for (const file of [...plan.files, ...plan.privateFiles]) {
     const logical = file.path;
-    if (!logical.startsWith('docs/')) throw new DocsMoveError('Move path is not under docs/. Preview the move again.');
-    const rel = logical.slice('docs/'.length);
+    if (!logical.startsWith(DOCS_PREFIX)) throw new DocsMoveError(`Move path is not under ${DOCS_PREFIX}. Preview the move again.`);
+    const rel = logical.slice(DOCS_PREFIX.length);
     const expectedSourceRoot = plan.from === 'shared' && rawSession(rel) && file.source.startsWith(privateRoot(current.checkoutRoot, { dataRoot }))
       ? privateRoot(current.checkoutRoot, { dataRoot }) : current.docsRoot;
     const destinationRoot = plan.privateFiles.includes(file) ? expectedPrivate : expectedDestination;

@@ -4,8 +4,8 @@ import { listCardFolders } from './board.mjs';
 import { CycleError, listCycles, readCycle } from './cycle.mjs';
 import { reviewedPath } from './delta.mjs';
 import { listFeedback } from './feedback.mjs';
-import { isText } from './files.mjs';
-import { BACKLOG_DIR, COLUMNS, CYCLES_DIR, INBOX_DIR, cyclePaths, isCycleName } from './layout.mjs';
+import { isText, toLf } from './files.mjs';
+import { BACKLOG_DIR, CARD_JSON, CARD_MD, COLUMNS, CONTEXT_MD, CYCLES_DIR, EPHEMERAL_DIR, INBOX_DIR, cyclePaths, isCycleName } from './layout.mjs';
 import { checkSecrets } from './checks/secrets.mjs';
 import { LIVING_DELTA_FIX_SHORT, livingWithoutDelta } from './checks/living-via-delta.mjs';
 import { resolveProjectPath, resolveProjectRoots } from './project-roots.mjs';
@@ -28,13 +28,13 @@ export const SESSION_RULES = Object.freeze({
   failed: 'session-check-failed',
 });
 
-const SECRET_SCAN_ROOT = 'docs/ephemeral/';
+const SECRET_SCAN_ROOT = `${EPHEMERAL_DIR}/`;
 // Keeps the end-of-session check fast; a larger note is not something a session writes by hand.
 const SECRET_SCAN_MAX_BYTES = 1024 * 1024;
 // Keeps the uncommitted finding one line.
 const UNCOMMITTED_PATHS_SHOWN = 5;
 const BRIEF_SECTIONS = ['Goal', 'Stories'];
-const CARD_RECORDS = ['card.md', 'context.md'];
+const CARD_RECORDS = [CARD_MD, CONTEXT_MD];
 const INDEX_FILE = 'INDEX.md';
 const URL_START = /^https?:\/\//;
 const HTML_COMMENT = /<!--[\s\S]*?-->/g;
@@ -136,10 +136,19 @@ function section(lines, name) {
   return (end === -1 ? rest : rest.slice(0, end)).join('\n');
 }
 
+const NONE_REASON = /^none:\s*\S/i;
+/** A brief section is empty when it holds only comments or whitespace; Stories may also say none: <reason>, and Goal may not. */
+function isEmptySection(heading, text) {
+  const body = text.replace(HTML_COMMENT, '').trim();
+  if (body === '') return true;
+  // The none marker is the bare word or the word with a colon: a sentence that merely starts with None is a filled section.
+  return /^none\s*(?::|$)/i.test(body) && (heading === 'Goal' || !NONE_REASON.test(body));
+}
+
 /** Open cycles holding at least one card whose brief leaves Goal or Stories empty (only comments or whitespace). */
 function emptyBriefs(projectDir, io, info) {
   const roots = resolveProjectRoots(projectDir);
-  const withCards = new Set(listCardFolders(projectDir).filter((f) => f.cycle !== null && existsSync(join(f.dir, 'card.json'))).map((f) => f.cycle));
+  const withCards = new Set(listCardFolders(projectDir).filter((f) => f.cycle !== null && existsSync(join(f.dir, CARD_JSON))).map((f) => f.cycle));
   const findings = [];
   for (const name of listCycles(projectDir)) {
     if (!withCards.has(name)) continue;
@@ -153,17 +162,17 @@ function emptyBriefs(projectDir, io, info) {
     const brief = cyclePaths(name).brief;
     let lines;
     try {
-      lines = io.readFile(resolveProjectPath(roots, brief), 'utf8').replaceAll('\r\n', '\n').split('\n');
+      lines = toLf(io.readFile(resolveProjectPath(roots, brief), 'utf8')).split('\n');
     } catch (cause) {
       info.push(unreadable(cause, brief, 'brief not checked'));
       continue;
     }
-    const empty = BRIEF_SECTIONS.filter((heading) => (section(lines, heading) ?? '').replace(HTML_COMMENT, '').trim() === '');
+    const empty = BRIEF_SECTIONS.filter((heading) => isEmptySection(heading, section(lines, heading) ?? ''));
     if (empty.length === 0) continue;
     findings.push({
       rule: SESSION_RULES.brief,
       path: brief,
-      message: `Cycle ${name} has cards but its brief has an empty ${empty.join(' and ')} section. Write ${empty.length === 1 ? 'it' : 'them'} in ${brief}.`,
+      message: `Cycle ${name} has cards but its brief has an empty ${empty.join(' and ')} section. Write ${empty.length === 1 ? 'it' : 'them'} in ${brief}${empty.includes('Stories') ? ' (a cycle with no user-facing story writes none: <reason> under Stories)' : ''}.`,
     });
   }
   return findings;

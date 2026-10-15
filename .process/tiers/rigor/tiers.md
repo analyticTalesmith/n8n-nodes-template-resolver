@@ -57,6 +57,7 @@ Checks that are not a matrix row, but run on the same edges:
 | `ownership` | `product` | changes stay inside the owning team's charter |
 | `tests-fail-first` | `product` | at shaping to ready (and, for a bug card, at backlog to ready), the card's gate command runs once and fails, and the card's red-evidence log (`red-evidence.md` in its work folder) matches the run: every test criterion has a failing test and every failure is an assertion failure, not a thrown error, timeout or file that would not load (skipped when no criterion is verified by test; a bug card instead needs the failing test, and a root-cause record with hypotheses tested, evidence and cause, from product tier) |
 | `card-gate` | `prototype` | at in progress to review, the card's own gate command (planned tests and linters) passes; it runs without a shell |
+| `builder-done` | `prototype` | at in progress to review, a claimed card whose builder said done (`claim.mjs done`) has no later commit and no uncommitted change on a manifest path; a claimed card with no done signal is refused from product and only warned about below it |
 | `test-amendments` | `prototype` | a modified, deleted or renamed existing test is logged with a reason and the lead's approval in `test_amendments` in `card.json` |
 | `front-end-css` | `product` | added style and markup lines hold no raw colour or pixel values outside token files, no `transition: all`, only transform and opacity transitions, and animating style files hold a reduced-motion block |
 | `front-end-contrast` | `product` | each declared token pair meets its WCAG 2 AA contrast minimum |
@@ -98,7 +99,7 @@ The tier is a label over six concerns: code hygiene, test depth, documentation, 
 | `code-hygiene` | `no-ids`, `manifest`, `boundary`, `secrets`, `ownership`, `front-end-css`, `front-end-contrast`, `front-end-tools`, `stance-hardened` |
 | `test-depth` | `test-levels`, `tests-fail-first`, `card-gate`, `test-amendments`, `baselines`, `verification-recorded` |
 | `documentation` | `spec`, `card-contract`, `docs-impact`, `index-fresh`, `living-state`, `living-via-delta`, `cycle-shape-recorded` |
-| `review` | `reviewer-brief`, `review-recorded`, `review-clear`, `evidence-cited`, `claim-checked` |
+| `review` | `reviewer-brief`, `builder-done`, `review-recorded`, `review-clear`, `evidence-cited`, `claim-checked` |
 | `approvals` | `design-approved`, `frozen` |
 | `release` | none yet |
 

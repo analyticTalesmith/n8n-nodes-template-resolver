@@ -1,4 +1,4 @@
-import { runGit, GitError } from '../git.mjs';
+import { runGit, GitError, isCommitId } from '../git.mjs';
 import { readAtoms } from '../atom.mjs';
 import { readDeliverables } from '../deliverable.mjs';
 import { resolveProjectRoots } from '../project-roots.mjs';
@@ -8,7 +8,6 @@ import { resolveProjectRoots } from '../project-roots.mjs';
 /** @typedef {import('../atom.mjs').Atom} Atom */
 /** @typedef {import('../deliverable.mjs').Deliverable} Deliverable */
 
-const COMMIT = /^[0-9a-f]{7,40}$/;
 
 /**
  * A composed deliverable records each atom id it used with the commit the id was verified at. The section is stale
@@ -29,7 +28,7 @@ export function checkDeliverableFresh({ deliverables, atoms, projectDir, run = r
     /** @type {Map<string, string>} */
     const recorded = new Map();
     for (const record of records) {
-      if (record.id === '' || !COMMIT.test(record.commit)) add('deliverable-record-malformed', `the cites entry "${record.raw}" is not "<atom id>: <commit>". Write the id and the 7 to 40 character lowercase hex commit it was verified at.`);
+      if (record.id === '' || !isCommitId(record.commit)) add('deliverable-record-malformed', `the cites entry "${record.raw}" is not "<atom id>: <commit>". Write the id and the 7 to 40 character hex commit it was verified at.`);
       else recorded.set(record.id, record.commit);
     }
     const used = new Set(sections.filter((section) => section.exempt === null).flatMap((section) => section.ids));

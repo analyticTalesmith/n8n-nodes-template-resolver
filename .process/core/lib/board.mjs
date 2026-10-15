@@ -1,16 +1,18 @@
 import { existsSync, lstatSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import { BACKLOG_DIR, COLUMNS, CYCLES_DIR, CYCLE_ARCHIVE_DIR, cycleColumn } from './layout.mjs';
-import { CARD_ID, validateCard } from './card.mjs';
+import { BACKLOG_DIR, CARD_JSON, COLUMNS, CYCLES_DIR, DOCS_ROOT, STAGE, CYCLE_ARCHIVE_DIR, TICKET_ARCHIVE_DIR, cycleColumn } from './layout.mjs';
+import { buildCardId, cardIdPrefix, compareCardIds, idDate, isAgentCode, isCardId, oldCounterOf, parseCardId, swarmIdFor } from './card-id.mjs';
+import { currentSwarmName } from './git.mjs';
+import { validateCard } from './card.mjs';
 import { resolveProjectPath, resolveProjectRoots } from './project-roots.mjs';
+import { toPosix } from './files.mjs';
 
 /** @typedef {import('./card.mjs').Card} Card */
 /** @typedef {{ cycle: string | null, column: string, dir: string }} CardLocation */
 
 const MAX_SLUG_LENGTH = 40;
-const ID_PREFIX = /^(\d{4})-/;
 /** The column a global backlog card reports; the backlog itself has no column folders. */
-const BACKLOG_COLUMN = COLUMNS[0];
+const BACKLOG_COLUMN = STAGE.backlog;
 
 export class BoardError extends Error {
   /** @param {string} message @param {ErrorOptions} [options] pass { cause } to chain the underlying error */
@@ -20,9 +22,7 @@ export class BoardError extends Error {
   }
 }
 
-/** True when the value is a well-formed card id (see CARD_ID); anything else must never reach a path join. */
-export const isCardId = (id) => typeof id === 'string' && CARD_ID.test(id);
-const toForwardSlashes = (p) => p.replaceAll('\\', '/');
+export { isCardId };
 
 const subdirectories = (dir) =>
   existsSync(dir) ? readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name) : [];
@@ -67,7 +67,7 @@ export function cardFolder(projectDir, cycle, column, id, options = {}) {
   if (!isCardId(id)) {
     throw new BoardError(`"${id}" is not a card id (like 0001-some-title), so no card folder can be built. Check the id.`);
   }
-  return toForwardSlashes(resolveProjectPath(resolveProjectRoots(projectDir, options), `${parent}/${id}`));
+  return toPosix(resolveProjectPath(resolveProjectRoots(projectDir, options), `${parent}/${id}`));
 }
 
 /**
@@ -112,19 +112,19 @@ function cardParents(projectDir, options = {}) {
 export function listCardFolders(projectDir, options = {}) {
   return cardParents(projectDir, options).flatMap(({ cycle, column, dir: parent }) =>
     subdirectories(parent)
-      .sort()
-      .map((id) => ({ cycle, column, id, dir: toForwardSlashes(join(parent, id)) })),
+      .sort(compareCardIds)
+      .map((id) => ({ cycle, column, id, dir: toPosix(join(parent, id)) })),
   );
 }
 
 const duplicateError = (projectDir, id, dirs, options = {}) => {
   const docsRoot = resolveProjectRoots(projectDir, options).docsRoot;
-  const folders = dirs.map((dir) => `docs/${toForwardSlashes(relative(docsRoot, dir))}`).join(' and ');
+  const folders = dirs.map((dir) => `${DOCS_ROOT}/${toPosix(relative(docsRoot, dir))}`).join(' and ');
   return new BoardError(`Card ${id} is in more than one place: ${folders}. Keep one folder and remove or renumber the others.`);
 };
 
 /**
- * Every archived card id: cards in archived cycle columns and closed tickets under `docs/archive/tickets/`.
+ * Every archived card id: cards in archived cycle columns and closed tickets under the ticket archive folder.
  * @param {string} projectDir
  * @returns {Set<string>}
  */
@@ -138,7 +138,7 @@ export function archivedIds(projectDir, options = {}) {
       for (const name of subdirectories(join(kanban, column))) if (isCardId(name)) ids.add(name);
     }
   }
-  for (const name of subdirectories(resolveProjectPath(roots, 'docs/archive/tickets'))) {
+  for (const name of subdirectories(resolveProjectPath(roots, TICKET_ARCHIVE_DIR))) {
     if (isCardId(name)) ids.add(name);
   }
   return ids;
@@ -147,39 +147,56 @@ export function archivedIds(projectDir, options = {}) {
 const liveAndArchivedNames = (projectDir, options = {}) => [...listCardFolders(projectDir, options).map(({ id }) => id), ...archivedIds(projectDir, options)];
 
 /**
- * Other card folders (the backlog, any cycle column or the archive) that carry the same four-digit counter as this id.
- * A non-empty result right after creating a folder means another creation raced this one.
+ * Other card folders (the backlog, any cycle column or the archive) that carry the same id prefix: the same four-digit
+ * counter for an old id, the same date, swarm, agent and counter for a new one. A non-empty result right after creating a
+ * folder means another creation raced this one.
  * @param {string} projectDir
  * @param {string} id
  * @returns {string[]}
  */
 export function siblingIds(projectDir, id, options = {}) {
-  const counter = ID_PREFIX.exec(id)?.[1];
-  if (counter === undefined) return [];
-  return liveAndArchivedNames(projectDir, options)
-    .filter((name) => name !== id && ID_PREFIX.exec(name)?.[1] === counter);
+  const prefix = cardIdPrefix(id);
+  if (prefix === null) return [];
+  const names = liveAndArchivedNames(projectDir, options).filter((name) => name !== id);
+  if (parseCardId(id).shape === 'old') return names.filter((name) => oldCounterOf(name) === Number(prefix));
+  return names.filter((name) => cardIdPrefix(name) === prefix);
 }
 
 /**
- * Next card id: one more than the highest counter in the backlog, any cycle column or the archive, then the title
- * slug. Live orphan folders reserve their counters even without card.json. Archived folders reserve only valid card ids.
+ * Next card id, always in the new shape `<yymmdd>-<swarm>-<agent><n>-<slug>`. The counter is one above the highest counter
+ * of any live or archived folder with the same date, swarm and agent (old four-digit ids never count), starting at 1. Live
+ * orphan folders reserve their counters even without card.json; archived folders reserve only valid card ids.
  * @param {string} projectDir
  * @param {string} title
+ * @param {{ swarm?: string, agent?: string, now?: Date, dataRoot?: string }} [options]
+ *   swarm is an already-derived swarm id (the current branch's when omitted), agent an agent code (default a), now the clock (UTC date)
  * @returns {string}
+ * @throws {BoardError} on a title with no letters or digits, a bad agent code or a bad swarm id
  */
-export function nextCardId(projectDir, title, options = {}) {
+export function nextCardId(projectDir, title, { swarm, agent = 'a', now = new Date(), ...rest } = {}) {
   const slug = slugify(title);
-  let highest = 0;
-  for (const name of liveAndArchivedNames(projectDir, options)) {
-    const match = ID_PREFIX.exec(name);
-    if (match) highest = Math.max(highest, Number(match[1]));
+  if (!isAgentCode(agent)) {
+    throw new BoardError(`Agent code ${JSON.stringify(agent)} is not valid. Use one or two lowercase letters, such as a or zz.`);
   }
-  return `${String(highest + 1).padStart(4, '0')}-${slug}`;
+  const names = liveAndArchivedNames(projectDir, rest);
+  const date = idDate(now);
+  const swarmId = swarm ?? swarmIdFor(currentSwarmName(projectDir));
+  let highest = 0;
+  for (const name of names) {
+    const parsed = parseCardId(name);
+    if (parsed?.shape === 'new' && parsed.date === date && parsed.swarm === swarmId && parsed.agent === agent) highest = Math.max(highest, parsed.counter);
+  }
+  try {
+    return buildCardId({ date, swarm: swarmId, agent, counter: highest + 1, slug });
+  } catch (cause) {
+    if (!(cause instanceof RangeError)) throw cause;
+    throw new BoardError(`Cannot build a card id: ${cause.message}`, { cause });
+  }
 }
 
 /**
  * Locates a card in the global backlog or a cycle (the archive is not searched). Returns null for a malformed id.
- * A backlog card reports a null cycle and the 00_backlog column.
+ * A backlog card reports a null cycle and the backlog column.
  * @param {string} projectDir
  * @param {string} id
  * @returns {CardLocation | null}
@@ -189,16 +206,16 @@ export function cardPath(projectDir, id, options = {}) {
   if (!isCardId(id)) return null;
   const found = cardParents(projectDir, options)
     .map((parent) => ({ ...parent, dir: join(parent.dir, id) }))
-    .filter(({ dir }) => existsSync(join(dir, 'card.json')));
+    .filter(({ dir }) => existsSync(join(dir, CARD_JSON)));
   if (found.length === 0) return null;
   if (found.length > 1) throw duplicateError(projectDir, id, found.map(({ dir }) => dir), options);
   const [{ cycle, column, dir }] = found;
-  return { cycle, column, dir: toForwardSlashes(dir) };
+  return { cycle, column, dir: toPosix(dir) };
 }
 
 /** Parses and validates the card.json inside a card folder. */
 function readCardFile(dir) {
-  const file = `${toForwardSlashes(dir)}/card.json`;
+  const file = `${toPosix(dir)}/${CARD_JSON}`;
   let card;
   try {
     card = JSON.parse(readFileSync(file, 'utf8'));
@@ -236,7 +253,7 @@ export function writeCard(projectDir, id, card) {
   if (!found) {
     throw new BoardError(`Card ${id} is not on the board, so it cannot be written. Check the id.`);
   }
-  writeFileSync(`${found.dir}/card.json`, JSON.stringify(card, null, 2) + '\n');
+  writeFileSync(`${found.dir}/${CARD_JSON}`, JSON.stringify(card, null, 2) + '\n');
 }
 
 /**
@@ -251,7 +268,7 @@ export function listCards(projectDir) {
   /** @type {Map<string, string>} */
   const seen = new Map();
   for (const { cycle, column, id, dir } of listCardFolders(projectDir)) {
-    if (!isCardId(id) || !existsSync(join(dir, 'card.json'))) continue;
+    if (!isCardId(id) || !existsSync(join(dir, CARD_JSON))) continue;
     if (seen.has(id)) throw duplicateError(projectDir, id, [seen.get(id), dir]);
     seen.set(id, dir);
     entries.push({ cycle, column, card: readCardFile(dir) });
@@ -266,4 +283,69 @@ export function listCards(projectDir) {
  */
 export function cardExists(projectDir, id, options = {}) {
   return isCardId(id) && (cardPath(projectDir, id, options) !== null || archivedIds(projectDir, options).has(id));
+}
+
+/**
+ * The printed label of a card: its id and its title on one line, even when a damaged card holds control characters.
+ * @param {{ id: string, title: string }} card
+ * @returns {string}
+ */
+export function cardLabel({ id, title }) {
+  return `${id}  ${String(title).replace(/[\s\p{Cc}]+/gu, ' ').trim()}`;
+}
+
+/** True when the text could be an id or a prefix of one: lowercase letters, digits and hyphens only. */
+export const isCardQuery = (query) => typeof query === 'string' && /^[a-z0-9-]+$/.test(query);
+
+/**
+ * The full id of the one live card or ticket (backlog and cycles, not the archive) a query names: an exact id wins,
+ * otherwise a prefix of the id, of the slug, or of the date and slug.
+ * @param {string} projectDir
+ * @param {string} query
+ * @returns {string}
+ * @throws {BoardError} for a malformed query, no match, or several matches (it never picks one)
+ */
+export function findCardId(projectDir, query) {
+  if (!isCardQuery(query)) {
+    throw new BoardError(`${JSON.stringify(query)} is not a card id or prefix: use lowercase letters, digits and hyphens.`);
+  }
+  if (cardPath(projectDir, query) !== null) return query;
+  const ids = [...new Set(listCardFolders(projectDir)
+    .filter(({ id, dir }) => isCardId(id) && existsSync(join(dir, CARD_JSON)))
+    .map(({ id }) => id))];
+  const matches = ids.filter((id) => {
+    const parsed = parseCardId(id);
+    return id.startsWith(query) || parsed.slug.startsWith(query) ||
+      (parsed.shape === 'new' && `${parsed.date}-${parsed.slug}`.startsWith(query));
+  });
+  if (matches.length === 0) throw new BoardError(`No card or ticket matches ${query}.`);
+  const sameSlug = matches.filter((id) => parseCardId(id).slug === query);
+  if (sameSlug.length === 1) return sameSlug[0];
+  if (matches.length > 1) {
+    throw new BoardError(`${query} matches ${matches.length} cards; type more of the slug:\n${matches.map((id) => `  ${lookupLabel(projectDir, id)}`).join('\n')}`);
+  }
+  return matches[0];
+}
+
+/** The label of a card for an ambiguity list; a damaged card is shown by its id alone. */
+function lookupLabel(projectDir, id) {
+  try {
+    return cardLabel(readCard(projectDir, id));
+  } catch (error) {
+    if (error instanceof BoardError) return id;
+    throw error;
+  }
+}
+
+
+
+/**
+ * The printed label of the live card or ticket a query names, resolving a slug prefix first.
+ * @param {string} projectDir
+ * @param {string} query
+ * @returns {{ id: string, label: string }}
+ */
+export function resolveCard(projectDir, query) {
+  const id = findCardId(projectDir, query);
+  return { id, label: cardLabel(readCard(projectDir, id)) };
 }

@@ -1,16 +1,18 @@
 import { realpathSync } from 'node:fs';
+import { isPlainObject } from '../lib/types.mjs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BoardError, cardPath, isCardId, readCard, writeCard } from '../lib/board.mjs';
-import { ConfigError, readConfig } from '../lib/config.mjs';
+import { CONFIG_PATH, ConfigError, readConfig } from '../lib/config.mjs';
 import { GitError, assertTopLevel, changedFiles, effectiveBase, runGit } from '../lib/git.mjs';
 import { baselineHash, changedBaselines, readBaselineSetting } from '../lib/checks/baselines.mjs';
+import { STAGE } from '../lib/layout.mjs';
 
 /** @typedef {import('../lib/git.mjs').GitRunner} GitRunner */
 /** @typedef {import('../lib/checks/baselines.mjs').BaselineApproval} BaselineApproval */
 /** @typedef {import('./validate.mjs').Finding} Finding */
 
-const APPROVAL_COLUMN = '05_gate';
+const APPROVAL_COLUMN = STAGE.gate;
 
 export class BaselineApprovalError extends Error {
   /**
@@ -55,9 +57,9 @@ export function approveBaselines(projectDir, id, options = {}) {
     throw err;
   }
   const frontEnd = config.gate?.front_end;
-  const { list, problem } = readBaselineSetting(frontEnd !== null && typeof frontEnd === 'object' && !Array.isArray(frontEnd) ? frontEnd : {});
+  const { list, problem } = readBaselineSetting(isPlainObject(frontEnd) ? frontEnd : {});
   if (problem !== null || list === null) {
-    throw new BaselineApprovalError('config', problem?.message ?? 'gate.front_end.baselines is not configured, so there are no baselines to approve. Set it in .process/aperture.json.');
+    throw new BaselineApprovalError('config', problem?.message ?? `gate.front_end.baselines is not configured, so there are no baselines to approve. Set it in ${CONFIG_PATH}.`);
   }
 
   const recorded = /** @type {{ base_commit?: unknown }} */ (card).base_commit;

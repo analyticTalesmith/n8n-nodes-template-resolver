@@ -1,17 +1,18 @@
 import { realpathSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { BoardError, archivedIds, isCardId, listCards } from '../lib/board.mjs';
+import { BoardError, archivedIds, cardLabel, isCardId, listCards } from '../lib/board.mjs';
 import { findCycle, parallelGroups } from '../lib/graph.mjs';
 import { instructionsOf } from '../lib/card.mjs';
 import { CycleError, readCycle } from '../lib/cycle.mjs';
 import { readCycleInstructions } from '../lib/depth.mjs';
+import { STAGE } from '../lib/layout.mjs';
 
 /** @typedef {import('../lib/card.mjs').Card} Card */
 
 const MAX_GROUP = 4;
-const READY = '02_ready';
-const DONE = '06_done';
+const READY = STAGE.ready;
+const DONE = STAGE.done;
 
 export class NextError extends Error {
   constructor(message) {
@@ -95,10 +96,11 @@ if (isMain) {
   }
   try {
     const { ready, groups, blocked, instructions } = next(resolve(args[0]), args[1]);
-    const list = (cards) => cards.map((c) => c.id).join(', ');
-    console.log(`ready: ${ready.length ? list(ready) : 'none'}`);
-    groups.forEach((g, i) => console.log(`group ${i + 1}: ${list(g)}`));
-    for (const b of blocked) console.log(`blocked ${b.id}: ${b.reason}`);
+    if (ready.length === 0) console.log('ready: none');
+    for (const card of ready) console.log(`ready  ${cardLabel(card)}`);
+    groups.forEach((g, i) => g.forEach((card) => console.log(`group ${i + 1}  ${cardLabel(card)}`)));
+    const titles = new Map(listCards(resolve(args[0])).map(({ card }) => [card.id, card.title]));
+    for (const b of blocked) console.log(`blocked  ${cardLabel({ id: b.id, title: titles.get(b.id) ?? '' })}: ${b.reason}`);
     for (const i of instructions) console.log(`instruction ${i.source}: ${i.text}`);
   } catch (err) {
     if (err instanceof NextError || err instanceof BoardError || err instanceof CycleError) {

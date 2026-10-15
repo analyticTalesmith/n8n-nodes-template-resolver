@@ -1,10 +1,11 @@
 import { BoardError, cardPath, isCardId } from './board.mjs';
-import { BACKLOG_DIR, COLUMNS, CYCLES_DIR, isCycleName } from './layout.mjs';
+import { toPosix } from './files.mjs';
+import { BACKLOG_DIR, COLUMNS, CYCLES_DIR, EPHEMERAL_DIR, HANDOFF_DIR, LEARNINGS_DIR, WORK_DIR, isCycleName } from './layout.mjs';
 import { resolveProjectPath, resolveProjectRoots } from './project-roots.mjs';
 
-export const WORK_ROOT = 'docs/ephemeral/work';
+export const WORK_ROOT = WORK_DIR;
 /** Everything under here is process material: reports, plans, handoffs, cycles and the backlog. */
-export const PROCESS_ROOT = 'docs/ephemeral';
+export const PROCESS_ROOT = EPHEMERAL_DIR;
 export const CARD_FILES = Object.freeze({
   spec: 'spec.md',
   plan: 'plan.md',
@@ -28,13 +29,13 @@ export const CARD_FILES = Object.freeze({
  * @returns {boolean}
  */
 export function isProcessPath(path) {
-  const p = String(path).replaceAll('\\', '/');
+  const p = toPosix(String(path));
   if (p.split('/').includes('..')) return false;
   return p === PROCESS_ROOT || p.startsWith(`${PROCESS_ROOT}/`);
 }
 
-/** Handoffs and learnings: notes a session may write at any time. Repeats HANDOFF_ROOT and LEARNINGS_ROOT as literals. */
-export const NOTE_ROOTS = Object.freeze(['docs/ephemeral/handoffs', 'docs/ephemeral/learnings']);
+/** Handoffs and learnings: notes a session may write at any time. */
+export const NOTE_ROOTS = Object.freeze([HANDOFF_DIR, LEARNINGS_DIR]);
 
 /**
  * True when a project-relative path is a process path under one of the NOTE_ROOTS.
@@ -42,7 +43,7 @@ export const NOTE_ROOTS = Object.freeze(['docs/ephemeral/handoffs', 'docs/epheme
  * @returns {boolean}
  */
 export function isNotePath(path) {
-  const p = String(path).replaceAll('\\', '/');
+  const p = toPosix(String(path));
   return isProcessPath(p) && NOTE_ROOTS.some((root) => p.startsWith(`${root}/`));
 }
 
@@ -80,7 +81,7 @@ export function cardFile(projectDir, id, name) {
  * @returns {boolean}
  */
 export function isCardProcessPath(path, id) {
-  const p = String(path).replaceAll('\\', '/');
+  const p = toPosix(String(path));
   if (p.startsWith(`${WORK_ROOT}/${id}/`) || p.startsWith(`${BACKLOG_DIR}/${id}/`)) return true;
   if (!p.startsWith(`${CYCLES_DIR}/`)) return false;
   // <cycle>/kanban/<column>/<id>/<file...>
@@ -98,7 +99,7 @@ export function isCardProcessPath(path, id) {
  * @returns {boolean}
  */
 export function isOtherCardKanbanPath(path, id) {
-  const p = String(path).replaceAll('\\', '/');
+  const p = toPosix(String(path));
   if (p.split('/').includes('..') || !p.startsWith(`${CYCLES_DIR}/`)) return false;
   const [cycle, kanban, column, folder, ...inside] = p.slice(CYCLES_DIR.length + 1).split('/');
   return isCycleName(cycle) && kanban === 'kanban' && COLUMNS.includes(column) && isCardId(folder) && folder !== id && inside.length > 0 && !inside.includes('');
@@ -115,7 +116,7 @@ const CYCLE_RECORD_FOLDERS = Object.freeze(['deltas', 'feedback', 'verification'
  * @returns {boolean}
  */
 export function isCycleOwnPath(path) {
-  const p = String(path).replaceAll('\\', '/');
+  const p = toPosix(String(path));
   if (!p.startsWith(`${CYCLES_DIR}/`) || p.split('/').includes('..')) return false;
   const [cycle, top, ...rest] = p.slice(CYCLES_DIR.length + 1).split('/');
   if (!isCycleName(cycle)) return false;

@@ -1,16 +1,17 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { toPosix } from '../lib/files.mjs';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CYCLES_DIR, PROJECT_DIRS, TIERS, isCycleName } from '../lib/layout.mjs';
+import { CARD_JSON, CARD_MD, CYCLES_DIR, PROJECT_DIRS, STAGE, STARTED, TIERS, humanColumn, isCycleName } from '../lib/layout.mjs';
 import { validateCycle } from '../lib/cycle.mjs';
 import { readFrontmatter } from '../lib/frontmatter.mjs';
 import { validateCard } from '../lib/card.mjs';
-import { humanColumn } from '../lib/moves.mjs';
 import { LEARNINGS_ROOT, checkLearning } from '../lib/learnings.mjs';
-import { ConfigError, readConfig } from '../lib/config.mjs';
+import { CONFIG_PATH, ConfigError, readConfig } from '../lib/config.mjs';
 import { ApprovalError, readApprovers } from '../lib/approval.mjs';
 import { readPosture } from '../lib/posture.mjs';
 import { listCardFolders } from '../lib/board.mjs';
+import { parseCardId } from '../lib/card-id.mjs';
 import { checkTypedCriteria, usesTypedLines } from '../lib/checks/typed-criteria.mjs';
 import { resolveProjectPath, resolveProjectRoots } from '../lib/project-roots.mjs';
 import { readAtoms, readRetiredIds } from '../lib/atom.mjs';
@@ -33,7 +34,6 @@ const isDir = (p) => {
   }
 };
 
-const STARTED_COLUMNS = ['03_in_progress', '04_review', '05_gate', '06_done'];
 
 /**
  * Reports cards whose column disagrees with their recorded state (a card moved by hand past card-move) and cards
@@ -46,9 +46,9 @@ export function checkCardStates(projectDir) {
   /** @type {Finding[]} */
   const findings = [];
   for (const { column, dir } of listCardFolders(projectDir)) {
-    const file = join(dir, 'card.json');
+    const file = join(dir, CARD_JSON);
     if (!existsSync(file)) continue;
-    const path = `${relative(resolve(projectDir), dir).replaceAll('\\', '/')}/card.json`;
+    const path = `${toPosix(relative(resolve(projectDir), dir))}/${CARD_JSON}`;
     const invalid = (reason) =>
       findings.push({ rule: 'card-invalid', message: `${path} is not a valid card: ${reason} Repair or restore the file.`, path });
     let card;
@@ -69,9 +69,9 @@ export function checkCardStates(projectDir) {
         message: `Card ${card.id} is in ${humanColumn(column)} but ${problem}. Move it with card-move, or correct started and ended in ${path}.`,
         path,
       });
-    if (STARTED_COLUMNS.includes(column) && card.started === null) mismatch('has no started time');
-    if (column === '06_done' && card.ended === null) mismatch('has no ended time');
-    if (column !== '06_done' && card.ended !== null) mismatch('has an ended time');
+    if (STARTED.includes(column) && card.started === null) mismatch('has no started time');
+    if (column === STAGE.done && card.ended === null) mismatch('has no ended time');
+    if (column !== STAGE.done && card.ended !== null) mismatch('has an ended time');
   }
   return findings;
 }
@@ -161,8 +161,8 @@ export function checkRequirementLines(projectDir) {
     for (const name of names) documents.push({ file: join(cyclesRoot, name, 'CYCLE.md'), path: `${CYCLES_DIR}/${name}/CYCLE.md` });
   }
   for (const { dir } of listCardFolders(projectDir)) {
-    const file = join(dir, 'card.md');
-    documents.push({ file, path: relative(root, file).replaceAll('\\', '/') });
+    const file = join(dir, CARD_MD);
+    documents.push({ file, path: toPosix(relative(root, file)) });
   }
   return documents.flatMap(({ file, path }) => {
     let text;
@@ -186,6 +186,52 @@ export function checkAtoms(projectDir) {
   const { atoms, findings } = readAtoms(projectDir);
   const { retired, findings: registryFindings } = readRetiredIds(projectDir);
   return [...findings, ...registryFindings, ...checkLinksResolve({ atoms, retired })];
+}
+
+/**
+ * Reports backlog tickets (folders directly under the backlog with a readable card.json) that share a title, ignoring
+ * case and spacing, or an id number: the counter for an old id, the date, swarm, agent and counter for a new one.
+ * One finding per group. Folders without a readable card.json are skipped, and names that are not card ids are
+ * skipped for the id rule. Never throws for card content and never writes.
+ * @param {string} projectDir
+ * @returns {Finding[]}
+ */
+export function checkBacklogTickets(projectDir) {
+  const root = resolve(projectDir);
+  const tickets = [];
+  for (const { cycle, id, dir } of listCardFolders(projectDir)) {
+    if (cycle !== null) continue;
+    let card;
+    try {
+      card = JSON.parse(readFileSync(join(dir, CARD_JSON), 'utf8'));
+    } catch {
+      continue;
+    }
+    tickets.push({ id, title: typeof card?.title === 'string' ? card.title : null, path: toPosix(relative(root, dir)) });
+  }
+  const groupBy = (keyOf) => {
+    const groups = new Map();
+    for (const ticket of tickets) {
+      const key = keyOf(ticket);
+      if (key !== null) groups.set(key, [...(groups.get(key) ?? []), ticket]);
+    }
+    return [...groups.values()].filter((group) => group.length > 1);
+  };
+  const idNumber = ({ id }) => {
+    const parsed = parseCardId(id);
+    if (parsed === null) return null;
+    return parsed.shape === 'old' ? `old:${parsed.counter}` : `new:${parsed.date}-${parsed.swarm}-${parsed.agent}${parsed.counter}`;
+  };
+  const titleKey = ({ title }) => (title === null ? null : title.trim().replace(/\s+/g, ' ').toLowerCase());
+  const finding = (rule, group, shared) => ({
+    rule,
+    message: `Backlog tickets ${group.map((t) => t.path).join(' and ')} share ${shared}. Keep one and close the other with ticket.mjs close.`,
+    path: group[0].path,
+  });
+  return [
+    ...groupBy(titleKey).map((group) => finding('backlog-duplicate-title', group, 'a title')),
+    ...groupBy(idNumber).map((group) => finding('backlog-duplicate-id', group, 'an id number')),
+  ];
 }
 
 /**
@@ -214,15 +260,15 @@ export function validate(projectDir) {
       const problem =
         config.tier === undefined
           ? `tier is missing; set it to one of: ${TIERS.join(', ')}.`
-          : `Unknown tier "${config.tier}". Allowed tiers: ${TIERS.join(', ')}. Set tier in .process/aperture.json to one of them.`;
-      findings.push({ rule: 'tier-unknown', message: problem, path: '.process/aperture.json' });
+          : `Unknown tier "${config.tier}". Allowed tiers: ${TIERS.join(', ')}. Set tier in ${CONFIG_PATH} to one of them.`;
+      findings.push({ rule: 'tier-unknown', message: problem, path: CONFIG_PATH });
     }
     const packs = config.packs;
     if ('packs' in config && (packs === null || typeof packs !== 'object' || Array.isArray(packs))) {
       findings.push({
         rule: 'config-invalid',
         message: 'packs must be an object mapping pack names to versions, for example {"core": "1.0.0"}.',
-        path: '.process/aperture.json',
+        path: CONFIG_PATH,
       });
     } else {
       for (const [name, version] of Object.entries(packs ?? {})) {
@@ -230,22 +276,22 @@ export function validate(projectDir) {
           findings.push({
             rule: 'pack-version-format',
             message: `Pack "${name}" has version "${version}". Use MAJOR.MINOR.PATCH, for example 1.2.3.`,
-            path: '.process/aperture.json',
+            path: CONFIG_PATH,
           });
         }
       }
     }
-    findings.push(...readPosture(projectDir).findings.map((item) => ({ ...item, path: '.process/aperture.json' })));
-    for (const message of workProfileProblems(config)) findings.push({ rule: 'work-profile-invalid', message, path: '.process/aperture.json' });
+    findings.push(...readPosture(projectDir).findings.map((item) => ({ ...item, path: CONFIG_PATH })));
+    for (const message of workProfileProblems(config)) findings.push({ rule: 'work-profile-invalid', message, path: CONFIG_PATH });
     try {
       readApprovers(projectDir);
     } catch (cause) {
       if (!(cause instanceof ApprovalError)) throw cause;
-      findings.push({ rule: 'config-invalid', message: cause.message, path: '.process/aperture.json' });
+      findings.push({ rule: 'config-invalid', message: cause.message, path: CONFIG_PATH });
     }
   } catch (err) {
     if (!(err instanceof ConfigError)) throw err;
-    findings.push({ rule: err.rule, message: err.message, path: '.process/aperture.json' });
+    findings.push({ rule: err.rule, message: err.message, path: CONFIG_PATH });
   }
 
   findings.push(...checkCycleFolders(projectDir));
@@ -253,6 +299,7 @@ export function validate(projectDir) {
   findings.push(...checkLearningNotes(projectDir));
   findings.push(...checkRequirementLines(projectDir));
   findings.push(...checkAtoms(projectDir));
+  findings.push(...checkBacklogTickets(projectDir));
 
   const key = (f) => f.path ?? '';
   findings.sort((a, b) => (key(a) < key(b) ? -1 : key(a) > key(b) ? 1 : 0));

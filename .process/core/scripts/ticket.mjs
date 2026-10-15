@@ -1,7 +1,7 @@
 import { realpathSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { BoardError } from '../lib/board.mjs';
+import { BoardError, cardLabel, isCardQuery, resolveCard } from '../lib/board.mjs';
 import { CycleError } from '../lib/cycle.mjs';
 import { TicketError, closeTicket, listTickets, releaseTicket, selectTicket } from '../lib/ticket.mjs';
 
@@ -26,21 +26,26 @@ if (isMain) {
   if (rest.length < wanted) usage(command === 'select' ? 'select needs a cycle and a ticket id.' : command === 'release' ? 'release needs a ticket id.' : command === 'close' ? 'close needs a ticket id and --reason <text>.' : 'Missing arguments.');
   if (rest.length > wanted) usage(`${command} takes ${wanted} argument${wanted === 1 ? '' : 's'}, got ${rest.length}.`);
   if (command === 'close' && rest[1] !== '--reason') usage('close needs --reason <text>.');
+  const idArg = command === 'select' ? rest[1] : command === 'list' ? undefined : rest[0];
+  if (idArg !== undefined && !isCardQuery(idArg)) usage(`"${idArg}" is not a card id or prefix (lowercase letters, digits and hyphens).`);
   try {
     const dir = resolve(projectDir);
     if (command === 'list') {
       for (const { id, title, type, origin } of listTickets(dir)) {
-        console.log(`${id}  ${type}  ${title}${origin ? `  (from ${origin})` : ''}`);
+        console.log(`${cardLabel({ id, title })}  ${type}${origin ? `  (from ${origin})` : ''}`);
       }
     } else if (command === 'select') {
-      const { id, cycle } = selectTicket(dir, rest[0], rest[1]);
-      console.log(`selected ${id} into cycle ${cycle}`);
+      const { id, label } = resolveCard(dir, rest[1]);
+      const { cycle } = selectTicket(dir, rest[0], id);
+      console.log(`selected ${label} into cycle ${cycle}`);
     } else if (command === 'release') {
-      const { id, cycle } = releaseTicket(dir, rest[0]);
-      console.log(`released ${id} from cycle ${cycle} to backlog`);
+      const { id, label } = resolveCard(dir, rest[0]);
+      const { cycle } = releaseTicket(dir, id);
+      console.log(`released ${label} from cycle ${cycle} to backlog`);
     } else {
-      const { id } = closeTicket(dir, rest[0], rest[2]);
-      console.log(`closed ${id}`);
+      const { id, label } = resolveCard(dir, rest[0]);
+      closeTicket(dir, id, rest[2]);
+      console.log(`closed ${label}`);
     }
   } catch (err) {
     if (!(err instanceof TicketError || err instanceof CycleError || err instanceof BoardError)) throw err;

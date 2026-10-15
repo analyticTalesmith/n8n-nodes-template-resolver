@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { toLf } from './files.mjs';
 import { createHash } from 'node:crypto';
 import { lstatSync, readFileSync, readlinkSync, realpathSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
@@ -6,7 +7,12 @@ import { PROCESS_ROOT, isProcessPath } from './card-files.mjs';
 
 const MAX_BUFFER = 64 * 1024 * 1024;
 const BINARY_SNIFF_BYTES = 8000;
-const SHORT_SHA_LENGTH = 7;
+/** An abbreviated or full commit id as typed or recorded: 7 to 40 hexadecimal characters, either case. */
+export const COMMIT_ABBREV = /^[0-9a-f]{7,40}$/i;
+/** A full commit id as git prints it: 40 hexadecimal characters, or 64 in a repository that hashes with sha256. */
+export const COMMIT_FULL = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/;
+/** How many characters of a commit id a person is shown. */
+const SHORT_SHA_LENGTH = 12;
 const GIT_CONFIG = ['-c', 'core.quotepath=false'];
 
 /** The parent environment without any GIT_ variable (a hook's GIT_DIR or GIT_INDEX_FILE must not redirect git), with English messages. */
@@ -61,10 +67,29 @@ function assertRevision(base) {
   }
 }
 
+/**
+ * True when the value is a commit id: 7 to 40 hexadecimal characters of either case, or with `full` a whole 40 or 64 character id.
+ * @param {unknown} value
+ * @param {{ full?: boolean }} [options]
+ */
+export function isCommitId(value, { full = false } = {}) {
+  return typeof value === 'string' && (full ? COMMIT_FULL : COMMIT_ABBREV).test(value);
+}
+
+/** A commit a citation may name: an abbreviation of 7 to 40 characters or a full id. */
+export const isCitedCommit = (value) => isCommitId(value) || isCommitId(value, { full: true });
+
+/**
+ * The first 12 characters of a commit id, the width every message and record shows.
+ * @param {string} sha
+ * @returns {string}
+ */
+export const shortSha = (sha) => sha.slice(0, SHORT_SHA_LENGTH);
+
 /** A citation may name a full or abbreviated hexadecimal commit, never a revision expression. */
 function assertEvidenceCommit(commit) {
   assertRevision(commit);
-  if (!/^[0-9a-f]{7,64}$/.test(commit)) throw new GitError('A cited commit must be 7 to 64 lowercase hexadecimal characters.');
+  if (!isCitedCommit(commit)) throw new GitError('A cited commit must be 7 to 40 hexadecimal characters, or a full 64.');
 }
 
 /** The same project-relative path rules as fileAtCommit, checked before any git invocation. */
@@ -83,13 +108,16 @@ const untrackedFiles = (cwd, run) => splitZ(run(cwd, [...GIT_CONFIG, 'ls-files',
 /**
  * Files changed from the base commit to the working tree (committed, staged, unstaged, untracked), sorted by path.
  * @param {string} cwd
+ * With `to`, the files changed from the base to that revision instead (committed only; the working tree is not read).
  * @param {string} base
  * @param {GitRunner} [run]
+ * @param {string} [to]
  * @returns {Change[]}
  */
-export function changedFiles(cwd, base, run = runGit) {
+export function changedFiles(cwd, base, run = runGit, to = undefined) {
   assertRevision(base);
-  const tokens = splitZ(run(cwd, [...GIT_CONFIG, 'diff', '-z', '--name-status', '--find-renames', '--no-color', '--no-ext-diff', '--no-textconv', base, '--']));
+  if (to !== undefined) assertRevision(to);
+  const tokens = splitZ(run(cwd, [...GIT_CONFIG, 'diff', '-z', '--name-status', '--find-renames', '--no-color', '--no-ext-diff', '--no-textconv', base, ...(to === undefined ? [] : [to]), '--']));
   /** @type {Change[]} */
   const changes = [];
   for (let i = 0; i < tokens.length; ) {
@@ -102,7 +130,7 @@ export function changedFiles(cwd, base, run = runGit) {
       i += 2;
     }
   }
-  for (const path of untrackedFiles(cwd, run)) changes.push({ status: 'A', path });
+  if (to === undefined) for (const path of untrackedFiles(cwd, run)) changes.push({ status: 'A', path });
   return changes.sort(byPath);
 }
 
@@ -215,7 +243,7 @@ export function addedLines(cwd, base, run = runGit, io = {}) {
 function newFileBlock(path, content) {
   const head = `diff --git a/${path} b/${path}\nnew file mode 100644\n`;
   if (content.length === 0) return head;
-  const rows = content.toString('utf8').replaceAll('\r\n', '\n').split('\n');
+  const rows = toLf(content.toString('utf8')).split('\n');
   const endsWithNewline = rows.at(-1) === '';
   if (endsWithNewline) rows.pop();
   const body = rows.map((row) => `+${row}\n`).join('') + (endsWithNewline ? '' : '\\ No newline at end of file\n');
@@ -360,7 +388,7 @@ export function fileAtCommit(cwd, commit, path, run = runGit) {
     }
     throw err;
   }
-  return run(cwd, ['cat-file', 'blob', object]).replaceAll('\r\n', '\n');
+  return toLf(run(cwd, ['cat-file', 'blob', object]));
 }
 
 /**
@@ -496,7 +524,7 @@ export function assertTopLevel(cwd, { run = runGit, platform = process.platform 
 }
 
 /**
- * The current commit, short (7 characters) by default.
+ * The current commit, short (12 characters) by default.
  * @param {string} cwd
  * @param {{ short?: boolean, run?: GitRunner }} [options]
  * @returns {string}
@@ -520,4 +548,27 @@ export function projectRootOf(cwd, { run = runGit } = {}) {
   } catch {
     return cwd;
   }
+}
+
+/**
+ * The name the swarm id is derived from: the current branch, the work tree folder name when HEAD is detached, or the folder
+ * name outside git. Reads no environment variable.
+ * @param {string} cwd
+ * @param {{ run?: GitRunner }} [options]
+ * @returns {string}
+ */
+export function currentSwarmName(cwd, { run = runGit } = {}) {
+  try {
+    const branch = run(cwd, ['symbolic-ref', '--short', '-q', 'HEAD']).trim();
+    if (branch !== '') return branch;
+  } catch {
+    // A detached HEAD makes the command exit 1 with no output; a folder outside git fails too. Both fall through.
+  }
+  try {
+    const top = run(cwd, ['rev-parse', '--show-toplevel']).trim();
+    if (top !== '') return basename(top);
+  } catch {
+    // Not inside a work tree.
+  }
+  return basename(resolve(cwd));
 }

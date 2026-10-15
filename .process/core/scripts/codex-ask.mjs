@@ -4,7 +4,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WINDOWS_LAUNCHER_HINT } from '../lib/checks/boundary.mjs';
 import { ALLOW_SECRET_MARKER, checkSecrets } from '../lib/checks/secrets.mjs';
-import { ConfigError, readConfig } from '../lib/config.mjs';
+import { CONFIG_PATH, ConfigError, readConfig } from '../lib/config.mjs';
 import { REVIEW_OUTPUT_MAX_BYTES, REVIEW_TIMEOUT_MS, ReviewerError, codexArgs, readReviewSettings, runReviewer } from '../lib/reviewer.mjs';
 
 /** @typedef {import('./validate.mjs').Finding} Finding */
@@ -84,8 +84,8 @@ export function askCodex(projectDir, input, { runner = runReviewer, notify, plat
     const choice = config.review?.claim_check_codex;
     if (choice !== true) {
       const repair = choice === undefined || choice === false
-        ? 'Set review.claim_check_codex to true in .process/aperture.json'
-        : 'Set review.claim_check_codex to true or false in .process/aperture.json';
+        ? `Set review.claim_check_codex to true in ${CONFIG_PATH}`
+        : `Set review.claim_check_codex to true or false in ${CONFIG_PATH}`;
       throw askError('ask-refused', 'not-opted-in', `Claim checks stay local unless explicitly opted in. ${repair}, or spawn the claim checker as a subagent. Nothing was sent.`);
     }
   }
@@ -115,7 +115,7 @@ export function askCodex(projectDir, input, { runner = runReviewer, notify, plat
     const argv = [...settings.reviewer, ...codexArgs(settings, { workDir, outFile })];
     const name = baseName(settings.reviewer.at(-1));
     const label = `${/^codex(\.(exe|cmd|bat))?$/i.test(name) ? 'codex' : name} ${settings.model} (${settings.effort})`;
-    notify?.(`running ${baseName(argv[0])}; expected to send the brief to OpenAI; set review.fallback_only to true in .process/aperture.json to keep it local`, label);
+    notify?.(`running ${baseName(argv[0])}; expected to send the brief to OpenAI; set review.fallback_only to true in ${CONFIG_PATH} to keep it local`, label);
     const result = runner(argv, { cwd: workDir, input: prompt, timeoutMs: REVIEW_TIMEOUT_MS });
     if (result.error || result.status !== 0) {
       const code = /** @type {any} */ (result.error)?.code;

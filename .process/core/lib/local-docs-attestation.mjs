@@ -1,5 +1,8 @@
-import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { isPlainObject } from './types.mjs';
+import { isSha256, sha256Bytes, toPosix } from './files.mjs';
+import { parseHeader } from './freeze.mjs';
+import { DOCS_ROOT, LIVING_DIR } from './layout.mjs';
 import { resolveProjectPath, resolveProjectRoots } from './project-roots.mjs';
 
 export class LocalDocsAttestationError extends Error {
@@ -14,9 +17,9 @@ export function localDocsHashes(projectDir, paths) {
   const roots = resolveProjectRoots(projectDir);
   if (roots.mode !== 'local') return null;
   const result = {};
-  for (const path of [...new Set(paths.map((path) => typeof path === 'string' ? path.replaceAll('\\', '/') : path))].sort()) {
-    if (typeof path !== 'string' || !path.startsWith('docs/')) {
-      throw new LocalDocsAttestationError(`Local document path ${JSON.stringify(path)} must begin with docs/. Fix the card or reviewer brief.`);
+  for (const path of [...new Set(paths.map((path) => typeof path === 'string' ? toPosix(path) : path))].sort()) {
+    if (typeof path !== 'string' || !path.startsWith(`${DOCS_ROOT}/`)) {
+      throw new LocalDocsAttestationError(`Local document path ${JSON.stringify(path)} must begin with ${DOCS_ROOT}/. Fix the card or reviewer brief.`);
     }
     let target;
     try {
@@ -26,7 +29,7 @@ export function localDocsHashes(projectDir, paths) {
     }
     try {
       if (!statSync(target).isFile()) throw new LocalDocsAttestationError(`${path} is not a file. Repair the local document before review.`);
-      result[path] = createHash('sha256').update(readFileSync(target)).digest('hex');
+      result[path] = sha256Bytes(readFileSync(target));
     } catch (cause) {
       if (cause.code === 'ENOENT') result[path] = null;
       else if (cause instanceof LocalDocsAttestationError) throw cause;
@@ -37,8 +40,8 @@ export function localDocsHashes(projectDir, paths) {
 }
 
 export function validLocalDocsHashes(value) {
-  return value !== null && typeof value === 'object' && !Array.isArray(value) && Object.entries(value).every(([path, hash]) =>
-    path.startsWith('docs/') && (hash === null || (typeof hash === 'string' && /^[0-9a-f]{64}$/.test(hash))));
+  return isPlainObject(value) && Object.entries(value).every(([path, hash]) =>
+    path.startsWith(`${DOCS_ROOT}/`) && (hash === null || isSha256(hash)));
 }
 
 /** All living documents at this instant, including generated indexes. Refuse unbounded trees and links. */
@@ -63,7 +66,7 @@ export function localLivingHashes(projectDir) {
       if (paths.length > 2500) throw new LocalDocsAttestationError('The living-doc tree exceeds 2500 files. Split or archive it before freezing or reviewing.');
     }
   };
-  walk('docs/living');
+  walk(LIVING_DIR);
   return localDocsHashes(projectDir, paths);
 }
 
@@ -81,16 +84,15 @@ export function localLivingChanges(projectDir, card) {
 
 /** Reconstruct the packet's relevant local-doc set and compare exact bytes, including newly added living files. */
 export function localPacketFresh(projectDir, packetText) {
-  const header = /^---\n([\s\S]*?)\n---/.exec(packetText);
-  const sealed = header === null ? null : /^local_docs_sha256: ([0-9a-f]{64})$/m.exec(header[1])?.[1];
-  if (sealed === null || sealed === undefined) return false;
+  const sealed = parseHeader(packetText).local_docs_sha256;
+  if (!isSha256(sealed)) return false;
   const match = /### Uncommitted local documents\n\n[^\n]*\n\n(`{3,})json\n([\s\S]*?)\n\1/.exec(packetText);
   if (match === null) return false;
   let recorded;
   try { recorded = JSON.parse(match[2]); } catch { return false; }
   if (!validLocalDocsHashes(recorded)) return false;
-  if (createHash('sha256').update(JSON.stringify(recorded)).digest('hex') !== sealed) return false;
-  const named = Object.keys(recorded).filter((path) => !path.startsWith('docs/living/'));
+  if (sha256Bytes(Buffer.from(JSON.stringify(recorded), 'utf8')) !== sealed) return false;
+  const named = Object.keys(recorded).filter((path) => !path.startsWith(`${LIVING_DIR}/`));
   const current = { ...localLivingHashes(projectDir), ...localDocsHashes(projectDir, named) };
   const sort = (value) => JSON.stringify(Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b))));
   return sort(current) === sort(recorded);

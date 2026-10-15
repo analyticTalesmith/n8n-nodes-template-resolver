@@ -1,6 +1,9 @@
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from 'node:fs';
+import { toPosix } from './files.mjs';
+import { isPlainObject } from './types.mjs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { readFrontmatter } from './frontmatter.mjs';
+import { isKebab } from './names.mjs';
 
 /** @typedef {import('../scripts/validate.mjs').Finding} Finding */
 
@@ -20,7 +23,6 @@ export const PACK_TYPES = Object.freeze(['team', 'role', 'skill', 'profile', 'ti
 
 export const MANIFEST_FILE = 'pack.json';
 
-const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const SEMVER = /^\d+\.\d+\.\d+$/;
 
 /** The most tags a pack or set may carry. */
@@ -79,7 +81,7 @@ function frontmatter(text) {
 /** Returns why a set's members are unusable, or null when they are fine. */
 function membersProblem({ name, members }) {
   if (!Array.isArray(members) || members.length === 0) return 'A set needs members: a non-empty array of pack names.';
-  const bad = members.find((m) => typeof m !== 'string' || !KEBAB.test(m));
+  const bad = members.find((m) => !isKebab(m));
   if (bad !== undefined) return `Set member ${JSON.stringify(bad)} is not a lowercase kebab-case pack name.`;
   const dup = members.find((m, i) => members.indexOf(m) !== i);
   if (dup !== undefined) return `Set member "${dup}" is listed more than once.`;
@@ -91,7 +93,7 @@ function membersProblem({ name, members }) {
 function tagsProblem({ tags }) {
   if (tags === undefined) return null;
   if (!Array.isArray(tags)) return `Tags must be a list of tags, not ${JSON.stringify(tags)}.`;
-  const bad = tags.find((t) => typeof t !== 'string' || !KEBAB.test(t));
+  const bad = tags.find((t) => !isKebab(t));
   if (bad !== undefined) return `Tag ${JSON.stringify(bad)} is not a lowercase kebab-case tag.`;
   const dup = tags.find((t, i) => tags.indexOf(t) !== i);
   if (dup !== undefined) return `Tag "${dup}" is listed more than once.`;
@@ -146,7 +148,7 @@ export function validateSetFile(file) {
       path,
     });
   }
-  if (!KEBAB.test(manifest.name)) {
+  if (!isKebab(manifest.name)) {
     findings.push({
       rule: 'pack-name-invalid',
       message: `Set file name ${JSON.stringify(path)} is not lowercase kebab-case. Rename it with letters, digits and single hyphens, for example "starter.md".`,
@@ -202,7 +204,7 @@ export function validatePack(packDir) {
       path: MANIFEST_FILE,
     });
   }
-  if (typeof manifest.name !== 'string' || !KEBAB.test(manifest.name)) {
+  if (!isKebab(manifest.name)) {
     findings.push({
       rule: 'pack-name-invalid',
       message: `Pack name ${JSON.stringify(manifest.name)} is not lowercase kebab-case. Use letters, digits and single hyphens, for example "skeleton-probe".`,
@@ -363,7 +365,7 @@ const isDir = (p) => {
 export function checkMarketplace(packDir, marketplaceFile) {
   const rule = 'marketplace-entry-missing';
   const invalid = 'marketplace-invalid';
-  const path = marketplaceFile.split('\\').join('/');
+  const path = toPosix(marketplaceFile);
   let text;
   try {
     text = readFileSync(marketplaceFile, 'utf8');
@@ -392,7 +394,7 @@ export function checkMarketplace(packDir, marketplaceFile) {
       continue;
     }
     const { source } = entry;
-    if (source !== null && typeof source === 'object' && !Array.isArray(source)) continue; // remote source: nothing local to check
+    if (isPlainObject(source)) continue; // remote source: nothing local to check
     if (typeof source !== 'string') {
       findings.push({
         rule: invalid,

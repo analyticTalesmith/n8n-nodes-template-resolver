@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -6,8 +5,9 @@ import { fileURLToPath } from 'node:url';
 import { isCardId, readCard } from '../lib/board.mjs';
 import { CARD_FILES, cardFile } from '../lib/card-files.mjs';
 import { WINDOWS_LAUNCHER_HINT } from '../lib/checks/boundary.mjs';
-import { ConfigError, readConfig } from '../lib/config.mjs';
-import { freezeHashes } from '../lib/freeze.mjs';
+import { CONFIG_PATH, ConfigError, readConfig } from '../lib/config.mjs';
+import { sha256Bytes } from '../lib/files.mjs';
+import { freezeHashes, parseHeader } from '../lib/freeze.mjs';
 import { readFrontmatter } from '../lib/frontmatter.mjs';
 import { PacketError, buildPacket, readBriefText, validateReview } from '../lib/review-packet.mjs';
 import {
@@ -17,7 +17,7 @@ import {
   ReviewerError,
   buildReviewPrompt,
   codexArgs,
-  parseReviewMessage,
+  parseReviewMessageWithNotes,
   readReviewSettings,
   reviewerError,
   runReviewer,
@@ -37,7 +37,7 @@ const STDERR_LINES = 20;
 /** The last path segment, with either separator. */
 const baseName = (path) => String(path).split(/[\\/]/).pop();
 /** The notice printed before the packet leaves, naming the program actually run. */
-const openAiNotice = (program) => `running ${program}; expected to send the packet to OpenAI; set review.fallback_only to true in .process/aperture.json to keep it local`;
+const openAiNotice = (program) => `running ${program}; expected to send the packet to OpenAI; set review.fallback_only to true in ${CONFIG_PATH} to keep it local`;
 
 /**
  * The label for a reviewer command prefix: kind codex only when the last prefix element is codex (an .exe, .cmd or
@@ -52,7 +52,7 @@ function commandLabel(reviewer, { model, effort }) {
   return { kind, label: `${kind === 'codex' ? 'codex' : name} ${model} (${effort})`, model, effort };
 }
 
-const sha256 = (text) => createHash('sha256').update(text, 'utf8').digest('hex');
+const sha256 = (text) => sha256Bytes(Buffer.from(text, 'utf8'));
 const tail = (text) => String(text).split(/\r?\n/).filter((line) => line.trim() !== '').slice(-STDERR_LINES).join('\n');
 
 /** @returns {ReviewerError} */
@@ -91,13 +91,14 @@ function readFinalMessage(outFile) {
 
 /** Parses, validates and saves a review. */
 function saveReview({ projectDir, id, text, label, tier, chain, packetSha, diffSha, now }) {
-  const { review, dropped, problems } = validateReview(parseReviewMessage(text), { tier, chain });
+  const { value, repaired } = parseReviewMessageWithNotes(text);
+  const { review, dropped, problems } = validateReview(value, { tier, chain });
   if (review === null) throw new ReviewerError('review-output-invalid', problems);
   /** @type {ReviewOutput} */
   const output = { ...review, reviewer: label, at: now.toISOString(), card: id, tier, packet_sha256: packetSha, diff_sha256: diffSha, dropped };
   const outputPath = cardFile(projectDir, id, CARD_FILES.reviewOutput);
   writeFileSync(outputPath, `${JSON.stringify(output, null, 2)}\n`);
-  return { label, outputPath, kept: review.findings.length, dropped: dropped.length };
+  return { label, outputPath, kept: review.findings.length, dropped: dropped.length, repaired };
 }
 
 /**
@@ -162,13 +163,14 @@ export function recordReview(projectDir, id, text, { now = new Date() } = {}) {
     throw reviewerError('review-no-packet', `Card ${id} has no ${CARD_FILES.packet}. Run ${scriptCommand(projectDir, 'review.mjs')} run ${projectDir} ${id} --fallback first.`);
   }
   const meta = readFrontmatter(packetText);
+  const header = parseHeader(packetText);
   const card = readCard(projectDir, id);
   const fresh = freezeHashes(card, readBriefText(projectDir, id));
   const diff = currentDiffSha256(projectDir, card);
   const changed = [
-    ...(String(meta.criteria_sha256) === fresh.criteria_sha256 ? [] : ['criteria']),
-    ...(String(meta.brief_sha256) === fresh.brief_sha256 ? [] : ['reviewer brief']),
-    ...(diff === null || String(meta.diff_sha256) === diff ? [] : ['diff']),
+    ...(header.criteria_sha256 === fresh.criteria_sha256 ? [] : ['criteria']),
+    ...(header.brief_sha256 === fresh.brief_sha256 ? [] : ['reviewer brief']),
+    ...(diff === null || header.diff_sha256 === diff ? [] : ['diff']),
     ...(resolveProjectRoots(projectDir).mode === 'local' && !localPacketFresh(projectDir, packetText) ? ['local documents'] : []),
   ];
   if (changed.length) {
@@ -185,7 +187,7 @@ export function recordReview(projectDir, id, text, { now = new Date() } = {}) {
     tier: String(meta.tier),
     chain: { criteria: Number(meta.criteria_count), mustNots: Number(meta.must_not_count) },
     packetSha: sha256(packetText),
-    diffSha: String(meta.diff_sha256),
+    diffSha: String(header.diff_sha256),
     now,
   });
 }
@@ -203,6 +205,9 @@ if (isMain) {
   const usage = (message) => {
     console.error(`${message} ${USAGE}`);
     process.exit(2);
+  };
+  const printRepair = (count) => {
+    if (count > 0) console.log(`repaired ${count} invalid backslash escape${count === 1 ? '' : 's'} in the reply (each backslash was doubled)`);
   };
   const [command, ...args] = process.argv.slice(2);
   if (command !== 'run' && command !== 'record') usage(`Unknown subcommand ${command ?? '(none)'}.`);
@@ -245,6 +250,7 @@ if (isMain) {
       if (!announced) console.log(`reviewer: ${result.label.label}`);
       if (result.mode === 'codex') {
         console.log(`review saved: ${result.outputPath}`);
+        printRepair(result.repaired);
         console.log(`findings: ${result.kept} kept, ${result.dropped} dropped`);
       } else {
         console.log(result.reason === 'fallback-only' ? 'review.fallback_only is true: nothing is sent to OpenAI' : '--fallback given: nothing is sent to OpenAI');
@@ -261,6 +267,7 @@ if (isMain) {
       const result = recordReview(projectDir, id, /** @type {string} */ (text));
       console.log(`reviewer: ${result.label.label}`);
       console.log(`review saved: ${result.outputPath}`);
+      printRepair(result.repaired);
       console.log(`findings: ${result.kept} kept, ${result.dropped} dropped`);
       console.log(`Next: ${scriptCommand(projectDir, 'rounds.mjs')} record ${projectDir} ${id}  (this review counts as a round only once it is recorded)`);
     }

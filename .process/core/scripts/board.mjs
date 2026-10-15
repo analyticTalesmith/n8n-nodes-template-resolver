@@ -1,8 +1,9 @@
 import { realpathSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { BoardError, listCards } from '../lib/board.mjs';
+import { BoardError, cardLabel, listCards } from '../lib/board.mjs';
 import { CycleError, listCycles, readCycle } from '../lib/cycle.mjs';
+import { STAGE } from '../lib/layout.mjs';
 import { ProjectRootsError } from '../lib/project-roots.mjs';
 
 const isMain = (() => {
@@ -17,11 +18,8 @@ const isMain = (() => {
 export function openBoard(projectDir) {
   const openCycles = new Set(listCycles(projectDir).filter((name) => readCycle(projectDir, name).status === 'open'));
   return listCards(projectDir).filter(({ cycle, column }) =>
-    cycle === null || (openCycles.has(cycle) && column !== '06_done'));
+    cycle === null || (openCycles.has(cycle) && column !== STAGE.done));
 }
-
-/** Keep a card title on one output line, even when a damaged card holds control characters. */
-const lineText = (value) => value.replace(/[\s\p{Cc}]+/gu, ' ').trim();
 
 if (isMain) {
   const usage = 'Usage: node board.mjs <projectDir>';
@@ -33,8 +31,8 @@ if (isMain) {
   try {
     for (const { cycle, column, card } of openBoard(resolve(args[0]))) {
       console.log(cycle === null
-        ? `backlog  ${card.id}  ${lineText(card.title)}`
-        : `${cycle}  ${column}  ${card.id}  ${lineText(card.title)}`);
+        ? `backlog  ${cardLabel(card)}`
+        : `${cycle}  ${column}  ${cardLabel(card)}`);
     }
   } catch (error) {
     if (!(error instanceof BoardError || error instanceof CycleError || error instanceof ProjectRootsError)) throw error;

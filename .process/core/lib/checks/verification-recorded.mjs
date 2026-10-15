@@ -1,10 +1,12 @@
 import { lstatSync, readFileSync } from 'node:fs';
+import { toPosix } from '../files.mjs';
 import { relative, resolve } from 'node:path';
 import { cardPath } from '../board.mjs';
 import { isProcessPath } from '../card-files.mjs';
+import { lighterCycleOf } from '../shapes.mjs';
 import { readFrontmatter } from '../frontmatter.mjs';
-import { GitError, changedFiles, runGit } from '../git.mjs';
-import { TIERS } from '../layout.mjs';
+import { GitError, changedFiles, isCommitId, runGit, shortSha } from '../git.mjs';
+import { EPHEMERAL_DIR, TIERS } from '../layout.mjs';
 import { stateFindings } from '../verdicts.mjs';
 import { effectiveTier } from '../tier.mjs';
 import { resolveProjectRoots } from '../project-roots.mjs';
@@ -16,7 +18,6 @@ import { resolveProjectRoots } from '../project-roots.mjs';
 /** The card-level verification record, in the card folder. */
 export const VERIFICATION_RECORD = 'verification.md';
 
-const COMMIT = /^[0-9a-f]{7,40}$/i;
 const NAMED_PATHS = 3;
 const SHOWN_VALUE = 40;
 const RERUN = 'Spawn the verification lead to rerun verification against the current code, then check again.';
@@ -62,10 +63,10 @@ export function checkVerificationRecorded({ projectDir, card, required = true, t
   const found = cardPath(projectDir, card.id);
   const roots = resolveProjectRoots(projectDir);
   const root = roots.mode === 'local' ? roots.docsRoot : resolve(projectDir);
-  const path = found === null ? VERIFICATION_RECORD : `${roots.mode === 'local' ? 'docs/' : ''}${relative(root, found.dir).replaceAll('\\', '/')}/${VERIFICATION_RECORD}`;
+  const path = found === null ? VERIFICATION_RECORD : `${roots.mode === 'local' ? 'docs/' : ''}${toPosix(relative(root, found.dir))}/${VERIFICATION_RECORD}`;
   const recordFile = found === null ? null : `${found.dir}/${VERIFICATION_RECORD}`;
-  if (!required && recordFile !== null && absent(recordFile)) return [];
-  if (!required && recordFile === null) return [];
+  const optional = !required || lighterCycleOf(projectDir, card.id) !== null;
+  if (optional && (recordFile === null || absent(recordFile))) return [];
   const loaded = recordFile === null ? null : load(recordFile);
   if (loaded === null) {
     return [{ rule: 'verification-missing', message: `${path} is missing, unreadable or has no frontmatter, so no verification of ${card.id} is on record; spawn the verification lead for this card, which writes the record.`, path }];
@@ -78,7 +79,7 @@ export function checkVerificationRecorded({ projectDir, card, required = true, t
   const needStates = TIERS.indexOf(tier ?? effectiveTier(projectDir, card).tier) >= TIERS.indexOf('product');
   const states = needStates ? stateFindings({ data, text, path }) : [];
   const stale = (reason) => [...states, { rule: 'verification-stale', message: `${path}: ${reason}. ${RERUN}`, path }];
-  if (!COMMIT.test(ranAgainst)) return stale(ranAgainst === '' ? 'ran_against is empty' : `ran_against ${shown(ranAgainst)} is not a commit id`);
+  if (!isCommitId(ranAgainst)) return stale(ranAgainst === '' ? 'ran_against is empty' : `ran_against ${shown(ranAgainst)} is not a commit id`);
   let changes;
   try {
     const commit = run(projectDir, ['rev-parse', '--verify', '--quiet', `${ranAgainst}^{commit}`]).trim();
@@ -90,5 +91,5 @@ export function checkVerificationRecorded({ projectDir, card, required = true, t
   const outside = [...new Set(changes.flatMap((c) => [c.from, c.path]).filter((p) => p !== undefined && !isProcessPath(p)))].sort();
   if (outside.length === 0) return states;
   const more = outside.length > NAMED_PATHS ? ` and ${outside.length - NAMED_PATHS} more` : '';
-  return stale(`files outside docs/ephemeral changed since ${ranAgainst.slice(0, 12)}: ${outside.slice(0, NAMED_PATHS).join(', ')}${more}`);
+  return stale(`files outside ${EPHEMERAL_DIR} changed since ${shortSha(ranAgainst)}: ${outside.slice(0, NAMED_PATHS).join(', ')}${more}`);
 }

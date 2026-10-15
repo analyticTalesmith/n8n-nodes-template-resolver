@@ -5,21 +5,21 @@ import { BoardError, listCards } from '../lib/board.mjs';
 import { claimStatus } from '../lib/claim.mjs';
 import { GitError, changedFiles, headCommit, runGit } from '../lib/git.mjs';
 import { HANDOFF_ROOT, checkHandoff, renderHandoff } from '../lib/handoff.mjs';
-import { humanColumn } from '../lib/moves.mjs';
+import { ACTIVE, DOCS_ROOT, humanColumn } from '../lib/layout.mjs';
 import { SESSION_RULES, checkSession } from '../lib/session-check.mjs';
 import { resolveProjectPath, resolveProjectRoots } from '../lib/project-roots.mjs';
-import { PathError } from '../lib/files.mjs';
+import { PathError, toPosix } from '../lib/files.mjs';
 import { sessionFacts } from './session-check.mjs';
 import { checkCardStates } from './validate.mjs';
+import { isoDate } from '../lib/time.mjs';
+import { isKebab } from '../lib/names.mjs';
 
 /** @typedef {import('./validate.mjs').Finding} Finding */
 /** @typedef {import('../lib/handoff.mjs').HandoffFields} HandoffFields */
 /** @typedef {import('../lib/git.mjs').GitRunner} GitRunner */
 
-const NAME = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const NAME_MAX = 60;
 const DEVICE_NAME = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/;
-const ACTIVE_COLUMNS = ['03_in_progress', '04_review', '05_gate'];
 const BOARD_LINES_MAX = 8;
 const NEXT_MIN = 1;
 const NEXT_MAX = 3;
@@ -44,13 +44,12 @@ export class HandoffError extends Error {
   }
 }
 
-const toForwardSlashes = (p) => p.replaceAll('\\', '/');
 const blank = (value) => typeof value !== 'string' || value.trim() === '';
 const list = (value) => (Array.isArray(value) ? value : []);
 
 /** True when the project-relative path resolves inside the project (symlinks followed) and exists. */
 function existsInside(roots, path) {
-  if (blank(path) || isAbsolute(path) || path.replaceAll('\\', '/').split('/').some((part) => part === '' || part === '.' || part === '..')) return false;
+  if (blank(path) || isAbsolute(path) || toPosix(path).split('/').some((part) => part === '' || part === '.' || part === '..')) return false;
   let target;
   try {
     target = resolveProjectPath(roots, path);
@@ -59,10 +58,10 @@ function existsInside(roots, path) {
     throw cause;
   }
   if (!existsSync(target)) return false;
-  const logical = path.replaceAll('\\', '/');
-  const home = roots.mode === 'local' && (logical === 'docs' || logical.startsWith('docs/')) ? roots.docsRoot : roots.checkoutRoot;
+  const logical = toPosix(path);
+  const home = roots.mode === 'local' && (logical === DOCS_ROOT || logical.startsWith(`${DOCS_ROOT}/`)) ? roots.docsRoot : roots.checkoutRoot;
   const inside = relative(realpathSync(home), realpathSync(target));
-  return (inside !== '' || logical === 'docs') && !inside.startsWith('..') && !isAbsolute(inside) && !`${inside}${sep}`.startsWith(`..${sep}`);
+  return (inside !== '' || logical === DOCS_ROOT) && !inside.startsWith('..') && !isAbsolute(inside) && !`${inside}${sep}`.startsWith(`..${sep}`);
 }
 
 /** @param {string} root @param {HandoffFields} fields @returns {Finding[]} */
@@ -139,7 +138,7 @@ function boardFacts(projectDir, now) {
     if (status.state === 'held') return `held by ${owner}`;
     return `stale claim of ${owner}${status.minutes === undefined ? '' : `, ${status.minutes} min`}`;
   };
-  const active = cards.filter(({ column }) => ACTIVE_COLUMNS.includes(column));
+  const active = cards.filter(({ column }) => ACTIVE.includes(column));
   if (board.length === 0) {
     board = active.slice(0, BOARD_LINES_MAX).map(({ column, card }) => `${card.id} (${humanColumn(column)}): ${claimText(card)}, review rounds ${card.review_rounds}`);
     if (active.length > BOARD_LINES_MAX) board.push(`and ${active.length - BOARD_LINES_MAX} more active cards`);
@@ -173,7 +172,7 @@ function sessionReport(root, decisions, run) {
 }
 
 /**
- * Writes docs/ephemeral/handoffs/<name>.md from the caller's fields and the facts read from git and the board.
+ * Writes <HANDOFF_ROOT>/<name>.md from the caller's fields and the facts read from git and the board.
  * Nothing is written when any check fails. Never runs the verify command.
  * @param {string} projectDir
  * @param {string} name
@@ -182,7 +181,7 @@ function sessionReport(root, decisions, run) {
  * @returns {{ path: string, lines: number, overwrote: boolean }}
  */
 export function writeHandoff(projectDir, name, fields, { overwrite = false, now = new Date(), run = runGit } = {}) {
-  if (typeof name !== 'string' || !NAME.test(name) || name.length > NAME_MAX || DEVICE_NAME.test(name)) {
+  if (!isKebab(name) || name.length > NAME_MAX || DEVICE_NAME.test(name)) {
     throw new HandoffError(
       'handoff-name-invalid',
       `"${name}" is not a usable handoff name. Use lowercase letters, digits and single hyphens, at most ${NAME_MAX} characters, and not a Windows device name such as con or lpt1.`,
@@ -198,7 +197,7 @@ export function writeHandoff(projectDir, name, fields, { overwrite = false, now 
     const branch = run(root, ['rev-parse', '--abbrev-ref', 'HEAD']).trim();
     facts = {
       name,
-      date: now.toISOString().slice(0, 10),
+      date: isoDate(now),
       branch: branch === 'HEAD' ? 'detached HEAD' : branch,
       commit: headCommit(root, { run }),
       uncommitted: changedFiles(root, 'HEAD', run).length,
@@ -229,7 +228,7 @@ export function writeHandoff(projectDir, name, fields, { overwrite = false, now 
     if (cause.code !== 'EEXIST') throw cause;
     throw new HandoffError('handoff-exists', `${HANDOFF_ROOT}/${name}.md already exists. Pass overwrite (CLI --overwrite) to replace it; git keeps the old one.`, [], { cause });
   }
-  return { path: toForwardSlashes(file), lines: text.replace(/\n$/, '').split('\n').length, overwrote: overwrite && existed };
+  return { path: toPosix(file), lines: text.replace(/\n$/, '').split('\n').length, overwrote: overwrite && existed };
 }
 
 const isMain = (() => {

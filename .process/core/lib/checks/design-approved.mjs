@@ -3,7 +3,7 @@ import { BoardError, cardPath } from '../board.mjs';
 import { blastRadiusOf } from '../card.mjs';
 import { CycleError, readCycle } from '../cycle.mjs';
 import { DesignApprovalError, designApprovalState, readDesignApproval } from '../design-approval.mjs';
-import { PathError } from '../files.mjs';
+import { PathError, toPosix } from '../files.mjs';
 import { ProjectRootsError } from '../project-roots.mjs';
 
 /** A front cycle admits its planned cards and narrowly scoped bug or security fixes. */
@@ -40,7 +40,7 @@ function inspectDesignApproval(projectDir, card) {
   if (outside.length || blastRadiusOf(card).length === 0) {
     findings.push({ rule: 'card-not-approved', message: `Card ${card.id} reaches ${outside.length ? outside.join(', ') : 'an unspecified module'} outside the approved modules.` });
   }
-  const portablePath = (path) => typeof path === 'string' ? path.replaceAll('\\', '/').toLowerCase() : '';
+  const portablePath = (path) => typeof path === 'string' ? toPosix(path).toLowerCase() : '';
   const approvedPaths = new Set(approval.approves.map((entry) => portablePath(entry.path)));
   for (const path of ['add', 'edit', 'remove'].flatMap((kind) => card.manifest?.[kind] ?? [])) {
     if (approvedPaths.has(portablePath(path))) findings.push({ rule: 'card-not-approved', message: `Card ${card.id} changes approved document ${path}; a person must approve it.` });

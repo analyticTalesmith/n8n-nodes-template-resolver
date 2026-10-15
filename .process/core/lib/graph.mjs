@@ -1,3 +1,4 @@
+import { toPosix } from './files.mjs';
 /** @typedef {import('./card.mjs').Card} Card */
 
 /**
@@ -42,7 +43,7 @@ export function findCycle(nodes) {
  * a path-segment prefix of the other: "src" overlaps "src/a.mjs", but "a/b" does not overlap "a/bc".
  */
 export const normalize = (p) => {
-  const n = p.replaceAll('\\', '/').replace(/^\.\//, '').replace(/\/+$/, '').toLowerCase();
+  const n = toPosix(p).replace(/^\.\//, '').replace(/\/+$/, '').toLowerCase();
   return n === '.' ? '' : n;
 };
 export const overlaps = (a, b) => a === '' || b === '' || a === b || a.startsWith(`${b}/`) || b.startsWith(`${a}/`);

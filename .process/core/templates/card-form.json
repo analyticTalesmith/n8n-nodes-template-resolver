@@ -1,0 +1,46 @@
+{
+  "_about": "Only title, goal, criteria and writes are required. type defaults to improvement; verify is test, tool, review or manual; permission is add, edit or remove; links is a list of {label, target} with a path relative to the card folder; the gate is an argv. Create the card with: node core/scripts/card-new.mjs <projectDir> --from-form <this file> --cycle <name>.",
+  "title": "Show the total on the cart page",
+  "type": "improvement",
+  "goal": "The cart page shows the order total, so a shopper sees what they will pay before they check out.",
+  "criteria": [
+    {
+      "id": "cart-01",
+      "text": "the cart page shows the sum of the item prices",
+      "verify": "test"
+    },
+    {
+      "id": "cart-02",
+      "text": "an empty cart shows no total",
+      "verify": "test"
+    },
+    {
+      "id": "cart-03",
+      "text": "the new code reads as one small function",
+      "verify": "review"
+    }
+  ],
+  "writes": [
+    {
+      "path": "src/cart.mjs",
+      "permission": "edit"
+    },
+    {
+      "path": "test/cart-total.test.mjs",
+      "permission": "add"
+    }
+  ],
+  "must_nots": [
+    "change how an item price is rounded"
+  ],
+  "interface": "none: cart.mjs keeps its exported functions; the page text gains one line.",
+  "blast_radius": [
+    "cart"
+  ],
+  "gate": [
+    "node",
+    "--test",
+    "--test-reporter=tap",
+    "test/cart-total.test.mjs"
+  ]
+}

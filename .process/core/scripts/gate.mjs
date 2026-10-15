@@ -4,8 +4,8 @@ import { fileURLToPath } from 'node:url';
 import { BoardError, cardPath, isCardId, readCard } from '../lib/board.mjs';
 import { ConfigError } from '../lib/config.mjs';
 import { GateError, gateFindings } from '../lib/gate.mjs';
-import { COLUMNS } from '../lib/layout.mjs';
-import { checkMove, humanColumn } from '../lib/moves.mjs';
+import { COLUMNS, FORWARD, humanColumn } from '../lib/layout.mjs';
+import { checkMove } from '../lib/moves.mjs';
 import { TierError, describeTier, effectiveConcerns, effectiveTier } from '../lib/tier.mjs';
 import { scriptCommand } from '../lib/script-command.mjs';
 import { parseColumn } from './card-move.mjs';
@@ -13,8 +13,6 @@ import { parseColumn } from './card-move.mjs';
 /** @typedef {import('./validate.mjs').Finding} Finding */
 /** @typedef {import('../lib/gate.mjs').GateOptions} GateOptions */
 /** @typedef {import('../lib/gate.mjs').Skipped} Skipped */
-
-const FORWARD = Object.freeze(Object.fromEntries(COLUMNS.slice(0, -1).map((column, i) => [column, COLUMNS[i + 1]])));
 
 /**
  * Answers whether a move would pass, without moving anything or registering any guard.

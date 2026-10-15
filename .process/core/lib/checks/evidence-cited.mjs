@@ -1,22 +1,23 @@
+import { toLf } from '../files.mjs';
 import { readFileSync, readdirSync } from 'node:fs';
-import { fileAtCommit, isAncestorCommit, pathChangedSince, assertTopLevel, runGit } from '../git.mjs';
-import { COMMIT_HASH, readFrontmatter, readRecovered } from '../frontmatter.mjs';
+import { fileAtCommit, isAncestorCommit, isCitedCommit, isCommitId, pathChangedSince, assertTopLevel, runGit } from '../git.mjs';
+import { readFrontmatter, readRecovered } from '../frontmatter.mjs';
+import { LIVING_DIR } from '../layout.mjs';
 import { resolveProjectPath, resolveProjectRoots } from '../project-roots.mjs';
 
 export const RECOVERED_SECTIONS = Object.freeze({ purpose: '## Purpose', scope: '## Scope read', open: '## Open questions', answered: '## Answered' });
 export const EVIDENCE_RULES = Object.freeze(['evidence-commit', 'evidence-path', 'evidence-line', 'evidence-untagged', 'evidence-question', 'evidence-format']);
 export const STALE_RULE = 'evidence-stale';
-const LIVING = 'docs/living';
-const CITATION = /^([^:\s]+):(\d+)(?:-(\d+))?(?:@([0-9a-f]{7,64}))?$/;
+const CITATION = /^([^:\s]+):(\d+)(?:-(\d+))?(?:@([^\s;]+))?$/;
 const QUESTION = /^- Q([1-9]\d*)\.\s/;
 const unsafePath = (path) => !path || path.startsWith('-') || path.startsWith('/') || path.includes('\\') || path.includes(':') || /[\u0000-\u001f]/.test(path) || path.split('/').some((part) => part === '' || part === '.' || part === '..');
 const byName = (a, b) => a.name.localeCompare(b.name, 'en');
 
-function livingFiles(roots, rel = LIVING) {
+function livingFiles(roots, rel = LIVING_DIR) {
   let entries;
   try { entries = readdirSync(resolveProjectPath(roots, rel), { withFileTypes: true }).sort(byName); }
   catch (cause) {
-    if (cause.code === 'ENOENT' && rel === LIVING) return [];
+    if (cause.code === 'ENOENT' && rel === LIVING_DIR) return [];
     throw cause;
   }
   return entries.flatMap((entry) => {
@@ -136,7 +137,7 @@ function tokensOf(unit) {
 
 function countLines(text) {
   if (text === '') return 0;
-  const normalized = text.replaceAll('\r\n', '\n');
+  const normalized = toLf(text);
   return normalized.split('\n').length - (normalized.endsWith('\n') ? 1 : 0);
 }
 
@@ -146,10 +147,10 @@ export function evidenceReport({ projectDir, records, only, run = runGit }) {
   const notes = [];
   let roots;
   try { roots = resolveProjectRoots(projectDir); }
-  catch { return { findings: [{ rule: 'evidence-format', path: only ?? LIVING, message: 'Living documents cannot be read. Repair the project docs store.' }], notes }; }
+  catch { return { findings: [{ rule: 'evidence-format', path: only ?? LIVING_DIR, message: 'Living documents cannot be read. Repair the project docs store.' }], notes }; }
   let paths;
   try { paths = only ? [only] : recoveredInScope({ projectDir, records }); }
-  catch { return { findings: [{ rule: 'evidence-format', path: only ?? LIVING, message: 'Living documents cannot be inventoried. Repair the project docs store.' }], notes }; }
+  catch { return { findings: [{ rule: 'evidence-format', path: only ?? LIVING_DIR, message: 'Living documents cannot be inventoried. Repair the project docs store.' }], notes }; }
   if (paths.length === 0) return { findings, notes };
   try { assertTopLevel(projectDir, { run }); }
   catch { return { findings: paths.map((path) => ({ rule: 'evidence-commit', path, message: 'Recovered documents need a git repository at the project root.' })), notes }; }
@@ -172,11 +173,11 @@ export function evidenceReport({ projectDir, records, only, run = runGit }) {
     if (source === null) { add('evidence-format', 'Recovered document cannot be read. Restore the document.'); continue; }
     const data = readFrontmatter(source);
     const hash = readRecovered(data).recoveredAt;
-    if (hash === null || !COMMIT_HASH.test(hash) || !validCommit(hash)) {
+    if (hash === null || !isCommitId(hash, { full: true }) || !validCommit(hash)) {
       add('evidence-commit', 'recovered_at must name a reachable full lowercase commit in the project git repository.');
       continue;
     }
-    const lines = visibleLines(source.replaceAll('\r\n', '\n').split('\n'));
+    const lines = visibleLines(toLf(source).split('\n'));
     const open = questionNumbers(lines, RECOVERED_SECTIONS.open);
     const answered = questionNumbers(lines, RECOVERED_SECTIONS.answered);
     const referenced = { open: new Set(), answer: new Set() };
@@ -197,7 +198,7 @@ export function evidenceReport({ projectDir, records, only, run = runGit }) {
         if (!citations.length || citations.some((part) => part === '')) { add('evidence-format', 'A src tag needs a path and line citation.'); continue; }
         for (const citation of citations) {
           const match = CITATION.exec(citation);
-          if (!match || unsafePath(match[1])) { add('evidence-format', 'A citation needs a project-relative path and positive line or range.'); continue; }
+          if (!match || unsafePath(match[1]) || (match[4] !== undefined && !isCitedCommit(match[4]))) { add('evidence-format', 'A citation needs a project-relative path and positive line or range.'); continue; }
           const [, file, fromText, toText, override] = match;
           const commit = override ?? hash;
           if (override && !validCommit(override)) { add('evidence-commit', `Citation ${citation} names a commit not reachable from HEAD.`); continue; }

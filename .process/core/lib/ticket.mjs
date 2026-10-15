@@ -1,9 +1,11 @@
 import { existsSync, mkdirSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
+import { toPosix } from './files.mjs';
 import { randomUUID } from 'node:crypto';
 import { basename, dirname, join } from 'node:path';
 import { cardFolder, cardPath, isCardId, listCards, readCard, writeCard } from './board.mjs';
+import { compareCardIds } from './card-id.mjs';
 import { readCycle } from './cycle.mjs';
-import { COLUMNS } from './layout.mjs';
+import { CARD_JSON, STAGE, TICKET_ARCHIVE_DIR } from './layout.mjs';
 import { resolveProjectPath, resolveProjectRoots } from './project-roots.mjs';
 
 export class TicketError extends Error {
@@ -23,7 +25,7 @@ export function listTickets(projectDir) {
   return listCards(projectDir)
     .filter(({ cycle }) => cycle === null)
     .map(({ card }) => ({ id: card.id, title: card.title, type: card.type, origin: card.origin ?? null }))
-    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    .sort((a, b) => compareCardIds(a.id, b.id));
 }
 
 /** Moves an unclaimed global backlog ticket to the ticket archive with its dated closure reason. */
@@ -45,7 +47,7 @@ export function closeTicket(projectDir, id, reason) {
   if (claimed) {
     throw new TicketError(`Ticket ${id} is already claimed by cycle ${claimed}. Only unclaimed tickets can be closed.`);
   }
-  const dir = resolveProjectPath(resolveProjectRoots(projectDir), `docs/archive/tickets/${id}`).replaceAll('\\', '/');
+  const dir = toPosix(resolveProjectPath(resolveProjectRoots(projectDir), `${TICKET_ARCHIVE_DIR}/${id}`));
   if (existsSync(dir)) {
     throw new TicketError(`Ticket archive destination ${dir} already exists. The backlog ticket was not changed.`);
   }
@@ -100,7 +102,7 @@ export function selectTicket(projectDir, cycle, id) {
   if (claimed) {
     throw new TicketError(`Ticket ${id} is already claimed by cycle ${claimed}. Pick an unclaimed ticket.`);
   }
-  const dir = cardFolder(projectDir, cycle, COLUMNS[0], id);
+  const dir = cardFolder(projectDir, cycle, STAGE.backlog, id);
   try {
     mkdirSync(dirname(dir), { recursive: true });
     renameSync(found.dir, dir);
@@ -114,7 +116,7 @@ export function selectTicket(projectDir, cycle, id) {
     writeCard(projectDir, id, { ...readCard(projectDir, id), claimed_in: cycle });
   } catch (cause) {
     throw new TicketError(
-      `Ticket ${id} is now in cycle ${cycle}, but writing its claimed_in field failed (${cause.message}). Set claimed_in to "${cycle}" in ${dir}/card.json by hand.`,
+      `Ticket ${id} is now in cycle ${cycle}, but writing its claimed_in field failed (${cause.message}). Set claimed_in to "${cycle}" in ${dir}/${CARD_JSON} by hand.`,
     );
   }
   return { id, cycle, dir };
@@ -136,14 +138,14 @@ export function releaseTicket(projectDir, id) {
   if (status !== 'open') {
     throw new TicketError(`Cycle ${found.cycle} is ${status}. Tickets cannot be released from a closed cycle.`);
   }
-  if (found.column === COLUMNS.at(-1)) {
+  if (found.column === STAGE.done) {
     throw new TicketError(`Card ${id} is done. A completed card cannot be released to the backlog.`);
   }
   const card = readCard(projectDir, id);
   if (card.claimed_in !== found.cycle) {
     throw new TicketError(`Card ${id} has claimed_in ${JSON.stringify(card.claimed_in ?? null)}, not ${JSON.stringify(found.cycle)}. Repair its claim before releasing it.`);
   }
-  const dir = cardFolder(projectDir, null, COLUMNS[0], id);
+  const dir = cardFolder(projectDir, null, STAGE.backlog, id);
   if (existsSync(dir)) {
     throw new TicketError(`Backlog destination ${dir} already exists. The selected card was not changed.`);
   }
@@ -170,18 +172,18 @@ export function releaseTicket(projectDir, id) {
     throw new TicketError(`Ticket ${id} could not move to the backlog (${cause.message}). It remains in cycle ${found.cycle}.`, { cause });
   }
   try {
-    renameSync(join(dir, basename(staged)), join(dir, 'card.json'));
+    renameSync(join(dir, basename(staged)), join(dir, CARD_JSON));
   } catch (cause) {
     try {
       renameSync(dir, found.dir);
     } catch (rollbackCause) {
-      throw new TicketError(`Ticket ${id} moved to ${dir}, but its claim update failed (${cause.message}) and the folder could not be rolled back (${rollbackCause.message}). Its original card.json still claims ${found.cycle}; move the folder to ${found.dir} or finish clearing claimed_in by hand.`, { cause });
+      throw new TicketError(`Ticket ${id} moved to ${dir}, but its claim update failed (${cause.message}) and the folder could not be rolled back (${rollbackCause.message}). Its original ${CARD_JSON} still claims ${found.cycle}; move the folder to ${found.dir} or finish clearing claimed_in by hand.`, { cause });
     }
     try { unlinkSync(staged); }
     catch (rollbackCause) {
       throw new TicketError(`Ticket ${id} was rolled back to ${found.dir} after its claim update failed (${cause.message}), but ${staged} could not be removed (${rollbackCause.message}). Remove that staged file by hand.`, { cause });
     }
-    throw new TicketError(`Ticket ${id} claim update failed (${cause.message}); its folder and original card.json were rolled back to ${found.dir}.`, { cause });
+    throw new TicketError(`Ticket ${id} claim update failed (${cause.message}); its folder and original ${CARD_JSON} were rolled back to ${found.dir}.`, { cause });
   }
   return { id, cycle: found.cycle, dir };
 }

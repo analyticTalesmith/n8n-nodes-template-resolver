@@ -15,6 +15,7 @@ The accountable lead is `lead`, the feature lead for each card. It directs the o
 - Planning: consuming a service. Build takes Planning's spec, plan and frozen reviewer brief as given. The one exception is the card's own `docs/ephemeral/work/<card>/spec.md` when the card lists it in its manifest or file scope: Build may then edit it to match what was built, and no other file of Planning's work folder.
 - Architecture: collaborating when a contract is unclear. Build asks a question through the project lead and never edits Architecture's documents.
 - Review: consuming a service through the project lead. Build receives findings from the project lead and answers them in rounds.
+- Spawned members: `node .process/core/scripts/spawn.mjs <projectDir> build:<role> --brief <file> --cwd <worktree> --card <card>` starts a member with its role's tools and, for a role with Bash, only `Bash(git status *)`, `Bash(git diff *)`, `Bash(git add *)`, `Bash(git commit *)`, `Bash(git log *)`, `Bash(node *)`, `Bash(npm test *)` and the card's gate; never git push or a network command. `--print` shows the allowlist and runs nothing. A member that reports blocked on approval is run again through this launcher; the lead never commits for it without saying so in the handoff.
 - Project lead: the only caller. It claims and moves the card; Build reports and says which move comes next.
 
 ## Roster

@@ -32,6 +32,7 @@ export const CHECK_CONCERN = Object.freeze({
   ownership: 'code-hygiene',
   'tests-fail-first': 'test-depth',
   'card-gate': 'test-depth',
+  'builder-done': 'review',
   'test-amendments': 'test-depth',
   'front-end-css': 'code-hygiene',
   'front-end-contrast': 'code-hygiene',

@@ -9,7 +9,7 @@ import { listDeltas } from './delta.mjs';
 import { readFrontmatter } from './frontmatter.mjs';
 import { readTierData } from './gate.mjs';
 import { findCycle } from './graph.mjs';
-import { COLUMNS, cyclePaths } from './layout.mjs';
+import { CARD_JSON, CARD_MD, COLUMNS, CONTEXT_MD, DOCS_ROOT, LIVING_DIR, MODULES_DIR, PROCESS_TIERS, cyclePaths } from './layout.mjs';
 import { resolveProjectPath, resolveProjectRoots } from './project-roots.mjs';
 import { cardLevelFindings, contractCoverageFindings, planFindings, readCyclePlan, selectedLevelsOf } from './test-plan.mjs';
 
@@ -25,7 +25,7 @@ function linkedDocs(text, from) {
     let target;
     try { target = decodeURI(raw.split('#', 1)[0].split('?', 1)[0]); } catch { continue; }
     const path = posix.normalize(posix.join(posix.dirname(from), target));
-    if (path.startsWith('docs/') && !path.includes('\\') && path.endsWith('.md')) out.push(path);
+    if (path.startsWith(`${DOCS_ROOT}/`) && !path.includes('\\') && path.endsWith('.md')) out.push(path);
   }
   return out;
 }
@@ -38,11 +38,11 @@ function cycleCards(roots, name) {
     const folder = resolveProjectPath(roots, parent);
     for (const entry of readdirSync(folder, { withFileTypes: true }).filter((item) => item.isDirectory()).sort((a, b) => a.name.localeCompare(b.name))) {
       const logical = `${parent}/${entry.name}`;
-      const cardFile = resolveProjectPath(roots, `${logical}/card.json`);
+      const cardFile = resolveProjectPath(roots, `${logical}/${CARD_JSON}`);
       if (!existsSync(cardFile)) continue;
       const card = JSON.parse(readFileSync(cardFile, 'utf8'));
       const links = new Set();
-      for (const file of ['card.md', 'context.md']) {
+      for (const file of [CARD_MD, CONTEXT_MD]) {
         const path = `${logical}/${file}`;
         const absolute = resolveProjectPath(roots, path);
         if (existsSync(absolute)) for (const linked of linkedDocs(readFileSync(absolute, 'utf8'), path)) links.add(linked);
@@ -79,7 +79,7 @@ export function analyzeCycle(projectDir, name) {
 
   for (const story of stories) {
     if (!cards.some(({ card, links }) => links.has(story) || card.criteria?.some((criterion) => criterion.traces?.some((trace) => trace.split('#')[0] === story)))) {
-      findings.push(finding('analyze-story-unlinked', `Story ${story} has no card link. Link it from card.md or context.md, or trace it from a criterion.`, story));
+      findings.push(finding('analyze-story-unlinked', `Story ${story} has no card link. Link it from ${CARD_MD} or ${CONTEXT_MD}, or trace it from a criterion.`, story));
     }
   }
   for (const doc of must) {
@@ -99,7 +99,7 @@ export function analyzeCycle(projectDir, name) {
   const traced = cards.flatMap(({ card }) => (card.criteria ?? []).flatMap((criterion) => criterion.traces ?? []))
     .filter((trace) => typeof trace === 'string')
     .map((trace) => trace.split('#')[0])
-    .filter((path) => path.startsWith('docs/living/') && path.endsWith('.md') && !path.split('/').includes('..'));
+    .filter((path) => path.startsWith(`${LIVING_DIR}/`) && path.endsWith('.md') && !path.split('/').includes('..'));
   for (const doc of new Set([...stories, ...must, ...cards.flatMap(({ links }) => [...links]), ...traced])) {
     const absolute = resolveProjectPath(roots, doc);
     if (existsSync(absolute) && readFrontmatter(readFileSync(absolute, 'utf8'))?.state === 'planned' && !adds.has(doc)) {
@@ -107,7 +107,7 @@ export function analyzeCycle(projectDir, name) {
     }
   }
 
-  const modules = 'docs/living/architecture/modules';
+  const modules = MODULES_DIR;
   if (existsSync(resolveProjectPath(roots, modules))) for (const { card } of cards) for (const module of blastRadiusOf(card)) {
     // `none` says the card reaches no module, so there is no module page to look for.
     if (module !== 'none' && MODULE_NAME.test(module) && !existsSync(resolveProjectPath(roots, `${modules}/${module}.md`))) {
@@ -115,8 +115,8 @@ export function analyzeCycle(projectDir, name) {
     }
   }
   const tier = readTierData(projectDir);
-  for (const issue of tier.findings) findings.push(finding('analyze-test-levels', issue.message, '.process/tiers/rigor/tiers.json'));
-  for (const { card } of cards) for (const issue of checkTestLevels({ card, tier: card.tier ?? cycle.tier, tierData: tier.data }).findings) {
+  for (const issue of tier.findings) findings.push(finding('analyze-test-levels', issue.message, `${PROCESS_TIERS}/tiers.json`));
+  for (const { card } of cards) for (const issue of checkTestLevels({ card, tier: card.tier ?? cycle.tier, tierData: tier.data, projectDir }).findings) {
     findings.push(finding('analyze-test-levels', `Card ${card.id}: ${issue.message}`, card.id));
   }
 

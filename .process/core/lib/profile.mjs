@@ -1,8 +1,8 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { CONCERNS } from './concerns.mjs';
-import { ConfigError, readConfig, writeConfig } from './config.mjs';
-import { TIERS } from './layout.mjs';
+import { CONFIG_PATH, ConfigError, readConfig, writeConfig } from './config.mjs';
+import { PROCESS_CORE, TIERS } from './layout.mjs';
 
 /**
  * The work profile: a small set of dimensions, each set on its own. Eight are declared per cycle, one is inferred
@@ -191,18 +191,34 @@ export function readProjectProfile(projectDir) {
   const profile = config.work_profile;
   if (profile === undefined) return {};
   if (profile === null || typeof profile !== 'object' || Array.isArray(profile)) {
-    throw new ProfileError('work_profile in .process/aperture.json must be an object of project dimensions (audience, governance, deployment, executor, independence, criticality).');
+    throw new ProfileError(`work_profile in ${CONFIG_PATH} must be an object of project dimensions (audience, governance, deployment, executor, independence, criticality).`);
   }
   const problems = [];
   for (const [key, value] of Object.entries(profile)) {
     if (!Object.hasOwn(PROJECT_DIMENSIONS, key)) problems.push(`Unknown project dimension "${key}". Use one of: ${Object.keys(PROJECT_DIMENSIONS).join(', ')}.`);
     else if (!PROJECT_DIMENSIONS[key].includes(value)) problems.push(`Project ${key} cannot be ${JSON.stringify(value)}. Use one of: ${PROJECT_DIMENSIONS[key].join(', ')}.`);
   }
-  if (problems.length > 0) throw new ProfileError(`work_profile in .process/aperture.json is not valid: ${problems[0]}`);
+  if (problems.length > 0) throw new ProfileError(`work_profile in ${CONFIG_PATH} is not valid: ${problems[0]}`);
   return { ...profile };
 }
 
 export { ALL_KEYS as PROFILE_LEVELS };
+
+/**
+ * The reminder for project dimensions nobody has set: one line naming them and one saying how to set one. It never
+ * picks a value. Empty when all six are set.
+ * @param {string} projectDir
+ * @returns {string[]}
+ */
+export function unsetDimensionsReminder(projectDir) {
+  const set = readProjectProfile(projectDir);
+  const unset = Object.keys(PROJECT_DIMENSIONS).filter((key) => set[key] === undefined);
+  if (unset.length === 0) return [];
+  return [
+    `project dimensions not set: ${unset.join(', ')}`,
+    `set one with: node ${PROCESS_CORE}/scripts/profile.mjs <projectDir> set <dimension>=<value> (profile.mjs with no arguments lists the allowed values)`,
+  ];
+}
 
 /** @typedef {{ test: (facts: Record<string, unknown>) => boolean, manual: boolean, never: boolean, text: string }} Predicate */
 

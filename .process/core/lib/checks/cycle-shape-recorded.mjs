@@ -1,12 +1,12 @@
 import { cardPath } from '../board.mjs';
 import { CycleError } from '../cycle.mjs';
 import { shapeFindings } from '../cycle-shape.mjs';
-import { cyclePaths } from '../layout.mjs';
+import { STAGE, cyclePaths, edgeKey } from '../layout.mjs';
 
 /** @typedef {import('../../scripts/validate.mjs').Finding} Finding */
 
 /** The stage phases a card must have recorded before it moves, by the edge it takes. */
-const PHASES_BY_EDGE = Object.freeze({ '01_shaping>02_ready': ['down'] });
+const PHASES_BY_EDGE = Object.freeze({ [edgeKey(STAGE.shaping, STAGE.ready)]: ['down'] });
 
 /**
  * A card in a cycle may move to ready only when its cycle records why it has its shape and every down-leg spine stage is

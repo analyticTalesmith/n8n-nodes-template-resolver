@@ -1,3 +1,4 @@
+import { stripBom } from './files.mjs';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { ATOM_ROOTS } from './atom.mjs';
@@ -79,7 +80,7 @@ function sectionsOf(lines, offset) {
 export function parseDeliverable(text, path) {
   const data = frontmatterOf(text);
   if (data === null || typeof data[COMPOSED_KEY] !== 'string' || data[COMPOSED_KEY].trim() === '') return null;
-  const all = text.replace(/^﻿/, '').split(/\r?\n/);
+  const all = stripBom(text).split(/\r?\n/);
   const close = all.findIndex((line, index) => index > 0 && /^---[ \t]*$/.test(line));
   const cites = Array.isArray(data[CITES_KEY]) ? data[CITES_KEY] : [];
   const records = cites.map((raw) => {

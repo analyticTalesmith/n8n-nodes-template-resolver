@@ -1,23 +1,25 @@
+import { toPosix } from './files.mjs';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { readAtoms } from './atom.mjs';
 import { cardPath, listCards, readCard } from './board.mjs';
 import { readFrontmatter } from './frontmatter.mjs';
 import { findCycle, normalize } from './graph.mjs';
+import { BUILT, DOCS_ROOT, MODULES_DIR, PROCESS_DIR } from './layout.mjs';
 import { resolveProjectPath, resolveProjectRoots } from './project-roots.mjs';
+import { isTestPath } from './test-paths.mjs';
 
 /** @typedef {import('../scripts/validate.mjs').Finding} Finding */
 /** @typedef {{ name: string, depends_on: string[], paths: string[] }} Module */
 /** @typedef {{ id: string, type: string, links: { type: string, target: string }[] }} AtomNode */
 
-export const MODULES_DIR = 'docs/living/architecture/modules';
+export { MODULES_DIR };
 /** Columns whose cards have built, committed tests worth running again. */
-const BUILT_COLUMNS = new Set(['04_review', '05_gate', '06_done']);
-const TEST_FILE = /(^|\/)(tests?|__tests__)\/|\.(test|spec)\.[a-z0-9]+$/i;
+const BUILT_COLUMNS = new Set(BUILT);
 
-const slashes = (path) => String(path).replaceAll('\\', '/').replace(/^(\.\/)+/, '');
+const slashes = (path) => toPosix(String(path), { stripDotSlash: true });
 const listOf = (value) => (Array.isArray(value) ? value.filter((item) => typeof item === 'string' && item !== '') : []);
-const isIgnorable = (path) => path.startsWith('docs/') || path.startsWith('.process/') || TEST_FILE.test(path);
+const isIgnorable = (path) => path.startsWith(`${DOCS_ROOT}/`) || path.startsWith(`${PROCESS_DIR}/`) || isTestPath(path);
 
 /**
  * Reads the module pages and the atoms. A page's frontmatter may hold depends_on (module names) and paths (project
@@ -99,7 +101,7 @@ export function buildGraph({ modules, atoms }) {
 }
 
 const manifestPaths = (card) => ['add', 'edit', 'remove'].flatMap((kind) => (Array.isArray(card?.manifest?.[kind]) ? card.manifest[kind].filter((p) => typeof p === 'string').map(slashes) : []));
-const testsOf = (card) => manifestPaths(card).filter((path) => TEST_FILE.test(path));
+const testsOf = (card) => manifestPaths(card).filter((path) => isTestPath(path));
 const radiusOf = (card) => (Array.isArray(card?.blast_radius) ? card.blast_radius.filter((n) => typeof n === 'string') : []);
 const gateOf = (card) => (Array.isArray(card?.gate) ? card.gate : null);
 

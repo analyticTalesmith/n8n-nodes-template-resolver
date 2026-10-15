@@ -1,11 +1,11 @@
-import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
-import { PathError } from './files.mjs';
+import { PathError, isSha256, sha256Bytes } from './files.mjs';
+import { PROCESS_TEAMS } from './layout.mjs';
 import { resolveProjectPath, resolveProjectRoots } from './project-roots.mjs';
+import { isKebab } from './names.mjs';
 
-const ROOT = '.process/teams';
-const TEAM = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-const HASH = /^[0-9a-f]{64}$/;
+const ROOT = PROCESS_TEAMS;
+const CHARTER_PATH = new RegExp(`^${ROOT.replaceAll('.', '\\.')}/[a-z0-9]+(?:-[a-z0-9]+)*/charter\\.md$`);
 
 export class LocalCharterError extends Error {
   constructor(message, cause) {
@@ -36,7 +36,7 @@ function charters(projectDir) {
   for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
     if (entry.isSymbolicLink()) throw new LocalCharterError(`${ROOT}/${entry.name} is linked. Remove the link before freezing or reviewing the card.`);
     if (!entry.isDirectory()) continue;
-    if (!TEAM.test(entry.name)) throw new LocalCharterError(`${ROOT}/${entry.name} is not a valid team name. Repair the team installation.`);
+    if (!isKebab(entry.name)) throw new LocalCharterError(`${ROOT}/${entry.name} is not a valid team name. Repair the team installation.`);
     const path = `${ROOT}/${entry.name}/charter.md`;
     const file = resolved(path);
     let bytes;
@@ -46,7 +46,7 @@ function charters(projectDir) {
       if (cause.code === 'ENOENT') continue;
       throw new LocalCharterError(`Cannot read ${path}. Restore the charter and freeze the card again.`, cause);
     }
-    result.push({ team: entry.name, path, text: bytes.toString('utf8'), hash: createHash('sha256').update(bytes).digest('hex') });
+    result.push({ team: entry.name, path, text: bytes.toString('utf8'), hash: sha256Bytes(bytes) });
   }
   return result;
 }
@@ -62,7 +62,7 @@ export function frozenLocalCharters(projectDir, snapshot) {
   const found = charters(projectDir);
   if (found === null) return null;
   if (snapshot === null || typeof snapshot !== 'object' || Array.isArray(snapshot)
-      || Object.entries(snapshot).some(([path, hash]) => !/^\.process\/teams\/[a-z0-9]+(?:-[a-z0-9]+)*\/charter\.md$/.test(path) || typeof hash !== 'string' || !HASH.test(hash))) {
+      || Object.entries(snapshot).some(([path, hash]) => !CHARTER_PATH.test(path) || !isSha256(hash))) {
     throw new LocalCharterError('The card has no valid frozen local team-charter baseline. Return it to shaping and freeze it again.');
   }
   const current = Object.fromEntries(found.map(({ path, hash }) => [path, hash]));

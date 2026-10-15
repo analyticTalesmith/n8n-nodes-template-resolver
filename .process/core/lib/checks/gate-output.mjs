@@ -1,4 +1,5 @@
 import { readFileSync, statSync } from 'node:fs';
+import { toPosix } from '../files.mjs';
 import { isAbsolute, join } from 'node:path';
 import { parseRunnerJson, reportFileOf } from './runner-json.mjs';
 
@@ -87,7 +88,7 @@ export function parseTap(output) {
     const kind = kindOf(fields);
     const name = unescapeTap(match[2].trim());
     const message = kind === 'file-load' ? loadErrorLine(lines, index) || (fields.error ?? '') : (fields.error ?? '');
-    failures.push({ name: kind === 'file-load' ? name.replaceAll('\\', '/') : name, kind, message });
+    failures.push({ name: kind === 'file-load' ? toPosix(name) : name, kind, message });
   });
   return { isTap: true, failures };
 }

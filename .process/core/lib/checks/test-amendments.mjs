@@ -1,28 +1,17 @@
 import { isProcessPath } from '../card-files.mjs';
+import { isPlainObject } from '../types.mjs';
+import { isTestPath } from '../test-paths.mjs';
 
 /** @typedef {import('../../scripts/validate.mjs').Finding} Finding */
 /** @typedef {import('../git.mjs').Change} Change */
 /** @typedef {import('../card.mjs').Card} Card */
 /** @typedef {{ path: string, reason: string, approved_by: string }} TestAmendment */
 
-const TEST_FOLDERS = new Set(['test', 'tests', '__tests__']);
-const TEST_FILE = [/\.(test|spec|acceptance)\.[a-z0-9]+$/, /_test\.[a-z0-9]+$/, /^test_.+\.py$/];
-
-/**
- * True when a project-relative path (forward slashes) is a test file: under a test folder or named like a test.
- * An acceptance script counts by file name (`<name>.acceptance.<ext>`), never by folder.
- * @param {string} path
- * @returns {boolean}
- */
-export function isTestPath(path) {
-  const parts = String(path).toLowerCase().split('/');
-  const name = parts.pop() ?? '';
-  return parts.some((part) => TEST_FOLDERS.has(part)) || TEST_FILE.some((pattern) => pattern.test(name));
-}
+export { isTestPath };
 
 const finding = (rule, message, path) => ({ rule, message, ...(path === undefined ? {} : { path }) });
 const filled = (value) => typeof value === 'string' && value.trim() !== '';
-const isLogged = (entry) => entry !== null && typeof entry === 'object' && !Array.isArray(entry) && typeof entry.path === 'string' && typeof entry.reason === 'string' && typeof entry.approved_by === 'string';
+const isLogged = (entry) => isPlainObject(entry) && typeof entry.path === 'string' && typeof entry.reason === 'string' && typeof entry.approved_by === 'string';
 
 /**
  * Tests are append-mostly: a modified, deleted or renamed test needs a logged reason and the lead's approval in the

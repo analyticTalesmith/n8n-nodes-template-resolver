@@ -4,10 +4,12 @@ import { instructionsOf, testLevelsOf } from './card.mjs';
 import { CONCERNS, concernKey } from './concerns.mjs';
 import { CycleError, readCycle } from './cycle.mjs';
 import { setFrontmatterField } from './frontmatter.mjs';
-import { CycleNameError, TIERS, cyclePaths } from './layout.mjs';
+import { CycleNameError, STAGE, TIERS, cyclePaths } from './layout.mjs';
 import { CARD_LEVELS, CYCLE_LEVELS, REGRESSION_MODES, TEST_LEVELS, requiredAt } from './levels.mjs';
 import { resolveProjectPath, resolveProjectRoots } from './project-roots.mjs';
 import { scriptCommand } from './script-command.mjs';
+import { isoDate } from './time.mjs';
+import { detectEol } from './files.mjs';
 
 /** @typedef {{ selected: boolean, source: 'card' | 'cycle' | 'project' | 'selection' }} DepthLevel */
 /** @typedef {{ kind: 'card', id: string } | { kind: 'cycle', name: string }} DepthTarget */
@@ -19,7 +21,7 @@ export class DepthError extends Error {
   }
 }
 
-const DONE = '06_done';
+const DONE = STAGE.done;
 const HEADING = '## Session instructions';
 const INDEX_START = '<!-- generated index';
 
@@ -73,7 +75,7 @@ export function readCycleInstructions(projectDir, name) {
 
 /** The brief text with one list item added to the Session instructions section, created before the generated index when absent. */
 function withInstruction(text, line) {
-  const eol = text.includes('\r\n') ? '\r\n' : '\n';
+  const eol = detectEol(text);
   const lines = splitLines(text);
   const start = lines.findIndex((entry) => entry.trimEnd() === HEADING);
   const item = `- ${line}`;
@@ -102,7 +104,7 @@ const oneLine = (value, what) => {
   return value.trim();
 };
 
-const dated = (now, text) => `${now.toISOString().slice(0, 10)} ${text}`;
+const dated = (now, text) => `${isoDate(now)} ${text}`;
 
 /** Resolves and checks a target; returns what the writers need. */
 function locate(projectDir, target) {

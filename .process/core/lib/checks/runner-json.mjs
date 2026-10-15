@@ -1,3 +1,5 @@
+import { toPosix } from '../files.mjs';
+
 /** @typedef {{ name: string, kind: 'assertion' | 'timeout' | 'file-load' | 'error' | 'cancelled', message: string }} TapFailure */
 
 /**
@@ -43,10 +45,26 @@ const meaningfulLine = (text) =>
     .map((line) => line.replace(/^\s*●\s*/, '').trim())
     .find((line) => line !== '' && !/^Test suite failed to run$/i.test(line)) ?? '';
 
+/**
+ * Markers of a failed assertion anywhere in a message: jest's matcher line (`expect(received).toBe(expected)`), its
+ * `Expected:` / `Received:` lines, or a vitest or node `AssertionError`. One is enough. The word expect alone is not one.
+ */
+const MARKER = /expect\((?:received|actual)\)\.\w+\(|^(?:Expected|Received)(?: [\w ]+)?:|\bAssertionError\b/;
+const STACK_FRAME = /^\s+at\s/;
+
+/** True when a line of the message, above its first stack frame, carries a marker. Best effort: no marker means error. */
+function hasMarker(message) {
+  for (const line of stripAnsi(message).split(/\r?\n/)) {
+    if (STACK_FRAME.test(line)) return false;
+    if (MARKER.test(line.trim())) return true;
+  }
+  return false;
+}
+
 /** @param {string} message @returns {TapFailure['kind']} */
 function kindOfMessage(message) {
   if (TIMEOUT.test(message)) return 'timeout';
-  return ASSERTION.test(meaningfulLine(message)) ? 'assertion' : 'error';
+  return ASSERTION.test(meaningfulLine(message)) || hasMarker(message) ? 'assertion' : 'error';
 }
 
 const JSON_START = /(?:^|\n)(\{"num(?:Total|Failed|Passed)\w*":)/;
@@ -84,9 +102,9 @@ function reportIn(text) {
 export function parseRunnerJson(output, root = '') {
   const report = reportIn(output);
   if (report === null) return { parsed: false, failures: [], passed: null };
-  const base = String(root).replaceAll('\\', '/').replace(/\/$/, '');
+  const base = toPosix(String(root)).replace(/\/$/, '');
   const relative = (name) => {
-    const path = String(name ?? '').replaceAll('\\', '/');
+    const path = toPosix(String(name ?? ''));
     return base !== '' && path.toLowerCase().startsWith(`${base.toLowerCase()}/`) ? path.slice(base.length + 1) : path;
   };
   /** @type {TapFailure[]} */

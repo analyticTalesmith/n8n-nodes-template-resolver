@@ -11,6 +11,7 @@
     "docs-impact": "product",
     "boundary": "product",
     "secrets": "product",
+    "builder-done": "prototype",
     "review-recorded": "prototype",
     "review-clear": "product",
     "ownership": "product",

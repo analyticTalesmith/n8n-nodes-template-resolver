@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { CycleError, cycleStatus, listCycles, readCycle } from './cycle.mjs';
 import { listFeedback } from './feedback.mjs';
 import { latestHandoff } from './handoff.mjs';
-import { BACKLOG_DIR } from './layout.mjs';
+import { BACKLOG_DIR, CARD_JSON } from './layout.mjs';
 import { humanColumn } from './moves.mjs';
 import { resolveProjectPath, resolveProjectRoots } from './project-roots.mjs';
 
@@ -39,7 +39,7 @@ function field(value, max) {
 function backlogCount(projectDir) {
   const dir = resolveProjectPath(resolveProjectRoots(projectDir), BACKLOG_DIR);
   try {
-    return readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory() && existsSync(join(dir, e.name, 'card.json'))).length;
+    return readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory() && existsSync(join(dir, e.name, CARD_JSON))).length;
   } catch (cause) {
     if (cause.code === 'ENOENT') return 0;
     throw cause;

@@ -10,7 +10,7 @@ Any agent picking this up: read the documents linked below, change only the file
 
 <!-- The behavior that must hold. A short list, not a requirements document. -->
 <!-- Type each line: "- `contract` `id` text" or "- `constraint` `id` must: text". Constraint kinds: must, must-not, evidence-required, human-decides, open-ended. -->
-<!-- In card.json each criterion carries `traces`, a list of test file paths ("test/x.test.mjs#id"), and the gate command names the SOURCE test file, never a compiled copy: the review packet shows the reviewer the test files named there as frozen tests, and a path not at the base commit is a warning. The gate must print a report the red-evidence check can read: `["node", "--test", "--test-reporter=tap", "test/x.test.mjs"]`, `["npx", "jest", "--json", "src/x.test.ts"]`, or `["npx", "vitest", "run", "--reporter=json", "--outputFile=<report file>", "src/x.test.ts"]` (the report file is rewritten by every run). -->
+<!-- In card.json each criterion carries `traces`, a list of test file paths ("test/x.test.mjs#id"), and the gate command names the SOURCE test file, never a compiled copy: the review packet shows the reviewer the test files named there as frozen tests, and a path not at the base commit is a warning. The gate must print a report the red-evidence check can read: `["node", "--test", "--test-reporter=tap", "test/x.test.mjs"]`, `["node", "node_modules/jest/bin/jest.js", "--json", "--runTestsByPath", "src/x.test.ts"]`, or `["node", "node_modules/vitest/vitest.mjs", "run", "--reporter=json", "--outputFile=<report file>", "src/x.test.ts"]` (a gate is an argv started without a shell, so it names a node script and never a launcher such as a .cmd file) (the report file is rewritten by every run). Test-first is proved on the gate command, or for a card that lists only `gates` (gate null) on its first selected gates entry, and `core/scripts/red-evidence.mjs` writes the log to `docs/ephemeral/work/<card>/red-evidence.md` (the work folder, not the card folder). With jest give the test path as `--runTestsByPath src/x.test.ts` before any reporter option such as `--reporters=...`: an option that takes a list, placed before the path, reads the path as another reporter. -->
 
 ## Must-nots
 
@@ -18,11 +18,11 @@ Any agent picking this up: read the documents linked below, change only the file
 
 ## Context links
 
-<!-- Links into docs/living that justify this ticket (vision, persona, epic and story, UX flow, principles, domain, ADRs). Link, never copy. Links are relative to this file, for example [Glossary](../../../../living/domain/glossary.md). -->
+<!-- Links into docs/living that justify this ticket (vision, persona, epic and story, UX flow, principles, domain, ADRs). Link, never copy. Links are relative to this file, so count the folders from it up to docs/: a backlog card (docs/ephemeral/backlog/<id>/) writes [Glossary](../../../living/domain/glossary.md); a cycle card (docs/ephemeral/cycles/<cycle>/kanban/<column>/<id>/) writes [Glossary](../../../../../../living/domain/glossary.md). -->
 
 ## User documentation
 
-<!-- Say whether a user can see this change. If so, set user_visible true in card.json and list the user-facing documents it updates in user_docs (documents tagged user_facing: true in their frontmatter), or give user_docs_waiver, one line with the reason none changes. If no user can see it, write `none`. -->
+<!-- Say whether a user can see this change. If so, set user_visible true in card.json and list the user-facing documents it updates in user_docs (documents tagged user_facing: true in their frontmatter, or the root README.md), or give user_docs_waiver, one line with the reason none changes. A card that changes only documents needs nothing, and the root README.md counts as user facing without a tag. If no user can see it, write `none`. -->
 
 ## Interface contract
 
