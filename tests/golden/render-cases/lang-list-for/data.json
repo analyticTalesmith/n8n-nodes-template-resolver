@@ -1,0 +1,12 @@
+{
+  "people": [
+    { "name": "Ann", "on": true },
+    { "name": "Bo", "on": false },
+    { "name": "Cy", "on": false },
+    { "name": "Di", "on": true }
+  ],
+  "cfg": { "size": 4 },
+  "tags": ["x", "y"],
+  "nobody": [],
+  "hidden": false
+}

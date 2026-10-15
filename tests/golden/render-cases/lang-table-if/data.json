@@ -1,0 +1,12 @@
+{
+  "showAll": true,
+  "servers": [
+    { "name": "alpha", "up": true, "load": "0.4" },
+    { "name": "beta", "up": false, "load": "-" },
+    { "name": "gamma", "up": false, "load": "-" },
+    { "name": "delta", "up": true, "load": "0.9 😀" }
+  ],
+  "cfg": { "size": 4 },
+  "spare": ["s1", "s2"],
+  "count": 4
+}
