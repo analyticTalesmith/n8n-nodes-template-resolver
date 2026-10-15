@@ -35,7 +35,6 @@ Must not:
 
 - docs/living/architecture/language-contract.md
 - docs/living/decisions/adr/0003-unknown-names-are-always-errors.md
-- docs/ephemeral/research/language-2-plan.md (section L4 and risks in section D)
 - core/src/interpreter.ts
 - core/src/macros.ts
 - core/src/scope.ts
