@@ -13,4 +13,5 @@ Contents of docs/living/decisions/adr.
 - [0004-render-returns-a-structured-result.md](0004-render-returns-a-structured-result.md) — Render returns a structured result (output, messages, stats, diagnostics) everywhere; the n8n node maps output to its old field.
 - [0005-dependency-free-token-estimator.md](0005-dependency-free-token-estimator.md) — Core ships a dependency-free token estimator (chars/4, wider error bar for code and JSON) with a hook for a real tokenizer.
 - [0006-n8n-node-imports-core-directly.md](0006-n8n-node-imports-core-directly.md) — The n8n node imports the core directly, with n8n libraries as peer dependencies; the API is an equally thin consumer.
+- [0007-statement-tags-without-a-body.md](0007-statement-tags-without-a-body.md) — ADR: SET, INPUT and CALL are single tags without an END, like ELSE
 <!-- end generated index -->
