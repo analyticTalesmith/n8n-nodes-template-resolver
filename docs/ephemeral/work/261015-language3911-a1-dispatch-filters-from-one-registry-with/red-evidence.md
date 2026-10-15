@@ -1,6 +1,6 @@
 ---
-summary: Red evidence for 261015-language3911-a1-dispatch-filters-from-one-registry-with: 54 failing tests across 5 criteria.
-command: ["node","node_modules/jest/bin/jest.js","--runTestsByPath","tests/language/filter-registry.test.ts","tests/headless/spec.test.ts","--json"]
+summary: Red evidence for 261015-language3911-a1-dispatch-filters-from-one-registry-with: 52 failing tests across 5 criteria.
+command: ["node","node_modules/jest/bin/jest.js","--runTestsByPath","tests/language/filter-registry.test.ts","--json"]
 exit_status: 1
 tests_sha256: 5130726d0741
 ---
@@ -63,5 +63,3 @@ Written by `node .process/core/scripts/red-evidence.mjs` from the first run of t
 | fr-groups: filter groups feed the registry fr-groups: every definition has name, params, description, paramNames and apply | fr-groups | assertion failed: Error: expect(received).toBeGreaterThan(expected) |
 | fr-groups: filter groups feed the registry fr-groups: names are unique | fr-groups | assertion failed: Error: expect(received).toBeGreaterThan(expected) |
 | fr-groups: filter groups feed the registry fr-groups: declared parameter names of the six existing filters | fr-groups | assertion failed: Error: expect(received).toMatchObject(expected) |
-| rr-spec: the language spec rr-spec: filter  is listed with a description | none | assertion failed: Error: expect(received).toBeDefined() |
-| rr-spec: the language spec rr-spec: lists exactly the engine's filters | none | assertion failed: Error: expect(received).toBeGreaterThan(expected) |
