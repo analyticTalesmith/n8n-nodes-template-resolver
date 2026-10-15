@@ -53,7 +53,6 @@ spec().operators gains in, not in, between, .length. No change to the existing o
 | Path | Permission (add, edit, remove) | Blast radius |
 | --- | --- | --- |
 | `tests/language/operators.test.ts` | add | template-resolver |
-| `core/src/analyze.ts` | edit | template-resolver |
 | `core/src/expressions.ts` | edit | template-resolver |
 | `core/src/interpreter.ts` | edit | template-resolver |
 | `core/src/spec.ts` | edit | template-resolver |
