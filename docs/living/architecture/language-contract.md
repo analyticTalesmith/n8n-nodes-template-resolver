@@ -1,5 +1,5 @@
 ---
-summary: "The template language contract: the filter registry and its 23 filters, math and output errors, condition operators, CASE matchers, the node limit and the surfaces that must agree"
+summary: "Template language contract: 23 filters, math errors, condition operators, CASE matchers, the node limit and the surfaces that must agree"
 state: built
 ---
 
