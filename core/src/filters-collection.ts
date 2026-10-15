@@ -9,14 +9,12 @@ function textOf(value: unknown): string {
   return tryCoerceToString(value as TemplateValue) || "";
 }
 
-/** The input of a list filter: coerced as FOR coerces it; null is the empty list */
+/** The input of a list filter: coerced as FOR coerces it; null, undefined and blank text are the empty list; anything else rejected is an error */
 function toList(filter: string, input: unknown): unknown[] {
   const list = tryCoerceToArray(input as TemplateValue);
   if (list) return list;
-  if (typeof input === "object" && input !== null) {
-    throw new Error(`${filter} needs a list, got an object`);
-  }
-  return [];
+  if (input == null || (typeof input === "string" && input.trim() === "")) return [];
+  throw new Error(`${filter} needs a list, got ${typeof input === "string" ? "an object text" : "an object"}`);
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -83,7 +81,7 @@ function stableJson(value: unknown): string {
 /** Numbers, then strings, then the rest, then what has no sort value at all */
 function rank(v: unknown): number {
   if (v === MISSING) return 3;
-  if (typeof v === "number") return 0;
+  if (typeof v === "number") return Number.isNaN(v) ? 2 : 0;
   if (typeof v === "string") return 1;
   return 2;
 }
@@ -92,7 +90,7 @@ function compare(a: unknown, b: unknown): number {
   const ra = rank(a);
   const rb = rank(b);
   if (ra !== rb) return ra - rb;
-  if (ra === 0) return (a as number) - (b as number);
+  if (ra === 0) return (a as number) < (b as number) ? -1 : (a as number) > (b as number) ? 1 : 0;
   if (ra === 1) return (a as string) < (b as string) ? -1 : (a as string) > (b as string) ? 1 : 0;
   return 0;
 }
@@ -120,7 +118,7 @@ export const COLLECTION_FILTERS: FilterDefinition[] = [
   {
     name: "length",
     params: "",
-    description: "Items of a list, characters of a text, keys of an object",
+    description: "Items of a list, UTF-16 code units of a text, keys of an object",
     paramNames: [],
     apply(input) {
       if (input == null) return 0;
