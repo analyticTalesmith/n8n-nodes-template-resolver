@@ -292,6 +292,7 @@ export interface Limits {
   maxIterations: number;
   maxOutputChars: number;
   maxDepth: number;
+  maxNodes: number;
 }
 
 /**
@@ -302,6 +303,7 @@ export const DEFAULT_LIMITS: Limits = {
   maxIterations: 10000,
   maxOutputChars: 1000000,
   maxDepth: 32,
+  maxNodes: 0,
 };
 
 /**
@@ -312,6 +314,7 @@ export function withDefaultLimits(limits?: Partial<Limits>): Limits {
     maxIterations: limits?.maxIterations ?? DEFAULT_LIMITS.maxIterations,
     maxOutputChars: limits?.maxOutputChars ?? DEFAULT_LIMITS.maxOutputChars,
     maxDepth: limits?.maxDepth ?? DEFAULT_LIMITS.maxDepth,
+    maxNodes: limits?.maxNodes ?? DEFAULT_LIMITS.maxNodes,
   };
 }
 

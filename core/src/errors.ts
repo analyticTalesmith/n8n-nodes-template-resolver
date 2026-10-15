@@ -1,4 +1,8 @@
-export type LimitCode = "limit-iterations" | "limit-output" | "limit-depth";
+export type LimitCode =
+  | "limit-iterations"
+  | "limit-output"
+  | "limit-depth"
+  | "limit-nodes";
 
 export type DiagnosticCode =
   | "syntax-error"
