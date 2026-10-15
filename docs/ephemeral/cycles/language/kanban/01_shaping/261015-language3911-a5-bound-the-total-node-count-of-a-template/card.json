@@ -19,7 +19,9 @@
     "cli/main.ts",
     "api/openapi.json",
     "tests/language/limits-nodes.test.ts",
-    "tests/headless/spec.test.ts"
+    "tests/headless/spec.test.ts",
+    "core/src/interpreter.ts",
+    "api/routes.ts"
   ],
   "manifest": {
     "add": [
@@ -35,7 +37,9 @@
       "core/src/analyze.ts",
       "cli/main.ts",
       "api/openapi.json",
-      "tests/headless/spec.test.ts"
+      "tests/headless/spec.test.ts",
+      "core/src/interpreter.ts",
+      "api/routes.ts"
     ],
     "frozen": false
   },
