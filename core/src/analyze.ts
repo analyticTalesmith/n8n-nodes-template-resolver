@@ -75,6 +75,9 @@ export interface TemplateAnalysis {
   diagnostics: AnalysisDiagnostic[];
 }
 
+/** Nesting bound for analyze when the caller sets no maxDepth */
+const ANALYZE_MAX_DEPTH = 256;
+
 /**
  * Report the variables a template reads and the filters it applies, derived
  * from the parsed template. Loop item names (inside their loop) and
@@ -85,7 +88,8 @@ export function analyze(
   options?: { limits?: Partial<Limits> }
 ): TemplateAnalysis {
   const ast = new Parser(new Lexer(template).tokenize(), {
-    maxDepth: options?.limits?.maxDepth,
+    maxDepth: options?.limits?.maxDepth ?? ANALYZE_MAX_DEPTH,
+    maxNodes: options?.limits?.maxNodes,
   }).parse();
   const walker = new Walker();
   walker.visitAll(ast.body);
@@ -198,10 +202,17 @@ class Walker {
   }
 
   private visitIf(node: IfNode, kind: "if" | "elseif"): void {
-    this.visitCondition(node.condition, kind, node);
-    this.visitAll(node.consequent);
-    if (Array.isArray(node.alternate)) this.visitAll(node.alternate);
-    else if (node.alternate) this.visitIf(node.alternate, "elseif");
+    let branch = node;
+    let branchKind = kind;
+    for (;;) {
+      this.visitCondition(branch.condition, branchKind, branch);
+      this.visitAll(branch.consequent);
+      const { alternate } = branch;
+      if (Array.isArray(alternate)) return this.visitAll(alternate);
+      if (!alternate) return;
+      branch = alternate;
+      branchKind = "elseif";
+    }
   }
 
   private visitCase(node: CaseNode): void {

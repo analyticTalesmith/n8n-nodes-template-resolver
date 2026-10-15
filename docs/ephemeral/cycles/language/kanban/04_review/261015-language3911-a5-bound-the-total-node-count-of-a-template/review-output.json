@@ -1,0 +1,96 @@
+{
+  "restatement": "Add a node-count limit to the template language. limits.maxNodes defaults to 20000 and is counted once, in the parser. Every AST node except the root counts, in document order, at its opening token. Node maxNodes+1 fails with a limit-nodes diagnostic located at that node, with the same code and position in render, validate, analyze and resolveTemplate. ELSEIF chains must be handled with loops in the parser, interpreter and analyzer, so a long chain ends in a result or limit-nodes and never in a RangeError. analyze must use the caller's limits: with no caller maxDepth it stops failing at 32 levels of nesting and only stops absurd nesting with a coded limit-depth. The API must accept maxNodes and only ever lower it, validate and analyze on the server must use the server's maxNodes, the CLI must take --max-nodes, and the OpenAPI Limits and RequestLimits schemas must list it. No existing output or test expectation may change except the named default-limits fixtures, no runtime dependency may be added, and nothing may be evaluated as code.",
+  "brief_mismatch": "Three small inconsistencies, none of which blocks the review. (1) card.md lists different must-nots from the reviewer brief. The card names 'the one named amendment (if any)', ADR 0003 lenient-mode names and compiled regexes. The brief names three default-limits fixtures and 'change what any existing template outputs'. (2) card.md's interface contract names only tests/headless/spec.test.ts as the amendment. spec.md and m1 name limits.test.ts and api.test.ts too, and the post-freeze manifest drops spec.test.ts and errors.ts from edit as pre-base work, though files_scope still lists them. (3) The base already held a stub DEFAULT_LIMITS.maxNodes of 0, so part of the interface landed before base and cannot be reviewed here.",
+  "verification_plan": [
+    "Parser: maxNodes is counted in one helper. Every node-producing path (text, variable, comment, IF, each ELSEIF branch, CASE, WHEN, DEFAULT, FOR, SECTION, FENCE, LIST, LIST_ITEM, TABLE, HEADER, ROW, the FOR row wrapper in TABLE) counts parent before children at its opening token. ELSE and the Program root do not count.",
+    "The limit-nodes error is a LimitError/TemplateError with code limit-nodes, the crossing token's line and column, and a suggestion naming limits.maxNodes.",
+    "render, resolveTemplate, validate (through analyze) and analyze all pass limits.maxNodes to the Parser; an absent value falls back to 20000.",
+    "ELSEIF handling is iterative in the parser, interpreter.visitIf and analyze Walker.visitIf; the AST shape stays a nested IfNode in alternate; no duplicated branch-parsing code is left.",
+    "Interpreter: branch choice, ELSE fallback, error relocation and output are unchanged for existing IF/ELSEIF/ELSE templates (m2).",
+    "Parse error ordering and locations for existing malformed IF templates are unchanged (m2).",
+    "analyze uses the caller maxDepth exactly and otherwise an internal 256. render and resolveTemplate keep 32.",
+    "API: options.limits.maxNodes is validated as a non-negative integer (400 otherwise) and min'ed with the server's value; /v1/validate and /v1/analyze pass the server's limits including maxNodes.",
+    "CLI: --max-nodes is registered, parsed by the same parseLimits path as --max-depth, rejects abc, -1 and 1.5 with exit 2, and appears in the usage text.",
+    "OpenAPI: Limits (required, integer, minimum 0) and RequestLimits list maxNodes.",
+    "Test fixtures: only the named default-limits fixtures changed; no runtime dependency added; no eval or Function.",
+    "Scope: every changed path is in files_scope or logged as a scope exception."
+  ],
+  "findings": [
+    {
+      "title": "IF/ELSEIF condition parsing moved after the body, so a malformed template can now report a different first error",
+      "class": "goal-risk",
+      "serves": {
+        "target": "m2",
+        "scenario": "Base parseIf and parseElseIf called extractCondition(token.value) right after consuming the tag, before parsing the body. The new parseIfBranch calls it inside the returned object literal, after the whole consequent is parsed. Suppose a template's IF or ELSEIF condition is rejected by extractCondition and its body also holds a parse-time error, or enough nodes to cross maxNodes. Base reports the condition error at the IF tag. Head reports the later body error (syntax-error, type-error or limit-nodes) at a different position. For an existing malformed template, render now returns a different diagnostic and location, and resolveTemplate throws a different error."
+      },
+      "rubric": "each criterion is met by the diff and its test; m2: change what any existing template outputs",
+      "reproduction": "Take a template whose IF tag content is something extractCondition rejects, for example an empty condition '{{IF }}', with an invalid FOR inside the body: '{{IF }}{{FOR bad}}{{END_FOR}}{{END_IF}}'. At base f4e552a, render(...).diagnostics[0] gives the condition error located at the IF tag (1:1). At head bde4503, the FOR syntax error comes first, located at the FOR tag. The smallest fix is to compute the condition from token.value right after this.open(type) in parseIfBranch, before the consequent loop, as the base code did.",
+      "evidence": [
+        "diff:core/src/parser.ts",
+        "code:core/src/parser.ts:276",
+        "code:core/src/parser.ts:301"
+      ],
+      "location": "core/src/parser.ts:301"
+    },
+    {
+      "title": "Living architecture documents edited directly, outside files_scope, with no scope exception logged",
+      "class": "drift",
+      "serves": {
+        "target": "card-goal",
+        "scenario": "The rubric says there must be no change outside the card scope. The diff edits docs/living/architecture/headless-contract.md, modules/api.md, modules/cli.md and modules/template-resolver.md. None of them is in files_scope (only docs/ephemeral/cycles/language/deltas is), and the scope exceptions log is empty. The project's own rule is that living documents change through deltas that are applied when the cycle merges. Editing them in the branch means the durable record gets ahead of the apply step and bypasses the delta trail the lead relies on."
+      },
+      "rubric": "no change outside the card scope",
+      "reproduction": "Compare the diff's changed paths with the card's files_scope list. All four docs/living/architecture/*.md paths are absent from it, and 'No scope exceptions are logged.'",
+      "evidence": [
+        "diff:docs/living/architecture/headless-contract.md",
+        "diff:docs/living/architecture/modules/api.md",
+        "diff:docs/living/architecture/modules/cli.md",
+        "diff:docs/living/architecture/modules/template-resolver.md",
+        "doc:card.md#Scope"
+      ],
+      "location": "docs/living/architecture/modules/template-resolver.md:79"
+    },
+    {
+      "title": "The four node-limit delta documents are empty placeholders: the Proposed change body is only the template comment",
+      "class": "drift",
+      "serves": {
+        "target": "card-goal",
+        "scenario": "The deltas are the card's recorded change to the durable facts (maxNodes, limit-nodes, iterative ELSEIF, analyze's 256 ceiling). Each one has only a frontmatter summary and the unfilled template comment. The apply step therefore has no stated change to check the living documents against, and the analyze 256-ceiling decision lives only in the directly edited template-resolver.md text."
+      },
+      "rubric": "no change outside the card scope (deltas are the in-scope record of living-document changes)",
+      "reproduction": "Open docs/ephemeral/cycles/language/deltas/node-limit-1.md through node-limit-4.md in the diff. Under '# Proposed change' each holds only the HTML template comment.",
+      "evidence": [
+        "diff:docs/ephemeral/cycles/language/deltas/node-limit-1.md",
+        "diff:docs/ephemeral/cycles/language/deltas/node-limit-4.md"
+      ],
+      "location": "docs/ephemeral/cycles/language/deltas/node-limit-1.md:9"
+    },
+    {
+      "title": "A caller-raised maxDepth still lets deep nesting overflow the stack in render and analyze",
+      "class": "drift",
+      "serves": {
+        "target": "c2",
+        "scenario": "Nesting is bounded only by maxDepth, and the spec decision says a caller maxDepth is obeyed exactly. A core caller passing limits { maxDepth: 100000 } with about 19000 nested IF blocks stays under maxNodes 20000. The parser and interpreter then recurse several frames per level and can throw a RangeError, which render rethrows because it only catches TemplateError. That breaks 'render never throws' and the 'no stack overflow in any mode' wording. The API is protected by the server ceiling, so this concerns only direct core and CLI --max-depth callers. Recorded for the lead as a possible follow-up ticket (a hard internal nesting cap, or turning RangeError into a coded limit-depth). It is not a fix request for this card."
+      },
+      "rubric": "ln-elseif: no stack overflow occurs for deep or long input in any mode",
+      "reproduction": "render('{{IF t}}'.repeat(19000) + 'x' + '{{END_IF}}'.repeat(19000), {t:'x'}, { limits: { maxDepth: 100000 } }) can throw a RangeError instead of returning ok or a coded diagnostic. No frozen test covers a raised maxDepth.",
+      "evidence": [
+        "code:core/src/analyze.ts:91",
+        "code:core/src/render.ts:76",
+        "test:ln-elseif: [render-strict] 5000 nested IF blocks give a coded limit-depth"
+      ],
+      "location": "core/src/render.ts:76"
+    }
+  ],
+  "responses": [],
+  "reviewer": {
+    "kind": "fallback",
+    "label": "opus fallback (same model family as the builder; has repository access)"
+  },
+  "at": "2026-10-15T03:45:28.724Z",
+  "card": "261015-language3911-a5-bound-the-total-node-count-of-a-template",
+  "tier": "product",
+  "packet_sha256": "498554b065d5638fdfe010fae4a4d65a08ddea4531fa0973ee2e03899bbad0c4",
+  "diff_sha256": "7b7ef6f980a12f0dcb77701f8331d9b89d0b03be9150c20390c23ea586c7ae61",
+  "dropped": []
+}

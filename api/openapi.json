@@ -190,7 +190,8 @@
         "required": [
           "maxIterations",
           "maxOutputChars",
-          "maxDepth"
+          "maxDepth",
+          "maxNodes"
         ],
         "properties": {
           "maxIterations": {
@@ -207,6 +208,11 @@
             "type": "integer",
             "minimum": 0,
             "description": "Nesting of blocks"
+          },
+          "maxNodes": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Total nodes in the parsed template"
           }
         }
       },
@@ -223,6 +229,10 @@
             "minimum": 0
           },
           "maxDepth": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "maxNodes": {
             "type": "integer",
             "minimum": 0
           }

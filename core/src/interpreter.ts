@@ -235,25 +235,23 @@ export class Interpreter {
    * Visit IF node
    */
   private visitIf(node: IfNode): string {
-    const result = this.at(node, () =>
-      evaluateCondition(node.condition, this.getAllVariables())
-    );
+    let branch = node;
+    for (;;) {
+      const current = branch;
+      const result = this.at(current, () =>
+        evaluateCondition(current.condition, this.getAllVariables())
+      );
+      if (result) return this.visitBody(current.consequent);
 
-    if (result) {
-      return node.consequent.map((child) => this.visit(child)).join("");
+      const { alternate } = current;
+      if (!alternate) return "";
+      if (Array.isArray(alternate)) return this.visitBody(alternate);
+      branch = alternate;
     }
+  }
 
-    if (node.alternate) {
-      if (Array.isArray(node.alternate)) {
-        // ELSE branch
-        return node.alternate.map((child) => this.visit(child)).join("");
-      } else {
-        // ELSEIF (nested IfNode)
-        return this.visitIf(node.alternate);
-      }
-    }
-
-    return "";
+  private visitBody(nodes: ASTNode[]): string {
+    return nodes.map((child) => this.visit(child)).join("");
   }
 
   /**

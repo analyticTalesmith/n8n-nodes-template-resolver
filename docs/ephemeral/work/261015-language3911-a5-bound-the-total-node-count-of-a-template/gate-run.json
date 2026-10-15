@@ -1,0 +1,32 @@
+{
+  "command": [
+    "node",
+    "node_modules/jest/bin/jest.js",
+    "--runTestsByPath",
+    "tests/language/limits-nodes.test.ts",
+    "--json"
+  ],
+  "exit_status": 0,
+  "ran_at": "2026-10-15T03:51:44.872Z",
+  "tests": {
+    "passed": 193,
+    "failed": 0
+  },
+  "commit": "815881cc454fbac2981c5ed2780bf16dbf585216",
+  "diff_sha256": "d5ab98742646bc2de3fb5cb73c494e37fffbae567e45fd8b3b538cb8414b988e",
+  "levels": [
+    {
+      "level": "gate",
+      "command": [
+        "node",
+        "node_modules/jest/bin/jest.js",
+        "--runTestsByPath",
+        "tests/language/limits-nodes.test.ts",
+        "--json"
+      ],
+      "exit_status": 0,
+      "commit": "815881cc454f"
+    }
+  ],
+  "skipped": []
+}
