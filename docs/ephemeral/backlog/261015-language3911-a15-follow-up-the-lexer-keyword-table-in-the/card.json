@@ -1,0 +1,26 @@
+{
+  "id": "261015-language3911-a15-follow-up-the-lexer-keyword-table-in-the",
+  "title": "Follow-up: The lexer keyword table in the surfaces test is hand-written, so a keyword the lexer gains without a spec() e",
+  "type": "improvement",
+  "parent": null,
+  "depends_on": [],
+  "origin": "language",
+  "tier": null,
+  "claimed_in": null,
+  "files_scope": [],
+  "manifest": {
+    "add": [],
+    "remove": [],
+    "edit": [],
+    "frozen": false
+  },
+  "criteria": [],
+  "gate": null,
+  "claim": null,
+  "blocked_on": null,
+  "docs_impact": "none",
+  "started": null,
+  "ended": null,
+  "review_rounds": 0,
+  "schema_version": 1
+}
