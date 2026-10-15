@@ -8,34 +8,27 @@
   "tier": null,
   "claimed_in": null,
   "files_scope": [
-    "core/src/filters.ts",
-    "core/src/parser.ts",
-    "core/src/interpreter.ts",
     "core/src/analyze.ts",
+    "core/src/errors.ts",
+    "core/src/filters-collection.ts",
+    "core/src/filters-text.ts",
+    "core/src/filters.ts",
+    "core/src/interpreter.ts",
+    "core/src/parser.ts",
     "core/src/spec.ts",
     "core/src/types.ts",
-    "core/src/errors.ts",
-    "core/src/filters-text.ts",
-    "core/src/filters-collection.ts",
-    "tests/language/filter-registry.test.ts",
-    "tests/headless/spec.test.ts"
+    "tests/headless/spec.test.ts",
+    "tests/language/filter-registry.test.ts"
   ],
   "manifest": {
-    "add": [
-      "core/src/filters-text.ts",
-      "core/src/filters-collection.ts",
-      "tests/language/filter-registry.test.ts"
-    ],
+    "add": [],
     "remove": [],
     "edit": [
-      "core/src/filters.ts",
-      "core/src/parser.ts",
-      "core/src/interpreter.ts",
       "core/src/analyze.ts",
-      "core/src/spec.ts",
-      "core/src/types.ts",
-      "core/src/errors.ts",
-      "tests/headless/spec.test.ts"
+      "core/src/filters.ts",
+      "core/src/interpreter.ts",
+      "core/src/parser.ts",
+      "core/src/spec.ts"
     ],
     "frozen": true
   },
@@ -104,8 +97,11 @@
   ],
   "claim": {
     "owner": "build:implementer",
-    "heartbeat": "2026-10-15T02:18:33.270Z",
-    "agent": "a"
+    "heartbeat": "2026-10-15T02:23:10.326Z",
+    "built": {
+      "commit": "860ea1e541eb487acbedc63d28e2f5a5c27f2ffb",
+      "at": "2026-10-15T02:23:10.326Z"
+    }
   },
   "blocked_on": null,
   "docs_impact": [
@@ -120,18 +116,91 @@
     "template-resolver"
   ],
   "freeze": {
-    "at": "2026-10-15T02:18:25.433Z",
+    "at": "2026-10-15T02:23:07.849Z",
     "brief_sha256": "8129f2277734285a9bc82e6bc2be5a025e2e96373f05ca71c5399925ddcaad06",
     "brief_core_sha256": "9053273e407dddc258d6c41f9509f7921c450f55bbfb5f086d7567980a89dabc",
-    "manifest_sha256": "f2bafa1a9600a7292921f710b002d4a4764cd4050c6dea8e20ca6b90c1828dbe",
+    "manifest_sha256": "24e359250acaf2edf957b713101a76489858d63540d6cfc8538fce36135986c7",
     "criteria_sha256": "87fc4a50c974d102660872e442f8e2af5ed2bdc19ad5d9eea0373e0d7efc8976",
-    "scope_sha256": "2d4a2d1242c9eb02e5f1e4d8f9c48f1145ae79c9627824f2ca9976b5f5c47c0d",
+    "scope_sha256": "d701d54c0d77babf6fcadf2545a7b84a8af26b4189bea483998883ed785a9012",
     "scope_parts": {
       "files_scope": "7a7f6c64a89bae376957b694f300b322f0b1f21207514612a5c00fa32ddd1be6",
       "docs_impact": "734a983468bce1e95b3ea76d75d42c73287af7532427891c8225fc0f0e1f04dd",
-      "docs_deferred": "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
+      "docs_deferred": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
       "gate": "76c09d4f849ffbb3806efcf8a7bd7aa599f2f893b292ebb02b2e47a49fbe2856"
     }
   },
-  "base_commit": "49e3aebd8eaf7b6001162841f2387f79f7297c1f"
+  "base_commit": "49e3aebd8eaf7b6001162841f2387f79f7297c1f",
+  "manifest_amendments": [
+    {
+      "at": "2026-10-15T02:22:56.465Z",
+      "by": "lead",
+      "reason": "stubs and the spec test amendment were committed by the test writer before the base; errors.ts needed no change",
+      "from": {
+        "manifest": {
+          "add": [
+            "core/src/filters-collection.ts",
+            "core/src/filters-text.ts",
+            "tests/language/filter-registry.test.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/errors.ts",
+            "core/src/filters.ts",
+            "core/src/interpreter.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts",
+            "tests/headless/spec.test.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/analyze.ts",
+          "core/src/errors.ts",
+          "core/src/filters-collection.ts",
+          "core/src/filters-text.ts",
+          "core/src/filters.ts",
+          "core/src/interpreter.ts",
+          "core/src/parser.ts",
+          "core/src/spec.ts",
+          "core/src/types.ts",
+          "tests/headless/spec.test.ts",
+          "tests/language/filter-registry.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/filters.ts",
+            "core/src/interpreter.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/analyze.ts",
+          "core/src/errors.ts",
+          "core/src/filters-collection.ts",
+          "core/src/filters-text.ts",
+          "core/src/filters.ts",
+          "core/src/interpreter.ts",
+          "core/src/parser.ts",
+          "core/src/spec.ts",
+          "core/src/types.ts",
+          "tests/headless/spec.test.ts",
+          "tests/language/filter-registry.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      }
+    }
+  ],
+  "docs_deferred": true
 }
