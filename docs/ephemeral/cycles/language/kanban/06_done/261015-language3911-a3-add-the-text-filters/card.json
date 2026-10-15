@@ -59,22 +59,14 @@
     "tests/language/filters-text.test.ts",
     "--json"
   ],
-  "claim": {
-    "owner": "build:implementer",
-    "heartbeat": "2026-10-15T03:44:09.049Z",
-    "agent": "a",
-    "built": {
-      "commit": "fb7fe00285523262f029f82e497a2c1670af5aef",
-      "at": "2026-10-15T03:44:09.049Z"
-    }
-  },
+  "claim": null,
   "blocked_on": null,
   "docs_impact": [
     "docs/living/architecture/modules/template-resolver.md",
     "docs/living/architecture/language-contract.md"
   ],
   "started": "2026-10-15T03:36:10.134Z",
-  "ended": null,
+  "ended": "2026-10-15T03:46:34.611Z",
   "review_rounds": 1,
   "schema_version": 1,
   "blast_radius": [

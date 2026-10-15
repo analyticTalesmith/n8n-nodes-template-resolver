@@ -57,7 +57,7 @@
       "location": "core/src/filters-text.ts:80",
       "label": "f1",
       "raised_in": 1,
-      "status": "fixed",
+      "status": "verified",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [
@@ -92,11 +92,17 @@
       "location": "docs/living/architecture/language-contract.md:25",
       "label": "f2",
       "raised_in": 1,
-      "status": "open",
+      "status": "withdrawn",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [],
-      "rulings": []
+      "rulings": [
+        {
+          "after_round": 1,
+          "ruling": "withdraw",
+          "note": "living documents are changed by the card on purpose: docs_impact lists them and docs_deferred is true; the project lead's brief says so"
+        }
+      ]
     },
     {
       "title": "default's author-facing description and contract row omit the text values isTruthy also treats as falsy",
@@ -115,11 +121,31 @@
       "location": "core/src/filters-text.ts:146",
       "label": "f3",
       "raised_in": 1,
-      "status": "open",
+      "status": "withdrawn",
       "sustained": 0,
       "failed_fixes": 0,
       "replies": [],
-      "rulings": []
+      "rulings": [
+        {
+          "after_round": 1,
+          "ruling": "withdraw",
+          "note": "wording fixed in the same round as the round fix"
+        }
+      ]
+    }
+  ],
+  "closures": [
+    {
+      "finding": "f1",
+      "by": "project lead",
+      "at": "2026-10-15T03:46:07.324Z",
+      "gate_commit": "982f6e54ffe18ae0b42c8f392d2e2b55411a5c1e",
+      "test": "tests/language/filters-text.test.ts",
+      "files": [
+        "core/src/filters-text.ts",
+        "docs/living/architecture/language-contract.md"
+      ],
+      "diff_sha256": "66d7b79052dce3b43cc7c037e71f671df9538ac5bf11ceb37924e4733c1f548b"
     }
   ]
 }
