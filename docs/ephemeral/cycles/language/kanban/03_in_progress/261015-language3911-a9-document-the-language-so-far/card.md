@@ -48,10 +48,11 @@ Documentation, one test file and one golden case. The living documents change th
 <!-- generated scope: from card.json -->
 | Path | Permission (add, edit, remove) | Blast radius |
 | --- | --- | --- |
-| `tests/golden/render-cases/lang-filters-showcase/template.md` | add | api, cli, template-resolver |
-| `tests/language/surfaces.test.ts` | add | api, cli, template-resolver |
-| `README.md` | edit | api, cli, template-resolver |
-| `changelog.md` | edit | api, cli, template-resolver |
+| `tests/language/surfaces.test.ts` | add | template-resolver |
+| `README.md` | edit | template-resolver |
+| `changelog.md` | edit | template-resolver |
+| `docs/living/architecture/headless-contract.md` | edit | template-resolver |
+| `docs/living/architecture/modules/template-resolver.md` | edit | template-resolver |
 
-Files scope: `README.md`, `changelog.md`, `tests/golden/render-cases/lang-filters-showcase/template.md`, `tests/language/surfaces.test.ts`
+Files scope: `README.md`, `changelog.md`, `docs/living/architecture`, `tests/golden/render-cases/lang-filters-showcase/template.md`, `tests/language/surfaces.test.ts`
 <!-- end generated scope -->

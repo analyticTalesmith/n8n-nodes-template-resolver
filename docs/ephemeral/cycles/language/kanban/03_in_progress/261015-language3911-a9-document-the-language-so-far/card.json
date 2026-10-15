@@ -17,18 +17,20 @@
   "files_scope": [
     "README.md",
     "changelog.md",
-    "tests/language/surfaces.test.ts",
-    "tests/golden/render-cases/lang-filters-showcase/template.md"
+    "docs/living/architecture",
+    "tests/golden/render-cases/lang-filters-showcase/template.md",
+    "tests/language/surfaces.test.ts"
   ],
   "manifest": {
     "add": [
-      "tests/language/surfaces.test.ts",
-      "tests/golden/render-cases/lang-filters-showcase/template.md"
+      "tests/language/surfaces.test.ts"
     ],
     "remove": [],
     "edit": [
       "README.md",
-      "changelog.md"
+      "changelog.md",
+      "docs/living/architecture/headless-contract.md",
+      "docs/living/architecture/modules/template-resolver.md"
     ],
     "frozen": true
   },
@@ -91,15 +93,68 @@
     "at": "2026-10-15T05:20:57.171Z",
     "brief_sha256": "11b3fc3cfb707e04398e6c112a4f50c693d4b13990c34629f186abee09100858",
     "brief_core_sha256": "560a37ef43d50f8e36d3f1cc9d79429df7317f4930e497352a23a9914a9ca7fb",
-    "manifest_sha256": "2cafef8777eff7ffde4a43e582f4410a2ae33983979399df362317881d8f8df7",
+    "manifest_sha256": "fe5f4846528bc40ca3cbef31f3e224264c8decba8c3bcfa252a2d97b710681dc",
     "criteria_sha256": "666380ac502bfd0bcbb26f0c0d596fb6c2a79f7923250d88f9530a84a203ea7b",
-    "scope_sha256": "45e68ebca902112e61c9d0baa54dfa3c49279f6007c9d7f094f5b6cfa517c927",
+    "scope_sha256": "41fd62fc29482dd06863d9fee0ce28e9f4f0ae0a7c9ceea2153e950e1d90ddcc",
     "scope_parts": {
-      "files_scope": "cc6a204e401d01722e41d9db112826bccffd5d8c665e9d2e39ff596cdffd7cc1",
+      "files_scope": "a07909e15ba3cc5abdc8f0af2bda31a6282721eb9432c317e09f1184a12a7866",
       "docs_impact": "28fcf7ec9ffd2b1f9a0b2000e47257f6301314857363093961381566ab543816",
       "docs_deferred": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b",
       "gate": "54e7f57846fcf5a15e9dd89127d7afa8e48ce3d51e4f388c7c29de2be3e87438"
     }
   },
-  "base_commit": "51d779206f8a0e15e506b54dba1b32a25aa3e92e"
+  "base_commit": "51d779206f8a0e15e506b54dba1b32a25aa3e92e",
+  "manifest_amendments": [
+    {
+      "at": "2026-10-15T05:33:42.448Z",
+      "by": "lead",
+      "reason": "the showcase template was committed with the tests before the base; two living pages that lagged the code are corrected through their open deltas",
+      "from": {
+        "manifest": {
+          "add": [
+            "tests/golden/render-cases/lang-filters-showcase/template.md",
+            "tests/language/surfaces.test.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "README.md",
+            "changelog.md"
+          ]
+        },
+        "files_scope": [
+          "README.md",
+          "changelog.md",
+          "tests/golden/render-cases/lang-filters-showcase/template.md",
+          "tests/language/surfaces.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [
+            "tests/language/surfaces.test.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "README.md",
+            "changelog.md",
+            "docs/living/architecture/headless-contract.md",
+            "docs/living/architecture/modules/template-resolver.md"
+          ]
+        },
+        "files_scope": [
+          "README.md",
+          "changelog.md",
+          "docs/living/architecture",
+          "tests/golden/render-cases/lang-filters-showcase/template.md",
+          "tests/language/surfaces.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      }
+    }
+  ]
 }
