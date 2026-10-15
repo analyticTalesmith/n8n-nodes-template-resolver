@@ -28,6 +28,7 @@
       "core/src/filters.ts",
       "core/src/interpreter.ts",
       "core/src/parser.ts",
+      "core/src/render.ts",
       "core/src/spec.ts",
       "tests/language/filter-registry.test.ts"
     ],
@@ -120,7 +121,7 @@
     "at": "2026-10-15T02:23:07.849Z",
     "brief_sha256": "8129f2277734285a9bc82e6bc2be5a025e2e96373f05ca71c5399925ddcaad06",
     "brief_core_sha256": "9053273e407dddc258d6c41f9509f7921c450f55bbfb5f086d7567980a89dabc",
-    "manifest_sha256": "05ba9668c98cf417d46a07270efe644c6e659d516283ae70a0c92adf3a8f240d",
+    "manifest_sha256": "50d7e76597f671f7494d6e0763e10a92148a55525590f8318f3edef71a265773",
     "criteria_sha256": "87fc4a50c974d102660872e442f8e2af5ed2bdc19ad5d9eea0373e0d7efc8976",
     "scope_sha256": "d701d54c0d77babf6fcadf2545a7b84a8af26b4189bea483998883ed785a9012",
     "scope_parts": {
@@ -244,6 +245,72 @@
             "core/src/filters.ts",
             "core/src/interpreter.ts",
             "core/src/parser.ts",
+            "core/src/spec.ts",
+            "tests/language/filter-registry.test.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/analyze.ts",
+          "core/src/errors.ts",
+          "core/src/filters-collection.ts",
+          "core/src/filters-text.ts",
+          "core/src/filters.ts",
+          "core/src/interpreter.ts",
+          "core/src/parser.ts",
+          "core/src/spec.ts",
+          "core/src/types.ts",
+          "tests/headless/spec.test.ts",
+          "tests/language/filter-registry.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      }
+    },
+    {
+      "at": "2026-10-15T02:25:38.054Z",
+      "by": "lead",
+      "reason": "validate must report an undeclared filter parameter as an error: one line in render.ts",
+      "from": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/filters.ts",
+            "core/src/interpreter.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts",
+            "tests/language/filter-registry.test.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/analyze.ts",
+          "core/src/errors.ts",
+          "core/src/filters-collection.ts",
+          "core/src/filters-text.ts",
+          "core/src/filters.ts",
+          "core/src/interpreter.ts",
+          "core/src/parser.ts",
+          "core/src/spec.ts",
+          "core/src/types.ts",
+          "tests/headless/spec.test.ts",
+          "tests/language/filter-registry.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/filters.ts",
+            "core/src/interpreter.ts",
+            "core/src/parser.ts",
+            "core/src/render.ts",
             "core/src/spec.ts",
             "tests/language/filter-registry.test.ts"
           ]
