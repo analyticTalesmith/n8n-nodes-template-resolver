@@ -1,12 +1,12 @@
 {
-  "id": "0034-follow-up-spec-s-filter-list-is-a-hand-m",
-  "title": "Follow-up: spec's filter list is a hand-maintained copy beside applyFilter's switch, not derived from it",
+  "id": "0048-follow-up-escape-md-in-the-named-paramet",
+  "title": "Follow-up: escape_md in the named-parameter form silently falls back to inline",
   "type": "improvement",
   "parent": null,
   "depends_on": [],
-  "origin": "headless",
+  "origin": "prompt-aware-1",
   "tier": null,
-  "claimed_in": "language",
+  "claimed_in": null,
   "files_scope": [],
   "manifest": {
     "add": [],

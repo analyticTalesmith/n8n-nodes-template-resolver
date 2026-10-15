@@ -1,12 +1,12 @@
 {
-  "id": "0018-follow-up-an-unquoted-default-that-start",
-  "title": "Follow-up: An unquoted default that starts with an apostrophe still opens a quote that never closes, so the filters afte",
+  "id": "0051-follow-up-a-fence-filter-lang-that-conta",
+  "title": "Follow-up: A fence filter lang that contains '=' or ':' is truncated or misparsed by the existing parseFilter",
   "type": "improvement",
   "parent": null,
   "depends_on": [],
-  "origin": "foundations",
+  "origin": "prompt-aware-1",
   "tier": null,
-  "claimed_in": "language",
+  "claimed_in": null,
   "files_scope": [],
   "manifest": {
     "add": [],

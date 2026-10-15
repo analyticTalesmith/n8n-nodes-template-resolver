@@ -1,12 +1,12 @@
 {
-  "id": "0051-follow-up-a-fence-filter-lang-that-conta",
-  "title": "Follow-up: A fence filter lang that contains '=' or ':' is truncated or misparsed by the existing parseFilter",
+  "id": "0034-follow-up-spec-s-filter-list-is-a-hand-m",
+  "title": "Follow-up: spec's filter list is a hand-maintained copy beside applyFilter's switch, not derived from it",
   "type": "improvement",
   "parent": null,
   "depends_on": [],
-  "origin": "prompt-aware-1",
+  "origin": "headless",
   "tier": null,
-  "claimed_in": "language",
+  "claimed_in": null,
   "files_scope": [],
   "manifest": {
     "add": [],
