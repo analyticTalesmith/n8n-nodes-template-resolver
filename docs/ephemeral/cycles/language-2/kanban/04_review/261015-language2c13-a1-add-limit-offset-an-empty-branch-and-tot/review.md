@@ -12,6 +12,11 @@ Generated from review-rounds.json by core/scripts/rounds.mjs; edits here are ove
 
 Restatement: The card replaces the two copies of FOR iteration (plain FOR and TABLE-FOR) with one loop runner on a chained scope stack. A frame holds the item name and the @ metadata and has a parent link. FOR gains limit= and offset= (a literal or a path read outside the loop, validated as a non-negative safe integer in every mode, with missing data governed by strict mode), an {{ELSE}} empty branch rendered in the outer scope, and @total. Conditions, math, filters, ternary, CASE and LIST_ITEM must read through the scope chain without copying the caller's data map. Non-root path segments read own properties only. Iterations, stats and output stay bounded. analyze, render and spec must agree. No runtime dependency, no eval, and no change to previously valid output beyond the two approved exceptions (trailing words after the item name, inherited segments).
 
+## Gate-verified closures
+
+- f2: verified by project lead at 2026-10-15T13:49:35.145Z; gate run at commit 5b2c0232d30d; test tests/language/for-window.test.ts; files core/src/interpreter.ts, core/src/parser.ts, docs/ephemeral/work/261015-language2c13-a1-add-limit-offset-an-empty-branch-and-tot/spec.md, docs/ephemeral/work/261015-language2c13-a1-add-limit-offset-an-empty-branch-and-tot/gate-run.json
+- f3: verified by project lead at 2026-10-15T13:49:35.145Z; gate run at commit 5b2c0232d30d; test tests/language/for-window.test.ts; files core/src/interpreter.ts, core/src/parser.ts, docs/ephemeral/work/261015-language2c13-a1-add-limit-offset-an-empty-branch-and-tot/spec.md, docs/ephemeral/work/261015-language2c13-a1-add-limit-offset-an-empty-branch-and-tot/gate-run.json
+
 ## Findings
 
 ### f1: The frozen card test file was edited to weaken 56 strict-mode expectations
@@ -27,7 +32,7 @@ Restatement: The card replaces the two copies of FOR iteration (plain FOR and TA
 ### f2: The TABLE-FOR fallback now merges separate non-ROW body nodes into one row, changing previously valid tables
 
 - Class: goal-risk
-- Status: fixed
+- Status: verified
 - Serves: m5: Before, each non-ROW node in a TABLE FOR body was rendered and split on '|' alone, so a body of two IF blocks that each render one row gave two rows per item. tableRowsFrom now joins every consecutive non-ROW node into one string and splits it on '|' once. The same template gives one row per item, its cells join text across the line break (for example '1', a newline, then 'B'), and the markdown table breaks. m5 allows only two output changes (trailing FOR words and inherited segments), and this is neither.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: resolveTemplate on '{{TABLE}}{{HEADER}}K|V{{END_HEADER}}{{FOR xs AS x}}' + newline + '{{IF x.a}}A|1{{END_IF}}' + newline + '{{IF x.b}}B|2{{END_IF}}' + newline + '{{END_FOR}}{{END_TABLE}}' with xs = [{a:true,b:true}]. At base the output has rows '| A | 1 |' and '| B | 2 |'. At head it has one row whose middle cell holds '1', a line break and 'B'. The smallest restoring change: split the merged run into lines before splitting each non-blank line on '|'. That keeps the frozen case '${{x}}|${{@index0}}' as one row and keeps one row per line.
@@ -37,7 +42,7 @@ Restatement: The card replaces the two copies of FOR iteration (plain FOR and TA
 ### f3: A FOR iterable that contains whitespace, which rendered before, is now a syntax error
 
 - Class: goal-risk
-- Status: fixed
+- Status: verified
 - Serves: m5: The old header regex /FOR\s+(.+?)\s+AS\s+(\w+)/i took everything up to the first ' AS ' as the iterable, so '{{FOR my items AS x}}' read the data key 'my items'. Data keys with spaces are plausible: the language contract treats names such as 'Order #' as plain data. parseForHeader now requires words[2] to be AS, so the same template is 'Invalid FOR syntax'. The words involved come before the item name, so this is not the approved 'trailing words after the FOR item name' exception.
 - Raised in round 1; sustained 0, failed fixes 0
 - Reproduction: resolveTemplate('{{FOR my items AS x}}${{x}}{{END_FOR}}', new Map([['my items', ['a']]])) returns 'a' at base. At head it throws syntax-error 'Invalid FOR syntax'. The smallest restoring change: find the first standalone AS word (case-insensitive) after FOR and take words[1..asIndex-1] joined by a space as the iterable, then parse the item name and arguments after it.
