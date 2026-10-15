@@ -9,14 +9,19 @@ approves:
 - ccba70e4286db8981e15dd8453f0a3f637f307cffa4c22d46b3d2d1c8318695b docs/ephemeral/work/261015-language3911-a1-dispatch-filters-from-one-registry-with/spec.md
 cards:
   - 261015-language3911-a1-dispatch-filters-from-one-registry-with
+  - 261015-language3911-a3-add-the-text-filters
+  - 261015-language3911-a4-add-the-collection-filters
+  - 261015-language3911-a5-bound-the-total-node-count-of-a-template
 modules:
   - template-resolver
+  - api
+  - cli
 max_iterations: 40
 max_spawns: 20
 max_cost:
 cost_unit:
 sweep_rounds: 3
-approval_hash: 1e7bdb6964c12f210cb1f6720726eaa97e6bd3486f61b7237f6c2fdabb9dd825
+approval_hash: d6cfa7531a19f8a93f06f4bf40126d3aadacdb93ca8a4c5f619c7548917d01f2
 ---
 
 # Design approval
