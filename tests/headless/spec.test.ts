@@ -61,6 +61,7 @@ describe("rr-spec: the language spec", () => {
       maxIterations: 10000,
       maxOutputChars: 1000000,
       maxDepth: 32,
+      maxNodes: 20000,
     });
   });
 
