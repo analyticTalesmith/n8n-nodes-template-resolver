@@ -10,42 +10,36 @@
   "tier": null,
   "claimed_in": null,
   "files_scope": [
-    "core/src/lexer.ts",
-    "core/src/types.ts",
-    "core/src/parser.ts",
-    "core/src/interpreter.ts",
-    "core/src/analyze.ts",
-    "core/src/whitespace.ts",
-    "core/src/spec.ts",
-    "core/src/scope.ts",
     "api/openapi.json",
-    "tests/language/surfaces.test.ts",
-    "tests/language/set.test.ts",
-    "tests/golden/render-cases/lang-set/template.md",
+    "core/src/analyze.ts",
+    "core/src/interpreter.ts",
+    "core/src/lexer.ts",
+    "core/src/parser.ts",
+    "core/src/scope.ts",
+    "core/src/spec.ts",
+    "core/src/types.ts",
+    "core/src/whitespace.ts",
     "tests/golden/render-cases/lang-set/data.json",
+    "tests/golden/render-cases/lang-set/expected.md",
     "tests/golden/render-cases/lang-set/options.json",
-    "tests/golden/render-cases/lang-set/expected.md"
+    "tests/golden/render-cases/lang-set/template.md",
+    "tests/language/set.test.ts",
+    "tests/language/surfaces.test.ts"
   ],
   "manifest": {
     "add": [
-      "tests/language/set.test.ts",
-      "tests/golden/render-cases/lang-set/template.md",
-      "tests/golden/render-cases/lang-set/data.json",
-      "tests/golden/render-cases/lang-set/options.json",
-      "tests/golden/render-cases/lang-set/expected.md"
+      "tests/language/set.test.ts"
     ],
     "remove": [],
     "edit": [
-      "core/src/lexer.ts",
-      "core/src/types.ts",
-      "core/src/parser.ts",
-      "core/src/interpreter.ts",
-      "core/src/analyze.ts",
-      "core/src/whitespace.ts",
-      "core/src/spec.ts",
-      "core/src/scope.ts",
       "api/openapi.json",
-      "tests/language/surfaces.test.ts"
+      "core/src/analyze.ts",
+      "core/src/interpreter.ts",
+      "core/src/lexer.ts",
+      "core/src/parser.ts",
+      "core/src/spec.ts",
+      "core/src/types.ts",
+      "core/src/whitespace.ts"
     ],
     "frozen": true
   },
@@ -190,8 +184,8 @@
   "review_rounds": 0,
   "schema_version": 1,
   "blast_radius": [
-    "template-resolver",
-    "api"
+    "api",
+    "template-resolver"
   ],
   "test_levels": [
     "unit",
@@ -202,13 +196,18 @@
       "path": "tests/language/surfaces.test.ts",
       "reason": "the hand-written BLOCK_PAIRS table is derived from the lexer keyword table; no row removed, no assertion weakened",
       "approved_by": "project lead"
+    },
+    {
+      "path": "tests/language/set.test.ts",
+      "reason": "two astral size rows had a text before the SET that was already over their limit; limit and value raised so the SET is the first thing over (no assertion weakened)",
+      "approved_by": "project lead"
     }
   ],
   "freeze": {
     "at": "2026-10-15T15:01:01.552Z",
     "brief_sha256": "e1cfd3463bff914c161c5d3346e0614e61679ddda08709d369d46be1a83bbf19",
     "brief_core_sha256": "b41d85b3f0d6d5b721b867ad7ef63921b86acdbc0fc6cbf5b7c91b93bae937cd",
-    "manifest_sha256": "318b271e27c08bf9ddc572c38655ab3d2ec775472c653c155e2ae57ca1c27f2f",
+    "manifest_sha256": "df6261ca52e1f716ba7ec977767923fe4fba90bd5bc4280aaaf4debd4d297b86",
     "criteria_sha256": "e8944c662ae9d1980dffe7aaded92c5f6a4fa3e617fb2f71824f74a4e4db0177",
     "scope_sha256": "22ed70a0944edd151ab579186cdd5ee063c35149a8671c2bbacfbed1e685b23c",
     "scope_parts": {
@@ -218,5 +217,181 @@
       "gate": "7125bcd75f05272c325089472215ac80ef370fa49bce0572379008353f1adbde"
     }
   },
-  "base_commit": "02e8dc84b5035b8a398b63d593f3ef66a3405768"
+  "base_commit": "02e8dc84b5035b8a398b63d593f3ef66a3405768",
+  "manifest_amendments": [
+    {
+      "at": "2026-10-15T15:11:00.473Z",
+      "by": "lead",
+      "reason": "the test writer committed the golden case files and the surfaces amendment before the base, and the card needed no change in scope.ts",
+      "from": {
+        "manifest": {
+          "add": [
+            "tests/golden/render-cases/lang-set/data.json",
+            "tests/golden/render-cases/lang-set/expected.md",
+            "tests/golden/render-cases/lang-set/options.json",
+            "tests/golden/render-cases/lang-set/template.md",
+            "tests/language/set.test.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "api/openapi.json",
+            "core/src/analyze.ts",
+            "core/src/interpreter.ts",
+            "core/src/lexer.ts",
+            "core/src/parser.ts",
+            "core/src/scope.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts",
+            "core/src/whitespace.ts",
+            "tests/language/surfaces.test.ts"
+          ]
+        },
+        "files_scope": [
+          "api/openapi.json",
+          "core/src/analyze.ts",
+          "core/src/interpreter.ts",
+          "core/src/lexer.ts",
+          "core/src/parser.ts",
+          "core/src/scope.ts",
+          "core/src/spec.ts",
+          "core/src/types.ts",
+          "core/src/whitespace.ts",
+          "tests/golden/render-cases/lang-set/data.json",
+          "tests/golden/render-cases/lang-set/expected.md",
+          "tests/golden/render-cases/lang-set/options.json",
+          "tests/golden/render-cases/lang-set/template.md",
+          "tests/language/set.test.ts",
+          "tests/language/surfaces.test.ts"
+        ],
+        "blast_radius": [
+          "api",
+          "template-resolver"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [
+            "tests/language/set.test.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "api/openapi.json",
+            "core/src/analyze.ts",
+            "core/src/interpreter.ts",
+            "core/src/lexer.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts",
+            "core/src/whitespace.ts",
+            "tests/language/surfaces.test.ts"
+          ]
+        },
+        "files_scope": [
+          "api/openapi.json",
+          "core/src/analyze.ts",
+          "core/src/interpreter.ts",
+          "core/src/lexer.ts",
+          "core/src/parser.ts",
+          "core/src/scope.ts",
+          "core/src/spec.ts",
+          "core/src/types.ts",
+          "core/src/whitespace.ts",
+          "tests/golden/render-cases/lang-set/data.json",
+          "tests/golden/render-cases/lang-set/expected.md",
+          "tests/golden/render-cases/lang-set/options.json",
+          "tests/golden/render-cases/lang-set/template.md",
+          "tests/language/set.test.ts",
+          "tests/language/surfaces.test.ts"
+        ],
+        "blast_radius": [
+          "api",
+          "template-resolver"
+        ]
+      }
+    },
+    {
+      "at": "2026-10-15T15:11:04.944Z",
+      "by": "lead",
+      "reason": "the surfaces test amendment was committed by the test writer before the base",
+      "from": {
+        "manifest": {
+          "add": [
+            "tests/language/set.test.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "api/openapi.json",
+            "core/src/analyze.ts",
+            "core/src/interpreter.ts",
+            "core/src/lexer.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts",
+            "core/src/whitespace.ts",
+            "tests/language/surfaces.test.ts"
+          ]
+        },
+        "files_scope": [
+          "api/openapi.json",
+          "core/src/analyze.ts",
+          "core/src/interpreter.ts",
+          "core/src/lexer.ts",
+          "core/src/parser.ts",
+          "core/src/scope.ts",
+          "core/src/spec.ts",
+          "core/src/types.ts",
+          "core/src/whitespace.ts",
+          "tests/golden/render-cases/lang-set/data.json",
+          "tests/golden/render-cases/lang-set/expected.md",
+          "tests/golden/render-cases/lang-set/options.json",
+          "tests/golden/render-cases/lang-set/template.md",
+          "tests/language/set.test.ts",
+          "tests/language/surfaces.test.ts"
+        ],
+        "blast_radius": [
+          "api",
+          "template-resolver"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [
+            "tests/language/set.test.ts"
+          ],
+          "remove": [],
+          "edit": [
+            "api/openapi.json",
+            "core/src/analyze.ts",
+            "core/src/interpreter.ts",
+            "core/src/lexer.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts",
+            "core/src/whitespace.ts"
+          ]
+        },
+        "files_scope": [
+          "api/openapi.json",
+          "core/src/analyze.ts",
+          "core/src/interpreter.ts",
+          "core/src/lexer.ts",
+          "core/src/parser.ts",
+          "core/src/scope.ts",
+          "core/src/spec.ts",
+          "core/src/types.ts",
+          "core/src/whitespace.ts",
+          "tests/golden/render-cases/lang-set/data.json",
+          "tests/golden/render-cases/lang-set/expected.md",
+          "tests/golden/render-cases/lang-set/options.json",
+          "tests/golden/render-cases/lang-set/template.md",
+          "tests/language/set.test.ts",
+          "tests/language/surfaces.test.ts"
+        ],
+        "blast_radius": [
+          "api",
+          "template-resolver"
+        ]
+      }
+    }
+  ]
 }
