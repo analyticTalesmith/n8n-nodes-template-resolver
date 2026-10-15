@@ -19,7 +19,6 @@
     "core/src/spec.ts",
     "core/src/scope.ts",
     "core/src/errors.ts",
-    "locateError",
     "core/src/render.ts",
     "core/src/macros.ts",
     "tests/language/macros.test.ts",
@@ -48,7 +47,6 @@
       "core/src/spec.ts",
       "core/src/scope.ts",
       "core/src/errors.ts",
-      "locateError",
       "core/src/render.ts"
     ],
     "frozen": false

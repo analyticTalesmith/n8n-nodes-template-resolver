@@ -81,7 +81,6 @@ See the plan section for this card in docs/ephemeral/research/language-2-plan.md
 | `core/src/spec.ts` | edit | template-resolver |
 | `core/src/types.ts` | edit | template-resolver |
 | `core/src/whitespace.ts` | edit | template-resolver |
-| `locateError` | edit | template-resolver |
 
-Files scope: `core/src/analyze.ts`, `core/src/errors.ts`, `core/src/interpreter.ts`, `core/src/lexer.ts`, `core/src/macros.ts`, `core/src/parser.ts`, `core/src/render.ts`, `core/src/scope.ts`, `core/src/spec.ts`, `core/src/types.ts`, `core/src/whitespace.ts`, `locateError`, `tests/golden/render-cases/lang-macro/data.json`, `tests/golden/render-cases/lang-macro/expected.md`, `tests/golden/render-cases/lang-macro/options.json`, `tests/golden/render-cases/lang-macro/template.md`, `tests/language/macros.test.ts`
+Files scope: `core/src/analyze.ts`, `core/src/errors.ts`, `core/src/interpreter.ts`, `core/src/lexer.ts`, `core/src/macros.ts`, `core/src/parser.ts`, `core/src/render.ts`, `core/src/scope.ts`, `core/src/spec.ts`, `core/src/types.ts`, `core/src/whitespace.ts`, `tests/golden/render-cases/lang-macro/data.json`, `tests/golden/render-cases/lang-macro/expected.md`, `tests/golden/render-cases/lang-macro/options.json`, `tests/golden/render-cases/lang-macro/template.md`, `tests/language/macros.test.ts`
 <!-- end generated scope -->
