@@ -98,6 +98,10 @@ export class Interpreter {
   private readonly depthCap: number;
   /** Characters of the finished children of every body being built, across calls */
   private held = 0;
+  /** True while a body that trims its text is being built (not through a macro body) */
+  private inTrimmed = false;
+  /** Whitespace that trimmed counts left out of the output of the CALLs run so far */
+  private callBlanks = 0;
   private macros = new Map<string, DefineNode>();
   private readonly root: RootScope;
   /** The innermost scope: a block or loop frame while one renders, else the root */
@@ -137,6 +141,8 @@ export class Interpreter {
     this.omittedSections = 0;
     this.depth = 0;
     this.held = 0;
+    this.inTrimmed = false;
+    this.callBlanks = 0;
     this.scope = this.root;
     // linking comes first: a bad call is found before any output
     this.macros = linkProgram(ast);
@@ -157,6 +163,11 @@ export class Interpreter {
    * maxOutputChars is where the error is located, or `at` when the caller
    * names the node (a loop keeps its own place). The body's characters are
    * released when it returns: the parent then adds the returned text.
+   * Inside a body that trims its text (SECTION, LIST_ITEM, a cell) a child
+   * adds only its text without the blanks around it, so text the trim drops
+   * never fails the limit; the blanks of CALL output inside the child are
+   * added back, since a macro body starts a fresh context and its whole
+   * output counts.
    */
   private renderChildren(
     nodes: ASTNode[],
@@ -167,19 +178,36 @@ export class Interpreter {
     let mine = 0;
     try {
       for (const child of nodes) {
+        const blanksBefore = this.callBlanks;
         const output = render(child);
         parts.push(output);
-        mine += output.length;
-        this.held += output.length;
-        if (this.held > this.limits.maxOutputChars) {
-          const node = at ?? child;
-          throw this.outputTooLong(node.line, node.column);
-        }
+        const kept = this.inTrimmed
+          ? output.trim().length + (this.callBlanks - blanksBefore)
+          : output.length;
+        mine += kept;
+        this.hold(kept, at ?? child);
       }
     } finally {
       this.held -= mine;
     }
     return parts.join("");
+  }
+
+  /** Add characters to `held`; the limit is crossed at `node` */
+  private hold(length: number, node: ASTNode): void {
+    this.held += length;
+    this.checkOutputLength(this.held, node);
+  }
+
+  /** Run a body with its trimming context set, restoring the one around it */
+  private trimming<T>(value: boolean, run: () => T): T {
+    const outer = this.inTrimmed;
+    this.inTrimmed = value;
+    try {
+      return run();
+    } finally {
+      this.inTrimmed = outer;
+    }
   }
 
   /**
@@ -341,7 +369,11 @@ export class Interpreter {
     const macro = this.macros.get(node.name) as DefineNode; // linked in interpret
     this.countIteration(node);
     const args = this.at(node, () => node.args.map((arg) => this.readArgument(arg)));
-    return this.enter(node, "call", () => this.runMacro(macro, node, args));
+    const output = this.enter(node, "call", () => this.runMacro(macro, node, args));
+    // a trimming body may drop the blanks around the output, but a macro's
+    // text counts in full: keep what the trimmed count leaves out
+    if (this.inTrimmed) this.callBlanks += output.length - output.trim().length;
+    return output;
   }
 
   /** An argument value, passed as the value (an array stays an array) */
@@ -358,14 +390,17 @@ export class Interpreter {
     const frame = new Frame(this.root);
     macro.params.forEach((param, i) => frame.set(param, args[i]));
     const outer = this.scope;
+    const outerCallBlanks = this.callBlanks;
     this.scope = frame;
     try {
-      return this.renderChildren(macro.body);
+      // a body starts a fresh context that trims nothing
+      return this.trimming(false, () => this.renderChildren(macro.body));
     } catch (error) {
       if (error instanceof TemplateError) error.addNote(macroNote(macro, call));
       throw error;
     } finally {
       this.scope = outer;
+      this.callBlanks = outerCallBlanks;
     }
   }
 
@@ -627,7 +662,11 @@ export class Interpreter {
   private runSection(node: SectionNode): string {
     const title = this.at(node, () => this.sectionTitle(node));
     const heading = `${"#".repeat(node.level)} ${title}\n`;
-    const body = this.visitBody(node.body).replace(/\r\n/g, "\n");
+    // the body loses blank edges below, so its children count trimmed
+    const body = this.trimming(true, () => this.visitBody(node.body)).replace(
+      /\r\n/g,
+      "\n"
+    );
 
     if (body.trim() === "") {
       if (!node.skipEmpty) return heading;
@@ -694,7 +733,13 @@ export class Interpreter {
    */
   private visitList(node: ListNode, depth = 0): string {
     const lines: string[] = [];
-    this.enter(node, "block", () => this.collectListItems(node.items, depth, lines));
+    // each finished line counts into `held` and is released when the list returns
+    const start = this.held;
+    try {
+      this.enter(node, "block", () => this.collectListItems(node.items, depth, lines, node));
+    } finally {
+      this.held = start;
+    }
     return lines.join("\n");
   }
 
@@ -703,12 +748,14 @@ export class Interpreter {
    * the lines of its branch, a FOR the lines of each iteration (or of its
    * ELSE body). The numbering follows the lines already collected for this
    * LIST, so items from any source share one counter. Returns the characters
-   * the lines hold.
+   * the lines hold. The limit is crossed at `list`, where it was before lines
+   * counted as they finish.
    */
   private collectListItems(
     children: ASTNode[],
     depth: number,
-    lines: string[]
+    lines: string[],
+    list: ListNode
   ): number {
     const indent = "   ".repeat(depth); // 3 spaces per level
     let length = 0;
@@ -719,15 +766,16 @@ export class Interpreter {
           const line = `${indent}${lines.length + 1}. ${output}`;
           lines.push(line);
           length += line.length;
+          this.hold(line.length, list);
         }
       } else if (child.type === "If") {
         length += this.enter(child, "block", () =>
-          this.collectListItems(this.selectBranch(child as IfNode), depth, lines)
+          this.collectListItems(this.selectBranch(child as IfNode), depth, lines, list)
         );
       } else if (child.type === "For") {
         this.enter(child, "block", () =>
           this.runLoop(child as ForNode, false, (nodes) => {
-            const added = this.collectListItems(nodes, depth, lines);
+            const added = this.collectListItems(nodes, depth, lines, list);
             length += added;
             return added;
           })
@@ -754,11 +802,14 @@ export class Interpreter {
     }
 
     // Render content, in a block of its own
-    const content = this.block(node.content, () =>
-      this.renderChildren(node.content, undefined, (child) =>
-        child.type === "List"
-          ? "\n" + this.visitList(child as ListNode, depth + 1) // nested list
-          : this.visit(child)
+    // the content is trimmed, so its children count trimmed (see renderChildren)
+    const content = this.trimming(true, () =>
+      this.block(node.content, () =>
+        this.renderChildren(node.content, undefined, (child) =>
+          child.type === "List"
+            ? "\n" + this.visitList(child as ListNode, depth + 1) // nested list
+            : this.visit(child)
+        )
       )
     );
 
@@ -772,12 +823,25 @@ export class Interpreter {
     return this.enter(node, "block", () => this.runTable(node));
   }
 
+  /**
+   * The finished cells count into `held` as they finish (see processCellsArray)
+   * and are released when the table returns: the parent then adds its text.
+   */
   private runTable(node: TableNode): string {
+    const start = this.held;
+    try {
+      return this.buildTable(node);
+    } finally {
+      this.held = start;
+    }
+  }
+
+  private buildTable(node: TableNode): string {
     const rows: string[][] = [];
 
     // Process header
     if (node.header) {
-      const headerCells = this.processCellsArray(node.header.cells);
+      const headerCells = this.processCellsArray(node.header);
       rows.push(headerCells);
     }
 
@@ -858,7 +922,7 @@ export class Interpreter {
         this.tableRowsFrom(this.selectBranch(child), rows, strict)
       );
     }
-    const cells = this.processCellsArray(child.cells);
+    const cells = this.processCellsArray(child);
     rows.push(cells);
     return cells.reduce((sum, cell) => sum + cell.length, 0);
   }
@@ -881,32 +945,34 @@ export class Interpreter {
     };
     if (strict) {
       for (const bodyNode of nodes) {
-        if (bodyNode.type === "TableRow") add(this.processCellsArray((bodyNode as TableRowNode).cells));
+        if (bodyNode.type === "TableRow") add(this.processCellsArray(bodyNode as TableRowNode));
         else if (bodyNode.type === "For" || bodyNode.type === "If") length += this.rowsFromChild(bodyNode as TableChild, rows, true);
       }
       return length;
     }
 
-    const addText = (text: string): void => {
+    const addText = (text: string, at: ASTNode): void => {
       if (text.trim()) {
-        add(text.split("|").map((cell) => cell.trim()));
+        const cells = text.split("|").map((cell) => cell.trim());
+        for (const cell of cells) this.hold(cell.length, at);
+        add(cells);
       }
     };
     const inline = ["Text", "Variable", "Ternary", "Comment", "Set", "Call"];
     let run: ASTNode[] = [];
     const flush = (): void => {
       if (run.length === 1) {
-        addText(this.visit(run[0]));
+        addText(this.visit(run[0]), run[0]);
       } else if (run.length > 1) {
         const text = run.map((node) => this.visit(node)).join("");
-        for (const line of text.split(/\r?\n/)) addText(line);
+        for (const line of text.split(/\r?\n/)) addText(line, run[0]);
       }
       run = [];
     };
     for (const bodyNode of nodes) {
       if (bodyNode.type === "TableRow") {
         flush();
-        add(this.processCellsArray((bodyNode as TableRowNode).cells));
+        add(this.processCellsArray(bodyNode as TableRowNode));
       } else if (holdsRow(bodyNode)) {
         flush();
         length += this.rowsFromChild(bodyNode as TableChild, rows, false);
@@ -914,7 +980,7 @@ export class Interpreter {
         run.push(bodyNode);
       } else {
         flush();
-        addText(this.visit(bodyNode));
+        addText(this.visit(bodyNode), bodyNode);
       }
     }
     flush();
@@ -925,17 +991,20 @@ export class Interpreter {
    * Process cells array where each cell is an array of AST nodes
    * Returns an array of strings, one per cell
    */
-  private processCellsArray(cells: ASTNode[][]): string[] {
+  private processCellsArray(row: ASTNode & { cells: ASTNode[][] }): string[] {
     // one block for the whole row: a SET in one cell reads on in the next
-    return this.block(cells.flat(), () =>
-      cells.map((cellNodes) => {
-        const content = cellNodes.map((node) => this.visit(node)).join("");
-        return content
+    return this.block(row.cells.flat(), () =>
+      row.cells.map((cellNodes) => {
+        // a cell is trimmed, so its children count trimmed (see renderChildren)
+        const content = this.trimming(true, () => this.renderChildren(cellNodes));
+        const cell = content
           .replace(/\r?\n/g, " ")
           .replace(/(\\*)\|/g, (found, slashes: string) =>
             slashes.length % 2 === 0 ? `${slashes}\\|` : found
           )
           .trim();
+        this.hold(cell.length, cellNodes[0] ?? row);
+        return cell;
       })
     );
   }

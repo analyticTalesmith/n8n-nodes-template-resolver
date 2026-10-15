@@ -75,7 +75,11 @@ export class Parser {
     const body: ASTNode[] = [];
 
     while (!this.isAtEnd()) {
-      const node = this.parseNode();
+      // Only here may a DEFINE start; every other path reaches parseNode
+      const node =
+        this.current().type === TokenType.DEFINE
+          ? this.nested(() => this.parseDefineBlock())
+          : this.parseNode();
       if (node) {
         body.push(node);
       }
@@ -121,7 +125,7 @@ export class Parser {
       case TokenType.SET:
         return this.parseSet();
       case TokenType.DEFINE:
-        return this.parseDefine();
+        return this.misplacedDefine();
       case TokenType.CALL:
         return this.parseCall();
       case TokenType.COMMENT:
@@ -137,6 +141,8 @@ export class Parser {
             "Close the item with {{END_LIST_ITEM}} before the FOR or IF that builds items"
           );
         }
+        // A stray item is an error, but a DEFINE inside it is the first error
+        this.parseListItem();
         return this.unexpectedToken(token);
       default:
         return this.unexpectedToken(token);
@@ -370,23 +376,21 @@ export class Parser {
   }
 
   /**
-   * Parse DEFINE: {{DEFINE name(param, ...)}}...{{END_DEFINE}}. It sits at the
-   * top level only: any block around it (another DEFINE included) is an error
-   * at the DEFINE.
+   * A DEFINE sits directly in the program body only (see parse): anywhere else,
+   * in a block, a table row or header, an item or another DEFINE, it is an
+   * error at the DEFINE.
    */
-  private parseDefine(): DefineNode {
-    if (this.depth > 0) {
-      const token = this.current();
-      throw new SyntaxError(
-        "A {{DEFINE}} must sit at the top level, outside every block",
-        token.line,
-        token.column,
-        "Move the DEFINE out of the block; a CALL can still sit anywhere"
-      );
-    }
-    return this.nested(() => this.parseDefineBlock());
+  private misplacedDefine(): never {
+    const token = this.current();
+    throw new SyntaxError(
+      "A {{DEFINE}} must sit at the top level, outside every block",
+      token.line,
+      token.column,
+      "Move the DEFINE out of the block; a CALL can still sit anywhere"
+    );
   }
 
+  /** Parse DEFINE: {{DEFINE name(param, ...)}}...{{END_DEFINE}} */
   private parseDefineBlock(): DefineNode {
     const token = this.open(TokenType.DEFINE);
     const header = parseDefineHeader(token.value.slice("DEFINE".length));

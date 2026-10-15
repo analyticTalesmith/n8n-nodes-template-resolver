@@ -79,9 +79,14 @@ export function render(
     }).parse();
     output = interpreter.interpret(ast);
   } catch (error) {
-    // a stack overflow inside a very deep template is a depth error, not a crash
+    // a stack overflow inside a very deep template is a depth error, not a
+    // crash; any other RangeError is a string grown past what the engine holds
     if (error instanceof RangeError) {
-      return failure(toDiagnostic(tooDeep()), interpreter.iterationCount);
+      const overflow = error.message.includes("Maximum call stack size exceeded");
+      return failure(
+        toDiagnostic(overflow ? tooDeep() : tooLong()),
+        interpreter.iterationCount
+      );
     }
     if (!(error instanceof TemplateError)) throw error;
     return failure(toDiagnostic(error), interpreter.iterationCount);
@@ -146,6 +151,17 @@ function tooDeep(): TemplateError {
     1,
     1,
     "Flatten the nested blocks or lower limits.maxDepth"
+  );
+}
+
+/** The error for text grown past the engine's string size; no position is known */
+function tooLong(): TemplateError {
+  return new LimitError(
+    "limit-output",
+    "Output is longer than the engine can hold",
+    1,
+    1,
+    "Render less content or lower limits.maxOutputChars"
   );
 }
 
