@@ -73,22 +73,14 @@
     "tests/language/operators.test.ts",
     "--json"
   ],
-  "claim": {
-    "owner": "build:implementer",
-    "heartbeat": "2026-10-15T04:48:43.773Z",
-    "agent": "a",
-    "built": {
-      "commit": "7f2ca9ff106dd24927d0eeb426788c681955c535",
-      "at": "2026-10-15T04:48:43.773Z"
-    }
-  },
+  "claim": null,
   "blocked_on": null,
   "docs_impact": [
     "docs/living/architecture/modules/template-resolver.md",
     "docs/living/architecture/language-contract.md"
   ],
   "started": "2026-10-15T04:35:45.820Z",
-  "ended": null,
+  "ended": "2026-10-15T04:49:43.000Z",
   "review_rounds": 1,
   "schema_version": 1,
   "blast_radius": [
