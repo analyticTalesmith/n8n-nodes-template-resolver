@@ -57,20 +57,12 @@ See the plan section for this card in docs/ephemeral/research/language-2-plan.md
 <!-- generated scope: from card.json -->
 | Path | Permission (add, edit, remove) | Blast radius |
 | --- | --- | --- |
-| `tests/golden/render-cases/lang-list-for/data.json` | add | template-resolver |
-| `tests/golden/render-cases/lang-list-for/expected.md` | add | template-resolver |
-| `tests/golden/render-cases/lang-list-for/options.json` | add | template-resolver |
-| `tests/golden/render-cases/lang-list-for/template.md` | add | template-resolver |
-| `tests/golden/render-cases/lang-table-if/data.json` | add | template-resolver |
-| `tests/golden/render-cases/lang-table-if/expected.md` | add | template-resolver |
-| `tests/golden/render-cases/lang-table-if/options.json` | add | template-resolver |
-| `tests/golden/render-cases/lang-table-if/template.md` | add | template-resolver |
-| `tests/language/list-table-children.test.ts` | add | template-resolver |
 | `core/src/analyze.ts` | edit | template-resolver |
 | `core/src/interpreter.ts` | edit | template-resolver |
 | `core/src/parser.ts` | edit | template-resolver |
 | `core/src/spec.ts` | edit | template-resolver |
 | `core/src/types.ts` | edit | template-resolver |
+| `tests/language/list-table-children.test.ts` | edit | template-resolver |
 
 Files scope: `core/src/analyze.ts`, `core/src/interpreter.ts`, `core/src/parser.ts`, `core/src/spec.ts`, `core/src/types.ts`, `tests/golden/render-cases/lang-list-for/data.json`, `tests/golden/render-cases/lang-list-for/expected.md`, `tests/golden/render-cases/lang-list-for/options.json`, `tests/golden/render-cases/lang-list-for/template.md`, `tests/golden/render-cases/lang-table-if/data.json`, `tests/golden/render-cases/lang-table-if/expected.md`, `tests/golden/render-cases/lang-table-if/options.json`, `tests/golden/render-cases/lang-table-if/template.md`, `tests/language/list-table-children.test.ts`
 <!-- end generated scope -->

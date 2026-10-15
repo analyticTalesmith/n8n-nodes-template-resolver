@@ -10,30 +10,31 @@
   "tier": null,
   "claimed_in": null,
   "files_scope": [
-    "core/src/types.ts",
-    "core/src/parser.ts",
-    "core/src/interpreter.ts",
     "core/src/analyze.ts",
+    "core/src/interpreter.ts",
+    "core/src/parser.ts",
     "core/src/spec.ts",
-    "tests/language/list-table-children.test.ts",
-    "tests/golden/render-cases/lang-list-for/template.md",
+    "core/src/types.ts",
     "tests/golden/render-cases/lang-list-for/data.json",
-    "tests/golden/render-cases/lang-list-for/options.json",
     "tests/golden/render-cases/lang-list-for/expected.md",
-    "tests/golden/render-cases/lang-table-if/template.md",
+    "tests/golden/render-cases/lang-list-for/options.json",
+    "tests/golden/render-cases/lang-list-for/template.md",
     "tests/golden/render-cases/lang-table-if/data.json",
+    "tests/golden/render-cases/lang-table-if/expected.md",
     "tests/golden/render-cases/lang-table-if/options.json",
-    "tests/golden/render-cases/lang-table-if/expected.md"
+    "tests/golden/render-cases/lang-table-if/template.md",
+    "tests/language/list-table-children.test.ts"
   ],
   "manifest": {
     "add": [],
     "remove": [],
     "edit": [
-      "core/src/types.ts",
-      "core/src/parser.ts",
-      "core/src/interpreter.ts",
       "core/src/analyze.ts",
-      "core/src/spec.ts"
+      "core/src/interpreter.ts",
+      "core/src/parser.ts",
+      "core/src/spec.ts",
+      "core/src/types.ts",
+      "tests/language/list-table-children.test.ts"
     ],
     "frozen": true
   },
@@ -157,7 +158,7 @@
     "at": "2026-10-15T14:18:33.401Z",
     "brief_sha256": "d8f241740e535b78261402e11e163f56581a3d3a5a9e5b3569c477b41bd0c6a8",
     "brief_core_sha256": "94bac7bf8c28050fd459f313677071caf9691e8ab8b96668de206c6389a79658",
-    "manifest_sha256": "a09af7a8f2e4395a07af8df2c8bffab3214238cbe77a283600628851db6ee76b",
+    "manifest_sha256": "cecee4ec2f6e9bea0dc21b8cd130470904ad81c9f6e8c1a58230ceda6b5928b4",
     "criteria_sha256": "dbf6b581274021a00477a78f085c83446aefcadb68b9aefaa9f490a34c4f9083",
     "scope_sha256": "2ca27d4f2adc38ce5894c651961d76f53fa5475d14215a647d17052e21bc8a77",
     "scope_parts": {
@@ -178,6 +179,78 @@
       "path": "tests/language/list-table-children.test.ts",
       "reason": "test defects: the golden helper returned no-result for a passing case, and three header rows expected a 5-hyphen separator for a 6-character cell (the unchanged rule gives 6)",
       "approved_by": "build lead (flagged to the project lead)"
+    }
+  ],
+  "manifest_amendments": [
+    {
+      "at": "2026-10-15T14:27:08.585Z",
+      "by": "build-lead",
+      "reason": "test writer committed the test and golden files before the base; two approved test corrections edit the test file",
+      "from": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/interpreter.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/analyze.ts",
+          "core/src/interpreter.ts",
+          "core/src/parser.ts",
+          "core/src/spec.ts",
+          "core/src/types.ts",
+          "tests/golden/render-cases/lang-list-for/data.json",
+          "tests/golden/render-cases/lang-list-for/expected.md",
+          "tests/golden/render-cases/lang-list-for/options.json",
+          "tests/golden/render-cases/lang-list-for/template.md",
+          "tests/golden/render-cases/lang-table-if/data.json",
+          "tests/golden/render-cases/lang-table-if/expected.md",
+          "tests/golden/render-cases/lang-table-if/options.json",
+          "tests/golden/render-cases/lang-table-if/template.md",
+          "tests/language/list-table-children.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      },
+      "to": {
+        "manifest": {
+          "add": [],
+          "remove": [],
+          "edit": [
+            "core/src/analyze.ts",
+            "core/src/interpreter.ts",
+            "core/src/parser.ts",
+            "core/src/spec.ts",
+            "core/src/types.ts",
+            "tests/language/list-table-children.test.ts"
+          ]
+        },
+        "files_scope": [
+          "core/src/analyze.ts",
+          "core/src/interpreter.ts",
+          "core/src/parser.ts",
+          "core/src/spec.ts",
+          "core/src/types.ts",
+          "tests/golden/render-cases/lang-list-for/data.json",
+          "tests/golden/render-cases/lang-list-for/expected.md",
+          "tests/golden/render-cases/lang-list-for/options.json",
+          "tests/golden/render-cases/lang-list-for/template.md",
+          "tests/golden/render-cases/lang-table-if/data.json",
+          "tests/golden/render-cases/lang-table-if/expected.md",
+          "tests/golden/render-cases/lang-table-if/options.json",
+          "tests/golden/render-cases/lang-table-if/template.md",
+          "tests/language/list-table-children.test.ts"
+        ],
+        "blast_radius": [
+          "template-resolver"
+        ]
+      }
     }
   ]
 }
